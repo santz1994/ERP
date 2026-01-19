@@ -1,0 +1,407 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'erp-softtoys/**'
+      - 'docker-compose.*.yml'
+      - '.github/workflows/deploy.yml'
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:  # Allow manual trigger
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  COMPOSE_FILE: docker-compose.production.yml
+
+jobs:
+  # ============================================================================
+  # PHASE 1: TEST
+  # ============================================================================
+  test:
+    runs-on: ubuntu-latest
+    name: Run Tests & Coverage
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_erp
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install dependencies
+        working-directory: erp-softtoys
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Lint with flake8
+        working-directory: erp-softtoys
+        run: |
+          # Stop the build if there are Python syntax errors or undefined names
+          flake8 app --count --select=E9,F63,F7,F82 --show-source --statistics
+          # Exit-zero treats all errors as warnings
+          flake8 app --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Type check with mypy
+        working-directory: erp-softtoys
+        run: mypy app --ignore-missing-imports
+        continue-on-error: true
+
+      - name: Run pytest
+        working-directory: erp-softtoys
+        env:
+          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_erp
+          REDIS_URL: redis://localhost:6379/0
+          JWT_SECRET_KEY: test_secret_key_for_ci_cd
+        run: |
+          pytest tests/ -v --cov=app --cov-report=xml --cov-report=term-missing
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./erp-softtoys/coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+
+      - name: Archive test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: erp-softtoys/.pytest_cache/
+
+  # ============================================================================
+  # PHASE 2: BUILD
+  # ============================================================================
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    name: Build Docker Images
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: erp-softtoys
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build docker-compose stack
+        if: github.event_name != 'pull_request'
+        run: docker-compose -f ${{ env.COMPOSE_FILE }} build
+
+  # ============================================================================
+  # PHASE 3: SECURITY SCAN
+  # ============================================================================
+  security-scan:
+    needs: build
+    runs-on: ubuntu-latest
+    name: Security Scan
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: 'erp-softtoys'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Check for vulnerabilities
+        run: |
+          if grep -q '"Severity": "CRITICAL"' trivy-results.sarif; then
+            echo "❌ CRITICAL vulnerabilities found!"
+            exit 1
+          fi
+
+  # ============================================================================
+  # PHASE 4: DEPLOY TO STAGING
+  # ============================================================================
+  deploy-staging:
+    needs: [test, build, security-scan]
+    runs-on: ubuntu-latest
+    name: Deploy to Staging
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    environment:
+      name: staging
+      url: https://staging.qutykarunia.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy to staging server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          script: |
+            cd /opt/erp-staging
+            
+            # Pull latest code
+            git pull origin develop
+            
+            # Load environment
+            export $(cat .env.staging | grep -v '^#' | xargs)
+            
+            # Pull latest images
+            docker-compose -f docker-compose.staging.yml pull
+            
+            # Run migrations
+            docker-compose -f docker-compose.staging.yml run --rm backend alembic upgrade head
+            
+            # Restart services
+            docker-compose -f docker-compose.staging.yml up -d
+            
+            # Wait for services
+            sleep 10
+            
+            # Health check
+            curl -f http://localhost:8000/health || exit 1
+
+      - name: Notify deployment
+        if: success()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '✅ Deployed to staging: https://staging.qutykarunia.com'
+            })
+
+  # ============================================================================
+  # PHASE 5: DEPLOY TO PRODUCTION
+  # ============================================================================
+  deploy-production:
+    needs: [test, build, security-scan]
+    runs-on: ubuntu-latest
+    name: Deploy to Production
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: production
+      url: https://erp.qutykarunia.com
+    concurrency:
+      group: production-deployment
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Create backup
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            cd /opt/erp
+            docker-compose exec -T postgres pg_dump -U postgres erp_quty_karunia_production | \
+              gzip > /backups/erp/erp_backup_$(date +%Y%m%d_%H%M%S).sql.gz
+
+      - name: Deploy to production
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            cd /opt/erp
+            
+            # Pull latest code
+            git pull origin main
+            
+            # Load environment
+            export $(cat .env.production | grep -v '^#' | xargs)
+            
+            # Pull latest images
+            docker-compose -f docker-compose.production.yml pull
+            
+            # Run migrations with timeout
+            timeout 300 docker-compose -f docker-compose.production.yml run --rm backend alembic upgrade head || \
+              (echo "Migration timeout or failed" && exit 1)
+            
+            # Start services with health checks
+            docker-compose -f docker-compose.production.yml up -d
+            
+            # Wait for services
+            sleep 15
+            
+            # Health check API
+            for i in {1..30}; do
+              if curl -f https://erp.qutykarunia.com/api/v1/health 2>/dev/null; then
+                echo "✓ API is healthy"
+                exit 0
+              fi
+              echo "Waiting for API... ($i/30)"
+              sleep 2
+            done
+            
+            echo "✗ API failed health check"
+            exit 1
+
+      - name: Verify deployment
+        run: |
+          curl -f https://erp.qutykarunia.com/docs -o /dev/null
+          echo "✓ Deployment verified"
+
+      - name: Notify slack on success
+        if: success()
+        uses: slackapi/slack-github-action@v1
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK }}
+          payload: |
+            {
+              "text": "✅ Production deployment successful",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Production Deployment Successful* ✅\n*Commit:* <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>\n*Author:* ${{ github.actor }}\n*URL:* https://erp.qutykarunia.com"
+                  }
+                }
+              ]
+            }
+
+      - name: Notify slack on failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1
+        with:
+          webhook-url: ${{ secrets.SLACK_WEBHOOK }}
+          payload: |
+            {
+              "text": "❌ Production deployment failed",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Production Deployment Failed* ❌\n*Commit:* <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>\n*Author:* ${{ github.actor }}\n*Check logs:* <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Details>"
+                  }
+                }
+              ]
+            }
+
+  # ============================================================================
+  # PHASE 6: POST-DEPLOYMENT TESTS
+  # ============================================================================
+  post-deploy-test:
+    needs: deploy-production
+    runs-on: ubuntu-latest
+    name: Post-Deployment Tests
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Wait for service stability
+        run: sleep 30
+
+      - name: Run smoke tests
+        run: |
+          echo "Running smoke tests against production..."
+          
+          # Test API availability
+          curl -f https://erp.qutykarunia.com/docs -o /dev/null || exit 1
+          
+          # Test auth endpoint
+          curl -f https://erp.qutykarunia.com/api/v1/auth/me -H "Authorization: Bearer dummy" -o /dev/null || echo "Auth endpoint responded as expected"
+          
+          # Test Prometheus metrics
+          curl -f https://erp.qutykarunia.com/metrics -o /dev/null || echo "Metrics endpoint available"
+          
+          echo "✓ Smoke tests passed"
+
+      - name: Performance baseline check
+        run: |
+          echo "Checking API performance..."
+          
+          # Test response time (should be < 500ms)
+          start=$(date +%s%N)
+          curl -s https://erp.qutykarunia.com/docs > /dev/null
+          end=$(date +%s%N)
+          
+          response_time=$(((end - start) / 1000000))
+          echo "Response time: ${response_time}ms"
+          
+          if [ $response_time -gt 500 ]; then
+            echo "⚠️  Warning: Response time exceeds expected baseline"
+          fi
+

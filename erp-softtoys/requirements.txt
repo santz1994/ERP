@@ -1,0 +1,44 @@
+# FastAPI Core Stack
+fastapi==0.95.1
+uvicorn[standard]==0.22.0
+websockets==11.0.3
+sqlalchemy==2.0.45
+alembic==1.18.1
+psycopg2-binary==2.9.11
+pydantic==1.10.17
+python-dotenv==1.2.1
+email-validator==2.1.0
+
+# Security & Authentication (deduplicated - using stable versions)
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+PyJWT==2.8.0
+bcrypt==4.1.1
+cryptography==41.0.7
+
+# HTTP & Requests
+httpx==0.25.2
+requests==2.31.0
+click==8.3.1
+
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+
+# Monitoring & Logging
+prometheus-client==0.19.0
+python-json-logger==2.0.7
+
+# Caching & Tasks
+redis==5.0.0
+celery==5.3.4
+
+# Type Hints & Development
+typing-extensions==4.12.0
+black==23.12.0
+flake8==6.1.0
+mypy==1.7.1
+
+# Reporting & Export
+openpyxl==3.1.2
+reportlab==4.0.7

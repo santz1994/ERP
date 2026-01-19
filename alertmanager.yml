@@ -1,0 +1,277 @@
+global:
+  resolve_timeout: 5m
+  # SMTP Configuration for email alerts
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_auth_username: '${ALERTMANAGER_EMAIL:-admin@qutykarunia.com}'
+  smtp_auth_password: '${ALERTMANAGER_EMAIL_PASSWORD:-password}'
+  smtp_require_tls: true
+  # Slack webhook (optional)
+  slack_api_url: '${SLACK_WEBHOOK_URL:-}'
+
+# The root route contains the routing rules. 
+# Routing is done on incoming alerts based on label matching.
+route:
+  # The group by clause specifies the labels to group alerts.
+  group_by: ['alertname', 'cluster', 'service']
+  
+  # Default group wait/interval time
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 12h
+  
+  # Default receiver - goes to PagerDuty
+  receiver: 'default'
+  
+  # Sub-routes
+  routes:
+    # Critical alerts - immediate notification
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      group_wait: 0s
+      repeat_interval: 5m
+      continue: true
+
+    # Metal detector critical alert
+    - match:
+        alertname: MetalDetectorFailureAlert
+      receiver: 'metal-detector-incident'
+      group_wait: 0s
+      repeat_interval: 5m
+      continue: true
+
+    # Database alerts
+    - match:
+        component: database
+      receiver: 'database-team'
+      group_wait: 30s
+      repeat_interval: 1h
+
+    # API alerts
+    - match:
+        component: api
+      receiver: 'api-team'
+      group_wait: 30s
+      repeat_interval: 1h
+
+    # Production workflow alerts
+    - match:
+        component: workflow
+      receiver: 'workflow-team'
+      group_wait: 10s
+      repeat_interval: 1h
+
+    # Quality control alerts
+    - match:
+        component: quality
+      receiver: 'quality-team'
+      group_wait: 30s
+      repeat_interval: 1h
+
+    # Infrastructure alerts
+    - match:
+        component: infrastructure
+      receiver: 'infrastructure-team'
+      group_wait: 30s
+      repeat_interval: 2h
+
+    # Monitoring alerts
+    - match:
+        component: monitoring
+      receiver: 'monitoring-team'
+      group_wait: 10s
+      repeat_interval: 30m
+
+    # Backup alerts
+    - match:
+        component: backup
+      receiver: 'backup-team'
+      group_wait: 5m
+      repeat_interval: 1h
+
+    # Warning alerts
+    - match:
+        severity: warning
+      receiver: 'default'
+      group_wait: 5m
+      repeat_interval: 12h
+
+# Receivers define where notifications are sent to.
+receivers:
+  - name: 'null'
+
+  - name: 'default'
+    slack_configs:
+      - channel: '#alerts-general'
+        title: 'Alert: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+    email_configs:
+      - to: 'ops-team@qutykarunia.com'
+        from: 'alertmanager@qutykarunia.com'
+        headers:
+          Subject: '[{{ .GroupLabels.severity | upper }}] {{ .GroupLabels.alertname }}'
+
+  - name: 'critical-alerts'
+    slack_configs:
+      - channel: '#alerts-critical'
+        title: '🚨 CRITICAL: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.summary }}\n{{ .Annotations.description }}\n{{ .Annotations.action }}{{ end }}'
+        send_resolved: true
+        color: '{{ if eq .Status "firing" }}danger{{ else }}good{{ end }}'
+    email_configs:
+      - to: 'oncall@qutykarunia.com'
+        from: 'alertmanager@qutykarunia.com'
+        headers:
+          Subject: '🚨 CRITICAL ALERT: {{ .GroupLabels.alertname }} - IMMEDIATE ACTION REQUIRED'
+          Priority: 'Urgent'
+    pagerduty_configs:
+      - service_key: '${PAGERDUTY_SERVICE_KEY:-}'
+        description: '{{ .GroupLabels.alertname }}'
+        details:
+          firing: '{{ template "pagerduty.default.instances" .Alerts.Firing }}'
+
+  - name: 'metal-detector-incident'
+    slack_configs:
+      - channel: '#metal-detector-incidents'
+        title: '🚨🚨🚨 METAL DETECTOR INCIDENT 🚨🚨🚨'
+        text: |
+          *CRITICAL ALERT: Metal detected in finished product!*
+          
+          {{ range .Alerts }}
+          Status: {{ .Status }}
+          Description: {{ .Annotations.description }}
+          Action: {{ .Annotations.action }}
+          Time: {{ .StartsAt }}
+          {{ end }}
+        send_resolved: true
+        color: 'danger'
+    email_configs:
+      - to: 'quality-manager@qutykarunia.com,production-manager@qutykarunia.com'
+        from: 'alertmanager@qutykarunia.com'
+        headers:
+          Subject: '🚨 CRITICAL: METAL DETECTED IN FINISHED PRODUCT - PRODUCTION STOPPED'
+          Priority: 'Urgent'
+    pagerduty_configs:
+      - service_key: '${PAGERDUTY_QUALITY_KEY:-}'
+        description: 'Metal Detector Alert - Production Stopped'
+
+  - name: 'database-team'
+    slack_configs:
+      - channel: '#alerts-database'
+        title: '⚠️ Database Alert: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}\n{{ .Annotations.recommendation }}{{ end }}'
+        send_resolved: true
+    email_configs:
+      - to: 'dba-team@qutykarunia.com'
+        from: 'alertmanager@qutykarunia.com'
+        headers:
+          Subject: '[Database] {{ .GroupLabels.alertname }}'
+
+  - name: 'api-team'
+    slack_configs:
+      - channel: '#alerts-api'
+        title: '⚠️ API Alert: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}\n{{ .Annotations.dashboard }}{{ end }}'
+        send_resolved: true
+    email_configs:
+      - to: 'backend-team@qutykarunia.com'
+        from: 'alertmanager@qutykarunia.com'
+        headers:
+          Subject: '[API] {{ .GroupLabels.alertname }}'
+
+  - name: 'workflow-team'
+    slack_configs:
+      - channel: '#alerts-workflow'
+        title: '⚠️ Workflow Alert: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}\n{{ .Annotations.runbook }}{{ end }}'
+        send_resolved: true
+    email_configs:
+      - to: 'production-team@qutykarunia.com'
+        from: 'alertmanager@qutykarunia.com'
+        headers:
+          Subject: '[Production] {{ .GroupLabels.alertname }}'
+
+  - name: 'quality-team'
+    slack_configs:
+      - channel: '#alerts-quality'
+        title: '⚠️ Quality Alert: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+    email_configs:
+      - to: 'qa-team@qutykarunia.com'
+        from: 'alertmanager@qutykarunia.com'
+        headers:
+          Subject: '[QA] {{ .GroupLabels.alertname }}'
+
+  - name: 'infrastructure-team'
+    slack_configs:
+      - channel: '#alerts-infrastructure'
+        title: '⚠️ Infrastructure Alert: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+    email_configs:
+      - to: 'devops-team@qutykarunia.com'
+        from: 'alertmanager@qutykarunia.com'
+        headers:
+          Subject: '[Infrastructure] {{ .GroupLabels.alertname }}'
+
+  - name: 'monitoring-team'
+    slack_configs:
+      - channel: '#alerts-monitoring'
+        title: 'Monitoring Alert: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
+    email_configs:
+      - to: 'monitoring-team@qutykarunia.com'
+        from: 'alertmanager@qutykarunia.com'
+
+  - name: 'backup-team'
+    slack_configs:
+      - channel: '#alerts-backup'
+        title: 'Backup Alert: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.description }}\n{{ .Annotations.action }}{{ end }}'
+        send_resolved: true
+    email_configs:
+      - to: 'backup-admin@qutykarunia.com'
+        from: 'alertmanager@qutykarunia.com'
+        headers:
+          Subject: '[Backup] {{ .GroupLabels.alertname }}'
+
+# Inhibition rules - silence alerts based on other alerts
+inhibit_rules:
+  # Inhibit APIServiceDown if NodeDown
+  - source_match:
+      alertname: 'NodeDown'
+    target_match:
+      alertname: 'APIServiceDown'
+    equal: ['instance']
+
+  # Inhibit PostgreSQLDown if NodeDown
+  - source_match:
+      alertname: 'NodeDown'
+    target_match:
+      alertname: 'PostgreSQLDown'
+    equal: ['instance']
+
+  # Inhibit slow query warnings if database is down
+  - source_match:
+      alertname: 'PostgreSQLDown'
+    target_match:
+      alertname: 'SlowQueries'
+    equal: ['instance']
+
+  # Inhibit high memory if node is restarting
+  - source_match:
+      alertname: 'NodeDown'
+    target_match_re:
+      alertname: 'High.*'
+    equal: ['instance']
+
+  # Inhibit connection pool warnings if database is down
+  - source_match:
+      alertname: 'PostgreSQLDown'
+    target_match:
+      alertname: 'DBConnectionPoolExhausted'
+    equal: ['instance']
+

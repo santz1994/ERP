@@ -1,0 +1,248 @@
+"""
+FastAPI Dependencies
+Reusable dependency injection for routes
+"""
+
+from typing import Generator, Optional
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer
+from sqlalchemy.orm import Session
+from app.core.database import SessionLocal
+from app.core.security import TokenUtils
+from app.core.models.users import User
+
+
+# Database session dependency
+def get_db() -> Generator[Session, None, None]:
+    """
+    Database session dependency
+    Provides SQLAlchemy session to routes
+    """
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+# HTTP Bearer token scheme
+security = HTTPBearer()
+
+
+async def get_current_user(
+    token: str = Depends(security),
+    db: Session = Depends(get_db)
+) -> User:
+    """
+    Get current authenticated user from JWT token
+    
+    Args:
+        token: HTTP Bearer token
+        db: Database session
+    
+    Returns:
+        User object
+    
+    Raises:
+        HTTPException: If token invalid or user not found
+    """
+    # For FastAPI 0.95.1 compatibility, extract token from security scheme
+    actual_token = token.credentials if hasattr(token, 'credentials') else token
+    
+    # Decode token
+    token_data = TokenUtils.decode_token(actual_token)
+    if not token_data:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Get user from database
+    user = db.query(User).filter(User.id == token_data.user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User account is inactive"
+        )
+    
+    return user
+
+
+async def get_optional_user(
+    token: Optional[str] = Depends(security),
+    db: Session = Depends(get_db)
+) -> Optional[User]:
+    """
+    Get current user (optional, returns None if not authenticated)
+    """
+    if not token:
+        return None
+    
+    return await get_current_user(token, db)
+
+
+def require_role(required_role: str):
+    """
+    Dependency to require specific role
+    
+    Args:
+        required_role: Role name required (e.g., "admin", "ppic_manager")
+    
+    Returns:
+        Async function that validates role
+    
+    **Example**:
+    ```python
+    @router.get("/admin-only")
+    def admin_endpoint(user: User = Depends(require_role("admin"))):
+        return {"message": "Admin only endpoint"}
+    ```
+    """
+    async def check_role(current_user: User = Depends(get_current_user)) -> User:
+        """Check if user has required role"""
+        user_role = current_user.role.value
+        
+        if user_role == "Admin" or user_role == required_role:
+            return current_user
+        
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Role '{required_role}' is required. Your role: {user_role}"
+        )
+    
+    return check_role
+
+
+def require_any_role(*allowed_roles: str):
+    """
+    Dependency to require any of multiple roles
+    
+    Args:
+        allowed_roles: Role names allowed (e.g., "admin", "ppic_manager")
+    
+    Returns:
+        Async function that validates role
+    
+    **Example**:
+    ```python
+    @router.post("/create-order")
+    def create_order(
+        user: User = Depends(require_any_role("ppic_manager", "admin"))
+    ):
+        return {"message": "Order created"}
+    ```
+    """
+    async def check_any_role(current_user: User = Depends(get_current_user)) -> User:
+        """Check if user has any allowed role"""
+        user_role = current_user.role.value
+        
+        if user_role == "Admin":
+            return current_user
+        
+        for allowed_role in allowed_roles:
+            if user_role == allowed_role:
+                return current_user
+        
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"One of these roles is required: {', '.join(allowed_roles)}. Your role: {user_role}"
+        )
+    
+    return check_any_role
+
+
+def require_supervisor_or_admin():
+    """Require supervisor or admin role"""
+    async def check_supervisor(current_user: User = Depends(get_current_user)) -> User:
+        if current_user.is_supervisor() or current_user.role.value == "Admin":
+            return current_user
+        
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Supervisor or Admin role required"
+        )
+    
+    return check_supervisor
+
+
+def require_operator():
+    """Require operator role"""
+    async def check_operator(current_user: User = Depends(get_current_user)) -> User:
+        if current_user.is_operator() or current_user.role.value == "Admin":
+            return current_user
+        
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Operator role required"
+        )
+    
+    return check_operator
+
+
+# Pagination dependency
+class PaginationParams:
+    """Pagination parameters"""
+    def __init__(self, skip: int = 0, limit: int = 100):
+        self.skip = max(0, skip)
+        self.limit = min(limit, 1000)  # Max 1000 items per page
+
+
+def get_pagination(
+    skip: int = 0,
+    limit: int = 100
+) -> PaginationParams:
+    """Pagination dependency"""
+    return PaginationParams(skip=skip, limit=limit)
+
+
+async def get_current_user_ws(token: str) -> User:
+    """
+    Get current authenticated user from JWT token (WebSocket version)
+    Used in WebSocket endpoints where we can't use HTTPBearer
+    
+    Args:
+        token: JWT token string
+    
+    Returns:
+        User object
+    
+    Raises:
+        HTTPException: If token invalid or user not found
+    """
+    from app.core.database import SessionLocal
+    
+    # Decode token
+    token_data = TokenUtils.decode_token(token)
+    if not token_data:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token"
+        )
+    
+    # Get user from database
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == token_data.user_id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found"
+            )
+        
+        if not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="User account is inactive"
+            )
+        
+        return user
+    finally:
+        db.close()

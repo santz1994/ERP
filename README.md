@@ -1,4 +1,4 @@
-# 🏭 QUTY KARUNIA ERP SYSTEM
+# 🏭 QUTY KARUNIA ERP SYSTEM #
 **AI-Powered Manufacturing Execution System for Soft Toys Production**
 
 ![Status](https://img.shields.io/badge/Status-Week%201%20Complete-brightgreen)
@@ -333,5 +333,6 @@ This project is for Quty Karunia internal use only. Do not share any part of thi
 *Developed by: Daniel Rizaldy (Senior IT Developer)*
 *Architecture: Modular Monolith + FastAPI + PostgreSQL*
 *For: Quty Karunia Manufacturing*
-#   E R P  
+#   E R P 
+ 
  
