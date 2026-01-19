@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.database import engine, Base
 from app.core.config import settings
-from app.api.v1 import auth, ppic, warehouse, admin, websocket, kanban, reports
+from app.api.v1 import auth, ppic, warehouse, admin, websocket, kanban, reports, import_export
 from app.modules.cutting import cutting_router
 from app.modules.sewing import sewing_router
 from app.modules.finishing import finishing_router
@@ -96,6 +96,12 @@ app.include_router(
 # Reporting Module (PDF/Excel)
 app.include_router(
     reports.router,
+    prefix=settings.API_PREFIX
+)
+
+# Import/Export Module (CSV/Excel)
+app.include_router(
+    import_export.router,
     prefix=settings.API_PREFIX
 )
 

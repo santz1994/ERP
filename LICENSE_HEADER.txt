@@ -1,0 +1,71 @@
+"""
+# =============================================================================
+# ERP QUTY KARUNIA - Manufacturing Execution System
+# =============================================================================
+#
+# Copyright (c) 2026 PT Quty Karunia / Daniel Rizaldy
+# All Rights Reserved.
+#
+# PROPRIETARY AND CONFIDENTIAL
+#
+# This software is the proprietary information of PT Quty Karunia.
+# Use is subject to license terms.
+#
+# Unauthorized copying, modification, distribution, or use of this software,
+# via any medium, is strictly prohibited without the express written permission
+# of PT Quty Karunia.
+#
+# Contact: [Your Contact Information]
+# Website: [Your Company Website]
+#
+# =============================================================================
+# File: {filename}
+# Description: {description}
+# Author: Daniel Rizaldy
+# Created: {created_date}
+# Last Modified: {modified_date}
+# =============================================================================
+"""
+
+# Usage Instructions:
+# 1. Copy the header above to the top of each source file
+# 2. Replace {filename} with actual filename (e.g., "app/main.py")
+# 3. Replace {description} with file description (e.g., "FastAPI application entry point")
+# 4. Replace {created_date} with creation date (e.g., "2026-01-19")
+# 5. Replace {modified_date} with last modification date
+#
+# Example for app/main.py:
+"""
+# =============================================================================
+# ERP QUTY KARUNIA - Manufacturing Execution System
+# =============================================================================
+#
+# Copyright (c) 2026 PT Quty Karunia / Daniel Rizaldy
+# All Rights Reserved.
+#
+# PROPRIETARY AND CONFIDENTIAL
+#
+# This software is the proprietary information of PT Quty Karunia.
+# Use is subject to license terms.
+#
+# Unauthorized copying, modification, distribution, or use of this software,
+# via any medium, is strictly prohibited without the express written permission
+# of PT Quty Karunia.
+#
+# Contact: daniel@qutykarunia.com
+# Website: https://www.qutykarunia.com
+#
+# =============================================================================
+# File: app/main.py
+# Description: FastAPI application entry point
+# Author: Daniel Rizaldy
+# Created: 2026-01-10
+# Last Modified: 2026-01-19
+# =============================================================================
+"""
+
+# Short Header Version (for smaller files):
+"""
+Copyright (c) 2026 PT Quty Karunia / Daniel Rizaldy - All Rights Reserved
+File: {filename} | Author: Daniel Rizaldy | Date: {date}
+"""
