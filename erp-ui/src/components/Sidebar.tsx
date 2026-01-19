@@ -3,11 +3,14 @@ import { Link, useLocation } from 'react-router-dom'
 import {
   BarChart3,
   Scissors,
+  Palette,
   Zap,
   Sparkles,
   Package,
   Beaker,
   Warehouse,
+  ShoppingCart,
+  TruckIcon,
   Users,
 } from 'lucide-react'
 import { useAuthStore, useUIStore } from '@/store'
@@ -23,12 +26,15 @@ interface MenuItem {
 const menuItems: MenuItem[] = [
   { icon: <BarChart3 />, label: 'Dashboard', path: '/dashboard', roles: Object.values(UserRole) },
   { icon: <BarChart3 />, label: 'PPIC', path: '/ppic', roles: [UserRole.PPIC, UserRole.ADMIN] },
+  { icon: <ShoppingCart />, label: 'Purchasing', path: '/purchasing', roles: [UserRole.PPIC, UserRole.ADMIN] },
+  { icon: <Warehouse />, label: 'Warehouse', path: '/warehouse', roles: [UserRole.WAREHOUSE_ADMIN, UserRole.ADMIN] },
   { icon: <Scissors />, label: 'Cutting', path: '/cutting', roles: [UserRole.OPERATOR_CUTTING, UserRole.SPV_CUTTING, UserRole.ADMIN] },
+  { icon: <Palette />, label: 'Embroidery', path: '/embroidery', roles: [UserRole.OPERATOR_CUTTING, UserRole.SPV_CUTTING, UserRole.ADMIN] },
   { icon: <Zap />, label: 'Sewing', path: '/sewing', roles: [UserRole.OPERATOR_SEWING, UserRole.SPV_SEWING, UserRole.ADMIN] },
   { icon: <Sparkles />, label: 'Finishing', path: '/finishing', roles: [UserRole.OPERATOR_FINISHING, UserRole.SPV_FINISHING, UserRole.ADMIN] },
   { icon: <Package />, label: 'Packing', path: '/packing', roles: [UserRole.OPERATOR_PACKING, UserRole.ADMIN] },
+  { icon: <TruckIcon />, label: 'Finish Goods', path: '/finishgoods', roles: [UserRole.WAREHOUSE_ADMIN, UserRole.ADMIN] },
   { icon: <Beaker />, label: 'Quality', path: '/quality', roles: [UserRole.QC_INSPECTOR, UserRole.ADMIN] },
-  { icon: <Warehouse />, label: 'Warehouse', path: '/warehouse', roles: [UserRole.WAREHOUSE_ADMIN, UserRole.ADMIN] },
   { icon: <Users />, label: 'Admin', path: '/admin', roles: [UserRole.ADMIN] },
 ]
 

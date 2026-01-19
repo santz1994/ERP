@@ -343,3 +343,71 @@ async def get_pending_sewing_orders(
         )
         for o in orders
     ]
+
+
+@router.post("/internal-loop", response_model=dict)
+async def create_internal_loop(
+    work_order_id: int,
+    from_stage: int,
+    to_stage: int,
+    qty_to_return: float,
+    reason: str,
+    notes: str = None,
+    current_user: User = Depends(require_role(["SPV Sewing", "Admin"])),
+    db: Session = Depends(get_db)
+) -> dict:
+    """
+    **POST** - Internal Loop/Return to Previous Stage
+    
+    **Note 1: Sewing Loop (Balik lagi) - Internal Line Balancing**
+    
+    For products requiring multiple passes through sewing stages WITHOUT
+    leaving the Sewing department. This is NOT a rework due to defects,
+    but part of normal production flow for certain product types.
+    
+    **Common Use Cases:**
+    - After Stik (Stage 3) → Return to Assembly (Stage 1) for final components
+    - Finger stitching on soft toys requiring additional stik work
+    - Complex patterns needing multiple assembly passes
+    - Special embellishments added after main body completion
+    
+    **Internal Control:**
+    - No external transfer slip (Surat Jalan) required
+    - Uses internal work card (Kartu Kendali Meja)
+    - Stays within Sewing department
+    - Tracked via Work Order metadata
+    
+    **Stages:**
+    - 1: Assembly (Pos 1: Rakit)
+    - 2: Labeling (Pos 2: Label)
+    - 3: Stik (Pos 3: Stik Balik)
+    
+    **Validation:**
+    - from_stage > to_stage (must return to PREVIOUS stage)
+    - Only SPV Sewing can authorize internal loops
+    
+    **Example:**
+    ```json
+    {
+        "work_order_id": 123,
+        "from_stage": 3,
+        "to_stage": 1,
+        "qty_to_return": 100.0,
+        "reason": "Final Assembly after Stik",
+        "notes": "Add final components (eyes, nose) after body stitching"
+    }
+    ```
+    
+    Reference: Flow Production.md - Note 1
+    Requires: SPV Sewing
+    """
+    return SewingService.internal_loop_return(
+        db=db,
+        work_order_id=work_order_id,
+        from_stage=from_stage,
+        to_stage=to_stage,
+        qty_to_return=Decimal(str(qty_to_return)),
+        reason=reason,
+        user_id=current_user.id,
+        notes=notes
+    )

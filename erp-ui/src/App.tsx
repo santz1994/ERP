@@ -6,6 +6,21 @@ import { Sidebar } from '@/components/Sidebar'
 import { NotificationCenter } from '@/components/NotificationCenter'
 import { LoginPage } from '@/pages/LoginPage'
 import { DashboardPage } from '@/pages/DashboardPage'
+import PPICPage from '@/pages/PPICPage'
+import CuttingPage from '@/pages/CuttingPage'
+import EmbroideryPage from '@/pages/EmbroideryPage'
+import SewingPage from '@/pages/SewingPage'
+import FinishingPage from '@/pages/FinishingPage'
+import PackingPage from '@/pages/PackingPage'
+import PurchasingPage from '@/pages/PurchasingPage'
+import FinishgoodsPage from '@/pages/FinishgoodsPage'
+import WarehousePage from '@/pages/WarehousePage'
+import KanbanPage from '@/pages/KanbanPage'
+import ReportsPage from '@/pages/ReportsPage'
+import QCPage from '@/pages/QCPage'
+import AdminUserPage from '@/pages/AdminUserPage'
+import AdminMasterdataPage from '@/pages/AdminMasterdataPage'
+import AdminImportExportPage from '@/pages/AdminImportExportPage'
 
 // Placeholder for other pages
 const PlaceholderPage = ({ title }: { title: string }) => (
@@ -58,7 +73,7 @@ function App() {
           path="/ppic"
           element={
             <ProtectedLayout>
-              <PlaceholderPage title="PPIC - Manufacturing Planning" />
+              <PPICPage />
             </ProtectedLayout>
           }
         />
@@ -67,7 +82,16 @@ function App() {
           path="/cutting"
           element={
             <ProtectedLayout>
-              <PlaceholderPage title="Cutting Department" />
+              <CuttingPage />
+            </ProtectedLayout>
+          }
+        />
+
+        <Route
+          path="/embroidery"
+          element={
+            <ProtectedLayout>
+              <EmbroideryPage />
             </ProtectedLayout>
           }
         />
@@ -76,7 +100,7 @@ function App() {
           path="/sewing"
           element={
             <ProtectedLayout>
-              <PlaceholderPage title="Sewing Department" />
+              <SewingPage />
             </ProtectedLayout>
           }
         />
@@ -85,7 +109,7 @@ function App() {
           path="/finishing"
           element={
             <ProtectedLayout>
-              <PlaceholderPage title="Finishing Department" />
+              <FinishingPage />
             </ProtectedLayout>
           }
         />
@@ -94,7 +118,43 @@ function App() {
           path="/packing"
           element={
             <ProtectedLayout>
-              <PlaceholderPage title="Packing Department" />
+              <PackingPage />
+            </ProtectedLayout>
+          }
+        />
+
+        <Route
+          path="/purchasing"
+          element={
+            <ProtectedLayout>
+              <PurchasingPage />
+            </ProtectedLayout>
+          }
+        />
+
+        <Route
+          path="/finishgoods"
+          element={
+            <ProtectedLayout>
+              <FinishgoodsPage />
+            </ProtectedLayout>
+          }
+        />
+
+        <Route
+          path="/kanban"
+          element={
+            <ProtectedLayout>
+              <KanbanPage />
+            </ProtectedLayout>
+          }
+        />
+
+        <Route
+          path="/reports"
+          element={
+            <ProtectedLayout>
+              <ReportsPage />
             </ProtectedLayout>
           }
         />
@@ -103,7 +163,7 @@ function App() {
           path="/quality"
           element={
             <ProtectedLayout>
-              <PlaceholderPage title="Quality Control" />
+              <QCPage />
             </ProtectedLayout>
           }
         />
@@ -112,7 +172,7 @@ function App() {
           path="/warehouse"
           element={
             <ProtectedLayout>
-              <PlaceholderPage title="Warehouse Management" />
+              <WarehousePage />
             </ProtectedLayout>
           }
         />
@@ -122,6 +182,33 @@ function App() {
           element={
             <ProtectedLayout>
               <PlaceholderPage title="System Administration" />
+            </ProtectedLayout>
+          }
+        />
+
+        <Route
+          path="/admin/users"
+          element={
+            <ProtectedLayout>
+              <AdminUserPage />
+            </ProtectedLayout>
+          }
+        />
+
+        <Route
+          path="/admin/masterdata"
+          element={
+            <ProtectedLayout>
+              <AdminMasterdataPage />
+            </ProtectedLayout>
+          }
+        />
+
+        <Route
+          path="/admin/import-export"
+          element={
+            <ProtectedLayout>
+              <AdminImportExportPage />
             </ProtectedLayout>
           }
         />

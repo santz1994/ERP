@@ -2,7 +2,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.database import engine, Base
 from app.core.config import settings
-from app.api.v1 import auth, ppic, warehouse, admin, websocket, kanban, reports, import_export
+from app.api.v1 import (
+    auth, ppic, warehouse, admin, websocket, 
+    kanban, reports, import_export, embroidery,
+    purchasing, finishgoods
+)
 from app.modules.cutting import cutting_router
 from app.modules.sewing import sewing_router
 from app.modules.finishing import finishing_router
@@ -54,9 +58,19 @@ app.include_router(
     prefix=settings.API_PREFIX
 )
 
+app.include_router(
+    purchasing.router,
+    prefix=settings.API_PREFIX
+)
+
 # Phase 2: Production Module Routers
 app.include_router(
     cutting_router,
+    prefix=settings.API_PREFIX
+)
+
+app.include_router(
+    embroidery.router,
     prefix=settings.API_PREFIX
 )
 
@@ -72,6 +86,11 @@ app.include_router(
 
 app.include_router(
     packing_router,
+    prefix=settings.API_PREFIX
+)
+
+app.include_router(
+    finishgoods.router,
     prefix=settings.API_PREFIX
 )
 

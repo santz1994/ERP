@@ -328,3 +328,36 @@ async def logout(current_user: User = Depends(get_current_user)):
         "username": current_user.username
     }
 
+
+@router.get("/permissions")
+async def get_user_permissions(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get current user's permissions summary
+    
+    **Roles Required**: Any authenticated user
+    
+    **Responses**:
+    - `200`: Returns user's module access and permissions
+    - `401`: Unauthorized
+    
+    **Response Format**:
+    ```json
+    {
+        "user_id": 1,
+        "username": "john.doe",
+        "role": "Operator Cutting",
+        "department": "Cutting",
+        "modules": {
+            "dashboard": ["view"],
+            "cutting": ["view", "execute"]
+        }
+    }
+    ```
+    """
+    from app.core.permissions import AccessControl
+    
+    return AccessControl.get_user_permissions_summary(current_user)
+

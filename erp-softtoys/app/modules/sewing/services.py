@@ -388,3 +388,104 @@ class SewingService:
                 "next_action": "Operator in Finishing scans transfer slip to ACCEPT"
             }
         }
+
+
+    @staticmethod
+    def internal_loop_return(
+        db: Session,
+        work_order_id: int,
+        from_stage: int,
+        to_stage: int,
+        qty_to_return: Decimal,
+        reason: str,
+        user_id: int,
+        notes: Optional[str] = None
+    ) -> dict:
+        """
+        Internal Loop/Return - Sewing Department Internal Transfer
+        
+        Handles Note 1: Sewing Loop (Balik lagi)
+        - Internal Line Balancing within Sewing department
+        - No external transfer slip needed (stays in Sewing)
+        - Uses internal work card/control card (Kartu Kendali Meja)
+        
+        Common use cases:
+        - After Stik (Stage 3) → Return to Assembly (Stage 1) for final assembly
+        - Finger stitching on dolls requiring additional stik work
+        - Complex patterns needing multiple assembly passes
+        
+        This is NOT a rework due to defects - it's part of the normal process flow
+        for certain product types.
+        
+        Args:
+            from_stage: Current stage (1=Assembly, 2=Labeling, 3=Stik)
+            to_stage: Target stage to return to
+            qty_to_return: Quantity for internal loop
+            reason: Business reason (e.g., "Final Assembly after Stik", "Finger Stitching")
+        """
+        
+        wo = db.query(WorkOrder).filter(WorkOrder.id == work_order_id).first()
+        if not wo:
+            raise HTTPException(status_code=404, detail=f"Work order {work_order_id} not found")
+        
+        stage_names = {
+            1: "Assembly (Pos 1: Rakit)",
+            2: "Labeling (Pos 2: Label)",
+            3: "Stik (Pos 3: Stik Balik)"
+        }
+        
+        if from_stage not in [1, 2, 3] or to_stage not in [1, 2, 3]:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid stage number. Must be 1 (Assembly), 2 (Labeling), or 3 (Stik)"
+            )
+        
+        if from_stage <= to_stage:
+            raise HTTPException(
+                status_code=400,
+                detail="Internal loop must return to PREVIOUS stage (from_stage > to_stage)"
+            )
+        
+        # Create internal control card record (not a full transfer log)
+        internal_loop_data = {
+            "control_card_type": "Internal Sewing Loop",
+            "work_order_id": work_order_id,
+            "from_stage": stage_names[from_stage],
+            "to_stage": stage_names[to_stage],
+            "qty_looped": float(qty_to_return),
+            "reason": reason,
+            "notes": notes,
+            "created_by": user_id,
+            "created_at": datetime.utcnow().isoformat(),
+            "department": "Sewing (Internal)",
+            "requires_external_transfer": False
+        }
+        
+        # Update work order metadata to track internal loops
+        if not wo.metadata:
+            wo.metadata = {}
+        
+        if "internal_loops" not in wo.metadata:
+            wo.metadata["internal_loops"] = []
+        
+        wo.metadata["internal_loops"].append(internal_loop_data)
+        
+        # Mark to trigger SQLAlchemy update
+        from sqlalchemy.orm.attributes import flag_modified
+        flag_modified(wo, "metadata")
+        
+        db.commit()
+        
+        return {
+            "success": True,
+            "message": "Internal loop created successfully",
+            "control_card": internal_loop_data,
+            "workflow": {
+                "type": "Internal Line Balancing",
+                "no_external_transfer": True,
+                "tracking_method": "Kartu Kendali Meja",
+                "next_action": f"Process {float(qty_to_return)} units at {stage_names[to_stage]} station"
+            },
+            "reference": "Note 1: Sewing Loop - Flow Production.md"
+        }
+
