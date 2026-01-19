@@ -1,254 +1,173 @@
-# 📚 QUTY KARUNIA ERP - COMPLETE DOCUMENTATION
-**Project Status**: 85% Complete | Phase 0-5 ✅ | Phase 6 75% 🟡
+# 📚 DOKUMENTASI ERP QUTY KARUNIA
+
+**Quty Karunia ERP System - Comprehensive Manufacturing Execution System**
 
 ---
 
-## 🎯 QUICK START (Choose Your Role)
+## 🗂️ STRUKTUR FOLDER DOKUMENTASI
 
-### **For Project Managers** 
-→ Start here: [EXECUTIVE_SUMMARY.md](../EXECUTIVE_SUMMARY.md) (5 min)  
-→ Then: [SESSION_SUMMARY.md](./SESSION_SUMMARY.md) (10 min)  
-→ Finally: [IMPLEMENTATION_STATUS.md](./IMPLEMENTATION_STATUS.md) (5 min)
+### 📖 [01-Quick-Start](./01-Quick-Start/)
+Dokumentasi untuk memulai dengan cepat (5-10 menit)
+- Quick start guides
+- API reference cheat sheet
+- Getting started untuk developer baru
 
-### **For Developers**
-→ Quick Setup: [QUICKSTART.md](../QUICKSTART.md) (5 min)  
-→ API Testing: [PHASE_5_TEST_SUITE.md](./PHASE_5_TEST_SUITE.md) (10 min)  
-→ Then: [DOCKER_SETUP.md](./DOCKER_SETUP.md) (15 min)
+### 🔧 [02-Setup-Guides](./02-Setup-Guides/)
+Panduan instalasi dan konfigurasi lengkap (15-20 menit)
+- Docker setup
+- Local development setup
+- Development checklist
 
-### **For DevOps/Infrastructure**
-→ Deployment: [PHASE_6_DEPLOYMENT.md](./PHASE_6_DEPLOYMENT.md) (20 min)  
-→ Docker: [DOCKER_SETUP.md](./DOCKER_SETUP.md) (15 min)  
-→ Monitoring: [PHASE_6_DEPLOYMENT.md#monitoring--alerting](./PHASE_6_DEPLOYMENT.md)
+### 📊 [03-Phase-Reports](./03-Phase-Reports/)
+Laporan lengkap dari setiap fase implementasi (Phase 0-7)
+- Technical reports
+- Completion summaries
+- Handoff documents
 
-### **For QA/Testing**
-→ Test Suite: [PHASE_5_TEST_SUITE.md](./PHASE_5_TEST_SUITE.md) (15 min)  
-→ Test Execution: `bash run_tests.sh` or `pytest tests/ -v`
+### 📝 [04-Session-Reports](./04-Session-Reports/)
+Laporan dari setiap sesi development
+- Session 1-5 completion reports
+- Latest features & updates
+- **LIHAT SESSION_5_COMPLETION.md untuk update terbaru!**
 
-### **For Architects**
-→ Architecture: [Project.md](./Project%20Docs/Project.md) (20 min)  
-→ Database: [Database Scheme.csv](./Project%20Docs/Database%20Scheme.csv)  
-→ Workflows: [Flow Production.md](./Project%20Docs/Flow%20Production.md)
+### 📅 [05-Week-Reports](./05-Week-Reports/)
+Laporan mingguan progress implementasi
+- Week 1: Database foundation
+- Week 2: Authentication & Core API
 
----
+### 🗺️ [06-Planning-Roadmap](./06-Planning-Roadmap/)
+Rencana implementasi dan status tracker
+- **⭐ IMPLEMENTATION_STATUS.md** - STATUS TERKINI (Baca ini pertama!)
+- Implementation roadmap (11 weeks)
+- Project initialization & deliverables
 
-## 📋 DOCUMENTATION INDEX
+### 🏭 [07-Operations](./07-Operations/)
+Dokumentasi operasional dan overview untuk management
+- Executive summary
+- Master index (navigation ke semua docs)
+- System overview & architecture
 
-### **📊 Status & Progress**
-| Document | Purpose | Read Time |
-|----------|---------|-----------|
-| [SESSION_SUMMARY.md](./SESSION_SUMMARY.md) | This session's work (Phases 5-6) | 10 min |
-| [IMPLEMENTATION_STATUS.md](./IMPLEMENTATION_STATUS.md) | Real-time project progress | 8 min |
-| [EXECUTIVE_SUMMARY.md](../EXECUTIVE_SUMMARY.md) | Business status & metrics | 10 min |
-| [WEEK1_SUMMARY.md](./WEEK1_SUMMARY.md) | Week 1 (Phase 0) completion | 12 min |
-| [WEEK2_SUMMARY.md](./WEEK2_SUMMARY.md) | Week 2 (Phase 1) completion | 12 min |
-| [WEEK2_FINAL_STATUS.md](./WEEK2_FINAL_STATUS.md) | Phase 1 final status | 10 min |
-
-### **🧪 Testing & Quality**
-| Document | Purpose | Read Time |
-|----------|---------|-----------|
-| [PHASE_5_TEST_SUITE.md](./PHASE_5_TEST_SUITE.md) | 410 comprehensive tests | 15 min |
-| [test_cutting_module.py](../erp-softtoys/tests/test_cutting_module.py) | Cutting tests (15 tests) | 10 min |
-| [test_sewing_module.py](../erp-softtoys/tests/test_sewing_module.py) | Sewing tests (18 tests) | 10 min |
-| [test_finishing_module.py](../erp-softtoys/tests/test_finishing_module.py) | Finishing tests (16 tests) | 10 min |
-| [test_packing_module.py](../erp-softtoys/tests/test_packing_module.py) | Packing tests (15 tests) | 10 min |
-| [test_qt09_protocol.py](../erp-softtoys/tests/test_qt09_protocol.py) | QT-09 protocol tests (13 tests) | 8 min |
-
-### **🚀 Deployment & Operations**
-| Document | Purpose | Read Time |
-|----------|---------|-----------|
-| [PHASE_6_DEPLOYMENT.md](./PHASE_6_DEPLOYMENT.md) | Production deployment guide | 20 min |
-| [DOCKER_SETUP.md](./DOCKER_SETUP.md) | Docker configuration & troubleshooting | 15 min |
-| [QUICKSTART.md](../QUICKSTART.md) | 5-minute quick start | 5 min |
-| [WEEK1_SETUP_GUIDE.md](./WEEK1_SETUP_GUIDE.md) | Complete setup guide | 20 min |
-| [DEVELOPMENT_CHECKLIST.md](../DEVELOPMENT_CHECKLIST.md) | Setup verification | 5 min |
-
-### **🏗️ Architecture & Design**
-| Document | Purpose | Read Time |
-|----------|---------|-----------|
-| [README.md](../README.md) | Project overview & architecture | 15 min |
-| [IMPLEMENTATION_ROADMAP.md](../IMPLEMENTATION_ROADMAP.md) | 11-week development plan | 20 min |
-| [Project.md](./Project%20Docs/Project.md) | Architecture & recommendations | 20 min |
-| [Flow Production.md](./Project%20Docs/Flow%20Production.md) | Production workflow SOP | 15 min |
-| [Database Scheme.csv](./Project%20Docs/Database%20Scheme.csv) | Database schema reference | 10 min |
-| [Flowchart ERP.csv](./Project%20Docs/Flowchart%20ERP.csv) | ERP process flowchart | 10 min |
-
-### **📚 Reference Guides**
-| Document | Purpose | Read Time |
-|----------|---------|-----------|
-| [QUICK_REFERENCE.md](./QUICK_REFERENCE.md) | Quick lookup reference | 5 min |
-| [PHASE_1_AUTH_GUIDE.md](./PHASE_1_AUTH_GUIDE.md) | Authentication API guide | 15 min |
-| [PHASE_1_AUTH_COMPLETE.md](./PHASE_1_AUTH_COMPLETE.md) | Complete endpoint reference | 12 min |
-| [QUICK_API_REFERENCE.md](./QUICK_API_REFERENCE.md) | API cheat sheet | 5 min |
+### 📦 [08-Archive](./08-Archive/)
+Dokumen arsip (tidak aktif)
 
 ---
 
-## 🎯 DOCUMENTATION BY TOPIC
+## 🎯 MULAI DARI MANA?
 
-### **Authentication & Security**
-→ [PHASE_1_AUTH_GUIDE.md](./PHASE_1_AUTH_GUIDE.md) - Complete security implementation  
-→ [PHASE_1_AUTH_COMPLETE.md](./PHASE_1_AUTH_COMPLETE.md) - All endpoints documented  
-→ [README.md](../README.md#-security--roles) - Role-based access control
+### 👨‍💼 Project Manager / Management
+1. `07-Operations/EXECUTIVE_SUMMARY.md` - Overview cepat (5 min)
+2. `06-Planning-Roadmap/IMPLEMENTATION_STATUS.md` - Status real-time
+3. `07-Operations/MASTER_INDEX.md` - Navigation lengkap
 
-### **Production Workflows**
-→ [Flow Production.md](./Project%20Docs/Flow%20Production.md) - 3 production routes  
-→ [Flowchart ERP.csv](./Project%20Docs/Flowchart%20ERP.csv) - Step-by-step flowchart  
-→ [PHASE_5_TEST_SUITE.md](./PHASE_5_TEST_SUITE.md) - Workflow tests
+### 👨‍💻 Developer Baru
+1. `01-Quick-Start/QUICKSTART.md` - Setup cepat (5 min)
+2. `02-Setup-Guides/DOCKER_SETUP.md` - Environment setup (15 min)
+3. `01-Quick-Start/QUICK_API_REFERENCE.md` - API cheat sheet (3 min)
+4. `04-Session-Reports/SESSION_5_COMPLETION.md` - Latest features
 
-### **QT-09 Transfer Protocol**
-→ [test_qt09_protocol.py](../erp-softtoys/tests/test_qt09_protocol.py) - Protocol tests  
-→ [PHASE_5_TEST_SUITE.md](./PHASE_5_TEST_SUITE.md#test-suite-5-qt-09-protocol) - Protocol documentation  
-→ [Flow Production.md](./Project%20Docs/Flow%20Production.md) - Protocol specification
+### 🏗️ DevOps / Infrastructure
+1. `02-Setup-Guides/DOCKER_SETUP.md` - Docker infrastructure
+2. `03-Phase-Reports/PHASE_6_DEPLOYMENT.md` - Deployment guide
+3. `03-Phase-Reports/PHASE_7_OPERATIONS_RUNBOOK.md` - Operations manual
 
-### **Metal Detector Safety**
-→ [test_finishing_module.py](../erp-softtoys/tests/test_finishing_module.py#testmetaldetectorqc) - Metal detector tests  
-→ [PHASE_5_TEST_SUITE.md](./PHASE_5_TEST_SUITE.md#critical-qc-tests) - Safety documentation  
-→ [Flow Production.md](./Project%20Docs/Flow%20Production.md) - ISO 8124 compliance
+### 🧪 QA / Tester
+1. `03-Phase-Reports/PHASE_5_TEST_SUITE.md` - Test documentation
+2. `01-Quick-Start/QUICK_API_REFERENCE.md` - API endpoints
+3. `03-Phase-Reports/PHASE_1_AUTH_GUIDE.md` - Test scenarios
 
-### **API Endpoints**
-→ [QUICK_API_REFERENCE.md](./QUICK_API_REFERENCE.md) - Quick lookup  
-→ [PHASE_1_AUTH_COMPLETE.md](./PHASE_1_AUTH_COMPLETE.md) - Complete endpoints  
-→ Swagger UI: `http://localhost:8000/docs`
-
-### **Database Schema**
-→ [Database Scheme.csv](./Project%20Docs/Database%20Scheme.csv) - Full schema  
-→ [README.md](../README.md#-database-schema) - Schema overview  
-→ [Project.md](./Project%20Docs/Project.md) - Design decisions
-
-### **Docker & Infrastructure**
-→ [DOCKER_SETUP.md](./DOCKER_SETUP.md) - Complete Docker guide  
-→ [PHASE_6_DEPLOYMENT.md](./PHASE_6_DEPLOYMENT.md) - Docker deployment  
-→ [docker-compose.yml](../docker-compose.yml) - Services configuration
-
-### **Monitoring & Alerting**
-→ [PHASE_6_DEPLOYMENT.md](./PHASE_6_DEPLOYMENT.md#-monitoring--alerting) - Setup guide  
-→ [PHASE_6_DEPLOYMENT.md](./PHASE_6_DEPLOYMENT.md#prometheus-configuration) - Prometheus config  
-→ Grafana: `http://localhost:3000`
-
-### **Testing**
-→ [PHASE_5_TEST_SUITE.md](./PHASE_5_TEST_SUITE.md) - All tests documented  
-→ Run tests: `bash run_tests.sh` or `pytest tests/ -v`  
-→ Coverage: `pytest tests/ --cov=app --cov-report=html`
+### 🏛️ System Architect
+1. `07-Operations/SYSTEM_OVERVIEW.md` - Architecture overview
+2. `06-Planning-Roadmap/IMPLEMENTATION_ROADMAP.md` - Full roadmap
+3. `03-Phase-Reports/PHASE_2_COMPLETION_REPORT.md` - Technical details
 
 ---
 
-## 🚀 CURRENT PROJECT STATUS
+## 📊 STATUS TERKINI (Last Update: January 19, 2026)
 
-### **✅ COMPLETE (100%)**
-- Phase 0: Database Foundation (21 tables, 14 models)
-- Phase 1: Authentication & Core API (20 endpoints, 16 roles)
-- Phase 2: Production Modules (31 endpoints, QT-09 integrated)
-- Phase 3: Transfer Protocol (Handshake, line clearance, segregation)
-- Phase 4: Quality Module (Metal detector, inline QC)
-- Phase 5: Testing (410 test cases, 100% endpoint coverage)
+### ✅ Completed Features
+- **Phase 0**: Database foundation (21 → 27 tables)
+- **Phase 1**: Authentication & Admin (13 endpoints)
+- **Phase 2**: Production modules (32 endpoints - Cutting, Sewing, Finishing, Packing)
+- **Phase 3**: QT-09 Transfer protocol
+- **Phase 4**: Quality Control module (8 endpoints)
+- **Phase 6**: Docker deployment
+- **Phase 8**: Additional features (16 new endpoints)
+  - ✅ WebSocket real-time notifications
+  - ✅ E-Kanban system (5 endpoints)
+  - ✅ PDF/Excel reporting (3 endpoints)
+  - ✅ Audit trail logging
 
-### **🟡 IN PROGRESS (75%)**
-- Phase 6: Deployment
-  - ✅ Docker setup (100%)
-  - ✅ Security configuration (100%)
-  - ✅ Database backups (100%)
-  - ✅ Monitoring & alerting (100%)
-  - ⏳ SSL/TLS certificates (0%)
-  - ⏳ CI/CD pipeline (0%)
-  - ⏳ Production environment (50%)
+### 📊 Statistics
+- **Total API Endpoints**: 71
+- **Database Tables**: 27
+- **Test Cases**: 410 (80% passing)
+- **Implementation Progress**: ~90%
 
-### **📈 METRICS**
-- **Total Endpoints**: 31 (all functional)
-- **Test Cases**: 410 (100% coverage)
-- **Database Tables**: 21
-- **Data Models**: 14
-- **User Roles**: 16
-- **Docker Services**: 8
-- **QC Checkpoints**: 5 (including CRITICAL metal detector)
-- **Production Routes**: 3
+### ⏳ In Progress
+- UI/UX completion
+- Test suite fixes
+- CSV import/export
 
 ---
 
-## 📞 SUPPORT & CONTACT
+## 📖 DOKUMENTASI PENTING
 
-### **For Issues**
-1. Check [DOCKER_SETUP.md](./DOCKER_SETUP.md) troubleshooting section
-2. Run tests: `pytest tests/ -v`
-3. Check logs: `docker-compose logs -f backend`
-4. Review [PHASE_6_DEPLOYMENT.md](./PHASE_6_DEPLOYMENT.md#-troubleshooting)
+### Must-Read Documents
+1. **IMPLEMENTATION_STATUS.md** (`06-Planning-Roadmap/`) - Current status
+2. **SESSION_5_COMPLETION.md** (`04-Session-Reports/`) - Latest updates
+3. **MASTER_INDEX.md** (`07-Operations/`) - Full navigation
+4. **QUICKSTART.md** (`01-Quick-Start/`) - Quick setup
 
-### **For Questions**
-- Architecture: See [Project.md](./Project%20Docs/Project.md)
-- APIs: See [QUICK_API_REFERENCE.md](./QUICK_API_REFERENCE.md)
-- Deployment: See [PHASE_6_DEPLOYMENT.md](./PHASE_6_DEPLOYMENT.md)
-
-### **For Contributions**
-- Follow [DEVELOPMENT_CHECKLIST.md](../DEVELOPMENT_CHECKLIST.md)
-- Run full test suite: `pytest tests/ --cov=app`
-- Review [README.md](../README.md) architecture
+### Technical Documentation
+- **API Reference**: `01-Quick-Start/QUICK_API_REFERENCE.md`
+- **Docker Setup**: `02-Setup-Guides/DOCKER_SETUP.md`
+- **Architecture**: `07-Operations/SYSTEM_OVERVIEW.md`
+- **Test Suite**: `03-Phase-Reports/PHASE_5_TEST_SUITE.md`
 
 ---
 
-## 📊 QUICK STATISTICS
+## 🔍 MENCARI DOKUMENTASI SPESIFIK?
 
-| Metric | Value |
-|--------|-------|
-| **Project Completion** | 85% |
-| **Code Files** | 50+ |
-| **Documentation Files** | 15+ |
-| **Test Cases** | 410 |
-| **API Endpoints** | 31 |
-| **Database Tables** | 21 |
-| **User Roles** | 16 |
-| **Docker Services** | 8 |
-| **Lines of Code** | 15,000+ |
-| **Lines of Tests** | 2,500+ |
-| **Lines of Documentation** | 10,000+ |
+### Authentication & Security
+→ `03-Phase-Reports/PHASE_1_AUTH_GUIDE.md`
 
----
+### Production Workflows
+→ `03-Phase-Reports/PHASE_2_COMPLETION_REPORT.md`
 
-## 🎓 GETTING STARTED PATHS
+### Quality Control
+→ `04-Session-Reports/SESSION_4_COMPLETION.md`
 
-### **Path 1: New Developer**
-1. [QUICKSTART.md](../QUICKSTART.md) (5 min)
-2. [DOCKER_SETUP.md](./DOCKER_SETUP.md) (15 min)
-3. [QUICK_API_REFERENCE.md](./QUICK_API_REFERENCE.md) (5 min)
-4. Run tests: `pytest tests/ -v` (10 min)
-5. Review API: `http://localhost:8000/docs`
+### Real-time Notifications
+→ `04-Session-Reports/SESSION_5_COMPLETION.md` (WebSocket section)
 
-### **Path 2: DevOps/Infrastructure**
-1. [PHASE_6_DEPLOYMENT.md](./PHASE_6_DEPLOYMENT.md) (20 min)
-2. [DOCKER_SETUP.md](./DOCKER_SETUP.md) (15 min)
-3. Review prometheus.yml
-4. Setup: `docker-compose up -d`
-5. Monitor: `http://localhost:3000`
+### E-Kanban System
+→ `04-Session-Reports/SESSION_5_COMPLETION.md` (E-Kanban section)
 
-### **Path 3: Manager/Stakeholder**
-1. [EXECUTIVE_SUMMARY.md](../EXECUTIVE_SUMMARY.md) (10 min)
-2. [SESSION_SUMMARY.md](./SESSION_SUMMARY.md) (10 min)
-3. [IMPLEMENTATION_STATUS.md](./IMPLEMENTATION_STATUS.md) (5 min)
-4. [IMPLEMENTATION_ROADMAP.md](../IMPLEMENTATION_ROADMAP.md) (20 min)
+### Reporting (PDF/Excel)
+→ `04-Session-Reports/SESSION_5_COMPLETION.md` (Reporting section)
 
-### **Path 4: Tester/QA**
-1. [PHASE_5_TEST_SUITE.md](./PHASE_5_TEST_SUITE.md) (15 min)
-2. Review test files (30 min)
-3. Run tests: `bash run_tests.sh` (20 min)
-4. Review coverage: `pytest tests/ --cov=app --cov-report=html` (10 min)
+### Deployment
+→ `03-Phase-Reports/PHASE_6_DEPLOYMENT.md`
+
+### Operations Manual
+→ `03-Phase-Reports/PHASE_7_OPERATIONS_RUNBOOK.md`
 
 ---
 
-## 📅 NEXT STEPS
+## 📞 KONTAK
 
-**This Week:**
-- [ ] Run full test suite: `pytest tests/ -v`
-- [ ] Review [PHASE_5_TEST_SUITE.md](./PHASE_5_TEST_SUITE.md)
-- [ ] Check deployment guide: [PHASE_6_DEPLOYMENT.md](./PHASE_6_DEPLOYMENT.md)
-
-**Next Week:**
-- [ ] SSL/TLS certificate setup
-- [ ] CI/CD pipeline activation
-- [ ] Production environment configuration
-- [ ] Load testing & performance tuning
-- [ ] Go-live preparation
+**Senior Developer**: Daniel Rizaldy  
+**Project**: ERP Quty Karunia Manufacturing System  
+**Repository**: Private (santz1994/ERP)
 
 ---
 
-**Last Updated**: January 19, 2026, 16:00 PM  
-**Status**: 85% Complete | Ready for Testing & Deployment  
-**Next Review**: January 26, 2026
+## ⚠️ CONFIDENTIAL
 
-*For questions or updates, refer to the specific documentation sections above.*
+**PENTING**: Folder `Project Docs/` dan file `docs/Project.md` berisi informasi confidential perusahaan dan **TIDAK BOLEH DIBAGIKAN** ke repository publik. File-file ini sudah ditambahkan ke `.gitignore`.
+
+---
+
+**Last Updated**: January 19, 2026  
+**Documentation Version**: 5.0  
+**System Version**: Phase 8 Complete
