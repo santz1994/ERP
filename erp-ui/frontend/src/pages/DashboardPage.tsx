@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { BarChart3, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react'
 import { useUIStore } from '@/store'
+import { EnvironmentBanner } from '@/components/EnvironmentBanner'
 
 export const DashboardPage: React.FC = () => {
   const { addNotification } = useUIStore()
@@ -32,22 +33,24 @@ export const DashboardPage: React.FC = () => {
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600">Welcome back! Here's your production overview.</p>
-      </div>
+    <div>
+      <EnvironmentBanner />
+      <div className="p-6">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600">Welcome back! Here's your production overview.</p>
+        </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <StatCard
-          title="Total MOs"
-          value={stats.totalMOs}
-          icon={<BarChart3 className="w-8 h-8" />}
-          color="bg-blue-50 text-blue-600"
-        />
-        <StatCard
-          title="Completed Today"
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <StatCard
+            title="Total MOs"
+            value={stats.totalMOs}
+            icon={<BarChart3 className="w-8 h-8" />}
+            color="bg-blue-50 text-blue-600"
+          />
+          <StatCard
+            title="Completed Today"
           value={stats.completedToday}
           icon={<CheckCircle className="w-8 h-8" />}
           color="bg-green-50 text-green-600"

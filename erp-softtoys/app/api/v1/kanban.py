@@ -9,6 +9,7 @@ from typing import List, Optional
 from datetime import datetime, timedelta
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
+from app.core.permissions import require_permission, ModuleName, Permission
 from app.core.models.users import User
 from app.core.models.kanban import KanbanCard, KanbanStatus, KanbanPriority, KanbanBoard, KanbanRule
 from app.core.models.products import Product
@@ -66,7 +67,7 @@ class KanbanFulfillmentRequest(BaseModel):
 @router.post("/card", response_model=KanbanCardResponse)
 async def create_kanban_card(
     request: KanbanCardCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission(ModuleName.KANBAN, Permission.CREATE)),
     db: Session = Depends(get_db)
 ):
     """
@@ -158,7 +159,7 @@ async def list_kanban_cards(
     status: Optional[KanbanStatus] = None,
     department: Optional[str] = None,
     priority: Optional[KanbanPriority] = None,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission(ModuleName.KANBAN, Permission.VIEW)),
     db: Session = Depends(get_db)
 ):
     """
@@ -217,7 +218,7 @@ async def list_kanban_cards(
 async def approve_kanban_card(
     card_id: int,
     request: KanbanApprovalRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission(ModuleName.KANBAN, Permission.APPROVE)),
     db: Session = Depends(get_db)
 ):
     """
@@ -274,7 +275,7 @@ async def approve_kanban_card(
 async def fulfill_kanban_card(
     card_id: int,
     request: KanbanFulfillmentRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission(ModuleName.KANBAN, Permission.EXECUTE)),
     db: Session = Depends(get_db)
 ):
     """
@@ -331,7 +332,7 @@ async def fulfill_kanban_card(
 @router.get("/dashboard/{department}")
 async def kanban_dashboard(
     department: str,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission(ModuleName.KANBAN, Permission.VIEW)),
     db: Session = Depends(get_db)
 ):
     """

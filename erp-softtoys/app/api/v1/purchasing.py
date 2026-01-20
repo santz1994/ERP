@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
+from app.core.permissions import require_permission, ModuleName, Permission
 from app.core.models.users import User
 from app.modules.purchasing import PurchasingService
 
@@ -83,7 +84,7 @@ def get_purchase_orders(
     status: Optional[str] = None,
     supplier_id: Optional[int] = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission(ModuleName.PURCHASING, Permission.VIEW))
 ):
     """
     Get all purchase orders with optional filters
@@ -100,7 +101,7 @@ def get_purchase_orders(
 def create_purchase_order(
     request: CreatePORequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission(ModuleName.PURCHASING, Permission.CREATE))
 ):
     """
     Create new purchase order for raw materials
@@ -130,7 +131,7 @@ def create_purchase_order(
 def approve_purchase_order(
     po_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission(ModuleName.PURCHASING, Permission.APPROVE))
 ):
     """
     Approve purchase order (Manager only)
@@ -150,7 +151,7 @@ def receive_purchase_order(
     po_id: int,
     request: ReceivePORequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission(ModuleName.PURCHASING, Permission.EXECUTE))
 ):
     """
     Receive materials from purchase order
@@ -178,7 +179,7 @@ def cancel_purchase_order(
     po_id: int,
     request: CancelPORequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission(ModuleName.PURCHASING, Permission.DELETE))
 ):
     """
     Cancel purchase order
@@ -197,7 +198,7 @@ def cancel_purchase_order(
 def get_supplier_performance(
     supplier_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission(ModuleName.PURCHASING, Permission.VIEW))
 ):
     """
     Get supplier performance metrics

@@ -1908,7 +1908,7 @@ docker-compose logs -f frontend
 **CONFIDENTIAL - QUTY KARUNIA PROPRIETARY**
 
 This project is for PT Quty Karunia internal use only.  
-© 2026 PT Quty Karunia. All rights reserved.
+© 2026 Daniel Rizaldy. All rights reserved.
 
 ---
 
@@ -1928,6 +1928,6 @@ This project is for PT Quty Karunia internal use only.
 
 ---
 
-*Developed for PT Quty Karunia by IT Development Team*  
+*Developed for PT Quty Karunia by Daniel Rizaldy*  
 *Security Review & Compliance by External Auditor*  
 *"Enterprise-Grade Manufacturing ERP with Professional Security Architecture"*

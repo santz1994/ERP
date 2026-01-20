@@ -356,3 +356,44 @@ async def list_users_by_role(
         )
         for u in users
     ]
+
+
+@router.get("/environment-info")
+async def get_environment_info(
+    current_user: User = Depends(require_role("Admin"))
+):
+    """
+    Get environment information and access control policies
+    
+    **Roles Required**: Admin
+    
+    **Use Case**: Debugging, security audit, compliance verification
+    
+    **Returns**:
+    - Current environment (development/testing/production)
+    - DEVELOPER role restrictions status
+    - Allowed/blocked permissions for DEVELOPER
+    - User's current role and restrictions
+    """
+    from app.core.environment_policy import get_environment_info, EnvironmentAccessControl
+    from app.core.config import settings
+    
+    env_info = get_environment_info()
+    
+    # Add user-specific info
+    env_info["current_user"] = {
+        "id": current_user.id,
+        "username": current_user.username,
+        "role": current_user.role.value,
+        "is_developer": current_user.role == UserRole.DEVELOPER,
+        "is_restricted": EnvironmentAccessControl.is_developer_in_production(current_user),
+        "can_write": not EnvironmentAccessControl.is_developer_in_production(current_user)
+    }
+    
+    env_info["security_settings"] = {
+        "debug_mode": settings.DEBUG,
+        "environment": settings.ENVIRONMENT.value,
+        "jwt_expiration_hours": settings.JWT_EXPIRATION_HOURS
+    }
+    
+    return env_info

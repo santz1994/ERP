@@ -2,10 +2,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.database import engine, Base
 from app.core.config import settings
+from app.core.audit_middleware import AuditContextMiddleware
 from app.api.v1 import (
     auth, ppic, warehouse, admin, websocket, 
     kanban, reports, import_export, embroidery,
-    purchasing, finishgoods, report_builder, barcode
+    purchasing, finishgoods, report_builder, barcode, audit
 )
 from app.modules.cutting import cutting_router
 from app.modules.sewing import sewing_router
@@ -13,10 +14,15 @@ from app.modules.finishing import finishing_router
 from app.modules.packing import packing_router
 from app.modules.quality import quality_router
 
+# Initialize Audit Trail Event Listeners
+from app.core.audit_listeners import setup_audit_listeners
+
 # Create Tables (Otomatis buat tabel saat start - untuk dev mode)
 # Skip database creation if connection fails (useful for dev without DB)
 try:
     Base.metadata.create_all(bind=engine)
+    # Initialize audit listeners after tables are created
+    setup_audit_listeners()
 except Exception as e:
     print(f"⚠️  Warning: Could not create tables. Make sure PostgreSQL is running.")
     print(f"   Error: {str(e)[:100]}")
@@ -27,6 +33,9 @@ app = FastAPI(
     description=settings.API_DESCRIPTION,
     version=settings.API_VERSION
 )
+
+# Audit Context Middleware (First - captures user info)
+app.add_middleware(AuditContextMiddleware)
 
 # CORS Middleware
 app.add_middleware(
@@ -60,6 +69,12 @@ app.include_router(
 
 app.include_router(
     purchasing.router,
+    prefix=settings.API_PREFIX
+)
+
+# Audit Trail Module (ISO 27001 A.12.4.1 Compliance)
+app.include_router(
+    audit.router,
     prefix=settings.API_PREFIX
 )
 

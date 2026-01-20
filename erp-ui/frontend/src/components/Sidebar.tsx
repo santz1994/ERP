@@ -17,6 +17,7 @@ import {
   ChevronRight,
   FileText,
   ClipboardList,
+  Shield,
 } from 'lucide-react'
 import { useAuthStore, useUIStore } from '@/store'
 import { UserRole } from '@/types'
@@ -119,8 +120,21 @@ const menuItems: MenuItem[] = [
   { 
     icon: <Users />, 
     label: 'Admin', 
-    path: '/admin', 
-    roles: [UserRole.ADMIN] 
+    roles: [UserRole.DEVELOPER, UserRole.SUPERADMIN, UserRole.ADMIN],
+    submenu: [
+      { 
+        icon: <Users />, 
+        label: 'User Management', 
+        path: '/admin/users', 
+        roles: [UserRole.DEVELOPER, UserRole.SUPERADMIN, UserRole.ADMIN] 
+      },
+      { 
+        icon: <Shield />, 
+        label: 'Audit Trail', 
+        path: '/admin/audit-trail', 
+        roles: [UserRole.DEVELOPER, UserRole.SUPERADMIN, UserRole.MANAGER] 
+      },
+    ]
   },
 ]
 

@@ -10,6 +10,7 @@ from typing import Optional
 import io
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
+from app.core.permissions import require_permission, ModuleName, Permission
 from app.core.models.users import User
 from app.core.models.manufacturing import ManufacturingOrder, WorkOrder, WorkOrderStatus
 from app.core.models.quality import QCInspection, QCLabTest
@@ -165,7 +166,7 @@ def generate_pdf_report(data: dict, title: str) -> bytes:
 @router.post("/production")
 async def generate_production_report(
     request: ProductionReportRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission(ModuleName.REPORTS, Permission.CREATE)),
     db: Session = Depends(get_db)
 ):
     """
@@ -241,7 +242,7 @@ async def generate_production_report(
 @router.post("/qc")
 async def generate_qc_report(
     request: QCReportRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission(ModuleName.REPORTS, Permission.CREATE)),
     db: Session = Depends(get_db)
 ):
     """
@@ -317,7 +318,7 @@ async def generate_qc_report(
 @router.get("/inventory")
 async def generate_inventory_report(
     format: str = "excel",
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_permission(ModuleName.REPORTS, Permission.VIEW)),
     db: Session = Depends(get_db)
 ):
     """

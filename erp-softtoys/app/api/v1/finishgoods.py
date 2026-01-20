@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
+from app.core.permissions import require_permission, ModuleName, Permission
 from app.core.models.users import User
 from app.modules.finishgoods import FinishgoodsService
 
@@ -69,7 +70,7 @@ def get_finishgoods_inventory(
     product_code: Optional[str] = None,
     low_stock_only: bool = False,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission(ModuleName.FINISHGOODS, Permission.VIEW))
 ):
     """
     Get finished goods inventory with stock levels
@@ -89,7 +90,7 @@ def get_finishgoods_inventory(
 def receive_from_packing(
     request: ReceiveFromPackingRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission(ModuleName.FINISHGOODS, Permission.EXECUTE))
 ):
     """
     Receive finished goods from Packing department
@@ -120,7 +121,7 @@ def receive_from_packing(
 def prepare_shipment(
     request: PrepareShipmentRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission(ModuleName.FINISHGOODS, Permission.CREATE))
 ):
     """
     Prepare finished goods for shipment
@@ -147,7 +148,7 @@ def prepare_shipment(
 def ship_finishgoods(
     request: ShipFinishgoodsRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission(ModuleName.FINISHGOODS, Permission.EXECUTE))
 ):
     """
     Ship finished goods (reduce FG inventory)
@@ -171,7 +172,7 @@ def ship_finishgoods(
 @router.get("/ready-for-shipment", response_model=List[ShipmentReadyResponse])
 def get_shipment_ready_products(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission(ModuleName.FINISHGOODS, Permission.VIEW))
 ):
     """
     Get list of products ready for shipment
@@ -186,7 +187,7 @@ def get_shipment_ready_products(
 @router.get("/stock-aging", response_model=List[StockAgingResponse])
 def get_stock_aging(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission(ModuleName.FINISHGOODS, Permission.VIEW))
 ):
     """
     Get finished goods stock aging analysis

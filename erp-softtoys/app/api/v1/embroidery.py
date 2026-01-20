@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
+from app.core.permissions import require_permission, ModuleName, Permission
 from app.core.models.users import User
 from app.modules.embroidery import EmbroideryService
 
@@ -58,7 +59,7 @@ class LineStatusResponse(BaseModel):
 def get_embroidery_work_orders(
     status: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission(ModuleName.EMBROIDERY, Permission.VIEW))
 ):
     """
     Get all work orders for Embroidery department
@@ -74,7 +75,7 @@ def get_embroidery_work_orders(
 def start_embroidery_work_order(
     work_order_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission(ModuleName.EMBROIDERY, Permission.EXECUTE))
 ):
     """
     Start embroidery work order
@@ -96,7 +97,7 @@ def record_embroidery_output(
     work_order_id: int,
     request: EmbroideryOutputRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission(ModuleName.EMBROIDERY, Permission.EXECUTE))
 ):
     """
     Record embroidery output with design details
@@ -125,7 +126,7 @@ def record_embroidery_output(
 def complete_embroidery_work_order(
     work_order_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission(ModuleName.EMBROIDERY, Permission.EXECUTE))
 ):
     """
     Complete embroidery work order
@@ -146,7 +147,7 @@ def complete_embroidery_work_order(
 def transfer_to_sewing(
     work_order_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission(ModuleName.EMBROIDERY, Permission.EXECUTE))
 ):
     """
     Transfer embroidered items to Sewing (QT-09 Protocol)
@@ -170,7 +171,7 @@ def transfer_to_sewing(
 @router.get("/line-status", response_model=List[LineStatusResponse])
 def get_line_status(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission(ModuleName.EMBROIDERY, Permission.VIEW))
 ):
     """
     Get real-time status of all embroidery lines

@@ -286,6 +286,8 @@ def require_permission(module: ModuleName, permission: Permission):
     """
     Dependency to require specific permission on module
     
+    Enforces both RBAC and environment-based restrictions (DEVELOPER read-only in production)
+    
     Usage:
     ```python
     @router.post("/cutting/complete")
@@ -297,9 +299,15 @@ def require_permission(module: ModuleName, permission: Permission):
     """
     from fastapi import Depends
     from app.core.dependencies import get_current_user
+    from app.core.environment_policy import EnvironmentAccessControl
     
     async def check_perm(user: User = Depends(get_current_user)) -> User:
+        # First check RBAC permissions
         AccessControl.check_permission(user, module, permission)
+        
+        # Then check environment-based restrictions
+        EnvironmentAccessControl.enforce_environment_restriction(user, permission)
+        
         return user
     
     return check_perm
