@@ -16,14 +16,18 @@
 Quty Karunia ERP is a **production-ready** manufacturing execution system designed for stuffed toy production with IKEA standards. The system manages complex multi-stage production workflows with real-time quality control, inventory tracking, and inter-departmental handshake protocols.
 
 ### **✨ Implemented Features**
-- ✅ **97 REST API Endpoints** - Complete backend implementation (11 departments)
-- ✅ **11 Frontend Pages** - React 18 + TypeScript production UI
+- ✅ **104 REST API Endpoints** - Complete backend implementation (11 departments)
+- ✅ **15 Frontend Pages** - React 18 + TypeScript production UI
 - ✅ **11-Department Production Flow** - Purchasing → Warehouse → Cutting → Embroidery → Sewing → Finishing → Packing → Finishgoods
+- ✅ **UAC/RBAC System** - Fine-grained module-level permissions for 17 roles ⭐ NEW!
+- ✅ **QC Module** - Complete quality control interface with inspections & lab tests ⭐ NEW!
+- ✅ **Admin Tools** - User, Masterdata, and Import/Export management ⭐ NEW!
+- ✅ **Dynamic Report Builder** - Custom report creation with 5+ data sources ⭐ NEW!
+- ✅ **Barcode Scanner** - Camera + manual barcode scanning for warehouse & finishgoods ⭐ NEW!
 - ✅ **Purchasing Module** - PO management, approval workflow, supplier performance tracking
 - ✅ **Finishgoods Module** - Final warehouse with shipment preparation & stock aging analysis
 - ✅ **Sewing Internal Loop** - Handle products returning to same department (Note 1 from Flow Production)
 - ✅ **E-Kanban Board** - Digital accessory request system with approval workflow
-- ✅ **QC Module** - 8 defect types, inspection tracking, pass/fail statistics
 - ✅ **Reports Dashboard** - Production/QC/Inventory reports with PDF/Excel export
 - ✅ **Real-Time Updates** - React Query with 3-5 second polling
 - ✅ **Multilingual Support** - Indonesia & English (i18n)
@@ -32,6 +36,7 @@ Quty Karunia ERP is a **production-ready** manufacturing execution system design
 - ✅ **Line Clearance Protocol** - Prevent product segregation
 - ✅ **QT-09 Transfer Protocol** - Gold standard inter-department handshake
 - ✅ **Shortage Logic** - Automatic shortage detection with approval workflow
+- ✅ **FIFO Inventory** - First-In-First-Out stock allocation with lot traceability
 - Docker Desktop (recommended) OR Python 3.10+ & Node.js 18+
 - PostgreSQL 15+ & Redis 7+ (if not using Docker)
 - Git
@@ -86,23 +91,27 @@ ERP2026/
 │   │   │   ├── database.py       # SQLAlchemy + async support
 │   │   │   ├── security.py       # JWT auth + bcrypt
 │   │   │   ├── config.py         # Environment configuration
+│   │   │   ├── permissions.py    # UAC/RBAC system (17 roles × 16 modules) ⭐ NEW!
 │   │   │   └── models/           # SQLAlchemy ORM models (27 tables)
 │   │   ├── api/
-│   │   │   └── v1/               # 97 REST API endpoints ⭐ UPDATED!
-│   │   │       ├── auth.py       # Authentication (6 endpoints)
+│   │   │   └── v1/               # 104 REST API endpoints ⭐ UPDATED!
+│   │   │       ├── auth.py       # Authentication (7 endpoints + permissions)
+│   │   │       ├── admin.py      # Admin management (7 endpoints)
 │   │   │       ├── ppic.py       # PPIC management (5 endpoints)
-│   │   │       ├── purchasing.py # Purchasing module (6 endpoints) ⭐ NEW!
+│   │   │       ├── purchasing.py # Purchasing module (6 endpoints)
 │   │   │       ├── warehouse.py  # Warehouse operations (8 endpoints)
 │   │   │       ├── cutting.py    # Cutting module (5 endpoints)
 │   │   │       ├── embroidery.py # Embroidery module (6 endpoints)
-│   │   │       ├── sewing.py     # Sewing module (7 endpoints) ⭐ Enhanced!
+│   │   │       ├── sewing.py     # Sewing module (7 endpoints)
 │   │   │       ├── finishing.py  # Finishing module (5 endpoints)
 │   │   │       ├── packing.py    # Packing module (6 endpoints)
-│   │   │       ├── finishgoods.py # Finishgoods module (6 endpoints) ⭐ NEW!
-│   │   │       ├── qc.py         # Quality control (4 endpoints)
+│   │   │       ├── finishgoods.py # Finishgoods module (6 endpoints)
+│   │   │       ├── quality.py    # Quality control (4 endpoints)
 │   │   │       ├── kanban.py     # E-Kanban (5 endpoints)
 │   │   │       ├── reports.py    # Reports (8 endpoints)
-│   │   │       └── import_export.py  # CSV/Excel (8 endpoints)
+│   │   │       ├── report_builder.py # Dynamic report builder (6 endpoints) ⭐ NEW!
+│   │   │       ├── import_export.py  # CSV/Excel (8 endpoints)
+│   │   │       └── websocket.py  # Real-time notifications (3 endpoints)
 │   │   ├── modules/              # Production logic (11 departments)
 │   │   │   ├── ppic/             # PPIC planning
 │   │   │   ├── purchasing/       # Purchasing business logic ⭐ NEW!
@@ -123,46 +132,34 @@ ERP2026/
 │   ├── requirements.txt          # Python dependencies
 │   └── Dockerfile                # Backend container
 │
-├── erp-ui/                       # Frontend (React + TypeScript)
-│   ├── src/
-│   │   ├── pages/                # 11 major pages ⭐ UPDATED!
-│   │   │   ├── LoginPage.tsx     # Authentication
-│   │   │   ├── DashboardPage.tsx # Main dashboard
-│   │   │   ├── PurchasingPage.tsx # Purchasing operations ⭐ NEW!
-│   │   │   ├── CuttingPage.tsx   # Cutting operations
-│   │   │   ├── EmbroideryPage.tsx # Embroidery operations
-│   │   │   ├── PPICPage.tsx     # PPIC planning/Administration
-│   │   │   ├── QCPage.tsx        # Quality Control
-│   │   │   ├── AdminImportExportPage.tsx # CSV/Excel import/export
-│   │   │   ├── SewingPage.tsx    # Sewing + QC
-│   │   │   ├── FinishingPage.tsx # Finishing operations
-│   │   │   ├── PackingPage.tsx   # Packing + E-Kanban
-│   │   │   ├── FinishgoodsPage.tsx # Finishgoods warehouse ⭐ NEW!
-│   │   │   ├── KanbanPage.tsx    # E-Kanban board
-│   │   │   ├── WarehousePage.tsx  # Warehouse management ⭐ NEW!
-│   │   │   ├── AdminMasterdataPage.tsx   # Master data management
-│   │   │   ├── AdminUserPage.tsx   # User settings & preferences (SuperAdmin Only) ⭐ NEW!
-│   │   │   └── ReportsPage.tsx   # Reports dashboard
-│   │   ├── components/           # Reusable components
-│   │   ├── api/                  # Axios API clients
-│   │   ├── store/                # Zustand state management
-│   │   ├── types/                # TypeScript types
-│   │   └── App.tsx               # Router configuration
-│   ├── package.json              # Node dependencies
-│   └── Dockerfile                # Frontend container
+├── erp-ui/                       # User Interfaces (Multi-Platform)
+│   ├── frontend/                 # Web Application (React + TypeScript) ✅ COMPLETE
+│   │   ├── src/
+│   │   │   ├── pages/            # 15 major pages
+│   │   │   │   ├── LoginPage.tsx, DashboardPage.tsx, PPICPage.tsx
+│   │   │   │   ├── PurchasingPage.tsx, WarehousePage.tsx
+│   │   │   │   ├── CuttingPage.tsx, EmbroideryPage.tsx, SewingPage.tsx
+│   │   │   │   ├── FinishingPage.tsx, PackingPage.tsx, FinishgoodsPage.tsx
+│   │   │   │   ├── QCPage.tsx, KanbanPage.tsx, ReportsPage.tsx
+│   │   │   │   └── AdminUserPage.tsx, AdminMasterdataPage.tsx, AdminImportExportPage.tsx
+│   │   │   ├── components/       # Reusable components
+│   │   │   ├── api/              # Axios API clients
+│   │   │   ├── store/            # Zustand state management
+│   │   │   └── App.tsx           # Router configuration
+│   │   ├── package.json          # Dependencies
+│   │   └── Dockerfile            # Container build
+│   ├── mobile/                   # Mobile App (React Native) 🚧 PLANNED
+│   │   ├── src/                  # Mobile screens & components
+│   │   │   ├── screens/          # Native screens (Login, QC Scanner, etc.)
+│   │   │   ├── components/       # Mobile components
+│   │   │   └── navigation/       # React Navigation
+│   │   └── package.json          # React Native dependencies
+│   └── desktop/                  # Desktop App (Electron) 🚧 READY
+│       ├── main.js               # Electron main process
+│       ├── preload.js            # Security preload
+│       └── package.json          # Electron dependencies
 ├── prometheus.yml                # Metrics collection
 └── README.md                     # This file
-
-
-erp-ui/
-├── frontend/                     # React frontend (coming Week 5)
-│   ├── src/
-│   └── public/
-├── mobile/                       # React Native mobile app (coming Week 6)
-│   ├── src/ 
-│   └── assets/
-├── package.json                  # Node dependencies
-└── README.md                     # Frontend instructions
 
 docs/
 ├── IMPLEMENTATION_ROADMAP.md     # 11-week development plan
@@ -173,25 +170,8 @@ docs/
     ├── Flow Production.md         # Production SOP
     ├── Database Scheme.csv        # Schema reference
     └── Flowchart ERP.csv         # Process flowchart
-```
-- **Master Data** (5 tables): Products, Categories, BOM, BOM Lines, Partners
-- **Production** (8 tables): Manufacturing Orders, Work Orders, Material Consumption, Transfers, Line Occupancy
-- **Warehouse** (6 tables): Locations, Stock Moves, Stock Quants, Stock Lots (FIFO), Inventory Adjustments
-- **Quality** (3 tables): QC Lab Tests, QC Inspections, QC Records
-- **E-Kanban** (2 tables): Kanban Cards, Kanban History
-- **Exception** (2 tables): Alert Logs, Segregation Acknowledgements
-- **Security** (1 table): Users with role-based access control
 
-### **Key Technical Features**
-✅ Parent-child article hierarchy for product variants
-✅ Real-time line occupancy tracking (prevents segregation)
-✅ FIFO stock allocation with lot traceability
-✅ BOM revision audit trail for change tracking
-✅ Numeric precision for QC test results (DECIMAL(10,4))
-✅ Comprehensive foreign key relationships (45+ constraints)
-✅ Optimized indexes on frequently queried columns
-✅ PostgreSQL 15 with advanced featuresrse proxy configuration for CORS and security headers
-✅ Dockerized multi-service architecture (API, DB, Redis, pgAdmin)
+```
 ---
 
 ## 📊 DATABASE SCHEMA
@@ -240,6 +220,17 @@ docs/
 3. **Production** - Work order execution (Cutting, Embroidery, Sewing, Finishing, Packing)
 4. **QC** - Quality inspections, defect tracking, lab test management
 5. **Warehouse** - Inventory management, stock moves, FIFO allocation, E-Kanban approval
+
+### **Key Technical Features**
+✅ Parent-child article hierarchy for product variants
+✅ Real-time line occupancy tracking (prevents segregation)
+✅ FIFO stock allocation with lot traceability
+✅ BOM revision audit trail for change tracking
+✅ Numeric precision for QC test results (DECIMAL(10,4))
+✅ Comprehensive foreign key relationships (45+ constraints)
+✅ Optimized indexes on frequently queried columns
+✅ PostgreSQL 15 with advanced featuresrse proxy configuration for CORS and security headers
+✅ Dockerized multi-service architecture (API, DB, Redis, pgAdmin)
 
 ---
 

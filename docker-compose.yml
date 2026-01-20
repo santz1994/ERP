@@ -69,12 +69,13 @@ services:
   # React Frontend Application
   frontend:
     build:
-      context: ./erp-ui
+      context: ./erp-ui/frontend
+      dockerfile: Dockerfile
     container_name: erp_frontend
     environment:
       VITE_API_URL: http://backend:8000/api/v1
     ports:
-      - "3000:3000"
+      - "3001:3000"
     depends_on:
       - backend
     networks:

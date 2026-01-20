@@ -8,6 +8,7 @@ psycopg2-binary==2.9.11
 pydantic==1.10.17
 python-dotenv==1.2.1
 email-validator==2.1.0
+python-multipart==0.0.6
 
 # Security & Authentication (deduplicated - using stable versions)
 python-jose[cryptography]==3.3.0

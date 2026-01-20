@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '../api/client';
+import BarcodeScanner from '../components/BarcodeScanner';
 
 // Types
 interface FinishGoodInventory {
@@ -36,11 +37,20 @@ interface StockAgingItem {
 }
 
 const FinishgoodsPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'inventory' | 'ready' | 'aging'>('inventory');
+  const [activeTab, setActiveTab] = useState<'inventory' | 'ready' | 'aging' | 'barcode'>('inventory');
   const [showReceiveModal, setShowReceiveModal] = useState(false);
   const [showShipmentModal, setShowShipmentModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [lowStockOnly, setLowStockOnly] = useState(false);
+
+  // Barcode states
+  const [barcodeOperation, setBarcodeOperation] = useState<'receive' | 'pick'>('receive');
+  const [scannedBarcode, setScannedBarcode] = useState('');
+  const [transactionQty, setTransactionQty] = useState('');
+  const [transactionNotes, setTransactionNotes] = useState('');
+  const [transactionLoading, setTransactionLoading] = useState(false);
+  const [transactionSuccess, setTransactionSuccess] = useState('');
+  const [barcodeHistory, setBarcodeHistory] = useState<any[]>([]);
 
   // Form states
   const [receiveForm, setReceiveForm] = useState({
@@ -147,6 +157,72 @@ const FinishgoodsPage: React.FC = () => {
     }
   };
 
+  // Barcode scanner handlers
+  const handleBarcodeScan = (barcode: string) => {
+    setScannedBarcode(barcode);
+    setTransactionSuccess('');
+  };
+
+  const handleTransactionSubmit = async () => {
+    if (!scannedBarcode || !transactionQty) {
+      alert('⚠️ Please scan barcode and enter quantity');
+      return;
+    }
+
+    setTransactionLoading(true);
+    setTransactionSuccess('');
+
+    try {
+      const endpoint = barcodeOperation === 'receive' 
+        ? '/barcode/receive' 
+        : '/barcode/pick';
+      
+      const response = await apiClient.post(endpoint, {
+        barcode: scannedBarcode,
+        qty: parseFloat(transactionQty),
+        location: 'finishgoods',
+        notes: transactionNotes
+      });
+
+      setTransactionSuccess(
+        barcodeOperation === 'receive'
+          ? `✅ Received ${transactionQty} units successfully!`
+          : `✅ Picked ${transactionQty} units successfully!`
+      );
+
+      // Reset form
+      setScannedBarcode('');
+      setTransactionQty('');
+      setTransactionNotes('');
+
+      // Refresh data
+      refetchInventory();
+      fetchBarcodeHistory();
+    } catch (error: any) {
+      alert('❌ Error: ' + (error.response?.data?.detail || error.message));
+    } finally {
+      setTransactionLoading(false);
+    }
+  };
+
+  const fetchBarcodeHistory = async () => {
+    try {
+      const response = await apiClient.get('/barcode/history', {
+        params: { location: 'finishgoods', limit: 10 }
+      });
+      setBarcodeHistory(response.data.history || []);
+    } catch (error) {
+      console.error('Failed to fetch barcode history:', error);
+    }
+  };
+
+  // Fetch barcode history when tab changes
+  useEffect(() => {
+    if (activeTab === 'barcode') {
+      fetchBarcodeHistory();
+    }
+  }, [activeTab]);
+
   // Get aging category color
   const getAgingColor = (category: string) => {
     switch (category) {
@@ -240,6 +316,16 @@ const FinishgoodsPage: React.FC = () => {
           }`}
         >
           ⏱️ Stock Aging
+        </button>
+        <button
+          onClick={() => setActiveTab('barcode')}
+          className={`px-6 py-3 font-medium transition-colors ${
+            activeTab === 'barcode'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-600 hover:text-gray-800'
+          }`}
+        >
+          📷 Barcode Scanner
         </button>
       </div>
 
@@ -422,6 +508,178 @@ const FinishgoodsPage: React.FC = () => {
                 <p className="text-gray-500 text-lg">No aging data available</p>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Barcode Scanner Tab */}
+        {activeTab === 'barcode' && (
+          <div>
+            <div className="p-4 border-b">
+              <h3 className="font-semibold text-lg">📷 Barcode Scanner - Finishgoods</h3>
+              <p className="text-sm text-gray-600 mt-1">
+                Scan or enter barcode to receive or pick goods
+              </p>
+            </div>
+
+            <div className="p-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Left: Scanner */}
+                <div>
+                  {/* Operation Toggle */}
+                  <div className="flex gap-2 mb-4">
+                    <button
+                      onClick={() => setBarcodeOperation('receive')}
+                      className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+                        barcodeOperation === 'receive'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      📥 Receive Goods
+                    </button>
+                    <button
+                      onClick={() => setBarcodeOperation('pick')}
+                      className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+                        barcodeOperation === 'pick'
+                          ? 'bg-green-600 text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      📤 Pick/Ship Goods
+                    </button>
+                  </div>
+
+                  {/* Barcode Scanner Component */}
+                  <BarcodeScanner
+                    onScan={handleBarcodeScan}
+                    operation={barcodeOperation}
+                    location="finishgoods"
+                  />
+
+                  {/* Transaction Form */}
+                  {scannedBarcode && (
+                    <div className="mt-6 p-4 bg-gray-50 rounded-lg space-y-4">
+                      <h4 className="font-semibold text-gray-800">Transaction Details</h4>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Scanned Barcode
+                        </label>
+                        <input
+                          type="text"
+                          value={scannedBarcode}
+                          readOnly
+                          className="w-full px-3 py-2 bg-white border rounded-lg text-gray-700"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Quantity *
+                        </label>
+                        <input
+                          type="number"
+                          value={transactionQty}
+                          onChange={(e) => setTransactionQty(e.target.value)}
+                          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                          placeholder="Enter quantity"
+                          step="0.01"
+                          min="0.01"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Notes (Optional)
+                        </label>
+                        <textarea
+                          value={transactionNotes}
+                          onChange={(e) => setTransactionNotes(e.target.value)}
+                          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                          rows={2}
+                          placeholder="Additional notes..."
+                        />
+                      </div>
+
+                      <button
+                        onClick={handleTransactionSubmit}
+                        disabled={transactionLoading || !transactionQty}
+                        className={`w-full py-2 px-4 rounded-lg font-medium transition-colors ${
+                          transactionLoading || !transactionQty
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            : barcodeOperation === 'receive'
+                            ? 'bg-blue-600 text-white hover:bg-blue-700'
+                            : 'bg-green-600 text-white hover:bg-green-700'
+                        }`}
+                      >
+                        {transactionLoading
+                          ? 'Processing...'
+                          : barcodeOperation === 'receive'
+                          ? '📥 Confirm Receive'
+                          : '📤 Confirm Pick'}
+                      </button>
+
+                      {transactionSuccess && (
+                        <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                          <p className="text-green-800 text-sm">{transactionSuccess}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Right: Recent History */}
+                <div>
+                  <h4 className="font-semibold text-gray-800 mb-3">📋 Recent Transactions</h4>
+                  <div className="space-y-2 max-h-[600px] overflow-y-auto">
+                    {barcodeHistory.length > 0 ? (
+                      barcodeHistory.map((item: any, index: number) => (
+                        <div key={index} className="p-3 bg-white border rounded-lg">
+                          <div className="flex justify-between items-start mb-2">
+                            <span className="font-mono text-sm font-semibold text-gray-900">
+                              {item.barcode}
+                            </span>
+                            <span className={`px-2 py-1 text-xs font-semibold rounded ${
+                              item.operation === 'receive'
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-green-100 text-green-800'
+                            }`}>
+                              {item.operation === 'receive' ? '📥 Receive' : '📤 Pick'}
+                            </span>
+                          </div>
+                          <div className="text-sm text-gray-600 space-y-1">
+                            <div className="flex justify-between">
+                              <span>Product:</span>
+                              <span className="font-medium text-gray-900">{item.product_name}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Quantity:</span>
+                              <span className="font-medium text-gray-900">{item.qty}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Time:</span>
+                              <span className="text-gray-500">
+                                {new Date(item.timestamp).toLocaleString()}
+                              </span>
+                            </div>
+                            {item.notes && (
+                              <div className="mt-2 pt-2 border-t">
+                                <p className="text-xs text-gray-500">{item.notes}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-8 text-center">
+                        <div className="text-4xl mb-2">📋</div>
+                        <p className="text-gray-500 text-sm">No recent transactions</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>

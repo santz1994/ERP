@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '../api/client';
+import BarcodeScanner from '../components/BarcodeScanner';
 
 // Types
 interface StockItem {
@@ -28,9 +29,17 @@ interface StockMovement {
 }
 
 const WarehousePage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'inventory' | 'movements' | 'transfers'>('inventory');
+  const [activeTab, setActiveTab] = useState<'inventory' | 'movements' | 'barcode'>('inventory');
   const [searchTerm, setSearchTerm] = useState('');
   const [showLowStockOnly, setShowLowStockOnly] = useState(false);
+  
+  // Barcode scanning states
+  const [barcodeOperation, setBarcodeOperation] = useState<'receive' | 'pick'>('receive');
+  const [scannedBarcode, setScannedBarcode] = useState('');
+  const [transactionQty, setTransactionQty] = useState<number>(0);
+  const [transactionNotes, setTransactionNotes] = useState('');
+  const [transactionLoading, setTransactionLoading] = useState(false);
+  const [transactionSuccess, setTransactionSuccess] = useState<any>(null);
 
   // Fetch Stock Inventory
   const { data: inventoryData, isLoading: inventoryLoading } = useQuery({
@@ -54,6 +63,58 @@ const WarehousePage: React.FC = () => {
     refetchInterval: 10000,
     enabled: false // Disable until endpoint exists
   });
+  
+  // Fetch Barcode History
+  const { data: barcodeHistory, refetch: refetchHistory } = useQuery({
+    queryKey: ['barcode-history'],
+    queryFn: async () => {
+      const response = await apiClient.get('/barcode/history?location=warehouse&limit=20');
+      return response.data;
+    },
+    refetchInterval: 10000
+  });
+
+  // Handle barcode scan
+  const handleBarcodeScan = (barcode: string) => {
+    setScannedBarcode(barcode);
+    setTransactionQty(0);
+    setTransactionSuccess(null);
+  };
+
+  // Handle transaction submission
+  const handleTransactionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!scannedBarcode || transactionQty <= 0) {
+      alert('Please scan a barcode and enter quantity');
+      return;
+    }
+
+    setTransactionLoading(true);
+    
+    try {
+      const endpoint = barcodeOperation === 'receive' ? '/barcode/receive' : '/barcode/pick';
+      const response = await apiClient.post(endpoint, {
+        barcode: scannedBarcode,
+        qty: transactionQty,
+        location: 'warehouse',
+        notes: transactionNotes || null
+      });
+
+      setTransactionSuccess(response.data);
+      setScannedBarcode('');
+      setTransactionQty(0);
+      setTransactionNotes('');
+      refetchHistory();
+      
+      // Auto-clear success message after 5 seconds
+      setTimeout(() => setTransactionSuccess(null), 5000);
+    } catch (error: any) {
+      alert(error.response?.data?.detail || 'Transaction failed');
+    } finally {
+      setTransactionLoading(false);
+    }
+  };
 
   // Mock data for demonstration
   const mockInventory: StockItem[] = [
@@ -198,19 +259,156 @@ const WarehousePage: React.FC = () => {
           🔄 Stock Movements
         </button>
         <button
-          onClick={() => setActiveTab('transfers')}
+          onClick={() => setActiveTab('barcode')}
           className={`px-6 py-3 font-medium transition-colors ${
-            activeTab === 'transfers'
+            activeTab === 'barcode'
               ? 'text-blue-600 border-b-2 border-blue-600'
               : 'text-gray-600 hover:text-gray-800'
           }`}
         >
-          🚚 Inter-Dept Transfers
+          📷 Barcode Scanner
         </button>
       </div>
 
       {/* Content Area */}
       <div className="bg-white rounded-lg shadow">
+        {/* Barcode Scanner Tab */}
+        {activeTab === 'barcode' && (
+          <div className="p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Left: Scanner */}
+              <div>
+                {/* Operation Selector */}
+                <div className="mb-6 flex gap-4">
+                  <button
+                    onClick={() => setBarcodeOperation('receive')}
+                    className={`flex-1 px-6 py-3 rounded-lg font-medium transition ${
+                      barcodeOperation === 'receive'
+                        ? 'bg-green-600 text-white shadow-lg'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    📥 Receive Goods
+                  </button>
+                  <button
+                    onClick={() => setBarcodeOperation('pick')}
+                    className={`flex-1 px-6 py-3 rounded-lg font-medium transition ${
+                      barcodeOperation === 'pick'
+                        ? 'bg-blue-600 text-white shadow-lg'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    📤 Pick Goods
+                  </button>
+                </div>
+
+                {/* Barcode Scanner Component */}
+                <BarcodeScanner
+                  onScan={handleBarcodeScan}
+                  operation={barcodeOperation}
+                  location="warehouse"
+                />
+
+                {/* Transaction Form */}
+                {scannedBarcode && (
+                  <form onSubmit={handleTransactionSubmit} className="mt-6 bg-gray-50 border rounded-lg p-6">
+                    <h4 className="font-semibold mb-4">Complete Transaction</h4>
+                    
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium mb-2">Scanned Barcode</label>
+                      <input
+                        type="text"
+                        value={scannedBarcode}
+                        readOnly
+                        className="w-full border rounded-lg px-4 py-2 bg-white"
+                      />
+                    </div>
+
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium mb-2">Quantity *</label>
+                      <input
+                        type="number"
+                        value={transactionQty}
+                        onChange={(e) => setTransactionQty(parseFloat(e.target.value))}
+                        min="0"
+                        step="any"
+                        required
+                        className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium mb-2">Notes (Optional)</label>
+                      <textarea
+                        value={transactionNotes}
+                        onChange={(e) => setTransactionNotes(e.target.value)}
+                        rows={3}
+                        className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Add any notes..."
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={transactionLoading || transactionQty <= 0}
+                      className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    >
+                      {transactionLoading ? 'Processing...' : `Complete ${barcodeOperation === 'receive' ? 'Receiving' : 'Picking'}`}
+                    </button>
+                  </form>
+                )}
+
+                {/* Success Message */}
+                {transactionSuccess && (
+                  <div className="mt-6 bg-green-50 border border-green-200 rounded-lg p-4">
+                    <h4 className="font-semibold text-green-800 mb-2">✓ Transaction Successful!</h4>
+                    <p className="text-sm text-green-700">{transactionSuccess.message}</p>
+                    <p className="text-xs text-green-600 mt-2">
+                      Lot: {transactionSuccess.lot_number || transactionSuccess.picked_lots?.[0]?.lot_number}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Right: Recent Scans History */}
+              <div>
+                <h3 className="text-xl font-bold mb-4">📋 Recent Scans</h3>
+                <div className="space-y-3">
+                  {barcodeHistory?.map((item: any) => (
+                    <div key={item.id} className="border rounded-lg p-4 hover:bg-gray-50 transition">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+                            item.operation === 'receive' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {item.operation === 'receive' ? '📥 Receive' : '📤 Pick'}
+                          </span>
+                          <p className="font-semibold mt-2">{item.product_name}</p>
+                          <p className="text-sm text-gray-600">{item.barcode}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-lg">{item.qty}</p>
+                          <p className="text-xs text-gray-500">{new Date(item.timestamp).toLocaleString()}</p>
+                        </div>
+                      </div>
+                      <div className="text-xs text-gray-500 border-t pt-2 mt-2">
+                        <span>By: {item.user}</span> • <span>{item.location}</span>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {(!barcodeHistory || barcodeHistory.length === 0) && (
+                    <div className="text-center py-12 text-gray-400">
+                      <p>No barcode scans yet</p>
+                      <p className="text-sm mt-2">Start scanning to see history here</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {/* Stock Inventory Tab */}
         {activeTab === 'inventory' && (
           <div>

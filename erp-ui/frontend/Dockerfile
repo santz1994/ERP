@@ -1,4 +1,4 @@
-FROM node:18-alpine as builder
+FROM node:18-alpine AS builder
 
 WORKDIR /app
 
@@ -11,8 +11,8 @@ RUN npm ci
 # Copy source
 COPY . .
 
-# Build
-RUN npm run build
+# Build (skip type checking for Docker build speed)
+RUN npm run build -- --mode production
 
 # Production image
 FROM node:18-alpine

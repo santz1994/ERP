@@ -5,7 +5,7 @@ from app.core.config import settings
 from app.api.v1 import (
     auth, ppic, warehouse, admin, websocket, 
     kanban, reports, import_export, embroidery,
-    purchasing, finishgoods
+    purchasing, finishgoods, report_builder, barcode
 )
 from app.modules.cutting import cutting_router
 from app.modules.sewing import sewing_router
@@ -121,6 +121,18 @@ app.include_router(
 # Import/Export Module (CSV/Excel)
 app.include_router(
     import_export.router,
+    prefix=settings.API_PREFIX
+)
+
+# Dynamic Report Builder
+app.include_router(
+    report_builder.router,
+    prefix=settings.API_PREFIX
+)
+
+# Barcode Scanner Module
+app.include_router(
+    barcode.router,
     prefix=settings.API_PREFIX
 )
 

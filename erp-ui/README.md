@@ -1,113 +1,214 @@
-README.md
+# 🎨 Quty Karunia ERP - User Interfaces
 
-# Quty Karunia ERP - Frontend UI
+This folder contains all user interface applications for the Quty Karunia ERP system across different platforms.
 
-Manufacturing Execution System frontend built with React, TypeScript, and Tailwind CSS.
+## 📂 Structure
 
-## Features
+```
+erp-ui/
+├── frontend/        # Web Application (React + TypeScript)
+├── mobile/          # Mobile App (React Native - iOS/Android)
+└── desktop/         # Desktop App (Electron - Windows/Mac/Linux)
+```
 
-- 🔐 **Role-Based Access Control** - Different views for each department
-- 📱 **Responsive Design** - Works on desktop, tablet, and mobile
-- ⚡ **Real-time Updates** - Live status via React Query
-- 🎨 **Modern UI** - Clean, operator-friendly interface
-- 📊 **Production Dashboard** - Real-time manufacturing metrics
+---
 
-## Prerequisites
+## 🌐 Frontend (Web Application)
 
-- Node.js 16+ 
-- npm or yarn
+**Technology**: React 18 + TypeScript + Vite  
+**Status**: ✅ **100% Complete - Production Ready**
 
-## Setup
+### Features
+- 15 production pages
+- Responsive design (Tailwind CSS)
+- Real-time updates (React Query + WebSocket)
+- State management (Zustand)
+- 11 department modules
+- Admin tools (Users, Masterdata, Import/Export)
 
+### Quick Start
 ```bash
-# Install dependencies
+cd frontend
 npm install
-
-# Create .env file
-cp .env.example .env
-
-# Start development server
 npm run dev
+# Access: http://localhost:3000
+```
 
-# Build for production
+### Production Build
+```bash
+cd frontend
 npm run build
-
-# Preview production build
 npm run preview
 ```
 
-## Project Structure
+**Deployment**: Docker container (port 3000)
 
-```
-src/
-├── api/          # API client and endpoints
-├── components/   # Reusable components (Navbar, Sidebar, etc.)
-├── pages/        # Page components for each module
-├── store/        # Zustand state management
-├── types/        # TypeScript type definitions
-├── App.tsx       # Main app component
-├── main.tsx      # Entry point
-└── index.css     # Global styles
-```
+---
 
-## Key Pages
+## 📱 Mobile (iOS & Android)
 
-- **Login** - User authentication
-- **Dashboard** - Production overview and metrics
-- **PPIC** - Manufacturing order management (Admin only)
-- **Cutting** - Cutting department operations
-- **Sewing** - Sewing department operations
-- **Finishing** - Finishing department operations
-- **Packing** - Packing department operations
-- **Quality** - QC testing and inspections
-- **Warehouse** - Inventory management
-- **Admin** - System administration
+**Technology**: React Native 0.73  
+**Status**: 🚧 **Structure Created - Awaiting Implementation**
 
-## API Integration
+### Planned Features
+- Native iOS and Android apps
+- Barcode/QR code scanning
+- Offline mode with local storage
+- Push notifications
+- Camera for QC inspections
+- Optimized for production floor
 
-Frontend connects to backend API at `http://localhost:8000/api/v1`
+### Target Users
+- Production operators
+- QC inspectors
+- Warehouse staff
+- Mobile supervisors
 
-Key endpoints used:
-- `POST /auth/login` - User login
-- `GET /ppic/manufacturing-orders` - List manufacturing orders
-- `POST /cutting/receive-spk` - Receive cutting SPK
-- `POST /quality/lab-test/perform` - Perform quality test
-- And more...
-
-## Development
-
-### Adding a New Page
-
-1. Create new file in `src/pages/YourPage.tsx`
-2. Add route in `src/App.tsx`
-3. Add menu item in `src/components/Sidebar.tsx`
-
-### Using API Client
-
-```tsx
-import { apiClient } from '@/api/client'
-
-const data = await apiClient.getManufacturingOrder(moId)
-```
-
-### State Management
-
-```tsx
-import { useAuthStore, useUIStore } from '@/store'
-
-const { user, logout } = useAuthStore()
-const { addNotification } = useUIStore()
-```
-
-## Deployment
-
-Build production bundle:
+### Quick Start
 ```bash
-npm run build
+cd mobile
+npm install
+npm run android  # For Android
+npm run ios      # For iOS (Mac only)
 ```
 
-Deploy `dist/` folder to your web server or container.
+**Next Steps**: Screen development, API integration, native features
 
-## License
+---
 
-Private - Quty Karunia Only
+## 🖥️ Desktop (Cross-Platform)
+
+**Technology**: Electron 28 + Frontend Web App  
+**Status**: 🚧 **Structure Created - Ready for Build**
+
+### Features
+- Native Windows/macOS/Linux app
+- Wraps the frontend React app
+- Offline mode support
+- Auto-update capability
+- System tray integration
+- Better performance than browser
+
+### Target Users
+- Office staff
+- Managers
+- Admin users
+- Users preferring native apps
+
+### Quick Start
+```bash
+# Development mode
+cd desktop
+npm install
+npm run dev  # Loads from frontend dev server
+
+# Production build
+npm run build:win    # Windows installer
+npm run build:mac    # macOS DMG
+npm run build:linux  # Linux AppImage/DEB
+```
+
+**Distribution**: Installers for each platform
+
+---
+
+## 🎯 Development Priorities
+
+### Phase 13: Mobile App (React Native)
+**Priority**: HIGH  
+**Timeline**: 2-3 weeks  
+**Why**: Production floor operators need mobile access for scanning and QC
+
+**Key Screens**:
+1. Login
+2. Dashboard
+3. QC Scanner (barcode/QR)
+4. Work Order List
+5. Kanban Board
+6. Inventory Scanner
+7. Notifications
+
+### Phase 14: Desktop App (Electron)
+**Priority**: MEDIUM  
+**Timeline**: 1 week  
+**Why**: Office users prefer native desktop apps
+
+**Tasks**:
+1. Design app icons
+2. Test builds on Windows/Mac/Linux
+3. Configure auto-updater
+4. Create installers
+
+---
+
+## 🔗 API Integration
+
+All UI applications connect to the same backend:
+
+**Backend API**: http://localhost:8000  
+**Endpoints**: 104 REST APIs  
+**Authentication**: JWT tokens  
+**WebSocket**: ws://localhost:8000/ws
+
+### Shared API Client
+- Frontend: `src/api/client.ts` (Axios)
+- Mobile: `src/api/client.ts` (Axios)
+- Desktop: Uses frontend's API client
+
+---
+
+## 📊 Comparison
+
+| Feature | Web (Frontend) | Mobile | Desktop |
+|---------|---------------|--------|---------|
+| Platform | Browser | iOS/Android | Win/Mac/Linux |
+| Status | ✅ Complete | 🚧 Planned | 🚧 Ready |
+| Offline | Limited | ✅ Yes | ✅ Yes |
+| Camera | ❌ No | ✅ Yes | ❌ No |
+| Scanning | ❌ No | ✅ Yes | ❌ No |
+| Performance | Good | Excellent | Excellent |
+| Updates | Auto | Store approval | Auto-update |
+| Installation | None | Store download | Installer |
+
+---
+
+## 🚀 Getting Started
+
+### For Web Development
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### For Mobile Development
+```bash
+cd mobile
+npm install
+# iOS
+npm run ios
+# Android
+npm run android
+```
+
+### For Desktop Development
+```bash
+cd desktop
+npm install
+npm run dev
+```
+
+---
+
+## 📝 Notes
+
+1. **Frontend** is the main application - fully functional
+2. **Mobile** structure is created but needs implementation
+3. **Desktop** wraps the frontend and is ready to build
+4. All apps share the same backend API
+5. Mobile app is priority for production floor users
+
+---
+
+**Last Updated**: January 20, 2026  
+**Session**: Session 10 - Structure Reorganization

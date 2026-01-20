@@ -117,6 +117,7 @@ Halaman Kunci yang Perlu Didesain:
     - Pastikan sistem dirancang agar mudah di-maintain dan scalable untuk penambahan fitur di masa depan.
     - Flow produksi dan SOP harus selalu menjadi acuan utama dalam pengembangan sistem ERP ini.
     - Tambahkan License header pada setiap file kode sumber untuk kepemilikan intelektual.
+    - Barcode/QR Code Scanning: Pada Warehouse dan Operator untuk mempercepat proses input data.
 
 Dengan arsitektur modular, teknologi yang tepat, desain API yang jelas, dan fokus pada UI/UX operator, sistem ERP manufaktur untuk Quty Karunia dapat dibangun dengan efisien dan efektif sesuai kebutuhan produksi mainan boneka.
 
@@ -487,5 +488,538 @@ erp_handshake_acknowledgement{dept="Sewing"} 0.99
 | Support Engineer | Post-deployment support, issue resolution | 1 Person + 1 AI |
 
 **Recommended Total**: 1 Person + 1 AI for 1 year sprint
+
+---
+
+## 9. STRATEGIC ENHANCEMENT RECOMMENDATIONS (January 2026)
+**Status**: AWAITING APPROVAL
+**Prepared by**: Daniel Rizaldy (Senior IT Developer)
+
+### 9.1 Advanced Analytics & Business Intelligence 📊
+
+#### **Predictive Production Planning**
+- **Objective**: Forecast demand and optimize production scheduling
+- **Technology**: Machine Learning (Python scikit-learn, TensorFlow)
+- **Features**:
+  - Historical data analysis for demand forecasting
+  - Optimal routing recommendation based on patterns
+  - Machine downtime prediction
+  - Material shortage early warning
+- **Impact**: 20-30% reduction in production delays
+- **Complexity**: High | **Timeline**: 3-4 months
+- **ROI**: High - reduces waste and improves delivery times
+
+#### **Real-Time Production Dashboard with KPIs**
+- **Objective**: Executive-level visibility into production metrics
+- **Features**:
+  - OEE (Overall Equipment Effectiveness) calculation
+  - Real-time production vs target visualization
+  - Quality yield percentage by department
+  - Bottleneck identification with heat maps
+  - Interactive Gantt charts for MO tracking
+- **Technology**: Grafana dashboards, custom React charts
+- **Impact**: Better decision-making for management
+- **Complexity**: Medium | **Timeline**: 2 months
+- **ROI**: Medium - improves management oversight
+
+---
+
+### 9.2 IoT & Industry 4.0 Integration 🏭
+
+#### **IoT Sensor Integration**
+- **Objective**: Automate data collection from production floor
+- **Devices**:
+  - Weight sensors on stuffing machines (automatic weight verification)
+  - Temperature/humidity sensors (fabric storage monitoring)
+  - Vibration sensors on sewing machines (predictive maintenance)
+  - RFID readers at each department gateway (automatic transfer logging)
+- **Protocol**: MQTT broker (Mosquitto) for device communication
+- **Benefits**: Eliminates manual data entry, real-time monitoring
+- **Complexity**: High | **Timeline**: 4-6 months
+- **ROI**: Very High - reduces labor costs and errors
+
+#### **RFID System Implementation** 🔖
+- **Status**: Already mentioned in requirements as "next implementation"
+- **Scope**:
+  - RFID tags on fabric rolls and carton boxes
+  - Fixed readers at department entrances/exits
+  - Handheld readers for operators
+  - Bulk scanning capability (scan entire pallet at once)
+  - Integration with existing barcode system
+- **Advantages over Barcode**:
+  - No line-of-sight required
+  - Faster scanning (multiple items simultaneously)
+  - More durable tags
+  - Higher capacity data storage
+- **Implementation Plan**:
+  - Phase 1: Pilot in Warehouse (3 months)
+  - Phase 2: Expand to all departments (6 months)
+  - Phase 3: Complete migration (12 months)
+- **Complexity**: High | **Timeline**: 12 months
+- **ROI**: Very High - significant time savings
+
+---
+
+### 9.3 Mobile-First Enhancements 📱
+
+#### **Offline-First Mobile App**
+- **Objective**: Enable production floor operations without internet
+- **Features**:
+  - Complete offline functionality with local storage
+  - Background sync when connection restored
+  - Conflict resolution for concurrent edits
+  - Progressive Web App (PWA) for easy installation
+- **Technology**: React Native + WatermelonDB (offline database)
+- **Impact**: Eliminates internet dependency on factory floor
+- **Complexity**: Medium | **Timeline**: 2-3 months
+- **ROI**: High - ensures continuous operations
+
+#### **Voice Commands & Hands-Free Operation**
+- **Objective**: Operators can work without touching devices
+- **Features**:
+  - Voice-activated QC pass/fail recording
+  - Spoken barcode confirmation
+  - Voice notes for defect description
+  - Multilingual support (Indonesia, English)
+- **Technology**: Web Speech API, Google Speech-to-Text
+- **Impact**: Faster data entry, improved hygiene
+- **Complexity**: Medium | **Timeline**: 1-2 months
+- **ROI**: Medium - improves operator efficiency
+
+---
+
+### 9.4 AI-Powered Quality Control 🤖
+
+#### **Computer Vision for Defect Detection**
+- **Objective**: Automated visual inspection using AI
+- **Implementation**:
+  - Cameras at critical inspection points
+  - CNN model trained on defect images
+  - Real-time defect classification (torn fabric, wrong color, missing parts)
+  - Automatic defect photo capture and logging
+- **Technology**: TensorFlow, OpenCV, Raspberry Pi cameras
+- **Benefits**: 
+  - 99%+ inspection accuracy
+  - Reduces inspector fatigue
+  - Consistent quality standards
+- **Complexity**: Very High | **Timeline**: 6-8 months
+- **ROI**: Very High - reduces rework and returns
+
+#### **Natural Language Processing for Defect Reports**
+- **Objective**: Automatically categorize and analyze defect descriptions
+- **Features**:
+  - Text mining of QC notes to identify recurring issues
+  - Root cause analysis suggestions
+  - Automatic categorization of defect types
+  - Trend analysis for proactive quality improvement
+- **Technology**: spaCy, NLTK for Indonesian language processing
+- **Complexity**: Medium | **Timeline**: 2 months
+- **ROI**: Medium - improves quality management
+
+---
+
+### 9.5 Advanced Planning & Optimization 🎯
+
+#### **Advanced Planning and Scheduling (APS)**
+- **Objective**: Optimize production sequences across all departments
+- **Features**:
+  - Constraint-based scheduling (machine capacity, operator skills, material availability)
+  - What-if scenario analysis
+  - Automatic rescheduling on delays or shortages
+  - Critical path method (CPM) for MO dependencies
+- **Technology**: OR-Tools (Google Operations Research)
+- **Impact**: 15-25% improvement in throughput
+- **Complexity**: Very High | **Timeline**: 4-6 months
+- **ROI**: Very High - maximizes production efficiency
+
+#### **Inventory Optimization with AI**
+- **Objective**: Minimize inventory costs while ensuring material availability
+- **Features**:
+  - Dynamic safety stock calculation based on lead time variability
+  - Economic Order Quantity (EOQ) optimization
+  - ABC analysis for inventory prioritization
+  - Automatic reorder point suggestions
+- **Complexity**: Medium | **Timeline**: 2-3 months
+- **ROI**: High - reduces working capital needs
+
+---
+
+### 9.6 Collaboration & Communication 💬
+
+#### **Integrated Communication Platform**
+- **Objective**: Unified communication for production team
+- **Features**:
+  - In-app chat between departments
+  - @mentions for specific users/roles
+  - File sharing (photos, documents)
+  - Integration with WhatsApp Business API
+  - Broadcast messages from management
+- **Technology**: Socket.io (already have WebSocket), WhatsApp Business API
+- **Impact**: Faster issue resolution, better coordination
+- **Complexity**: Low | **Timeline**: 1 month
+- **ROI**: Medium - improves team collaboration
+
+#### **Supplier Portal**
+- **Objective**: Self-service portal for suppliers
+- **Features**:
+  - View PO status
+  - Acknowledge orders
+  - Update delivery schedules
+  - Upload shipping documents
+  - Invoice submission
+- **Technology**: Separate React app with limited API access
+- **Impact**: Reduces procurement admin work
+- **Complexity**: Medium | **Timeline**: 2-3 months
+- **ROI**: Medium - improves supplier relationships
+
+---
+
+### 9.7 Compliance & Sustainability 🌱
+
+#### **Carbon Footprint Tracking**
+- **Objective**: Measure and report environmental impact
+- **Features**:
+  - Energy consumption tracking per product
+  - Material waste measurement
+  - Carbon emissions calculation
+  - Sustainability reports for IKEA compliance
+- **Impact**: Meets ESG (Environmental, Social, Governance) standards
+- **Complexity**: Medium | **Timeline**: 2 months
+- **ROI**: Low (Compliance) - but may become mandatory
+
+#### **Blockchain for Supply Chain Traceability**
+- **Objective**: Immutable record of product journey
+- **Features**:
+  - End-to-end traceability from raw material to delivery
+  - QR code for customers to verify authenticity
+  - Supplier certification verification
+  - Tamper-proof quality records
+- **Technology**: Hyperledger Fabric (private blockchain)
+- **Impact**: Enhanced trust and transparency
+- **Complexity**: Very High | **Timeline**: 8-12 months
+- **ROI**: Low-Medium - brand differentiation
+
+---
+
+### 9.8 Performance & Scalability 🚀
+
+#### **Microservices Migration (Long-term)**
+- **Objective**: Scale beyond modular monolith when needed
+- **When to Consider**:
+  - Multiple factories or locations
+  - More than 500 concurrent users
+  - Different scaling needs per module
+- **Approach**: Gradual extraction of modules
+  - Start with high-traffic modules (Warehouse, QC)
+  - Keep core modules together initially
+- **Complexity**: Very High | **Timeline**: 12-18 months
+- **ROI**: Depends on scale - only if growth demands it
+
+#### **Edge Computing for Factory Floor**
+- **Objective**: Process data locally for faster response
+- **Implementation**:
+  - Edge servers at each department
+  - Local data processing for real-time operations
+  - Sync to central server periodically
+- **Benefits**: Lower latency, works during WAN outages
+- **Complexity**: High | **Timeline**: 4-6 months
+- **ROI**: Medium - improves reliability
+
+---
+
+### 9.9 Advanced Reporting & Compliance 📑
+
+#### **Automated Compliance Reports for IKEA**
+- **Objective**: Generate ISO/IKEA compliance reports automatically
+- **Features**:
+  - ISO 8124 test result compilation
+  - REACH compliance documentation
+  - FSC/GOTS certification tracking
+  - Automatic report generation on schedule
+  - Digital signature for authenticity
+- **Complexity**: Medium | **Timeline**: 2 months
+- **ROI**: High - reduces manual reporting effort
+
+#### **Business Intelligence (BI) Suite Integration**
+- **Objective**: Advanced data analysis capabilities
+- **Tools**: 
+  - Power BI or Tableau integration
+  - Superset (open-source alternative)
+- **Features**:
+  - Custom dashboards for each department
+  - Drill-down analysis
+  - Cross-departmental analytics
+  - Export to PDF/Excel with branding
+- **Complexity**: Medium | **Timeline**: 1-2 months
+- **ROI**: High - empowers data-driven decisions
+
+---
+
+### 9.10 Training & Gamification 🎮
+
+#### **Training Mode with Simulation**
+- **Objective**: Train new operators without affecting production data
+- **Features**:
+  - Sandbox environment with dummy data
+  - Guided tutorials with step-by-step instructions
+  - Achievement badges for completed modules
+  - Leaderboard for training completion
+  - Quiz system for certification
+- **Impact**: Faster onboarding, reduced training costs
+- **Complexity**: Medium | **Timeline**: 2 months
+- **ROI**: High - improves workforce readiness
+
+#### **Gamification for Productivity**
+- **Objective**: Motivate operators through game mechanics
+- **Features**:
+  - Daily/weekly challenges (e.g., "Complete 500 units with 0 defects")
+  - Points system for quality performance
+  - Team competitions between shifts
+  - Recognition system (Employee of the Month)
+- **Impact**: 10-15% productivity increase
+- **Complexity**: Low | **Timeline**: 1 month
+- **ROI**: Very High - low cost, high impact
+
+---
+
+## 9.11 PRIORITIZATION MATRIX
+
+### **Must Have (High Value, Low Effort)**
+1. ✅ RFID Integration (already planned)
+2. ✅ Real-Time Production Dashboard
+3. ✅ Offline-First Mobile App
+4. ✅ Integrated Communication Platform
+5. ✅ Training Mode with Simulation
+
+### **Should Have (High Value, Medium Effort)**
+6. ✅ Predictive Production Planning
+7. ✅ Advanced Planning and Scheduling (APS)
+8. ✅ Inventory Optimization with AI
+9. ✅ Automated Compliance Reports
+10. ✅ Voice Commands
+
+### **Could Have (Medium Value, High Effort)**
+11. 🟡 IoT Sensor Integration
+12. 🟡 Computer Vision for Defect Detection
+13. 🟡 Supplier Portal
+14. 🟡 BI Suite Integration
+
+### **Future Consideration (Low Priority)**
+15. 🔴 Blockchain for Traceability
+16. 🔴 Microservices Migration
+17. 🔴 Carbon Footprint Tracking
+
+---
+
+## 9.12 IMPLEMENTATION ROADMAP (2026-2027)
+
+### **Q2 2026 (Apr-Jun)**: Foundation Enhancements
+- [ ] Real-Time Production Dashboard with KPIs
+- [ ] Integrated Communication Platform
+- [ ] Training Mode with Simulation
+- [ ] Gamification for Productivity
+
+**Estimated Cost**: $15,000 | **Team**: 2 developers | **Timeline**: 3 months
+
+---
+
+### **Q3 2026 (Jul-Sep)**: Mobile & AI Basics
+- [ ] Offline-First Mobile App
+- [ ] Voice Commands & Hands-Free Operation
+- [ ] Inventory Optimization with AI
+- [ ] Automated Compliance Reports
+
+**Estimated Cost**: $25,000 | **Team**: 2 developers + 1 ML engineer | **Timeline**: 3 months
+
+---
+
+### **Q4 2026 (Oct-Dec)**: RFID Implementation (Phase 1)
+- [ ] RFID Pilot in Warehouse
+- [ ] Handheld reader deployment
+- [ ] Training for warehouse staff
+- [ ] Integration with existing barcode system
+
+**Estimated Cost**: $35,000 (including hardware) | **Team**: 2 developers + 1 hardware engineer | **Timeline**: 3 months
+
+---
+
+### **Q1 2027 (Jan-Mar)**: Advanced Planning
+- [ ] Predictive Production Planning (ML model)
+- [ ] Advanced Planning and Scheduling (APS)
+- [ ] NLP for Defect Reports
+- [ ] BI Suite Integration
+
+**Estimated Cost**: $30,000 | **Team**: 2 developers + 1 data scientist | **Timeline**: 3 months
+
+---
+
+### **Q2 2027 (Apr-Jun)**: RFID Expansion + IoT
+- [ ] RFID expansion to all departments (Phase 2)
+- [ ] IoT Sensor Integration (pilot)
+- [ ] Supplier Portal
+- [ ] Edge Computing setup
+
+**Estimated Cost**: $50,000 (including hardware) | **Team**: 3 developers + 1 IoT engineer | **Timeline**: 3 months
+
+---
+
+### **Q3-Q4 2027**: Advanced AI & Vision
+- [ ] Computer Vision for Defect Detection
+- [ ] Complete RFID Migration (Phase 3)
+- [ ] IoT rollout to all machines
+- [ ] Advanced analytics models
+
+**Estimated Cost**: $60,000+ | **Team**: 4 developers + 2 ML engineers | **Timeline**: 6 months
+
+---
+
+## 9.13 TECHNOLOGY EVALUATION
+
+### **Emerging Technologies to Watch**
+
+1. **5G for Factory Connectivity**
+   - Ultra-low latency for real-time control
+   - Massive IoT device connectivity
+   - Private 5G network for security
+   - **Timeline**: 2027-2028
+
+2. **Digital Twin Technology**
+   - Virtual replica of entire factory
+   - Simulation for optimization
+   - Predictive maintenance
+   - **Timeline**: 2028+
+
+3. **Collaborative Robots (Cobots)**
+   - Work alongside human operators
+   - Automatic stuffing and packing
+   - Reduces physical strain
+   - **Timeline**: 2027-2028
+
+4. **Augmented Reality (AR) for Training**
+   - AR glasses for step-by-step guidance
+   - Remote expert assistance
+   - Visual quality inspection aids
+   - **Timeline**: 2027+
+
+---
+
+## 9.14 ESTIMATED TOTAL INVESTMENT (2026-2027)
+
+| Category | Cost Range | Priority |
+|----------|------------|----------|
+| **Must Have Features** | $40,000 - $60,000 | ⭐⭐⭐ |
+| **Should Have Features** | $50,000 - $80,000 | ⭐⭐ |
+| **RFID Implementation** | $70,000 - $100,000 | ⭐⭐⭐ |
+| **IoT & Industry 4.0** | $80,000 - $120,000 | ⭐⭐ |
+| **AI & Computer Vision** | $60,000 - $100,000 | ⭐ |
+| **Infrastructure & Scalability** | $30,000 - $50,000 | ⭐⭐ |
+
+**Total Estimated Investment**: $330,000 - $510,000 over 18-24 months
+
+**Expected ROI**: 
+- Productivity improvement: 25-35%
+- Quality improvement: 15-20%
+- Cost reduction: 20-30%
+- **Payback period**: 18-24 months
+
+---
+
+## 9.15 RISK ASSESSMENT
+
+| Risk | Probability | Impact | Mitigation |
+|------|-------------|--------|------------|
+| **Technology complexity** | High | High | Gradual rollout, pilot testing |
+| **User adoption resistance** | Medium | Medium | Training, change management |
+| **Hardware compatibility** | Medium | High | Vendor evaluation, POC testing |
+| **Budget overrun** | Medium | High | Phased approach, strict cost control |
+| **Integration challenges** | Medium | Medium | Modular design, API-first approach |
+| **Vendor lock-in** | Low | Medium | Open standards, multi-vendor strategy |
+
+---
+
+## 9.16 SUCCESS METRICS
+
+### **Technical KPIs**
+- System uptime: >99.5%
+- API response time: <200ms (95th percentile)
+- Mobile app performance: 60fps
+- Data accuracy: >99.9%
+- Test coverage: >85%
+
+### **Business KPIs**
+- Production cycle time reduction: 20%+
+- Quality defect rate: <2%
+- Inventory turnover: +15%
+- On-time delivery: >95%
+- Training time reduction: 40%+
+
+### **User Experience KPIs**
+- User satisfaction: >4.5/5
+- Mobile app adoption: >80% of operators
+- Support tickets: <5% of active users/month
+- Feature usage: >70% of available features
+
+---
+
+## 9.17 RECOMMENDATIONS SUMMARY
+
+### **Immediate Actions (Next 3 Months)**
+1. ✅ Implement Real-Time Production Dashboard
+2. ✅ Add Integrated Communication Platform
+3. ✅ Deploy Training Mode with Simulation
+4. ✅ Start Offline-First Mobile App development
+
+### **Short-Term (3-6 Months)**
+1. 🟡 Complete Offline Mobile App
+2. 🟡 Implement Voice Commands
+3. 🟡 Deploy Inventory Optimization AI
+4. 🟡 Pilot RFID in Warehouse
+
+### **Medium-Term (6-12 Months)**
+1. 🔴 Full RFID rollout
+2. 🔴 Advanced Planning & Scheduling (APS)
+3. 🔴 IoT sensor integration pilot
+4. 🔴 Predictive analytics for demand forecasting
+
+### **Long-Term (12-24 Months)**
+1. ⚪ Computer Vision for QC
+2. ⚪ Complete IoT implementation
+3. ⚪ Edge computing deployment
+4. ⚪ Advanced AI/ML models
+
+---
+
+## 📌 APPROVAL & SIGN-OFF
+
+**Document Version**: 1.0  
+**Date Prepared**: January 20, 2026  
+**Prepared By**: Daniel Rizaldy (Senior IT Developer)
+
+**Approval Required From**:
+- [ ] IT Manager / CTO
+- [ ] Production Manager
+- [ ] Finance Director (Budget Approval)
+- [ ] IKEA Compliance Representative
+
+**Next Steps**:
+1. Review recommendations with management team
+2. Prioritize features based on business goals and budget
+3. Create detailed project plan for approved items
+4. Allocate resources and timeline
+5. Begin implementation of Phase 1 (Q2 2026)
+
+---
+
+**Note**: All recommendations are based on:
+- Current ERP system assessment (Score: 94/100)
+- Industry 4.0 best practices
+- IKEA manufacturing standards
+- Cost-benefit analysis
+- Technical feasibility study
+- Market research on similar implementations
+
+**Status**: ⏳ AWAITING MANAGEMENT APPROVAL
+
+---
 
 **Created by: Daniel Rizaldy**
