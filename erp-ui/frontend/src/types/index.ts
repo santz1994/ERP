@@ -12,17 +12,39 @@ export interface User {
 }
 
 export enum UserRole {
+  // Level 0: System Development
+  DEVELOPER = 'Developer',
+  
+  // Level 1: System Administration
+  SUPERADMIN = 'Superadmin',
+  
+  // Level 2: Top Management (Approvers)
+  MANAGER = 'Manager',
+  FINANCE_MANAGER = 'Finance Manager',
+  
+  // Level 3: System Admin
   ADMIN = 'Admin',
-  PPIC = 'PPIC',
-  OPERATOR_CUTTING = 'Operator_Cutting',
-  OPERATOR_SEWING = 'Operator_Sewing',
-  OPERATOR_FINISHING = 'Operator_Finishing',
-  OPERATOR_PACKING = 'Operator_Packing',
-  SPV_CUTTING = 'SPV_Cutting',
-  SPV_SEWING = 'SPV_Sewing',
-  SPV_FINISHING = 'SPV_Finishing',
-  QC_INSPECTOR = 'QC_Inspector',
-  WAREHOUSE_ADMIN = 'Warehouse_Admin',
+  
+  // Level 4: Department Management
+  PPIC_MANAGER = 'PPIC Manager',
+  PPIC_ADMIN = 'PPIC Admin',
+  SPV_CUTTING = 'SPV Cutting',
+  SPV_SEWING = 'SPV Sewing',
+  SPV_FINISHING = 'SPV Finishing',
+  WAREHOUSE_ADMIN = 'Warehouse Admin',
+  QC_LAB = 'QC Lab',
+  PURCHASING_HEAD = 'Purchasing Head',
+  PURCHASING = 'Purchasing',
+  
+  // Level 5: Operations
+  OPERATOR_CUT = 'Operator Cutting',
+  OPERATOR_EMBRO = 'Operator Embroidery',
+  OPERATOR_SEW = 'Operator Sewing',
+  OPERATOR_FINISH = 'Operator Finishing',
+  OPERATOR_PACK = 'Operator Packing',
+  QC_INSPECTOR = 'QC Inspector',
+  WAREHOUSE_OP = 'Warehouse Operator',
+  SECURITY = 'Security',
 }
 
 export interface AuthResponse {

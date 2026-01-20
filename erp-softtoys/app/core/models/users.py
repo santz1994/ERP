@@ -9,23 +9,39 @@ from app.core.database import Base
 
 
 class UserRole(str, enum.Enum):
-    """User roles in the system"""
+    """User roles in the system - 22 roles total (SoD compliant)"""
+    # Level 0: System Development & Protection
+    DEVELOPER = "Developer"
+    
+    # Level 1: System Administration
+    SUPERADMIN = "Superadmin"
+    
+    # Level 2: Top Management (Approvers)
+    MANAGER = "Manager"
+    FINANCE_MANAGER = "Finance Manager"
+    
+    # Level 3: System Admin
     ADMIN = "Admin"
+    
+    # Level 4: Department Management
     PPIC_MANAGER = "PPIC Manager"
     PPIC_ADMIN = "PPIC Admin"
     SPV_CUTTING = "SPV Cutting"
     SPV_SEWING = "SPV Sewing"
     SPV_FINISHING = "SPV Finishing"
+    WAREHOUSE_ADMIN = "Warehouse Admin"
+    QC_LAB = "QC Lab"
+    PURCHASING_HEAD = "Purchasing Head"
+    PURCHASING = "Purchasing"
+    
+    # Level 5: Operations
     OPERATOR_CUT = "Operator Cutting"
     OPERATOR_EMBRO = "Operator Embroidery"
     OPERATOR_SEW = "Operator Sewing"
     OPERATOR_FINISH = "Operator Finishing"
     OPERATOR_PACK = "Operator Packing"
     QC_INSPECTOR = "QC Inspector"
-    QC_LAB = "QC Lab"
-    WAREHOUSE_ADMIN = "Warehouse Admin"
     WAREHOUSE_OP = "Warehouse Operator"
-    PURCHASING = "Purchasing"
     SECURITY = "Security"
 
 

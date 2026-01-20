@@ -47,48 +47,48 @@ const menuItems: MenuItem[] = [
     icon: <ShoppingCart />, 
     label: 'Purchasing', 
     path: '/purchasing', 
-    roles: [UserRole.PPIC, UserRole.ADMIN] 
+    roles: [UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN, UserRole.PURCHASING, UserRole.ADMIN] 
   },
   { 
     icon: <ClipboardList />, 
     label: 'PPIC', 
     path: '/ppic', 
-    roles: [UserRole.PPIC, UserRole.ADMIN] 
+    roles: [UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN, UserRole.ADMIN] 
   },
   { 
     icon: <Factory />, 
     label: 'Production', 
-    roles: [UserRole.OPERATOR_CUTTING, UserRole.SPV_CUTTING, UserRole.OPERATOR_SEWING, UserRole.SPV_SEWING, UserRole.OPERATOR_FINISHING, UserRole.SPV_FINISHING, UserRole.OPERATOR_PACKING, UserRole.ADMIN],
+    roles: [UserRole.OPERATOR_CUT, UserRole.SPV_CUTTING, UserRole.OPERATOR_EMBRO, UserRole.OPERATOR_SEW, UserRole.SPV_SEWING, UserRole.OPERATOR_FINISH, UserRole.SPV_FINISHING, UserRole.OPERATOR_PACK, UserRole.ADMIN],
     submenu: [
       { 
         icon: <Scissors />, 
         label: 'Cutting', 
         path: '/cutting', 
-        roles: [UserRole.OPERATOR_CUTTING, UserRole.SPV_CUTTING, UserRole.ADMIN] 
+        roles: [UserRole.OPERATOR_CUT, UserRole.SPV_CUTTING, UserRole.ADMIN] 
       },
       { 
         icon: <Palette />, 
         label: 'Embroidery', 
         path: '/embroidery', 
-        roles: [UserRole.OPERATOR_CUTTING, UserRole.SPV_CUTTING, UserRole.ADMIN] 
+        roles: [UserRole.OPERATOR_EMBRO, UserRole.SPV_CUTTING, UserRole.ADMIN] 
       },
       { 
         icon: <Zap />, 
         label: 'Sewing', 
         path: '/sewing', 
-        roles: [UserRole.OPERATOR_SEWING, UserRole.SPV_SEWING, UserRole.ADMIN] 
+        roles: [UserRole.OPERATOR_SEW, UserRole.SPV_SEWING, UserRole.ADMIN] 
       },
       { 
         icon: <Sparkles />, 
         label: 'Finishing', 
         path: '/finishing', 
-        roles: [UserRole.OPERATOR_FINISHING, UserRole.SPV_FINISHING, UserRole.ADMIN] 
+        roles: [UserRole.OPERATOR_FINISH, UserRole.SPV_FINISHING, UserRole.ADMIN] 
       },
       { 
         icon: <Package />, 
         label: 'Packing', 
         path: '/packing', 
-        roles: [UserRole.OPERATOR_PACKING, UserRole.ADMIN] 
+        roles: [UserRole.OPERATOR_PACK, UserRole.ADMIN] 
       },
     ]
   },
@@ -96,25 +96,25 @@ const menuItems: MenuItem[] = [
     icon: <Warehouse />, 
     label: 'Warehouse', 
     path: '/warehouse', 
-    roles: [UserRole.WAREHOUSE_ADMIN, UserRole.ADMIN] 
+    roles: [UserRole.WAREHOUSE_ADMIN, UserRole.WAREHOUSE_OP, UserRole.ADMIN] 
   },
   { 
     icon: <TruckIcon />, 
     label: 'Finish Goods', 
     path: '/finishgoods', 
-    roles: [UserRole.WAREHOUSE_ADMIN, UserRole.ADMIN] 
+    roles: [UserRole.WAREHOUSE_ADMIN, UserRole.WAREHOUSE_OP, UserRole.ADMIN] 
   },
   { 
     icon: <Beaker />, 
     label: 'QC', 
     path: '/quality', 
-    roles: [UserRole.QC_INSPECTOR, UserRole.ADMIN] 
+    roles: [UserRole.QC_INSPECTOR, UserRole.QC_LAB, UserRole.ADMIN] 
   },
   { 
     icon: <FileText />, 
     label: 'Reports', 
     path: '/reports', 
-    roles: [UserRole.PPIC, UserRole.ADMIN] 
+    roles: [UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN, UserRole.ADMIN] 
   },
   { 
     icon: <Users />, 
