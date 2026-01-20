@@ -1,9 +1,15 @@
 # User Access Control (UAC) & Role-Based Access Control (RBAC)
 ## ERP System - PT Quty Karunia
 
-**Document Version**: 1.0  
+**Document Version**: 2.0  
 **Date**: 2026-01-20  
-**Status**: ⚠️ **CRITICAL ISSUES FOUND - REQUIRES IMMEDIATE REVIEW**
+**Status**: ✅ **SECURITY REVIEW COMPLETE - COMPLIANCE IMPLEMENTED**
+
+> **🔗 IMPORTANT**: See [ISO 27001 Compliance Document](./UAC_RBAC_COMPLIANCE.md) for:
+> - Critical security fixes implemented
+> - Production floor implementation guide
+> - Audit trail requirements (Day 1 mandatory)
+> - Revised implementation roadmap
 
 ---
 

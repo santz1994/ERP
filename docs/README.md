@@ -4,7 +4,49 @@
 
 ---
 
-## 🗂️ STRUKTUR FOLDER DOKUMENTASI
+## � DOKUMEN TERBARU (January 2026)
+
+### 🔐 Security & Compliance (ISO 27001)
+Hasil review external auditor dan perbaikan security critical:
+
+1. **[EXECUTIVE_SUMMARY_SECURITY_REVIEW.md](./EXECUTIVE_SUMMARY_SECURITY_REVIEW.md)** 🔴 **BACA INI DULU!**
+   - Executive summary untuk management
+   - 7 critical security issues identified & fixed
+   - Cost-benefit analysis ($6K investment vs $170K+ risk)
+   - Week 1 implementation approval needed
+
+2. **[UAC_RBAC_COMPLIANCE.md](./UAC_RBAC_COMPLIANCE.md)** ⭐ **CRITICAL**
+   - ISO 27001 compliance implementation guide
+   - Critical security fixes (Developer prod access, SoD, audit trails)
+   - Production floor considerations (Quick Login, RLS, Kiosk Mode)
+   - Day 1 mandatory requirements
+
+3. **[SEGREGATION_OF_DUTIES_MATRIX.md](./SEGREGATION_OF_DUTIES_MATRIX.md)**
+   - SoD compliance matrix (Maker-Checker separation)
+   - Backend validation code examples
+   - Database constraints to prevent fraud
+   - Testing checklist
+
+4. **[WEEK1_SECURITY_IMPLEMENTATION.md](./WEEK1_SECURITY_IMPLEMENTATION.md)**
+   - Day-by-day action plan (7 working days)
+   - Code examples for each day
+   - Testing procedures
+   - Success criteria for go-live
+
+5. **[UAC_RBAC_REVIEW.md](./UAC_RBAC_REVIEW.md)** ✅ **UPDATED**
+   - Complete role definitions (22 roles, 5-level hierarchy)
+   - Module access matrix (15 modules × 22 roles)
+   - Permission levels (CRUD by role)
+
+### 📋 Quick Reference
+- **Total Roles**: 22 (was 17 → 20 → 22)
+- **New Roles Added**: DEVELOPER, SUPERADMIN, MANAGER, PURCHASING_HEAD, FINANCE_MANAGER
+- **Compliance**: ISO 27001, SOX 404
+- **Implementation**: Week 1 mandatory before go-live
+
+---
+
+## �🗂️ STRUKTUR FOLDER DOKUMENTASI
 
 ### 📖 [01-Quick-Start](./01-Quick-Start/)
 Dokumentasi untuk memulai dengan cepat (5-10 menit)
