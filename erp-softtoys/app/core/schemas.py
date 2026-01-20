@@ -8,24 +8,12 @@ from typing import Optional, List
 from decimal import Decimal
 from pydantic import BaseModel, EmailStr, Field, validator
 from enum import Enum
+from app.core.models.users import UserRole  # Import from database models
 
 
 # ==================== AUTH SCHEMAS ====================
 
-class UserRole(str, Enum):
-    """User role types"""
-    ADMIN = "admin"
-    PPIC_MANAGER = "ppic_manager"
-    SPV_CUTTING = "spv_cutting"
-    SPV_SEWING = "spv_sewing"
-    SPV_FINISHING = "spv_finishing"
-    OPERATOR_CUTTING = "operator_cutting"
-    OPERATOR_SEWING = "operator_sewing"
-    OPERATOR_FINISHING = "operator_finishing"
-    QC_INSPECTOR = "qc_inspector"
-    WAREHOUSE_ADMIN = "warehouse_admin"
-    PURCHASING = "purchasing"
-    SECURITY = "security"
+# UserRole enum imported from models.users
 
 
 class UserCreate(BaseModel):
@@ -34,7 +22,7 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=8)
     full_name: str = Field(..., min_length=1, max_length=100)
-    roles: List[UserRole] = [UserRole.OPERATOR_CUTTING]
+    roles: List[UserRole] = [UserRole.OPERATOR_CUT]
 
 
 class UserLogin(BaseModel):

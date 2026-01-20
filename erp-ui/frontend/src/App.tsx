@@ -43,16 +43,27 @@ const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
   </div>
 )
 
+const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuthStore()
+  
+  if (!user) {
+    return <Navigate to="/login" replace />
+  }
+  
+  return <>{children}</>
+}
+
+const RootRedirect: React.FC = () => {
+  const { user } = useAuthStore()
+  return user ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />
+}
+
 function App() {
-  const { user, loadUserFromStorage } = useAuthStore()
+  const { loadUserFromStorage } = useAuthStore()
 
   useEffect(() => {
     loadUserFromStorage()
   }, [])
-
-  if (!user) {
-    return <LoginPage />
-  }
 
   return (
     <Router>
@@ -63,117 +74,143 @@ function App() {
         <Route
           path="/dashboard"
           element={
-            <ProtectedLayout>
-              <DashboardPage />
-            </ProtectedLayout>
+            <PrivateRoute>
+              <ProtectedLayout>
+                <DashboardPage />
+              </ProtectedLayout>
+            </PrivateRoute>
           }
         />
 
         <Route
           path="/ppic"
           element={
-            <ProtectedLayout>
-              <PPICPage />
-            </ProtectedLayout>
+            <PrivateRoute>
+              <ProtectedLayout>
+                <PPICPage />
+              </ProtectedLayout>
+            </PrivateRoute>
           }
         />
 
         <Route
           path="/cutting"
           element={
-            <ProtectedLayout>
-              <CuttingPage />
-            </ProtectedLayout>
+            <PrivateRoute>
+              <ProtectedLayout>
+                <CuttingPage />
+              </ProtectedLayout>
+            </PrivateRoute>
           }
         />
 
         <Route
           path="/embroidery"
           element={
-            <ProtectedLayout>
-              <EmbroideryPage />
-            </ProtectedLayout>
+            <PrivateRoute>
+              <ProtectedLayout>
+                <EmbroideryPage />
+              </ProtectedLayout>
+            </PrivateRoute>
           }
         />
 
         <Route
           path="/sewing"
           element={
-            <ProtectedLayout>
-              <SewingPage />
-            </ProtectedLayout>
+            <PrivateRoute>
+              <ProtectedLayout>
+                <SewingPage />
+              </ProtectedLayout>
+            </PrivateRoute>
           }
         />
 
         <Route
           path="/finishing"
           element={
-            <ProtectedLayout>
-              <FinishingPage />
-            </ProtectedLayout>
+            <PrivateRoute>
+              <ProtectedLayout>
+                <FinishingPage />
+              </ProtectedLayout>
+            </PrivateRoute>
           }
         />
 
         <Route
           path="/packing"
           element={
-            <ProtectedLayout>
-              <PackingPage />
-            </ProtectedLayout>
+            <PrivateRoute>
+              <ProtectedLayout>
+                <PackingPage />
+              </ProtectedLayout>
+            </PrivateRoute>
           }
         />
 
         <Route
           path="/purchasing"
           element={
-            <ProtectedLayout>
-              <PurchasingPage />
-            </ProtectedLayout>
+            <PrivateRoute>
+              <ProtectedLayout>
+                <PurchasingPage />
+              </ProtectedLayout>
+            </PrivateRoute>
           }
         />
 
         <Route
           path="/finishgoods"
           element={
-            <ProtectedLayout>
-              <FinishgoodsPage />
-            </ProtectedLayout>
+            <PrivateRoute>
+              <ProtectedLayout>
+                <FinishgoodsPage />
+              </ProtectedLayout>
+            </PrivateRoute>
           }
         />
 
         <Route
           path="/kanban"
           element={
-            <ProtectedLayout>
-              <KanbanPage />
-            </ProtectedLayout>
+            <PrivateRoute>
+              <ProtectedLayout>
+                <KanbanPage />
+              </ProtectedLayout>
+            </PrivateRoute>
           }
         />
 
         <Route
           path="/reports"
           element={
-            <ProtectedLayout>
-              <ReportsPage />
-            </ProtectedLayout>
+            <PrivateRoute>
+              <ProtectedLayout>
+                <ReportsPage />
+              </ProtectedLayout>
+            </PrivateRoute>
           }
         />
 
         <Route
           path="/quality"
           element={
-            <ProtectedLayout>
-              <QCPage />
-            </ProtectedLayout>
+            <PrivateRoute>
+              <ProtectedLayout>
+                <QCPage />
+              </ProtectedLayout>
+            </PrivateRoute>
           }
         />
 
         <Route
           path="/warehouse"
           element={
-            <ProtectedLayout>
-              <WarehousePage />
-            </ProtectedLayout>
+            <PrivateRoute>
+              <ProtectedLayout>
+                <WarehousePage />
+              </ProtectedLayout>
+            </PrivateRoute>
           }
         />
 
@@ -189,31 +226,41 @@ function App() {
         <Route
           path="/admin/users"
           element={
-            <ProtectedLayout>
-              <AdminUserPage />
-            </ProtectedLayout>
+            <PrivateRoute>
+              <ProtectedLayout>
+                <AdminUserPage />
+              </ProtectedLayout>
+            </PrivateRoute>
           }
         />
 
         <Route
           path="/admin/masterdata"
           element={
-            <ProtectedLayout>
-              <AdminMasterdataPage />
-            </ProtectedLayout>
+            <PrivateRoute>
+              <ProtectedLayout>
+                <AdminMasterdataPage />
+              </ProtectedLayout>
+            </PrivateRoute>
           }
         />
 
         <Route
           path="/admin/import-export"
           element={
-            <ProtectedLayout>
-              <AdminImportExportPage />
-            </ProtectedLayout>
+            <PrivateRoute>
+              <ProtectedLayout>
+                <AdminImportExportPage />
+              </ProtectedLayout>
+            </PrivateRoute>
           }
         />
 
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route 
+          path="/" 
+          element={<RootRedirect />} 
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   )

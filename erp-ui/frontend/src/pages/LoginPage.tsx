@@ -79,9 +79,9 @@ export const LoginPage: React.FC = () => {
             <strong>Demo Credentials:</strong>
           </p>
           <ul className="text-xs text-gray-600 space-y-1">
-            <li>Admin: admin / Admin@123</li>
-            <li>Operator: operator_cutting / Op@123</li>
-            <li>QC: qc_inspector / QC@123</li>
+            <li>Admin: admin / Admin@123456</li>
+            <li>Operator: operator / Operator@123</li>
+            <li>QC: qc / QC@123</li>
           </ul>
         </div>
       </div>

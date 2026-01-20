@@ -336,3 +336,7 @@ class ActivityLogger:
         db.commit()
         
         return log
+
+
+# Alias for backward compatibility
+log_audit = AuditLogger.log_action

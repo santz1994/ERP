@@ -11,12 +11,12 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 from app.core.database import get_db
-from app.core.security import get_current_user
+from app.core.dependencies import get_current_user
 from app.core.permissions import require_module_access, ModuleName
 from app.core.models.users import User
 from app.core.models.warehouse import StockMove, StockQuant, StockLot
 from app.core.models.products import Product
-from app.shared.audit import log_action
+from app.shared.audit import AuditLogger
 
 router = APIRouter(prefix="/barcode", tags=["Barcode Scanner"])
 
@@ -230,10 +230,11 @@ async def receive_goods(
     await db.commit()
     
     # Audit log
-    await log_action(
-        db, current_user.id, "barcode_receive",
+    AuditLogger.log_action(
+        db, current_user, "RECEIVE", "WAREHOUSE",
         f"Received {request.qty} {product.uom} of {product.name} via barcode",
-        {"barcode": request.barcode, "qty": request.qty, "location": request.location, "lot": lot_number}
+        entity_type="StockQuant",
+        new_values={"barcode": request.barcode, "qty": request.qty, "location": request.location, "lot": lot_number}
     )
     
     return {
@@ -346,10 +347,11 @@ async def pick_goods(
     await db.commit()
     
     # Audit log
-    await log_action(
-        db, current_user.id, "barcode_pick",
+    AuditLogger.log_action(
+        db, current_user, "TRANSFER", "WAREHOUSE",
         f"Picked {request.qty} {product.uom} of {product.name} via barcode",
-        {"barcode": request.barcode, "qty": request.qty, "location": request.location, "lots": picked_lots}
+        entity_type="StockMove",
+        new_values={"barcode": request.barcode, "qty": request.qty, "location": request.location, "lots": picked_lots}
     )
     
     return {

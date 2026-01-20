@@ -13,7 +13,8 @@ from sqlalchemy import and_, func
 from app.core.models.transfer import TransferLog
 from app.core.models.warehouse import StockMove, StockQuant, Location
 from app.core.models.products import Product, ProductType
-from app.core.models.manufacturing import ManufacturingOrder, MOStatus
+from app.core.models.manufacturing import ManufacturingOrder
+from app.core.schemas import MOStatus
 from app.shared.audit import log_audit
 
 

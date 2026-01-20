@@ -62,9 +62,8 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     # Create new user with hashed password
     hashed_password = PasswordUtils.hash_password(user_data.password)
     
-    # Use first role from list or default
-    role_name = user_data.roles[0] if user_data.roles else "operator_cutting"
-    user_role = UserRoleModel[role_name.upper().replace("-", "_")]
+    # Use first role from list or default (already a UserRole enum)
+    user_role = user_data.roles[0] if user_data.roles else UserRoleModel.OPERATOR_CUT
     
     new_user = User(
         username=user_data.username,

@@ -2,7 +2,7 @@
 Audit Trail System
 Comprehensive logging of all system activities for ISO/IKEA compliance
 """
-from sqlalchemy import Column, BigInteger, String, Text, DateTime, ForeignKey, JSON, Index
+from sqlalchemy import Column, BigInteger, String, Text, DateTime, ForeignKey, JSON, Index, Enum
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import enum as py_enum
@@ -61,8 +61,8 @@ class AuditLog(Base):
     ip_address = Column(String(45), nullable=True)  # IPv6 support
     
     # What happened
-    action = Column(JSON(AuditAction), nullable=False, index=True)
-    module = Column(JSON(AuditModule), nullable=False, index=True)
+    action = Column(Enum(AuditAction), nullable=False, index=True)
+    module = Column(Enum(AuditModule), nullable=False, index=True)
     entity_type = Column(String(100), nullable=True, index=True)  # e.g., "ManufacturingOrder"
     entity_id = Column(BigInteger, nullable=True, index=True)  # ID of affected record
     
