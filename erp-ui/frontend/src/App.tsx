@@ -44,7 +44,19 @@ const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
 )
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuthStore()
+  const { user, initialized } = useAuthStore()
+  
+  // Show loading while checking auth state
+  if (!initialized) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
   
   if (!user) {
     return <Navigate to="/login" replace />
@@ -54,17 +66,25 @@ const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 }
 
 const RootRedirect: React.FC = () => {
-  const { user } = useAuthStore()
+  const { user, initialized } = useAuthStore()
+  
+  if (!initialized) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+  
   return user ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />
 }
 
 function App() {
-  const { loadUserFromStorage } = useAuthStore()
-
-  useEffect(() => {
-    loadUserFromStorage()
-  }, [])
-
+  // No need to call loadUserFromStorage anymore - auth is initialized in store
+  
   return (
     <Router>
       <Routes>

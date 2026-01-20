@@ -45,9 +45,21 @@ class UserResponse(BaseModel):
     username: str
     email: str
     full_name: str
-    roles: List[UserRole]
+    role: str  # Single role as string
     is_active: bool
     created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class AuthResponse(BaseModel):
+    """Authentication response with tokens and user data"""
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+    expires_in: int
+    user: UserResponse
 
 
 # ==================== PRODUCT SCHEMAS ====================

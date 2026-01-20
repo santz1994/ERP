@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from app.core.database import SessionLocal
 from app.core.security import PasswordUtils, TokenUtils, has_role
-from app.core.schemas import UserCreate, UserLogin, TokenResponse, UserResponse
+from app.core.schemas import UserCreate, UserLogin, TokenResponse, UserResponse, AuthResponse
 from app.core.dependencies import get_db, get_current_user
 from app.core.models.users import User, UserRole as UserRoleModel
 
@@ -90,7 +90,7 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     )
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post("/login", response_model=AuthResponse)
 async def login(credentials: UserLogin, db: Session = Depends(get_db)):
     """
     User login endpoint
@@ -178,11 +178,21 @@ async def login(credentials: UserLogin, db: Session = Depends(get_db)):
     
     db.commit()
     
-    return TokenResponse(
+    # Return tokens with user data
+    return AuthResponse(
         access_token=access_token,
         refresh_token=refresh_token,
         token_type="bearer",
-        expires_in=24 * 3600  # 24 hours in seconds
+        expires_in=24 * 3600,  # 24 hours in seconds
+        user=UserResponse(
+            id=user.id,
+            username=user.username,
+            email=user.email,
+            full_name=user.full_name,
+            role=user.role.value,
+            is_active=user.is_active,
+            created_at=user.created_at
+        )
     )
 
 

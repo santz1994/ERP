@@ -7,6 +7,7 @@ interface AuthState {
   token: string | null
   loading: boolean
   error: string | null
+  initialized: boolean
   
   // Actions
   login: (username: string, password: string) => Promise<void>
@@ -16,9 +17,26 @@ interface AuthState {
   loadUserFromStorage: () => void
 }
 
+// Initialize auth state from localStorage
+const initializeAuth = () => {
+  try {
+    const token = localStorage.getItem('access_token')
+    const userStr = localStorage.getItem('user')
+    
+    if (token && userStr) {
+      const user = JSON.parse(userStr)
+      return { user, token, initialized: true }
+    }
+  } catch (e) {
+    console.error('Failed to load auth from storage:', e)
+    localStorage.removeItem('user')
+    localStorage.removeItem('access_token')
+  }
+  return { user: null, token: null, initialized: true }
+}
+
 export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  token: null,
+  ...initializeAuth(),
   loading: false,
   error: null,
 
@@ -34,6 +52,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         user: response.user,
         token: response.access_token,
         loading: false,
+        initialized: true,
       })
     } catch (error: any) {
       const message = error.response?.data?.detail || 'Login failed'
@@ -58,11 +77,14 @@ export const useAuthStore = create<AuthState>((set) => ({
     if (token && userStr) {
       try {
         const user = JSON.parse(userStr)
-        set({ user, token })
+        set({ user, token, initialized: true })
       } catch (e) {
         localStorage.removeItem('user')
         localStorage.removeItem('access_token')
+        set({ initialized: true })
       }
+    } else {
+      set({ initialized: true })
     }
   },
 }))

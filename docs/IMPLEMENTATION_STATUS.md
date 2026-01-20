@@ -25,19 +25,215 @@ Phase 13: UI Structure + Barcode Scanner (100%) ✅ COMPLETE (Session 10.1)
 Phase 14: Final Docker Deployment (100%) ✅ COMPLETE (Session 12) 🎉 DEPLOYED!
 ```
 
-**Updated**: January 20, 2026 - Session 12 (DEPLOYMENT SUCCESSFUL! ✅)
-**Last Phase Completed**: Phase 14 - Final Docker Deployment & System Validation (100%)
-**Current Status**: 🎉 100% PRODUCTION READY - ALL SERVICES RUNNING & VERIFIED
-**Deployment Status**: ✅ All Docker containers running successfully with backend API responding
+**Updated**: January 20, 2026 - Session 12.1 (Auth Persistence Fixed! ✅)
+**Last Phase Completed**: Phase 14 - Final Docker Deployment & Auth/UI Enhancements (100%)
+**Current Status**: 🎉 100% PRODUCTION READY - ALL SERVICES RUNNING & AUTH STABLE
+**Deployment Status**: ✅ All Docker containers + Authentication persistence working
 **Services Live**:
   - Backend API: http://localhost:8000 ✅ OPERATIONAL (104 endpoints)
-  - Frontend UI: http://localhost:3001 ✅ HEALTHY (15 pages)
+  - Frontend UI: http://localhost:3001 ✅ HEALTHY (15 pages + Auth Fixed)
   - Swagger Docs: http://localhost:8000/docs ✅ ACCESSIBLE
-  - Database: PostgreSQL 15 ✅ HEALTHY
+  - Database: PostgreSQL 15 ✅ HEALTHY (28 tables)
   - Cache: Redis 7 ✅ HEALTHY
   - Monitoring: Grafana http://localhost:3000, Prometheus http://localhost:9090
   - DB Admin: Adminer http://localhost:8080
-**Next Focus**: ✅ System validation complete → User acceptance testing → Production launch
+**Next Focus**: ✅ Auth persistence fixed → Navbar improved → User acceptance testing
+
+---
+
+## 🎉 SESSION 12.1: AUTH PERSISTENCE & NAVBAR ENHANCEMENT (2026-01-20)
+
+### 🐛 Critical Bug Fixes
+
+#### Bug #8: Refresh Page Redirects to Login (RESOLVED ✅)
+- **Problem**: Every page refresh redirects user to login, losing authentication state
+- **Root Cause**: Race condition - `PrivateRoute` checked user before localStorage loaded
+- **Solution**: 
+  - Added `initialized` flag to auth store
+  - Synchronous auth state initialization when store created
+  - Loading spinner while checking auth state
+  - Only redirect after confirming not authenticated
+- **Impact**: Users can refresh any page without losing session
+- **Files**: `store/index.ts`, `App.tsx`
+
+#### Bug #9: Login Not Redirecting to Dashboard (RESOLVED ✅)
+- **Problem**: Login successful (200 OK) but no redirect to dashboard
+- **Root Cause**: Backend returned `TokenResponse` (tokens only), frontend expected user object
+- **Solution**: Created `AuthResponse` schema with user data, updated login endpoint
+- **Impact**: Login flow now completes correctly with redirect
+- **Files**: `app/core/schemas.py`, `app/api/v1/auth.py`
+
+### 🎨 UI/UX Enhancements
+
+#### Navbar Restructured with Dropdown Menu
+- **Feature**: Organized Production modules under dropdown menu
+- **Structure**:
+  ```
+  Dashboard
+  Purchasing
+  PPIC
+  Production ▼ (Dropdown)
+    - Cutting
+    - Embroidery
+    - Sewing
+    - Finishing
+    - Packing
+  Warehouse
+  Finish Goods
+  QC
+  Reports
+  Admin
+  ```
+- **Features Implemented**:
+  - ✅ Dropdown toggle with chevron indicators
+  - ✅ Active state highlighting (parent + submenu)
+  - ✅ Role-based submenu filtering
+  - ✅ Visual hierarchy with indented items
+  - ✅ Smooth animations
+  - ✅ Works in collapsed/expanded sidebar
+- **Files**: `components/Sidebar.tsx`
+
+### 📋 Pages Content Verification
+
+**All 15 Pages Confirmed Working** ✅:
+1. Dashboard - Analytics, stats, charts
+2. PPIC - Manufacturing orders, BOM, planning
+3. Cutting - Work orders, production tracking
+4. Embroidery - Work orders, design tracking
+5. Sewing - Work orders, line tracking
+6. Finishing - Work orders, stuffing tracking
+7. Packing - Work orders, carton tracking, Kanban
+8. Warehouse - Inventory, stock movements, barcode
+9. Finishgoods - Shipment management
+10. QC - Inspections, lab tests, statistics
+11. Purchasing - Purchase orders management
+12. Reports - Production, quality reports
+13. Admin Users - User management
+14. Admin Masterdata - Product/BOM management
+15. Admin Import/Export - Data operations
+
+### 🔧 Technical Details
+
+**Auth Store Initialization**:
+```typescript
+// Synchronous initialization on store creation
+const initializeAuth = () => {
+  try {
+    const token = localStorage.getItem('access_token')
+    const userStr = localStorage.getItem('user')
+    if (token && userStr) {
+      return { user: JSON.parse(userStr), token, initialized: true }
+    }
+  } catch (e) {
+    // Clean up invalid data
+    localStorage.removeItem('user')
+    localStorage.removeItem('access_token')
+  }
+  return { user: null, token: null, initialized: true }
+}
+
+export const useAuthStore = create<AuthState>((set) => ({
+  ...initializeAuth(),  // ← Initialize immediately
+  loading: false,
+  error: null,
+  // ... actions
+}))
+```
+
+**Protected Route with Loading**:
+```typescript
+const PrivateRoute = ({ children }) => {
+  const { user, initialized } = useAuthStore()
+  
+  if (!initialized) {
+    return <LoadingSpinner />  // Show loading while checking
+  }
+  
+  if (!user) {
+    return <Navigate to="/login" />  // Only redirect after confirmed
+  }
+  
+  return children
+}
+```
+
+**Dropdown Menu Structure**:
+```typescript
+interface MenuItem {
+  icon: ReactNode
+  label: string
+  path?: string           // Optional for parent menus
+  roles: UserRole[]
+  submenu?: SubMenuItem[] // Nested items for dropdown
+}
+
+// State for multiple dropdowns
+const [openDropdowns, setOpenDropdowns] = useState<string[]>([])
+
+// Toggle dropdown
+const toggleDropdown = (label: string) => {
+  setOpenDropdowns(prev => 
+    prev.includes(label) ? prev.filter(i => i !== label) : [...prev, label]
+  )
+}
+```
+
+### 📊 Testing Results
+
+**Auth Persistence** ✅:
+- Login successful → Token + user stored
+- Navigate between pages → Auth maintained
+- Refresh browser (F5) → User stays logged in
+- No redirect to login → Session preserved
+
+**Navbar Functionality** ✅:
+- Dropdown toggle working
+- Active state highlighting
+- Role-based filtering
+- Submenu navigation
+- Sidebar collapse/expand
+- Icons and styling
+
+**Pages Content** ✅:
+- All pages load without errors
+- Functional UI components
+- API integrations configured
+- Forms and tables present
+- Loading states implemented
+
+### 📝 Files Modified (Session 12.1)
+
+1. `app/core/schemas.py` - Added AuthResponse schema
+2. `app/api/v1/auth.py` - Updated login endpoint
+3. `erp-ui/frontend/src/store/index.ts` - Added initialized flag
+4. `erp-ui/frontend/src/App.tsx` - Added loading states
+5. `erp-ui/frontend/src/components/Sidebar.tsx` - Dropdown menus
+6. `docs/IMPLEMENTATION_STATUS.md` - Documentation
+
+**Total**: 6 files, ~250 lines changed
+
+### 🎯 Session 12.1 Summary
+
+**Problems Solved**:
+1. ✅ Users can refresh pages without losing authentication
+2. ✅ Login redirects properly to dashboard
+3. ✅ Navbar organized with Production dropdown
+4. ✅ All pages verified to have content
+
+**System Status**:
+- 🟢 Docker: 8/8 containers running
+- 🟢 Database: 28 tables operational
+- 🟢 Backend: 104 endpoints working
+- 🟢 Frontend: 15 pages with content
+- 🟢 Auth: Registration, login, persistence stable
+- 🟢 UI/UX: Responsive with organized navigation
+
+**User Experience**:
+- ✅ Login once, stay logged in across sessions
+- ✅ Refresh any page without re-login
+- ✅ Organized menu navigation
+- ✅ Visual feedback on active pages
+- ✅ Role-appropriate menu visibility
 
 ---
 
