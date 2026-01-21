@@ -3,13 +3,13 @@ FastAPI Dependencies
 Reusable dependency injection for routes
 """
 
-from typing import Generator, Optional
+from typing import Generator, Optional, List
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session
 from app.core.database import SessionLocal
 from app.core.security import TokenUtils
-from app.core.models.users import User
+from app.core.models.users import User, UserRole
 
 
 # Database session dependency
@@ -157,6 +157,43 @@ def require_any_role(*allowed_roles: str):
         )
     
     return check_any_role
+
+
+def require_roles(allowed_roles: List[UserRole]):
+    """
+    Dependency to require any role from UserRole enum list
+    
+    Args:
+        allowed_roles: List of UserRole enums allowed
+    
+    Returns:
+        Async function that validates role
+    
+    **Example**:
+    ```python
+    from app.core.role_requirements import EndpointRoleRequirements
+    
+    @router.post("/create-order")
+    def create_order(
+        user: User = Depends(require_roles(EndpointRoleRequirements.PPIC_CREATE))
+    ):
+        return {"message": "Order created"}
+    ```
+    """
+    async def check_roles(current_user: User = Depends(get_current_user)) -> User:
+        """Check if user has any of the allowed roles"""
+        if current_user.role in allowed_roles:
+            return current_user
+        
+        # Format role names for error message
+        role_names = [role.value for role in allowed_roles]
+        
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Insufficient permissions. Required roles: {', '.join(role_names)}. Your role: {current_user.role.value}"
+        )
+    
+    return check_roles
 
 
 def require_supervisor_or_admin():

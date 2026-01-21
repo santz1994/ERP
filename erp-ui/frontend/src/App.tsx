@@ -6,6 +6,8 @@ import { Sidebar } from '@/components/Sidebar'
 import { NotificationCenter } from '@/components/NotificationCenter'
 import { LoginPage } from '@/pages/LoginPage'
 import { DashboardPage } from '@/pages/DashboardPage'
+import { UnauthorizedPage } from '@/pages/UnauthorizedPage'
+import { canAccessModule } from '@/utils/roleGuard'
 import PPICPage from '@/pages/PPICPage'
 import CuttingPage from '@/pages/CuttingPage'
 import EmbroideryPage from '@/pages/EmbroideryPage'
@@ -21,6 +23,7 @@ import QCPage from '@/pages/QCPage'
 import AdminUserPage from '@/pages/AdminUserPage'
 import AdminMasterdataPage from '@/pages/AdminMasterdataPage'
 import AdminImportExportPage from '@/pages/AdminImportExportPage'
+import AuditTrailPage from '@/pages/AuditTrailPage'
 
 // Placeholder for other pages
 const PlaceholderPage = ({ title }: { title: string }) => (
@@ -43,11 +46,32 @@ const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
   </div>
 )
 
-const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuthStore()
+const PrivateRoute: React.FC<{ 
+  children: React.ReactNode
+  module?: string 
+}> = ({ children, module }) => {
+  const { user, initialized } = useAuthStore()
   
+  // Wait for auth initialization
+  if (!initialized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+  
+  // Check authentication
   if (!user) {
     return <Navigate to="/login" replace />
+  }
+  
+  // Check module access if specified
+  if (module && !canAccessModule(user.role, module)) {
+    return <Navigate to="/unauthorized" replace />
   }
   
   return <>{children}</>
@@ -69,12 +93,13 @@ function App() {
     <Router>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
         {/* Protected Routes */}
         <Route
           path="/dashboard"
           element={
-            <PrivateRoute>
+            <PrivateRoute module="dashboard">
               <ProtectedLayout>
                 <DashboardPage />
               </ProtectedLayout>
@@ -85,7 +110,7 @@ function App() {
         <Route
           path="/ppic"
           element={
-            <PrivateRoute>
+            <PrivateRoute module="ppic">
               <ProtectedLayout>
                 <PPICPage />
               </ProtectedLayout>
@@ -96,7 +121,7 @@ function App() {
         <Route
           path="/cutting"
           element={
-            <PrivateRoute>
+            <PrivateRoute module="cutting">
               <ProtectedLayout>
                 <CuttingPage />
               </ProtectedLayout>
@@ -107,7 +132,7 @@ function App() {
         <Route
           path="/embroidery"
           element={
-            <PrivateRoute>
+            <PrivateRoute module="embroidery">
               <ProtectedLayout>
                 <EmbroideryPage />
               </ProtectedLayout>
@@ -118,7 +143,7 @@ function App() {
         <Route
           path="/sewing"
           element={
-            <PrivateRoute>
+            <PrivateRoute module="sewing">
               <ProtectedLayout>
                 <SewingPage />
               </ProtectedLayout>
@@ -129,7 +154,7 @@ function App() {
         <Route
           path="/finishing"
           element={
-            <PrivateRoute>
+            <PrivateRoute module="finishing">
               <ProtectedLayout>
                 <FinishingPage />
               </ProtectedLayout>
@@ -140,7 +165,7 @@ function App() {
         <Route
           path="/packing"
           element={
-            <PrivateRoute>
+            <PrivateRoute module="packing">
               <ProtectedLayout>
                 <PackingPage />
               </ProtectedLayout>
@@ -151,7 +176,7 @@ function App() {
         <Route
           path="/purchasing"
           element={
-            <PrivateRoute>
+            <PrivateRoute module="purchasing">
               <ProtectedLayout>
                 <PurchasingPage />
               </ProtectedLayout>
@@ -162,7 +187,7 @@ function App() {
         <Route
           path="/finishgoods"
           element={
-            <PrivateRoute>
+            <PrivateRoute module="finishgoods">
               <ProtectedLayout>
                 <FinishgoodsPage />
               </ProtectedLayout>
@@ -173,7 +198,7 @@ function App() {
         <Route
           path="/kanban"
           element={
-            <PrivateRoute>
+            <PrivateRoute module="kanban">
               <ProtectedLayout>
                 <KanbanPage />
               </ProtectedLayout>
@@ -184,7 +209,7 @@ function App() {
         <Route
           path="/reports"
           element={
-            <PrivateRoute>
+            <PrivateRoute module="reports">
               <ProtectedLayout>
                 <ReportsPage />
               </ProtectedLayout>
@@ -195,7 +220,7 @@ function App() {
         <Route
           path="/quality"
           element={
-            <PrivateRoute>
+            <PrivateRoute module="qc">
               <ProtectedLayout>
                 <QCPage />
               </ProtectedLayout>
@@ -206,7 +231,7 @@ function App() {
         <Route
           path="/warehouse"
           element={
-            <PrivateRoute>
+            <PrivateRoute module="warehouse">
               <ProtectedLayout>
                 <WarehousePage />
               </ProtectedLayout>
@@ -226,7 +251,7 @@ function App() {
         <Route
           path="/admin/users"
           element={
-            <PrivateRoute>
+            <PrivateRoute module="admin">
               <ProtectedLayout>
                 <AdminUserPage />
               </ProtectedLayout>
@@ -237,7 +262,7 @@ function App() {
         <Route
           path="/admin/masterdata"
           element={
-            <PrivateRoute>
+            <PrivateRoute module="masterdata">
               <ProtectedLayout>
                 <AdminMasterdataPage />
               </ProtectedLayout>
@@ -248,9 +273,20 @@ function App() {
         <Route
           path="/admin/import-export"
           element={
-            <PrivateRoute>
+            <PrivateRoute module="import_export">
               <ProtectedLayout>
                 <AdminImportExportPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/admin/audit-trail"
+          element={
+            <PrivateRoute module="audit">
+              <ProtectedLayout>
+                <AuditTrailPage />
               </ProtectedLayout>
             </PrivateRoute>
           }
