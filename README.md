@@ -765,10 +765,10 @@ async def get_work_orders(
 
 | Control | Requirement | Implementation | Document |
 |---------|-------------|----------------|----------|
-| **A.9.2.3** | Management of privileged access rights | Developer production READ-ONLY, CI/CD for schema changes | [UAC_RBAC_COMPLIANCE.md](docs/UAC_RBAC_COMPLIANCE.md) § 1 |
+| **A.9.2.3** | Management of privileged access rights | Developer production READ-ONLY, CI/CD for schema changes | [UAC_RBAC_QUICK_REF.md](docs/09-Security/UAC_RBAC_QUICK_REF.md) § 1 |
 | **A.12.1.2** | Segregation of duties | PURCHASING cannot approve own POs, database constraint `created_by <> approved_by` | [SEGREGATION_OF_DUTIES_MATRIX.md](docs/SEGREGATION_OF_DUTIES_MATRIX.md) |
-| **A.12.4.1** | Event logging | 3 audit tables (user_activity_log, data_audit_log, financial_audit_log) | [UAC_RBAC_COMPLIANCE.md](docs/UAC_RBAC_COMPLIANCE.md) § 3 |
-| **A.9.4.1** | Information access restriction | UAC/RBAC matrix (22 roles × 15 modules), RLS for operators | [UAC_RBAC_REVIEW.md](docs/UAC_RBAC_REVIEW.md) |
+| **A.12.4.1** | Event logging | 3 audit tables (user_activity_log, data_audit_log, financial_audit_log) | [WEEK1_SECURITY_IMPLEMENTATION.md](docs/09-Security/WEEK1_SECURITY_IMPLEMENTATION.md) § 3 |
+| **A.9.4.1** | Information access restriction | UAC/RBAC matrix (22 roles × 15 modules), RLS for operators | [UAC_RBAC_QUICK_REF.md](docs/09-Security/UAC_RBAC_QUICK_REF.md) |
 
 ### SOX Compliance
 
@@ -1848,12 +1848,12 @@ def test_sod_violation_self_approval():
 
 | Document | Purpose | Location |
 |----------|---------|----------|
-| **Executive Summary** | Management overview, cost-benefit, decisions needed | [docs/EXECUTIVE_SUMMARY_SECURITY_REVIEW.md](docs/EXECUTIVE_SUMMARY_SECURITY_REVIEW.md) |
-| **ISO 27001 Compliance** | Security fixes, production floor UX, audit trail | [docs/UAC_RBAC_COMPLIANCE.md](docs/UAC_RBAC_COMPLIANCE.md) |
+| **RBAC Quick Reference** | 22 roles, module access matrix, permissions (master reference) | [docs/09-Security/UAC_RBAC_QUICK_REF.md](docs/09-Security/UAC_RBAC_QUICK_REF.md) |
+| **Week 1 Implementation** | Day-by-day action plan (security foundations) | [docs/09-Security/WEEK1_SECURITY_IMPLEMENTATION.md](docs/09-Security/WEEK1_SECURITY_IMPLEMENTATION.md) |
 | **SoD Matrix** | Maker-Checker workflows, testing checklist | [docs/SEGREGATION_OF_DUTIES_MATRIX.md](docs/SEGREGATION_OF_DUTIES_MATRIX.md) |
-| **Week 1 Implementation** | Day-by-day action plan (security foundations) | [docs/WEEK1_SECURITY_IMPLEMENTATION.md](docs/WEEK1_SECURITY_IMPLEMENTATION.md) |
-| **UAC/RBAC Review** | 22 roles, module access matrix, permissions | [docs/UAC_RBAC_REVIEW.md](docs/UAC_RBAC_REVIEW.md) |
-| **Security Docs Index** | Central navigation, FAQ, compliance checklist | [docs/SECURITY_DOCS_INDEX.md](docs/SECURITY_DOCS_INDEX.md) |
+| **Security Docs Index** | Central navigation, FAQ, compliance checklist | [docs/09-Security/SECURITY_DOCS_INDEX.md](docs/09-Security/SECURITY_DOCS_INDEX.md) |
+| **Audit Response** | Comprehensive IT consultant audit response | [docs/09-Security/SESSION_13_IT_CONSULTANT_AUDIT_RESPONSE.md](docs/09-Security/SESSION_13_IT_CONSULTANT_AUDIT_RESPONSE.md) |
+| **Archive Summary** | Historical docs (legacy security reviews) | [docs/08-Archive/ARCHIVE_SUMMARY_2026_01_21.md](docs/08-Archive/ARCHIVE_SUMMARY_2026_01_21.md) |
 
 ### Technical Documentation
 

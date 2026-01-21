@@ -286,7 +286,8 @@ Overall Progress: ████████░░░░░░░░░░░░ 3
 
 **Security**:
 - [docs/09-Security/DEPLOYMENT_INSTRUCTIONS.md](../09-Security/DEPLOYMENT_INSTRUCTIONS.md) - Deployment guide
-- [docs/09-Security/UAC_RBAC_COMPLIANCE.md](../09-Security/UAC_RBAC_COMPLIANCE.md) - Compliance guide
+- [docs/09-Security/UAC_RBAC_QUICK_REF.md](../09-Security/UAC_RBAC_QUICK_REF.md) - RBAC master reference
+- [docs/09-Security/SESSION_13_IT_CONSULTANT_AUDIT_RESPONSE.md](../09-Security/SESSION_13_IT_CONSULTANT_AUDIT_RESPONSE.md) - Audit response
 
 ---
 

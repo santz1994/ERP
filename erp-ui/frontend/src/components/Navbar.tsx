@@ -28,7 +28,7 @@ export const Navbar: React.FC = () => {
             <h1 className="ml-4 text-2xl font-bold text-brand-600">
               Quty Karunia ERP
             </h1>
-            {(user?.role === 'DEVELOPER' || user?.role === 'ADMIN' || user?.role === 'SUPERADMIN') && (
+            {(user?.role === 'Developer' || user?.role === 'Admin' || user?.role === 'Superadmin') && (
               <EnvironmentIndicator />
             )}
           </div>

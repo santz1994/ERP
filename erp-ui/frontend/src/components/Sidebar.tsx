@@ -19,9 +19,8 @@ import {
   ClipboardList,
   Shield,
 } from 'lucide-react'
-import { useAuthStore, useUIStore } from '@/store'
+import { useAuthStore, useUIStore, usePermissionStore } from '@/store'
 import { UserRole } from '@/types'
-import { useAnyPermission } from '@/hooks/usePermission'
 
 interface SubMenuItem {
   icon: React.ReactNode
@@ -158,27 +157,37 @@ const menuItems: MenuItem[] = [
 export const Sidebar: React.FC = () => {
   const { user } = useAuthStore()
   const { sidebarOpen } = useUIStore()
+  const { hasPermission } = usePermissionStore()
   const location = useLocation()
   const [openDropdowns, setOpenDropdowns] = useState<string[]>([])
 
   /**
    * Check if user has access to a menu item
    * Supports both permission-based (new) and role-based (old) checks
+   * 
+   * DEVELOPER and SUPERADMIN roles bypass all checks (full access)
    */
   const hasAccess = (item: MenuItem | SubMenuItem): boolean => {
     if (!user) return false
     
-    // Priority 1: Permission-based check (new system)
-    if (item.permissions && item.permissions.length > 0) {
-      return useAnyPermission(item.permissions)
+    // BYPASS: Developer and Superadmin have full access (matches backend)
+    // Backend: UserRole.DEVELOPER, UserRole.SUPERADMIN
+    if (user.role === 'Developer' || user.role === 'Superadmin') {
+      return true
     }
     
-    // Priority 2: Role-based check (backward compatible)
+    // Priority 1: PBAC - Permission-based check (primary system)
+    if (item.permissions && item.permissions.length > 0) {
+      // Check if user has ANY of the required permissions (OR logic)
+      return item.permissions.some(perm => hasPermission(perm))
+    }
+    
+    // Priority 2: RBAC - Role-based check (fallback for backward compatibility)
     if (item.roles && item.roles.length > 0) {
       return item.roles.includes(user.role as UserRole)
     }
     
-    // Default: no access
+    // Default: deny access if no permissions or roles defined
     return false
   }
 

@@ -17,7 +17,5 @@ def create_mo(db: Session, mo: schemas.MOCreate):
     db.refresh(db_mo)
     return db_mo
 
-def check_line_clearance(line_id: str):
-    # Logika QT-09: Cek apakah line kosong
-    # Query ke table transfer_logs
-    return True # Simulasi return True
+# REMOVED: check_line_clearance() - Unused standalone function
+# Use BaseProductionService.check_line_clearance() instead (app/core/base_production_service.py)

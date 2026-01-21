@@ -57,7 +57,12 @@ class Settings(BaseSettings):
     API_PREFIX: str = Field(default="/api/v1")
     
     # CORS
-    CORS_ORIGINS: List[str] = Field(default=["http://localhost:3000", "http://localhost:3001", "http://localhost:8080"])
+    CORS_ORIGINS: List[str] = Field(default=[
+        "http://localhost:3000", 
+        "http://localhost:3001", 
+        "http://localhost:5173",  # Vite default dev port
+        "http://localhost:8080"
+    ])
     CORS_ALLOW_CREDENTIALS: bool = Field(default=True)
     CORS_ALLOW_METHODS: list = Field(default=["*"])
     CORS_ALLOW_HEADERS: list = Field(default=["*"])

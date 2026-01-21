@@ -4,16 +4,19 @@ Production reports, QC reports, inventory reports
 """
 from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, func
-from datetime import datetime, timedelta
-from typing import Optional
+from sqlalchemy import and_, func, case
+from datetime import datetime
+from typing import Optional, List, Dict, Any
 import io
 from app.core.database import get_db
-from app.core.dependencies import get_current_user
-from app.core.permissions import require_permission, ModuleName, Permission
+from app.core.permissions import (
+    require_permission,
+    ModuleName,
+    Permission
+)
 from app.core.models.users import User
-from app.core.models.manufacturing import ManufacturingOrder, WorkOrder, WorkOrderStatus
-from app.core.models.quality import QCInspection, QCLabTest
+from app.core.models.manufacturing import WorkOrder
+from app.core.models.quality import QCInspection
 from app.core.models.products import Product
 from pydantic import BaseModel
 
@@ -44,11 +47,16 @@ def generate_excel_report(data: dict, title: str) -> bytes:
     """
     Generate Excel report using openpyxl
     
-    Returns: Excel file as bytes
+    Args:
+        data: Report data dict with headers, rows, etc.
+        title: Report title
+    
+    Returns:
+        Excel file as bytes
     """
     try:
         from openpyxl import Workbook
-        from opentxt.styles import Font, Alignment, PatternFill
+        from openpyxl.styles import Font, Alignment, PatternFill
         
         wb = Workbook()
         ws = wb.active
@@ -61,15 +69,22 @@ def generate_excel_report(data: dict, title: str) -> bytes:
         ws.merge_cells('A1:F1')
         
         # Report metadata
-        ws['A2'] = f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-        ws['A3'] = f"Period: {data.get('start_date', '')} to {data.get('end_date', '')}"
+        timestamp_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        ws['A2'] = f"Generated: {timestamp_str}"
+        start_date = data.get('start_date', '')
+        end_date = data.get('end_date', '')
+        ws['A3'] = f"Period: {start_date} to {end_date}"
         
         # Headers (row 5)
         headers = data.get('headers', [])
         for idx, header in enumerate(headers, start=1):
             cell = ws.cell(row=5, column=idx, value=header)
             cell.font = Font(bold=True)
-            cell.fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
+            cell.fill = PatternFill(
+                start_color="CCCCCC",
+                end_color="CCCCCC",
+                fill_type="solid"
+            )
         
         # Data rows
         rows = data.get('rows', [])
@@ -80,15 +95,17 @@ def generate_excel_report(data: dict, title: str) -> bytes:
         # Auto-adjust column widths
         for column in ws.columns:
             max_length = 0
-            column = [cell for cell in column]
-            for cell in column:
+            column_cells = [cell for cell in column]
+            for cell in column_cells:
                 try:
-                    if len(str(cell.value)) > max_length:
+                    if cell.value and len(str(cell.value)) > max_length:
                         max_length = len(str(cell.value))
-                except:
+                except (AttributeError, TypeError):
                     pass
-            adjusted_width = (max_length + 2)
-            ws.column_dimensions[column[0].column_letter].width = adjusted_width
+            adjusted_width = min(max_length + 2, 50)
+            if column_cells:
+                col_letter = column_cells[0].column_letter
+                ws.column_dimensions[col_letter].width = adjusted_width
         
         # Save to bytes
         output = io.BytesIO()
@@ -96,11 +113,14 @@ def generate_excel_report(data: dict, title: str) -> bytes:
         output.seek(0)
         return output.getvalue()
     
-    except ImportError:
+    except ImportError as exc:
         raise HTTPException(
             status_code=500,
-            detail="Excel generation not available. Install openpyxl: pip install openpyxl"
-        )
+            detail=(
+                "Excel generation not available. "
+                "Install openpyxl: pip install openpyxl"
+            )
+        ) from exc
 
 
 def generate_pdf_report(data: dict, title: str) -> bytes:
@@ -113,7 +133,10 @@ def generate_pdf_report(data: dict, title: str) -> bytes:
         from reportlab.lib.pagesizes import A4, landscape
         from reportlab.lib import colors
         from reportlab.lib.styles import getSampleStyleSheet
-        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+        from reportlab.platypus import (
+            SimpleDocTemplate, Table, TableStyle,
+            Paragraph, Spacer
+        )
         
         output = io.BytesIO()
         doc = SimpleDocTemplate(output, pagesize=landscape(A4))
@@ -126,8 +149,11 @@ def generate_pdf_report(data: dict, title: str) -> bytes:
         elements.append(Spacer(1, 20))
         
         # Metadata
-        meta_text = f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}<br/>"
-        meta_text += f"Period: {data.get('start_date', '')} to {data.get('end_date', '')}"
+        timestamp_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        meta_text = f"Generated: {timestamp_str}<br/>"
+        start_date = data.get('start_date', '')
+        end_date = data.get('end_date', '')
+        meta_text += f"Period: {start_date} to {end_date}"
         meta_para = Paragraph(meta_text, styles['Normal'])
         elements.append(meta_para)
         elements.append(Spacer(1, 20))
@@ -154,11 +180,14 @@ def generate_pdf_report(data: dict, title: str) -> bytes:
         output.seek(0)
         return output.getvalue()
     
-    except ImportError:
+    except ImportError as exc:
         raise HTTPException(
             status_code=500,
-            detail="PDF generation not available. Install reportlab: pip install reportlab"
-        )
+            detail=(
+                "PDF generation not available. "
+                "Install reportlab: pip install reportlab"
+            )
+        ) from exc
 
 
 # ========== ENDPOINTS ==========
@@ -166,7 +195,9 @@ def generate_pdf_report(data: dict, title: str) -> bytes:
 @router.post("/production")
 async def generate_production_report(
     request: ProductionReportRequest,
-    current_user: User = Depends(require_permission(ModuleName.REPORTS, Permission.CREATE)),
+    current_user: User = Depends(
+        require_permission(ModuleName.REPORTS, Permission.CREATE)
+    ),
     db: Session = Depends(get_db)
 ):
     """
@@ -203,14 +234,20 @@ async def generate_production_report(
         'title': 'Production Report',
         'start_date': request.start_date.strftime('%Y-%m-%d'),
         'end_date': request.end_date.strftime('%Y-%m-%d'),
-        'headers': ['Department', 'Total Orders', 'Total Output', 'Total Reject', 'Pass Rate %'],
+        'headers': [
+            'Department', 'Total Orders', 'Total Output',
+            'Total Reject', 'Pass Rate %'
+        ],
         'rows': []
     }
     
     for row in results:
         pass_rate = 0
         if row.total_output and row.total_output > 0:
-            pass_rate = ((row.total_output - (row.total_reject or 0)) / row.total_output) * 100
+            total_reject = row.total_reject or 0
+            pass_rate = (
+                (row.total_output - total_reject) / row.total_output
+            ) * 100
         
         report_data['rows'].append([
             row.department,
@@ -223,11 +260,16 @@ async def generate_production_report(
     # Generate report
     if request.format == 'excel':
         file_bytes = generate_excel_report(report_data, 'Production Report')
-        filename = f"production_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-        media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"production_report_{timestamp}.xlsx"
+        media_type = (
+            "application/vnd.openxmlformats-"
+            "officedocument.spreadsheetml.sheet"
+        )
     else:
         file_bytes = generate_pdf_report(report_data, 'Production Report')
-        filename = f"production_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"production_report_{timestamp}.pdf"
         media_type = "application/pdf"
     
     return Response(
@@ -242,7 +284,9 @@ async def generate_production_report(
 @router.post("/qc")
 async def generate_qc_report(
     request: QCReportRequest,
-    current_user: User = Depends(require_permission(ModuleName.REPORTS, Permission.CREATE)),
+    current_user: User = Depends(
+        require_permission(ModuleName.REPORTS, Permission.CREATE)
+    ),
     db: Session = Depends(get_db)
 ):
     """
@@ -260,8 +304,12 @@ async def generate_qc_report(
     query = db.query(
         QCInspection.type,
         func.count(QCInspection.id).label('total_inspections'),
-        func.sum(func.case((QCInspection.status == 'Pass', 1), else_=0)).label('passed'),
-        func.sum(func.case((QCInspection.status == 'Fail', 1), else_=0)).label('failed')
+        func.sum(
+            case((QCInspection.status == 'Pass', 1), else_=0)
+        ).label('passed'),
+        func.sum(
+            case((QCInspection.status == 'Fail', 1), else_=0)
+        ).label('failed')
     ).join(
         WorkOrder, QCInspection.work_order_id == WorkOrder.id
     ).filter(
@@ -281,12 +329,18 @@ async def generate_qc_report(
         'title': 'Quality Control Report',
         'start_date': request.start_date.strftime('%Y-%m-%d'),
         'end_date': request.end_date.strftime('%Y-%m-%d'),
-        'headers': ['Inspection Type', 'Total Inspections', 'Passed', 'Failed', 'Pass Rate %'],
+        'headers': [
+            'Inspection Type', 'Total Inspections',
+            'Passed', 'Failed', 'Pass Rate %'
+        ],
         'rows': []
     }
     
     for row in results:
-        pass_rate = (row.passed / row.total_inspections * 100) if row.total_inspections > 0 else 0
+        if row.total_inspections > 0:
+            pass_rate = (row.passed / row.total_inspections) * 100
+        else:
+            pass_rate = 0
         
         report_data['rows'].append([
             row.type,
@@ -299,11 +353,16 @@ async def generate_qc_report(
     # Generate report
     if request.format == 'excel':
         file_bytes = generate_excel_report(report_data, 'QC Report')
-        filename = f"qc_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-        media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"qc_report_{timestamp}.xlsx"
+        media_type = (
+            "application/vnd.openxmlformats-"
+            "officedocument.spreadsheetml.sheet"
+        )
     else:
         file_bytes = generate_pdf_report(report_data, 'QC Report')
-        filename = f"qc_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"qc_report_{timestamp}.pdf"
         media_type = "application/pdf"
     
     return Response(
@@ -317,8 +376,10 @@ async def generate_qc_report(
 
 @router.get("/inventory")
 async def generate_inventory_report(
-    format: str = "excel",
-    current_user: User = Depends(require_permission(ModuleName.REPORTS, Permission.VIEW)),
+    report_format: str = "excel",
+    current_user: User = Depends(
+        require_permission(ModuleName.REPORTS, Permission.VIEW)
+    ),
     db: Session = Depends(get_db)
 ):
     """
@@ -365,13 +426,20 @@ async def generate_inventory_report(
         ])
     
     # Generate report
-    if format == 'excel':
-        file_bytes = generate_excel_report(report_data, 'Inventory Report')
-        filename = f"inventory_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-        media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    if report_format == 'excel':
+        file_bytes = generate_excel_report(
+            report_data, 'Inventory Report'
+        )
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"inventory_report_{timestamp}.xlsx"
+        media_type = (
+            "application/vnd.openxmlformats-"
+            "officedocument.spreadsheetml.sheet"
+        )
     else:
         file_bytes = generate_pdf_report(report_data, 'Inventory Report')
-        filename = f"inventory_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"inventory_report_{timestamp}.pdf"
         media_type = "application/pdf"
     
     return Response(

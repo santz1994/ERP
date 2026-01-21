@@ -30,12 +30,18 @@ class PasswordUtils:
     
     @staticmethod
     def hash_password(password: str) -> str:
-        """Hash password using bcrypt"""
+        """Hash password using bcrypt (truncate to 72 bytes if needed)"""
+        # bcrypt has max 72 bytes limit
+        if len(password.encode('utf-8')) > 72:
+            password = password[:72]
         return pwd_context.hash(password)
     
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:
         """Verify password against hash"""
+        # bcrypt has max 72 bytes limit
+        if len(plain_password.encode('utf-8')) > 72:
+            plain_password = plain_password[:72]
         return pwd_context.verify(plain_password, hashed_password)
 
 

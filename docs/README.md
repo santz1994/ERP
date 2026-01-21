@@ -9,17 +9,17 @@
 ### 🔐 Security & Compliance (ISO 27001)
 Hasil review external auditor dan perbaikan security critical:
 
-1. **[EXECUTIVE_SUMMARY_SECURITY_REVIEW.md](./EXECUTIVE_SUMMARY_SECURITY_REVIEW.md)** 🔴 **BACA INI DULU!**
-   - Executive summary untuk management
-   - 7 critical security issues identified & fixed
-   - Cost-benefit analysis ($6K investment vs $170K+ risk)
-   - Week 1 implementation approval needed
+1. **[UAC_RBAC_QUICK_REF.md](./UAC_RBAC_QUICK_REF.md)** 🔴 **BACA INI DULU!**
+   - Consolidated RBAC quick reference (replaces compliance & review docs)
+   - 22 roles × 15 modules access matrix
+   - Permission levels (CRUD by role)
+   - Production-ready reference guide
 
-2. **[UAC_RBAC_COMPLIANCE.md](./UAC_RBAC_COMPLIANCE.md)** ⭐ **CRITICAL**
-   - ISO 27001 compliance implementation guide
-   - Critical security fixes (Developer prod access, SoD, audit trails)
-   - Production floor considerations (Quick Login, RLS, Kiosk Mode)
-   - Day 1 mandatory requirements
+2. **[WEEK1_SECURITY_IMPLEMENTATION.md](./WEEK1_SECURITY_IMPLEMENTATION.md)** ⭐ **CRITICAL**
+   - Day-by-day security hardening action plan (7 working days)
+   - Code examples for each day
+   - Testing procedures & success criteria
+   - Day 1 mandatory requirements before go-live
 
 3. **[SEGREGATION_OF_DUTIES_MATRIX.md](./SEGREGATION_OF_DUTIES_MATRIX.md)**
    - SoD compliance matrix (Maker-Checker separation)
@@ -33,10 +33,22 @@ Hasil review external auditor dan perbaikan security critical:
    - Testing procedures
    - Success criteria for go-live
 
-5. **[UAC_RBAC_REVIEW.md](./UAC_RBAC_REVIEW.md)** ✅ **UPDATED**
-   - Complete role definitions (22 roles, 5-level hierarchy)
-   - Module access matrix (15 modules × 22 roles)
-   - Permission levels (CRUD by role)
+5. **[SESSION_13_IT_CONSULTANT_AUDIT_RESPONSE.md](./09-Security/SESSION_13_IT_CONSULTANT_AUDIT_RESPONSE.md)** ✅ **COMPLETE**
+   - Comprehensive audit response with all security implementations
+   - ISO 27001 & SOX 404 compliance details
+   - Complete role definitions and permission matrix
+
+---
+
+### 📦 Archived Documentation
+Older security review documents have been archived with summaries preserved:
+- **[08-Archive/ARCHIVE_SUMMARY_2026_01_21.md](./08-Archive/ARCHIVE_SUMMARY_2026_01_21.md)** - Historical documentation archive
+  - EXECUTIVE_SUMMARY_SECURITY_REVIEW.md (superseded by Week 1 reports)
+  - UAC_RBAC_COMPLIANCE.md (consolidated into UAC_RBAC_QUICK_REF.md)
+  - UAC_RBAC_REVIEW.md (consolidated into UAC_RBAC_QUICK_REF.md)
+  - WEEK1_COMPLETION_REPORT.md (duplicate of Phase 1 report)
+  - SESSION_8_EMBROIDERY_MODULE.md (now in master docs)
+  - TESTING_GUIDE_SESSION_12.1.md (covered by Phase 5 Test Suite)
 
 ### 📋 Quick Reference
 - **Total Roles**: 22 (was 17 → 20 → 22)

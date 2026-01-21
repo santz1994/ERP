@@ -1,6 +1,6 @@
 import React from 'react';
 
-interface StatusCardProps {
+export interface StatusCardProps {
   status: 'ready' | 'processing' | 'warning' | 'error' | 'completed';
   title: string;
   details?: Record<string, string | number>;

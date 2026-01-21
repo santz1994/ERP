@@ -35,61 +35,41 @@ class PermissionService:
         self.cache_ttl = 300  # 5 minutes cache TTL
         
         # Role hierarchy: higher roles inherit permissions from lower roles
+        # 22 roles total (Session 13.1 - PBAC Implementation)
         self.role_hierarchy = {
-            UserRole.SUPERADMIN: [
-                UserRole.SUPERADMIN,
-                UserRole.ADMIN,
-                UserRole.DEVELOPER,
-                UserRole.PPIC_MANAGER,
-                UserRole.WAREHOUSE_SUPERVISOR,
-                UserRole.QC_INSPECTOR,
-                UserRole.SPV_CUTTING,
-                UserRole.SPV_SEWING,
-                UserRole.SPV_FINISHING,
-                UserRole.SPV_PACKING,
-                UserRole.OPERATOR_CUTTING,
-                UserRole.OPERATOR_SEWING,
-                UserRole.OPERATOR_FINISHING,
-                UserRole.OPERATOR_PACKING
-            ],
-            UserRole.ADMIN: [
-                UserRole.ADMIN,
-                UserRole.PPIC_MANAGER,
-                UserRole.WAREHOUSE_SUPERVISOR,
-                UserRole.QC_INSPECTOR,
-                UserRole.SPV_CUTTING,
-                UserRole.SPV_SEWING,
-                UserRole.SPV_FINISHING,
-                UserRole.SPV_PACKING,
-                UserRole.OPERATOR_CUTTING,
-                UserRole.OPERATOR_SEWING,
-                UserRole.OPERATOR_FINISHING,
-                UserRole.OPERATOR_PACKING
-            ],
+            # Level 0: System Development (bypass all checks in has_permission)
             UserRole.DEVELOPER: [UserRole.DEVELOPER],
-            UserRole.PPIC_MANAGER: [UserRole.PPIC_MANAGER],
-            UserRole.WAREHOUSE_SUPERVISOR: [UserRole.WAREHOUSE_SUPERVISOR],
+            
+            # Level 1: System Administration (bypass all checks in has_permission)
+            UserRole.SUPERADMIN: [UserRole.SUPERADMIN],
+            
+            # Level 2: Top Management (Approvers - inherit all operational permissions)
+            UserRole.MANAGER: [UserRole.MANAGER],
+            UserRole.FINANCE_MANAGER: [UserRole.FINANCE_MANAGER],
+            
+            # Level 3: System Admin (inherits all operational permissions)
+            UserRole.ADMIN: [UserRole.ADMIN],
+            
+            # Level 4: Department Management
+            UserRole.PPIC_MANAGER: [UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN],
+            UserRole.PPIC_ADMIN: [UserRole.PPIC_ADMIN],
+            UserRole.SPV_CUTTING: [UserRole.SPV_CUTTING, UserRole.OPERATOR_CUT, UserRole.OPERATOR_EMBRO],
+            UserRole.SPV_SEWING: [UserRole.SPV_SEWING, UserRole.OPERATOR_SEW],
+            UserRole.SPV_FINISHING: [UserRole.SPV_FINISHING, UserRole.OPERATOR_FINISH, UserRole.OPERATOR_PACK],
+            UserRole.WAREHOUSE_ADMIN: [UserRole.WAREHOUSE_ADMIN, UserRole.WAREHOUSE_OP],
+            UserRole.QC_LAB: [UserRole.QC_LAB, UserRole.QC_INSPECTOR],
+            UserRole.PURCHASING_HEAD: [UserRole.PURCHASING_HEAD, UserRole.PURCHASING],
+            UserRole.PURCHASING: [UserRole.PURCHASING],
+            
+            # Level 5: Operations (no inheritance)
+            UserRole.OPERATOR_CUT: [UserRole.OPERATOR_CUT],
+            UserRole.OPERATOR_EMBRO: [UserRole.OPERATOR_EMBRO],
+            UserRole.OPERATOR_SEW: [UserRole.OPERATOR_SEW],
+            UserRole.OPERATOR_FINISH: [UserRole.OPERATOR_FINISH],
+            UserRole.OPERATOR_PACK: [UserRole.OPERATOR_PACK],
             UserRole.QC_INSPECTOR: [UserRole.QC_INSPECTOR],
-            UserRole.SPV_CUTTING: [
-                UserRole.SPV_CUTTING,
-                UserRole.OPERATOR_CUTTING
-            ],
-            UserRole.SPV_SEWING: [
-                UserRole.SPV_SEWING,
-                UserRole.OPERATOR_SEWING
-            ],
-            UserRole.SPV_FINISHING: [
-                UserRole.SPV_FINISHING,
-                UserRole.OPERATOR_FINISHING
-            ],
-            UserRole.SPV_PACKING: [
-                UserRole.SPV_PACKING,
-                UserRole.OPERATOR_PACKING
-            ],
-            UserRole.OPERATOR_CUTTING: [UserRole.OPERATOR_CUTTING],
-            UserRole.OPERATOR_SEWING: [UserRole.OPERATOR_SEWING],
-            UserRole.OPERATOR_FINISHING: [UserRole.OPERATOR_FINISHING],
-            UserRole.OPERATOR_PACKING: [UserRole.OPERATOR_PACKING]
+            UserRole.WAREHOUSE_OP: [UserRole.WAREHOUSE_OP],
+            UserRole.SECURITY: [UserRole.SECURITY]
         }
     
     def _get_cache_key(self, user_id: int, permission_code: str) -> str:

@@ -63,8 +63,9 @@ def setup_audit_listeners():
     Call this during application startup
     """
     # Import here to avoid circular imports
-    from app.core.models.warehouse import PurchaseOrder, StockQuant, TransferLog
-    from app.core.models.manufacturing import ManufacturingOrder, EmbroideryWorkOrder
+    from app.core.models.warehouse import PurchaseOrder, StockQuant
+    from app.core.models.transfer import TransferLog
+    from app.core.models.manufacturing import ManufacturingOrder, WorkOrder
     from app.core.models.audit import AuditLog, AuditAction, AuditModule
     from app.core.database import SessionLocal
     
@@ -80,6 +81,9 @@ def setup_audit_listeners():
             
             values = get_model_dict(target)
             
+            # Get supplier name for description (supplier_id links to Partner)
+            supplier_name = f"Supplier#{target.supplier_id}"
+            
             audit_log = AuditLog(
                 user_id=getattr(target, '_audit_user_id', None),
                 username=getattr(target, '_audit_username', 'System'),
@@ -89,7 +93,7 @@ def setup_audit_listeners():
                 module=AuditModule.WAREHOUSE,
                 entity_type='PurchaseOrder',
                 entity_id=target.id,
-                description=f"Created Purchase Order #{target.po_number} for supplier {target.supplier_name}",
+                description=f"Created Purchase Order #{target.po_number} for {supplier_name}",
                 new_values=values,
                 request_method='POST',
                 request_path='/api/v1/purchasing/purchase-order'
@@ -191,6 +195,10 @@ def setup_audit_listeners():
             new_qty = changed['qty_on_hand']['new']
             qty_diff = new_qty - old_qty
             
+            # Get product code and location name for description
+            product_code = target.product.code if target.product else f"Product#{target.product_id}"
+            location_name = target.location.name if target.location else f"Location#{target.location_id}"
+            
             audit_log = AuditLog(
                 user_id=getattr(target, '_audit_user_id', None),
                 username=getattr(target, '_audit_username', 'System'),
@@ -200,7 +208,7 @@ def setup_audit_listeners():
                 module=AuditModule.WAREHOUSE,
                 entity_type='StockQuant',
                 entity_id=target.id,
-                description=f"Stock adjusted for {target.article_code} in {target.dept_name}: {old_qty} → {new_qty} ({qty_diff:+d})",
+                description=f"Stock adjusted for {product_code} in {location_name}: {old_qty} → {new_qty} ({qty_diff:+d})",
                 old_values={k: v['old'] for k, v in changed.items()},
                 new_values={k: v['new'] for k, v in changed.items()},
                 request_method='PUT',
@@ -256,6 +264,9 @@ def setup_audit_listeners():
             
             values = get_model_dict(target)
             
+            # Get product code for description
+            product_code = target.product.code if target.product else f"Product#{target.product_id}"
+            
             audit_log = AuditLog(
                 user_id=getattr(target, '_audit_user_id', None),
                 username=getattr(target, '_audit_username', 'System'),
@@ -265,7 +276,7 @@ def setup_audit_listeners():
                 module=AuditModule.PPIC,
                 entity_type='ManufacturingOrder',
                 entity_id=target.id,
-                description=f"Created Manufacturing Order for {target.article_code} ({target.qty_target} units)",
+                description=f"Created Manufacturing Order for {product_code} ({target.qty_planned} units)",
                 new_values=values,
                 request_method='POST',
                 request_path='/api/v1/ppic/manufacturing-orders'
@@ -288,12 +299,15 @@ def setup_audit_listeners():
             if not changed:
                 return
             
+            # Get product code for description
+            product_code = target.product.code if target.product else f"Product#{target.product_id}"
+            
             # Special handling for status changes
-            if 'status' in changed:
-                status_change = f"{changed['status']['old']} → {changed['status']['new']}"
-                description = f"Manufacturing Order {target.article_code} status: {status_change}"
+            if 'state' in changed:
+                status_change = f"{changed['state']['old']} → {changed['state']['new']}"
+                description = f"Manufacturing Order {product_code} status: {status_change}"
             else:
-                description = f"Updated Manufacturing Order {target.article_code}: {', '.join(changed.keys())}"
+                description = f"Updated Manufacturing Order {product_code}: {', '.join(changed.keys())}"
             
             audit_log = AuditLog(
                 user_id=getattr(target, '_audit_user_id', None),
@@ -319,12 +333,42 @@ def setup_audit_listeners():
     
     
     # ============================================================================
-    # EMBROIDERY WORK ORDER AUDIT (Production Line Traceability)
+    # WORK ORDER AUDIT (Production Line Traceability - All Departments)
     # ============================================================================
     
-    @event.listens_for(EmbroideryWorkOrder, 'after_update')
-    def log_embroidery_update(mapper, connection, target):
-        """Log embroidery work order status changes"""
+    @event.listens_for(WorkOrder, 'after_insert')
+    def log_work_order_create(mapper, connection, target):
+        """Log work order creation for all departments"""
+        try:
+            db = SessionLocal()
+            
+            values = get_model_dict(target)
+            
+            audit_log = AuditLog(
+                user_id=getattr(target, '_audit_user_id', None),
+                username=getattr(target, '_audit_username', 'System'),
+                user_role=getattr(target, '_audit_user_role', None),
+                ip_address=getattr(target, '_audit_ip_address', None),
+                action=AuditAction.CREATE,
+                module=AuditModule.PPIC,
+                entity_type='WorkOrder',
+                entity_id=target.id,
+                description=f"Created {target.department.value} Work Order #{target.id} (Input: {target.input_qty} units)",
+                new_values=values,
+                request_method='POST',
+                request_path='/api/v1/production/work-orders'
+            )
+            
+            db.add(audit_log)
+            db.commit()
+            db.close()
+        except Exception as e:
+            print(f"Audit logging error: {str(e)}")
+    
+    
+    @event.listens_for(WorkOrder, 'after_update')
+    def log_work_order_update(mapper, connection, target):
+        """Log work order status changes for all departments"""
         try:
             db = SessionLocal()
             
@@ -332,13 +376,13 @@ def setup_audit_listeners():
             if not changed:
                 return
             
-            # Track status changes (in_progress, completed, etc.)
+            # Track status changes
             if 'status' in changed:
-                description = f"Embroidery WO {target.id} status: {changed['status']['old']} → {changed['status']['new']}"
-            elif 'qty_completed' in changed:
-                description = f"Embroidery WO {target.id} progress: {changed['qty_completed']['new']} units completed"
+                description = f"{target.department.value} WO #{target.id} status: {changed['status']['old']} → {changed['status']['new']}"
+            elif 'output_qty' in changed:
+                description = f"{target.department.value} WO #{target.id} completed: {changed['output_qty']['new']} units"
             else:
-                description = f"Updated Embroidery WO {target.id}: {', '.join(changed.keys())}"
+                description = f"Updated {target.department.value} WO #{target.id}: {', '.join(changed.keys())}"
             
             audit_log = AuditLog(
                 user_id=getattr(target, '_audit_user_id', None),
@@ -346,14 +390,14 @@ def setup_audit_listeners():
                 user_role=getattr(target, '_audit_user_role', None),
                 ip_address=getattr(target, '_audit_ip_address', None),
                 action=AuditAction.UPDATE,
-                module=AuditModule.EMBROIDERY,
-                entity_type='EmbroideryWorkOrder',
+                module=AuditModule.PPIC,
+                entity_type='WorkOrder',
                 entity_id=target.id,
                 description=description,
                 old_values={k: v['old'] for k, v in changed.items()},
                 new_values={k: v['new'] for k, v in changed.items()},
                 request_method='PUT',
-                request_path=f'/api/v1/embroidery/work-orders/{target.id}'
+                request_path=f'/api/v1/production/work-orders/{target.id}'
             )
             
             db.add(audit_log)
@@ -368,4 +412,4 @@ def setup_audit_listeners():
     print("   - StockQuant: UPDATE (Inventory changes)")
     print("   - TransferLog: CREATE (Department transfers)")
     print("   - ManufacturingOrder: CREATE, UPDATE (Status tracking)")
-    print("   - EmbroideryWorkOrder: UPDATE (Production progress)")
+    print("   - WorkOrder: CREATE, UPDATE (All departments including Cutting, Embroidery, Sewing, Finishing, Packing)")

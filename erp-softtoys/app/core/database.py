@@ -24,18 +24,8 @@ engine = create_engine(
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# Import all models to register them with Base
-# This ensures tables are created when Base.metadata.create_all() is called
-from app.core.models import (
-    User,
-    Product, Category,
-    BOMHeader, BOMDetail,
-    ManufacturingOrder, WorkOrder, MaterialConsumption,
-    TransferLog, LineOccupancy,
-    Location, StockMove, StockQuant,
-    QCLabTest, QCInspection,
-    AlertLog, SegregasiAcknowledgement
-)
+# Note: Models are imported in app.main after Base is defined
+# This prevents circular import issues
 
 # Dependency injection for database sessions
 def get_db():

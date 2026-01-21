@@ -1,6 +1,6 @@
 import React from 'react';
 
-interface LargeDisplayProps {
+export interface LargeDisplayProps {
   label: string;
   value: string | number;
   size?: 'large' | 'xlarge';

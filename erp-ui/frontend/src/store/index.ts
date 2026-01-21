@@ -44,10 +44,18 @@ export const useAuthStore = create<AuthState>((set) => ({
   login: async (username: string, password: string) => {
     try {
       set({ loading: true, error: null })
+      console.log('[AuthStore] Starting login for:', username)
+      
       const response = await apiClient.login(username, password)
+      console.log('[AuthStore] Login response received:', { 
+        hasToken: !!response.access_token, 
+        hasUser: !!response.user,
+        userRole: response.user?.role 
+      })
       
       localStorage.setItem('access_token', response.access_token)
       localStorage.setItem('user', JSON.stringify(response.user))
+      console.log('[AuthStore] Tokens saved to localStorage')
       
       set({
         user: response.user,
@@ -55,6 +63,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         loading: false,
         initialized: true,
       })
+      console.log('[AuthStore] State updated with user data')
       
       // Load permissions after successful login
       const permStore = usePermissionStore.getState()
@@ -62,6 +71,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       console.log('[AuthStore] Login successful, permissions loaded')
       
     } catch (error: any) {
+      console.error('[AuthStore] Login error:', error)
       const message = error.response?.data?.detail || 'Login failed'
       set({ error: message, loading: false })
       throw error

@@ -3,6 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.database import engine, Base
 from app.core.config import settings
 from app.core.audit_middleware import AuditContextMiddleware
+
+# Import all models to register them with Base before creating tables
+# This must be done before Base.metadata.create_all()
+from app.core import models  # noqa: F401
+
 from app.api.v1 import (
     auth, ppic, warehouse, admin, websocket, 
     kanban, reports, import_export, embroidery,

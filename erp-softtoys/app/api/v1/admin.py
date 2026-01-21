@@ -7,13 +7,12 @@ Restricted to Admin role only
 from datetime import datetime
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.models.users import User, UserRole
-from app.core.dependencies import get_current_user, require_permission
+from app.core.dependencies import require_permission
 from app.core.security import PasswordUtils
-from app.core.schemas import UserResponse
 from app.core.base_production_service import BaseProductionService
 
 

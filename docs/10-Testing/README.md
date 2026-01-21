@@ -33,21 +33,22 @@
 
 ### 📖 Testing Guides
 
-3. **[TESTING_GUIDE_SESSION_12.1.md](TESTING_GUIDE_SESSION_12.1.md)** (9KB)
-   - **Purpose**: Session 12.1 testing guide
-   - **Audience**: QA team
-   - **Contains**: Test scenarios, setup instructions
-   - **Scope**: Session 12.1 features
-   - **Status**: ✅ Complete
-
-### 🚀 Quick Start
-
-4. **[TESTING_QUICK_START.md](TESTING_QUICK_START.md)** (5KB) ⭐
+3. **[TESTING_QUICK_START.md](TESTING_QUICK_START.md)** (5KB) ⭐
    - **Purpose**: Simplified testing workflow for quick validation
    - **Audience**: All roles (developers, QA, operators)
    - **Contains**: 5 critical browser tests, issue checklist, bug template
    - **Time to Complete**: 15-30 minutes
    - **Usage**: Quick smoke testing before deployment
+
+---
+
+### 📦 ARCHIVED (Historical Reference)
+
+**TESTING_GUIDE_SESSION_12.1.md** - Moved to [../08-Archive/](../08-Archive/)
+- **Reason**: Session-specific testing guide, now covered by comprehensive Phase 5 Test Suite
+- **Historical Value**: Documents auth persistence bug fix (Session 12.1)
+- **Superseded By**: `../03-Phase-Reports/PHASE_5_TEST_SUITE.md`
+- **Archive Summary**: [../08-Archive/ARCHIVE_SUMMARY_2026_01_21.md](../08-Archive/ARCHIVE_SUMMARY_2026_01_21.md)
 
 ---
 

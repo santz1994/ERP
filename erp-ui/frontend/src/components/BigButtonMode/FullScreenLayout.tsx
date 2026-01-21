@@ -1,6 +1,6 @@
 import React from 'react';
 
-interface FullScreenLayoutProps {
+export interface FullScreenLayoutProps {
   children: React.ReactNode;
   title?: string;
   showBackButton?: boolean;

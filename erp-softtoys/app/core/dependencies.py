@@ -1,6 +1,29 @@
 """
 FastAPI Dependencies
 Reusable dependency injection for routes
+
+ACCESS CONTROL STRATEGY (Session 13.1 - Week 3):
+==================================================
+
+✅ PRIMARY: PBAC (Permission-Based Access Control)
+   - Use: require_permission('module.action')
+   - Granular control: specific actions per user
+   - Redis cached (5-min TTL)
+   - Example: require_permission('cutting.create_wo')
+
+🔄 FALLBACK: RBAC (Role-Based Access Control)
+   - Use: require_role('role_name') or require_any_role()
+   - Backward compatible for legacy endpoints
+   - Example: require_role('admin')
+
+🚫 BYPASS ROLES (full system access):
+   - UserRole.DEVELOPER: System development & debugging
+   - UserRole.SUPERADMIN: System administration
+   
+MIGRATION PATH:
+   - New endpoints: Use require_permission() (PBAC)
+   - Legacy endpoints: Keep require_role() until migration
+   - Mixed: Use require_any_permission() for OR logic
 """
 
 from typing import Generator, Optional, List
@@ -197,7 +220,7 @@ def require_roles(allowed_roles: List[UserRole]):
     return check_roles
 
 
-def require_permission(permission_code: str):
+def require_permission(permission_code: str = None, permission_type: str = None):
     """
     PBAC Dependency: Require specific permission code
     
@@ -205,15 +228,27 @@ def require_permission(permission_code: str):
     
     Args:
         permission_code: Permission code (e.g., "cutting.create_wo", "admin.manage_users")
+                        OR ModuleName enum (for backward compatibility)
+        permission_type: Permission enum (VIEW, CREATE, etc.) - for backward compatibility only
     
     Returns:
         Async function that validates permission via PermissionService
     
-    **Example**:
+    **Example (new format)**:
     ```python
     @router.post("/cutting/work-orders")
     def create_work_order(
         user: User = Depends(require_permission("cutting.create_wo")),
+        db: Session = Depends(get_db)
+    ):
+        return {"message": "Work order created"}
+    ```
+    
+    **Example (old format - backward compatible)**:
+    ```python
+    @router.post("/cutting/work-orders")
+    def create_work_order(
+        user: User = Depends(require_permission(ModuleName.CUTTING, Permission.CREATE)),
         db: Session = Depends(get_db)
     ):
         return {"message": "Work order created"}
@@ -225,6 +260,16 @@ def require_permission(permission_code: str):
     - Role hierarchy support (supervisors can perform operator actions)
     - Custom user permissions (temporary elevated access)
     """
+    # Backward compatibility: convert old format to new format
+    if permission_type is not None:
+        # Old format: require_permission(ModuleName.X, Permission.Y)
+        module_name = str(permission_code.value if hasattr(permission_code, 'value') else permission_code).lower()
+        perm_name = str(permission_type.value if hasattr(permission_type, 'value') else permission_type).lower()
+        final_permission_code = f"{module_name}.{perm_name}"
+    else:
+        # New format: require_permission("module.action")
+        final_permission_code = permission_code
+    
     async def check_permission(
         current_user: User = Depends(get_current_user),
         db: Session = Depends(get_db)
@@ -233,13 +278,13 @@ def require_permission(permission_code: str):
         perm_service = get_permission_service()
         
         # Check permission with caching
-        if perm_service.has_permission(db, current_user, permission_code):
+        if perm_service.has_permission(db, current_user, final_permission_code):
             return current_user
         
         # Permission denied
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Insufficient permissions. Required: {permission_code}. User: {current_user.username} ({current_user.role.value})"
+            detail=f"Insufficient permissions. Required: {final_permission_code}. User: {current_user.username} ({current_user.role.value})"
         )
     
     return check_permission

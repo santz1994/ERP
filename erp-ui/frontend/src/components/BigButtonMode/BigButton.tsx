@@ -1,6 +1,6 @@
 import React from 'react';
 
-interface BigButtonProps {
+export interface BigButtonProps {
   onClick: () => void;
   disabled?: boolean;
   variant?: 'primary' | 'success' | 'danger' | 'warning' | 'secondary';

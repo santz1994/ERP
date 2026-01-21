@@ -255,9 +255,10 @@
 ## 🔗 QUICK LINKS
 
 - **Main Status**: [docs/IMPLEMENTATION_STATUS.md](../IMPLEMENTATION_STATUS.md)
-- **Security Compliance**: [09-Security/UAC_RBAC_COMPLIANCE.md](../09-Security/UAC_RBAC_COMPLIANCE.md)
+- **Security Compliance**: [09-Security/UAC_RBAC_QUICK_REF.md](../09-Security/UAC_RBAC_QUICK_REF.md)
 - **Deployment**: [09-Security/DEPLOYMENT_INSTRUCTIONS.md](../09-Security/DEPLOYMENT_INSTRUCTIONS.md)
 - **Testing Plan**: [10-Testing/PBAC_TEST_PLAN.md](../10-Testing/PBAC_TEST_PLAN.md)
+- **Archive Summary**: [08-Archive/ARCHIVE_SUMMARY_2026_01_21.md](../08-Archive/ARCHIVE_SUMMARY_2026_01_21.md)
 
 ---
 

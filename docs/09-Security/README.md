@@ -9,11 +9,11 @@
 
 ### 🔴 CRITICAL - Must Read
 
-1. **[UAC_RBAC_COMPLIANCE.md](UAC_RBAC_COMPLIANCE.md)** (16KB) ⭐
-   - **Purpose**: ISO 27001 compliance implementation guide
-   - **Audience**: Security team, Auditors, Management
-   - **Contains**: Mandatory Day 1 security requirements
-   - **Action**: Implement before production go-live
+1. **[UAC_RBAC_QUICK_REF.md](UAC_RBAC_QUICK_REF.md)** (5KB) ⭐⭐
+   - **Purpose**: Consolidated RBAC quick reference (master document)
+   - **Audience**: Developers, Security team, Auditors
+   - **Contains**: 22 roles, access matrix, permission levels
+   - **Action**: Use as primary reference for RBAC implementation
 
 2. **[DEPLOYMENT_INSTRUCTIONS.md](DEPLOYMENT_INSTRUCTIONS.md)** (12KB) 🔴
    - **Purpose**: Blue-Green deployment + PBAC migration guide
@@ -23,11 +23,11 @@
 
 ### 📊 Security Reviews & Reports
 
-3. **[EXECUTIVE_SUMMARY_SECURITY_REVIEW.md](EXECUTIVE_SUMMARY_SECURITY_REVIEW.md)** (10KB)
-   - **Purpose**: Executive summary for management
-   - **Audience**: C-level, Management
-   - **Contains**: Security status, risks, recommendations
-   - **Time to Read**: 5-10 minutes
+3. **[WEEK1_SECURITY_IMPLEMENTATION.md](WEEK1_SECURITY_IMPLEMENTATION.md)** (Active)
+   - **Purpose**: Week 1 security hardening detailed implementation
+   - **Audience**: Security team, Developers
+   - **Contains**: Day-by-day action plan, code examples, testing
+   - **Time to Read**: 20-25 minutes
 
 4. **[SECURITY_IMPLEMENTATION_COMPLETE_2026-01-21.md](SECURITY_IMPLEMENTATION_COMPLETE_2026-01-21.md)** (21KB)
    - **Purpose**: Complete security implementation report (latest)
@@ -41,6 +41,19 @@
    - **Contains**: Phase 15 progress
    - **Status**: Superseded by 2026-01-21 report
 
+---
+
+### 📦 ARCHIVED (Historical Reference)
+
+**Location**: [../08-Archive/ARCHIVE_SUMMARY_2026_01_21.md](../08-Archive/ARCHIVE_SUMMARY_2026_01_21.md)
+
+Following documents moved to archive with summaries preserved:
+- **EXECUTIVE_SUMMARY_SECURITY_REVIEW.md** - Superseded by Week 1 reports
+- **UAC_RBAC_COMPLIANCE.md** - Consolidated into UAC_RBAC_QUICK_REF.md
+- **UAC_RBAC_REVIEW.md** - Consolidated into UAC_RBAC_QUICK_REF.md
+
+**Why Archived**: Content consolidated into comprehensive master documents. Historical value preserved for audit trail and project history.
+
 ### 📖 Security Indexes & References
 
 6. **[SECURITY_DOCS_INDEX.md](SECURITY_DOCS_INDEX.md)** (9KB)
@@ -51,17 +64,17 @@
 
 ### 🎯 RBAC/PBAC Documentation
 
-7. **[UAC_RBAC_REVIEW.md](UAC_RBAC_REVIEW.md)** (30KB) ⭐⭐
-   - **Purpose**: Complete role definitions (22 roles, 5-level hierarchy)
+6. **[UAC_RBAC_QUICK_REF.md](UAC_RBAC_QUICK_REF.md)** (Master) ⭐⭐
+   - **Purpose**: Complete consolidated RBAC reference
    - **Audience**: Developers, Security team, Auditors
-   - **Contains**: All role definitions, permission levels, CRUD matrix
+   - **Contains**: 22 roles (5-level hierarchy), permission matrix, CRUD levels
    - **Time to Read**: 15-20 minutes
 
-8. **[UAC_RBAC_QUICK_REF.md](UAC_RBAC_QUICK_REF.md)** (5KB)
-   - **Purpose**: Quick reference for developers
-   - **Audience**: Developers
-   - **Contains**: Role hierarchy, common patterns
-   - **Time to Read**: 2-3 minutes
+7. **[SESSION_13_IT_CONSULTANT_AUDIT_RESPONSE.md](SESSION_13_IT_CONSULTANT_AUDIT_RESPONSE.md)**
+   - **Purpose**: Comprehensive audit response documentation
+   - **Audience**: Auditors, Security team
+   - **Contains**: All security implementations, audit findings, responses
+   - **Time to Read**: 25-30 minutes
 
 ### 📋 Compliance Matrices
 
@@ -77,15 +90,16 @@
 
 ### For New Security Team Members
 1. Read **SECURITY_DOCS_INDEX.md** (navigation)
-2. Read **UAC_RBAC_QUICK_REF.md** (5 min)
-3. Read **UAC_RBAC_COMPLIANCE.md** (critical requirements)
-4. Review **SEGREGATION_OF_DUTIES_MATRIX.md** (SoD rules)
+2. Read **UAC_RBAC_QUICK_REF.md** (15-20 min - master reference)
+3. Review **SEGREGATION_OF_DUTIES_MATRIX.md** (SoD rules)
+4. Check **WEEK1_SECURITY_IMPLEMENTATION.md** (implementation details)
 
 ### For Auditors
-1. Start with **EXECUTIVE_SUMMARY_SECURITY_REVIEW.md**
-2. Deep dive into **UAC_RBAC_REVIEW.md** (role definitions)
+1. Start with **SESSION_13_IT_CONSULTANT_AUDIT_RESPONSE.md** (comprehensive)
+2. Deep dive into **UAC_RBAC_QUICK_REF.md** (role definitions)
 3. Review **SEGREGATION_OF_DUTIES_MATRIX.md** (compliance)
 4. Check **SECURITY_IMPLEMENTATION_COMPLETE_2026-01-21.md** (status)
+5. Historical: **[../08-Archive/ARCHIVE_SUMMARY_2026_01_21.md](../08-Archive/ARCHIVE_SUMMARY_2026_01_21.md)**
 
 ### For DevOps/Deployment
 1. **MUST READ**: **DEPLOYMENT_INSTRUCTIONS.md**
@@ -94,9 +108,9 @@
 4. Test rollback procedure
 
 ### For Developers
-1. Quick ref: **UAC_RBAC_QUICK_REF.md**
-2. Role details: **UAC_RBAC_REVIEW.md**
-3. Deployment: **DEPLOYMENT_INSTRUCTIONS.md**
+1. Quick ref: **UAC_RBAC_QUICK_REF.md** (master document)
+2. Deployment: **DEPLOYMENT_INSTRUCTIONS.md**
+3. SoD rules: **SEGREGATION_OF_DUTIES_MATRIX.md**
 
 ---
 
