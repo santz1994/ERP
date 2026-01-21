@@ -6,6 +6,7 @@ Handles sorting, packaging, and shipping mark generation
 from sqlalchemy.orm import Session
 from app.core.models.manufacturing import WorkOrder, ManufacturingOrder, Department, WorkOrderStatus
 from app.core.models.products import Product
+from app.core.base_production_service import BaseProductionService
 from decimal import Decimal
 from datetime import datetime
 from typing import Optional
@@ -13,7 +14,7 @@ from fastapi import HTTPException
 import uuid
 
 
-class PackingService:
+class PackingService(BaseProductionService):
     """Business logic for packing department operations"""
     
     @staticmethod
@@ -31,11 +32,9 @@ class PackingService:
         - Prepare for cartonization
         """
         
-        wo = db.query(WorkOrder).filter(WorkOrder.id == work_order_id).first()
-        if not wo:
-            raise HTTPException(status_code=404, detail=f"Work order {work_order_id} not found")
+        wo = BaseProductionService.get_work_order(db, work_order_id)
         
-        mo = db.query(ManufacturingOrder).filter(ManufacturingOrder.id == wo.mo_id).first()
+        mo = BaseProductionService.get_manufacturing_order(db, wo.mo_id)
         
         return {
             "work_order_id": work_order_id,
@@ -65,9 +64,7 @@ class PackingService:
         - Record carton count and packing details
         """
         
-        wo = db.query(WorkOrder).filter(WorkOrder.id == work_order_id).first()
-        if not wo:
-            raise HTTPException(status_code=404, detail=f"Work order {work_order_id} not found")
+        wo = BaseProductionService.get_work_order(db, work_order_id)
         
         # Validate carton count
         expected_cartons = qty_packaged / pcs_per_carton
@@ -109,11 +106,9 @@ class PackingService:
         - Print physical label
         """
         
-        wo = db.query(WorkOrder).filter(WorkOrder.id == work_order_id).first()
-        if not wo:
-            raise HTTPException(status_code=404, detail=f"Work order {work_order_id} not found")
+        wo = BaseProductionService.get_work_order(db, work_order_id)
         
-        mo = db.query(ManufacturingOrder).filter(ManufacturingOrder.id == wo.mo_id).first()
+        mo = BaseProductionService.get_manufacturing_order(db, wo.mo_id)
         
         # Generate unique mark ID
         mark_id = f"MARK-{mo.batch_number}-{carton_number:04d}"
@@ -151,15 +146,13 @@ class PackingService:
         - Prepare for logistics/FG warehouse
         """
         
-        wo = db.query(WorkOrder).filter(WorkOrder.id == work_order_id).first()
-        if not wo:
-            raise HTTPException(status_code=404, detail=f"Work order {work_order_id} not found")
+        wo = BaseProductionService.get_work_order(db, work_order_id)
         
         wo.output_qty = total_pcs
         wo.status = WorkOrderStatus.FINISHED
         wo.end_time = datetime.utcnow()
         
-        mo = db.query(ManufacturingOrder).filter(ManufacturingOrder.id == wo.mo_id).first()
+        mo = BaseProductionService.get_manufacturing_order(db, wo.mo_id)
         
         db.commit()
         

@@ -45,13 +45,8 @@ class CuttingService(BaseProductionService):
         - Return material issue slip info
         """
         
-        # Fetch work order
-        wo = db.query(WorkOrder).filter(WorkOrder.id == work_order_id).first()
-        if not wo:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Work order {work_order_id} not found"
-            )
+        # Fetch work order using centralized helper
+        wo = cls.get_work_order(db, work_order_id)
         
         if wo.status != WorkOrderStatus.PENDING:
             raise HTTPException(
@@ -211,9 +206,7 @@ class CuttingService(BaseProductionService):
         - Await SPV approval
         """
         
-        wo = db.query(WorkOrder).filter(WorkOrder.id == work_order_id).first()
-        if not wo:
-            raise HTTPException(status_code=404, detail=f"Work order {work_order_id} not found")
+        wo = cls.get_work_order(db, work_order_id)
         
         # Create waste report
         waste_report = {
@@ -288,7 +281,8 @@ class CuttingService(BaseProductionService):
         if not target_dept:
             raise HTTPException(status_code=400, detail=f"Invalid destination department: {destination_dept}")
         
-        # Delegate to base class
+        # Delegate to base class (DRY principle)
+        # Base class handles: transfer log creation, line occupancy, handshake protocol
         return cls.create_transfer_log(
             db=db,
             work_order_id=work_order_id,
@@ -296,34 +290,3 @@ class CuttingService(BaseProductionService):
             qty_to_transfer=transfer_qty,
             operator_id=user_id
         )
-        
-        # Update line occupancy
-        line_occ = db.query(LineOccupancy).filter(
-            LineOccupancy.dept_name == target_dept
-        ).first()
-        if line_occ:
-            line_occ.status = "Occupied"
-            line_occ.current_article = wo.product.code
-            line_occ.current_batch = mo.batch_number
-        
-        db.commit()
-        
-        return {
-            "transfer_slip": {
-                "slip_number": f"TSLIP-{mo.batch_number}-{transfer.id}",
-                "timestamp": datetime.utcnow().isoformat(),
-                "from_dept": "Cutting",
-                "to_dept": destination_dept,
-                "article_code": wo.product.code,
-                "batch_number": mo.batch_number,
-                "qty_sent": float(transfer_qty),
-                "status": "LOCKED",
-                "handshake_protocol": "QT-09 (Awaiting ACCEPT from receiving dept)"
-            },
-            "handshake_info": {
-                "stock_locked": True,
-                "lock_time": datetime.utcnow().isoformat(),
-                "lock_reason": "Digital Handshake - Awaiting receiving department ACCEPT",
-                "next_action": f"Operator in {destination_dept} scans transfer slip to ACCEPT"
-            }
-        }

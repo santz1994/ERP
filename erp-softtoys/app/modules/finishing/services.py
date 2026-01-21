@@ -92,9 +92,7 @@ class FinishingService(BaseProductionService):
         - Record qty completed
         """
         
-        wo = db.query(WorkOrder).filter(WorkOrder.id == work_order_id).first()
-        if not wo:
-            raise HTTPException(status_code=404, detail=f"Work order {work_order_id} not found")
+        wo = BaseProductionService.get_work_order(db, work_order_id)
         
         return {
             "work_order_id": work_order_id,
@@ -121,9 +119,7 @@ class FinishingService(BaseProductionService):
         - Groom/straighten product
         """
         
-        wo = db.query(WorkOrder).filter(WorkOrder.id == work_order_id).first()
-        if not wo:
-            raise HTTPException(status_code=404, detail=f"Work order {work_order_id} not found")
+        wo = BaseProductionService.get_work_order(db, work_order_id)
         
         return {
             "work_order_id": work_order_id,
@@ -152,9 +148,7 @@ class FinishingService(BaseProductionService):
         This is a **CRITICAL QC POINT** - IKEA requirement for safety
         """
         
-        wo = db.query(WorkOrder).filter(WorkOrder.id == work_order_id).first()
-        if not wo:
-            raise HTTPException(status_code=404, detail=f"Work order {work_order_id} not found")
+        wo = BaseProductionService.get_work_order(db, work_order_id)
         
         # Create QC record
         qc = QCInspection(
@@ -209,9 +203,7 @@ class FinishingService(BaseProductionService):
         - If fail → repair (Step 445)
         """
         
-        wo = db.query(WorkOrder).filter(WorkOrder.id == work_order_id).first()
-        if not wo:
-            raise HTTPException(status_code=404, detail=f"Work order {work_order_id} not found")
+        wo = BaseProductionService.get_work_order(db, work_order_id)
         
         result = {
             "work_order_id": work_order_id,
@@ -247,11 +239,9 @@ class FinishingService(BaseProductionService):
         - This is the point where product becomes "Finish Good"
         """
         
-        wo = db.query(WorkOrder).filter(WorkOrder.id == work_order_id).first()
-        if not wo:
-            raise HTTPException(status_code=404, detail=f"Work order {work_order_id} not found")
+        wo = BaseProductionService.get_work_order(db, work_order_id)
         
-        mo = db.query(ManufacturingOrder).filter(ManufacturingOrder.id == wo.mo_id).first()
+        mo = BaseProductionService.get_manufacturing_order(db, wo.mo_id)
         
         # Get product codes
         wip_product = db.query(Product).filter(Product.id == wip_product_id).first()

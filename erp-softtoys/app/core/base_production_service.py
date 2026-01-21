@@ -167,6 +167,121 @@ class BaseProductionService(ABC):
             line.current_article = None
             line.cleared_at = datetime.utcnow()
     
+    # ========== HELPER METHODS FOR DUPLICATE QUERY ELIMINATION ==========
+    # These methods eliminate 20+ instances of repeated db.query patterns
+    # across cutting/sewing/finishing/packing/quality services and routers.
+    # Centralization improves maintainability and error handling consistency.
+    
+    @staticmethod
+    def get_work_order(
+        db: Session,
+        work_order_id: int
+    ) -> WorkOrder:
+        """
+        Get work order by ID with centralized error handling.
+        
+        Eliminates 20+ duplicate instances of:
+            db.query(WorkOrder).filter(WorkOrder.id == work_order_id).first()
+        
+        Args:
+            db: Database session
+            work_order_id: Work order ID to retrieve
+        
+        Returns:
+            WorkOrder object
+        
+        Raises:
+            HTTPException 404 if work order not found
+        """
+        wo = db.query(WorkOrder).filter(
+            WorkOrder.id == work_order_id
+        ).first()
+        
+        if not wo:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Work order {work_order_id} not found"
+            )
+        
+        return wo
+    
+    @staticmethod
+    def get_manufacturing_order(
+        db: Session,
+        mo_id: int
+    ) -> ManufacturingOrder:
+        """
+        Get manufacturing order by ID with centralized error handling.
+        
+        Eliminates duplicate instances of:
+            db.query(ManufacturingOrder).filter(ManufacturingOrder.id == mo_id).first()
+        
+        Args:
+            db: Database session
+            mo_id: Manufacturing order ID to retrieve
+        
+        Returns:
+            ManufacturingOrder object
+        
+        Raises:
+            HTTPException 404 if manufacturing order not found
+        """
+        mo = db.query(ManufacturingOrder).filter(
+            ManufacturingOrder.id == mo_id
+        ).first()
+        
+        if not mo:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Manufacturing order {mo_id} not found"
+            )
+        
+        return mo
+    
+    @staticmethod
+    def get_work_order_optional(
+        db: Session,
+        work_order_id: int
+    ) -> Optional[WorkOrder]:
+        """
+        Get work order by ID, returning None if not found (no exception).
+        
+        Use this variant when you need to handle missing WO gracefully
+        without raising an exception.
+        
+        Args:
+            db: Database session
+            work_order_id: Work order ID to retrieve
+        
+        Returns:
+            WorkOrder object or None
+        """
+        return db.query(WorkOrder).filter(
+            WorkOrder.id == work_order_id
+        ).first()
+    
+    @staticmethod
+    def get_manufacturing_order_optional(
+        db: Session,
+        mo_id: int
+    ) -> Optional[ManufacturingOrder]:
+        """
+        Get manufacturing order by ID, returning None if not found (no exception).
+        
+        Use this variant when you need to handle missing MO gracefully
+        without raising an exception.
+        
+        Args:
+            db: Database session
+            mo_id: Manufacturing order ID to retrieve
+        
+        Returns:
+            ManufacturingOrder object or None
+        """
+        return db.query(ManufacturingOrder).filter(
+            ManufacturingOrder.id == mo_id
+        ).first()
+    
     @classmethod
     def check_line_clearance(
         cls,

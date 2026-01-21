@@ -9,6 +9,7 @@ from decimal import Decimal
 from typing import List
 
 from app.core.dependencies import get_db, require_permission
+from app.core.base_production_service import BaseProductionService
 from app.core.models.users import User
 from app.modules.sewing.models import (
     AcceptTransferRequest, ValidateInputRequest, ProcessSewingStepRequest,
@@ -281,9 +282,7 @@ async def get_sewing_work_order_status(
     """
     from app.core.models.manufacturing import WorkOrder
     
-    wo = db.query(WorkOrder).filter(WorkOrder.id == work_order_id).first()
-    if not wo:
-        raise HTTPException(status_code=404, detail="Work order not found")
+    wo = BaseProductionService.get_work_order(db, work_order_id)
     
     return SewingWorkOrderResponse(
         id=wo.id,

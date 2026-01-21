@@ -10,6 +10,7 @@ from typing import List
 
 from app.core.dependencies import get_db, require_permission
 from app.core.models.users import User
+from app.core.base_production_service import BaseProductionService
 from app.modules.packing.models import (
     SortByDestinationRequest, PackageIntoCartonRequest,
     GenerateShippingMarkRequest, PackingWorkOrderResponse, ShippingMarkResponse
@@ -207,9 +208,7 @@ async def get_packing_work_order_status(
     """
     from app.core.models.manufacturing import WorkOrder
     
-    wo = db.query(WorkOrder).filter(WorkOrder.id == work_order_id).first()
-    if not wo:
-        raise HTTPException(status_code=404, detail="Work order not found")
+    wo = BaseProductionService.get_work_order(db, work_order_id)
     
     return PackingWorkOrderResponse(
         id=wo.id,

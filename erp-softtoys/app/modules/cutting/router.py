@@ -11,6 +11,7 @@ from datetime import datetime
 
 from app.core.dependencies import get_db, require_permission
 from app.core.models.users import User
+from app.core.base_production_service import BaseProductionService
 from app.modules.cutting.models import (
     MaterialIssueRequest, StartCuttingRequest, CompleteCuttingRequest,
     ShortageHandlingRequest, LineTransferRequest, CuttingWorkOrderResponse,
@@ -64,9 +65,7 @@ async def start_cutting_operation(
     """
     from app.core.models.manufacturing import WorkOrder, WorkOrderStatus
     
-    wo = db.query(WorkOrder).filter(WorkOrder.id == request.work_order_id).first()
-    if not wo:
-        raise HTTPException(status_code=404, detail="Work order not found")
+    wo = BaseProductionService.get_work_order(db, request.work_order_id)
     
     wo.status = WorkOrderStatus.RUNNING
     wo.start_time = datetime.utcnow()
@@ -248,9 +247,7 @@ async def get_cutting_work_order_status(
     """
     from app.core.models.manufacturing import WorkOrder
     
-    wo = db.query(WorkOrder).filter(WorkOrder.id == work_order_id).first()
-    if not wo:
-        raise HTTPException(status_code=404, detail="Work order not found")
+    wo = BaseProductionService.get_work_order(db, work_order_id)
     
     return CuttingWorkOrderResponse(
         id=wo.id,

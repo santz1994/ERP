@@ -8,13 +8,14 @@ from sqlalchemy import and_, desc
 from app.core.models.quality import QCLabTest, QCInspection, TestType, TestResult, QCInspectionType, QCStatus
 from app.core.models.manufacturing import WorkOrder, ManufacturingOrder, Department, WorkOrderStatus
 from app.core.models.products import Product
+from app.core.base_production_service import BaseProductionService
 from decimal import Decimal
 from datetime import datetime
 from typing import Optional, List, Tuple, Dict
 from fastapi import HTTPException
 
 
-class QualityService:
+class QualityService(BaseProductionService):
     """Business logic for quality control operations"""
     
     @staticmethod
@@ -111,9 +112,7 @@ class QualityService:
         Records pass/fail status with defect tracking
         """
         
-        wo = db.query(WorkOrder).filter(WorkOrder.id == work_order_id).first()
-        if not wo:
-            raise HTTPException(status_code=404, detail=f"Work order {work_order_id} not found")
+        wo = BaseProductionService.get_work_order(db, work_order_id)
         
         # Map string to enum
         try:
@@ -173,11 +172,9 @@ class QualityService:
         CRITICAL: Metal detection = P1 Alert + Block Transfer
         """
         
-        wo = db.query(WorkOrder).filter(WorkOrder.id == work_order_id).first()
-        if not wo:
-            raise HTTPException(status_code=404, detail=f"Work order {work_order_id} not found")
+        wo = BaseProductionService.get_work_order(db, work_order_id)
         
-        mo = db.query(ManufacturingOrder).filter(ManufacturingOrder.id == wo.mo_id).first()
+        mo = BaseProductionService.get_manufacturing_order(db, wo.mo_id)
         
         # Record inspection
         inspection = QCInspection(

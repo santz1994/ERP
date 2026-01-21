@@ -22,6 +22,13 @@ class EmbroideryService:
     def __init__(self, db: Session):
         self.db = db
 
+    def _get_work_order(self, work_order_id: int) -> WorkOrder:
+        """Helper method - Get work order by ID with error handling"""
+        work_order = self.db.query(WorkOrder).filter(WorkOrder.id == work_order_id).first()
+        if not work_order:
+            raise ValueError(f"Work order {work_order_id} not found")
+        return work_order
+
     def get_work_orders(self, status: Optional[str] = None) -> List[WorkOrder]:
         """Get work orders for Embroidery department"""
         query = self.db.query(WorkOrder).filter(WorkOrder.department == "Embroidery")
@@ -33,10 +40,7 @@ class EmbroideryService:
 
     def start_work_order(self, work_order_id: int, user_id: int) -> WorkOrder:
         """Start embroidery work order"""
-        work_order = self.db.query(WorkOrder).filter(WorkOrder.id == work_order_id).first()
-        
-        if not work_order:
-            raise ValueError("Work order not found")
+        work_order = self._get_work_order(work_order_id)
         
         if work_order.status != "Pending":
             raise ValueError(f"Cannot start work order with status {work_order.status}")
@@ -93,10 +97,7 @@ class EmbroideryService:
         thread_colors: Optional[List[str]] = None
     ) -> WorkOrder:
         """Record embroidery output with design details"""
-        work_order = self.db.query(WorkOrder).filter(WorkOrder.id == work_order_id).first()
-        
-        if not work_order:
-            raise ValueError("Work order not found")
+        work_order = self._get_work_order(work_order_id)
         
         if work_order.status != "Running":
             raise ValueError(f"Cannot record output for work order with status {work_order.status}")
@@ -148,10 +149,7 @@ class EmbroideryService:
 
     def complete_embroidery(self, work_order_id: int, user_id: int) -> WorkOrder:
         """Complete embroidery work order"""
-        work_order = self.db.query(WorkOrder).filter(WorkOrder.id == work_order_id).first()
-        
-        if not work_order:
-            raise ValueError("Work order not found")
+        work_order = self._get_work_order(work_order_id)
         
         if work_order.status != "Running":
             raise ValueError(f"Cannot complete work order with status {work_order.status}")
@@ -192,10 +190,7 @@ class EmbroideryService:
 
     def transfer_to_sewing(self, work_order_id: int, user_id: int) -> TransferLog:
         """Transfer embroidered items to Sewing (QT-09 Protocol)"""
-        work_order = self.db.query(WorkOrder).filter(WorkOrder.id == work_order_id).first()
-        
-        if not work_order:
-            raise ValueError("Work order not found")
+        work_order = self._get_work_order(work_order_id)
         
         if work_order.status != "Finished":
             raise ValueError("Work order must be finished before transfer")
