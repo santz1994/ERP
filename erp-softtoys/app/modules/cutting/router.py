@@ -9,7 +9,7 @@ from decimal import Decimal
 from typing import List
 from datetime import datetime
 
-from app.core.dependencies import get_db, require_role
+from app.core.dependencies import get_db, require_permission
 from app.core.models.users import User
 from app.modules.cutting.models import (
     MaterialIssueRequest, StartCuttingRequest, CompleteCuttingRequest,
@@ -25,7 +25,7 @@ router = APIRouter(prefix="/production/cutting", tags=["Cutting Module"])
 @router.post("/spk/receive", response_model=dict)
 async def receive_spk_and_allocate_material(
     request: MaterialIssueRequest,
-    current_user: User = Depends(require_role(["SPV Cutting", "Admin"])),
+    current_user: User = Depends(require_permission("cutting.allocate_material")),
     db: Session = Depends(get_db)
 ) -> dict:
     """
@@ -51,7 +51,7 @@ async def receive_spk_and_allocate_material(
 @router.post("/start", response_model=dict)
 async def start_cutting_operation(
     request: StartCuttingRequest,
-    current_user: User = Depends(require_role(["Operator_Cutting", "SPV Cutting", "Admin"])),
+    current_user: User = Depends(require_permission("cutting.complete_operation")),
     db: Session = Depends(get_db)
 ) -> dict:
     """
@@ -85,7 +85,7 @@ async def start_cutting_operation(
 @router.post("/complete", response_model=dict)
 async def complete_cutting_operation(
     request: CompleteCuttingRequest,
-    current_user: User = Depends(require_role(["QC Inspector", "SPV Cutting", "Admin"])),
+    current_user: User = Depends(require_permission("cutting.complete_operation")),
     db: Session = Depends(get_db)
 ) -> dict:
     """
@@ -120,7 +120,7 @@ async def complete_cutting_operation(
 @router.post("/shortage/handle", response_model=dict)
 async def handle_material_shortage(
     request: ShortageHandlingRequest,
-    current_user: User = Depends(require_role(["SPV Cutting", "Admin"])),
+    current_user: User = Depends(require_permission("cutting.handle_variance")),
     db: Session = Depends(get_db)
 ) -> dict:
     """
@@ -149,7 +149,7 @@ async def handle_material_shortage(
 async def check_line_clearance(
     work_order_id: int,
     destination_dept: str,
-    current_user: User = Depends(require_role(["SPV Cutting", "Admin"])),
+    current_user: User = Depends(require_permission("cutting.line_clearance")),
     db: Session = Depends(get_db)
 ) -> LineClearanceCheckResponse:
     """
@@ -189,7 +189,7 @@ async def check_line_clearance(
 @router.post("/transfer", response_model=dict)
 async def transfer_to_next_department(
     request: LineTransferRequest,
-    current_user: User = Depends(require_role(["SPV Cutting", "Admin"])),
+    current_user: User = Depends(require_permission("cutting.create_transfer")),
     db: Session = Depends(get_db)
 ) -> dict:
     """
@@ -232,7 +232,7 @@ async def transfer_to_next_department(
 @router.get("/status/{work_order_id}", response_model=CuttingWorkOrderResponse)
 async def get_cutting_work_order_status(
     work_order_id: int,
-    current_user: User = Depends(require_role(["Operator_Cutting", "SPV Cutting", "QC Inspector", "Admin"])),
+    current_user: User = Depends(require_permission("cutting.view_status")),
     db: Session = Depends(get_db)
 ) -> CuttingWorkOrderResponse:
     """
@@ -267,7 +267,7 @@ async def get_cutting_work_order_status(
 
 @router.get("/pending", response_model=List[CuttingWorkOrderResponse])
 async def get_pending_cutting_orders(
-    current_user: User = Depends(require_role(["SPV Cutting", "Operator_Cutting", "Admin"])),
+    current_user: User = Depends(require_permission("cutting.view_status")),
     db: Session = Depends(get_db)
 ) -> List[CuttingWorkOrderResponse]:
     """

@@ -1,22 +1,36 @@
 """
 Cutting Module Business Logic & Services
 Handles material allocation, output tracking, QT-09 protocol
+
+Refactored: Now extends BaseProductionService to eliminate code duplication
 """
 
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, desc
-from app.core.models.manufacturing import WorkOrder, ManufacturingOrder, MaterialConsumption, Department, WorkOrderStatus
+from app.core.models.manufacturing import (
+    WorkOrder, ManufacturingOrder, MaterialConsumption,
+    Department, WorkOrderStatus
+)
 from app.core.models.warehouse import StockQuant, StockMove, Location
-from app.core.models.transfer import TransferLog, TransferStatus, LineOccupancy, TransferDept
+from app.core.models.transfer import TransferLog, TransferStatus, LineOccupancy, TransferDept  # noqa: E501
 from app.core.models.products import Product
+from app.core.base_production_service import BaseProductionService
 from decimal import Decimal
 from datetime import datetime
 from typing import Optional, Tuple, List
 from fastapi import HTTPException
 
 
-class CuttingService:
-    """Business logic for cutting department operations"""
+class CuttingService(BaseProductionService):
+    """
+    Business logic for cutting department operations
+    Extends BaseProductionService for common production patterns
+    """
+    
+    # Department configuration
+    DEPARTMENT = Department.CUTTING
+    DEPARTMENT_NAME = "Cutting"
+    TRANSFER_DEPT = TransferDept.CUTTING
     
     @staticmethod
     def receive_spk_and_allocate_material(
@@ -34,20 +48,29 @@ class CuttingService:
         # Fetch work order
         wo = db.query(WorkOrder).filter(WorkOrder.id == work_order_id).first()
         if not wo:
-            raise HTTPException(status_code=404, detail=f"Work order {work_order_id} not found")
+            raise HTTPException(
+                status_code=404,
+                detail=f"Work order {work_order_id} not found"
+            )
         
         if wo.status != WorkOrderStatus.PENDING:
-            raise HTTPException(status_code=400, detail=f"Cannot allocate material for WO in {wo.status} status")
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot allocate material for WO in {wo.status} status"  # noqa: E501
+            )
         
         # Fetch BOM to get material requirements
         from app.core.models.bom import BOMHeader, BOMDetail
         bom = db.query(BOMHeader).filter(
             BOMHeader.product_id == wo.product_id,
-            BOMHeader.is_active == True
+            BOMHeader.is_active == True  # noqa: E712
         ).first()
         
         if not bom:
-            raise HTTPException(status_code=404, detail=f"No active BOM for product {wo.product_id}")
+            raise HTTPException(
+                status_code=404,
+                detail=f"No active BOM for product {wo.product_id}"
+            )
         
         # Get BOM details
         bom_details = db.query(BOMDetail).filter(
@@ -138,8 +161,9 @@ class CuttingService:
             }
         }
     
-    @staticmethod
+    @classmethod
     def complete_cutting_operation(
+        cls,
         db: Session,
         work_order_id: int,
         actual_output: Decimal,
@@ -148,76 +172,30 @@ class CuttingService:
     ) -> dict:
         """
         Step 220: Record cutting output and handle shortage/surplus
-        - Record actual output
-        - Check vs target (shortage/surplus handling)
-        - Prepare for transfer
+        Uses base class record_output_and_variance for common logic
         """
+        # Delegate to base class for common variance analysis
+        result = cls.record_output_and_variance(
+            db=db,
+            work_order_id=work_order_id,
+            actual_output=actual_output,
+            reject_qty=reject_qty,
+            notes=notes
+        )
         
-        wo = db.query(WorkOrder).filter(WorkOrder.id == work_order_id).first()
-        if not wo:
-            raise HTTPException(status_code=404, detail=f"Work order {work_order_id} not found")
-        
-        if wo.status != WorkOrderStatus.RUNNING:
-            raise HTTPException(status_code=400, detail=f"Cannot complete WO in {wo.status} status")
-        
-        # Get MO for target quantity
-        mo = db.query(ManufacturingOrder).filter(ManufacturingOrder.id == wo.mo_id).first()
-        
-        # Record output
-        wo.output_qty = actual_output
-        wo.reject_qty = reject_qty
-        wo.end_time = datetime.utcnow()
-        wo.status = WorkOrderStatus.FINISHED
-        
-        # Update MO total produced
-        mo.qty_produced = (mo.qty_produced or 0) + actual_output
-        
-        db.commit()
-        
-        # Analyze shortage/surplus
-        variance = actual_output - wo.input_qty
-        variance_percentage = (variance / wo.input_qty * 100) if wo.input_qty > 0 else 0
-        
-        handling_result = {
-            "work_order_id": work_order_id,
-            "actual_output": float(actual_output),
-            "target": float(wo.input_qty),
-            "variance": float(variance),
-            "variance_percentage": float(variance_percentage),
-            "reject_qty": float(reject_qty),
-            "notes": notes,
-            "handling_type": None,
-            "actions_taken": []
-        }
-        
-        if variance < 0:  # SHORTAGE
-            shortage_qty = abs(variance)
-            handling_result["handling_type"] = "SHORTAGE"
-            handling_result["actions_taken"] = [
-                f"Shortage detected: {shortage_qty} units short",
+        # Add cutting-specific handling actions
+        if result["handling_type"] == "SHORTAGE":
+            result["actions_taken"].extend([
                 "Generate Waste Report (Step 230)",
-                "Request Approval for Additional Material (Step 240)",
-                "Awaiting SPV approval for unplanned requisition"
-            ]
-        
-        elif variance > 0:  # SURPLUS
-            surplus_qty = variance
-            handling_result["handling_type"] = "SURPLUS"
-            handling_result["actions_taken"] = [
-                f"Surplus detected: {surplus_qty} units extra",
+                "Request Approval for Additional Material (Step 240)"
+            ])
+        elif result["handling_type"] == "SURPLUS":
+            result["actions_taken"].extend([
                 "System records surplus in Surplus Log (Step 270)",
-                "Trigger Auto-Revision of SPK Sewing (Step 280)",
-                "Update downstream SPK with new material quantities"
-            ]
+                "Trigger Auto-Revision of SPK Sewing (Step 280)"
+            ])
         
-        else:  # EXACT
-            handling_result["handling_type"] = "EXACT"
-            handling_result["actions_taken"] = [
-                "Output matches target - no variance",
-                "Ready for transfer to next department"
-            ]
-        
-        return handling_result
+        return result
     
     @staticmethod
     def handle_shortage(
@@ -271,15 +249,9 @@ class CuttingService:
     ) -> Tuple[bool, Optional[str], dict]:
         """
         Step 290: LINE CLEARANCE CHECK (QT-09 Cek 1-2)
-        - Verify destination line is empty (no previous batch)
-        - Check line status
+        Uses base class check_line_clearance
         """
-        
-        wo = db.query(WorkOrder).filter(WorkOrder.id == work_order_id).first()
-        if not wo:
-            raise HTTPException(status_code=404, detail=f"Work order {work_order_id} not found")
-        
-        # Map destination_dept to TransferDept enum
+        # Map destination_dept string to TransferDept enum
         dept_mapping = {
             "Sewing": TransferDept.SEWING,
             "Embroidery": TransferDept.EMBROIDERY,
@@ -290,44 +262,12 @@ class CuttingService:
         if not target_dept:
             raise HTTPException(status_code=400, detail=f"Invalid destination department: {destination_dept}")
         
-        # Check line occupancy
-        line_occupancy = db.query(LineOccupancy).filter(
-            LineOccupancy.dept_name == target_dept
-        ).first()
-        
-        if not line_occupancy:
-            # Create new line occupancy if doesn't exist
-            line_occupancy = LineOccupancy(
-                dept_name=target_dept,
-                current_article=None,
-                current_batch=None,
-                status="Clear"
-            )
-            db.add(line_occupancy)
-            db.flush()
-        
-        # Check if line is clear
-        is_clear = line_occupancy.status == "Clear" or line_occupancy.current_article is None
-        
-        blocking_reason = None
-        if not is_clear:
-            blocking_reason = f"{destination_dept} line still processing: {line_occupancy.current_article} (batch: {line_occupancy.current_batch})"
-        
-        line_check_info = {
-            "work_order_id": work_order_id,
-            "destination_dept": destination_dept,
-            "line_status": line_occupancy.status,
-            "current_article": line_occupancy.current_article,
-            "current_batch": line_occupancy.current_batch,
-            "can_transfer": is_clear,
-            "blocking_reason": blocking_reason,
-            "checked_at": datetime.utcnow().isoformat()
-        }
-        
-        return is_clear, blocking_reason, line_check_info
+        # Delegate to base class
+        return cls.check_line_clearance(db=db, work_order_id=work_order_id, target_dept=target_dept)
     
-    @staticmethod
+    @classmethod
     def create_transfer_to_next_dept(
+        cls,
         db: Session,
         work_order_id: int,
         destination_dept: str,
@@ -336,40 +276,26 @@ class CuttingService:
     ) -> dict:
         """
         Step 291-293: Print Transfer Slip & Handshake Digital
-        - Line clearance verified
-        - Create transfer log
-        - Lock WIP CUT in system (Handshake Step 3)
+        Uses base class create_transfer_log
         """
-        
-        wo = db.query(WorkOrder).filter(WorkOrder.id == work_order_id).first()
-        if not wo:
-            raise HTTPException(status_code=404, detail=f"Work order {work_order_id} not found")
-        
-        mo = db.query(ManufacturingOrder).filter(ManufacturingOrder.id == wo.mo_id).first()
-        
         # Map to transfer dept
         dept_mapping = {
             "Sewing": TransferDept.SEWING,
             "Embroidery": TransferDept.EMBROIDERY,
             "Subcon": TransferDept.SUBCON
         }
-        target_dept = dept_mapping[destination_dept]
+        target_dept = dept_mapping.get(destination_dept)
+        if not target_dept:
+            raise HTTPException(status_code=400, detail=f"Invalid destination department: {destination_dept}")
         
-        # Create transfer log (Step 291: Print Surat Jalan)
-        transfer = TransferLog(
-            mo_id=wo.mo_id,
-            from_dept=TransferDept.CUTTING,
+        # Delegate to base class
+        return cls.create_transfer_log(
+            db=db,
+            work_order_id=work_order_id,
             to_dept=target_dept,
-            article_code=wo.product.code,
-            batch_id=mo.batch_number,
-            qty_sent=transfer_qty,
-            is_line_clear=True,
-            line_checked_by=user_id,
-            line_checked_at=datetime.utcnow(),
-            status=TransferStatus.LOCKED  # Step 293: HANDSHAKE - Lock the stock
+            qty_to_transfer=transfer_qty,
+            operator_id=user_id
         )
-        db.add(transfer)
-        db.flush()
         
         # Update line occupancy
         line_occ = db.query(LineOccupancy).filter(

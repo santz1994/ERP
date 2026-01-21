@@ -12,7 +12,7 @@ import openpyxl
 from datetime import datetime
 
 from app.core.database import get_db
-from app.core.dependencies import require_role
+from app.core.dependencies import require_permission
 from app.core.models.products import Product, Category
 from app.core.models.bom import BOMHeader, BOMDetail
 from app.core.models.users import User
@@ -23,11 +23,11 @@ router = APIRouter(prefix="/import-export", tags=["Import/Export"])
 
 # ====================== IMPORT ENDPOINTS ======================
 
-@router.post("/import/products", dependencies=[Depends(require_role("Admin"))])
+@router.post("/import/products", dependencies=[Depends(require_permission("import_export.import_data"))])
 async def import_products(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("Admin"))
+    current_user: User = Depends(require_permission("import_export.import_data"))
 ):
     """
     Import products from CSV/Excel file
@@ -170,11 +170,11 @@ async def _import_products_excel(file: UploadFile, db: Session, current_user: Us
     }
 
 
-@router.post("/import/bom", dependencies=[Depends(require_role("Admin"))])
+@router.post("/import/bom", dependencies=[Depends(require_permission("import_export.import_data"))])
 async def import_bom(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("Admin"))
+    current_user: User = Depends(require_permission("import_export.import_data"))
 ):
     """
     Import BOM (Bill of Materials) from CSV/Excel
@@ -345,7 +345,7 @@ async def _import_bom_excel(file: UploadFile, db: Session, current_user: User):
 async def export_products(
     format: str = Query("csv", regex="^(csv|excel)$"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("Admin"))
+    current_user: User = Depends(require_permission("import_export.export_data"))
 ):
     """
     Export all products to CSV or Excel
@@ -427,7 +427,7 @@ def _export_products_excel(products: List[Product]):
 async def export_bom(
     format: str = Query("csv", regex="^(csv|excel)$"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("Admin"))
+    current_user: User = Depends(require_permission("import_export.export_data"))
 ):
     """
     Export BOM (Bill of Materials) to CSV or Excel
@@ -520,7 +520,7 @@ async def export_inventory(
     format: str = Query("csv", regex="^(csv|excel)$"),
     location_id: Optional[int] = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("Warehouse Manager"))
+    current_user: User = Depends(require_permission("import_export.export_data"))
 ):
     """
     Export current inventory to CSV or Excel
@@ -610,7 +610,7 @@ def _export_inventory_excel(inventory_data):
 async def export_users(
     format: str = Query("csv", regex="^(csv|excel)$"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("Admin"))
+    current_user: User = Depends(require_permission("import_export.export_data"))
 ):
     """
     Export users to CSV or Excel (for backup/audit)

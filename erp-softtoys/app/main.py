@@ -6,7 +6,7 @@ from app.core.audit_middleware import AuditContextMiddleware
 from app.api.v1 import (
     auth, ppic, warehouse, admin, websocket, 
     kanban, reports, import_export, embroidery,
-    purchasing, finishgoods, report_builder, barcode, audit
+    purchasing, finishgoods, report_builder, barcode, audit, dashboard
 )
 from app.modules.cutting import cutting_router
 from app.modules.sewing import sewing_router
@@ -75,6 +75,12 @@ app.include_router(
 # Audit Trail Module (ISO 27001 A.12.4.1 Compliance)
 app.include_router(
     audit.router,
+    prefix=settings.API_PREFIX
+)
+
+# Dashboard Module (Optimized with Materialized Views)
+app.include_router(
+    dashboard.router,
     prefix=settings.API_PREFIX
 )
 

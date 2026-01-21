@@ -1,6 +1,7 @@
 /**
  * Copyright (c) 2026 PT Quty Karunia / Daniel Rizaldy - All Rights Reserved
  * File: PackingPage.tsx | Author: Daniel Rizaldy | Date: 2026-01-19
+ * Updated: 2026-01-21 | Phase 16 Week 4 | PBAC Integration
  */
 
 import { useState } from 'react';
@@ -12,9 +13,11 @@ import {
   Truck,
   CheckCircle,
   AlertCircle,
-  Plus
+  Plus,
+  Lock
 } from 'lucide-react';
 import axios from 'axios';
+import { usePermission } from '@/hooks/usePermission';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
@@ -46,6 +49,13 @@ export default function PackingPage() {
   const [kanbanItem, setKanbanItem] = useState('');
   const [kanbanQty, setKanbanQty] = useState<number>(0);
   const queryClient = useQueryClient();
+
+  // Permission checks (PBAC - Phase 16 Week 4)
+  const canViewStatus = usePermission('packing.view_status');
+  const canSortByDestination = usePermission('packing.sort_by_destination');
+  const canPackProduct = usePermission('packing.pack_product');
+  const canLabelCarton = usePermission('packing.label_carton');
+  const canCompleteOperation = usePermission('packing.complete_operation');
 
   const { data: workOrders, isLoading } = useQuery({
     queryKey: ['packing-work-orders'],

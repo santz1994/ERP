@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.core.database import SessionLocal
 from app.core.security import TokenUtils
 from app.core.models.users import User, UserRole
+from app.services.permission_service import get_permission_service
 
 
 # Database session dependency
@@ -194,6 +195,96 @@ def require_roles(allowed_roles: List[UserRole]):
         )
     
     return check_roles
+
+
+def require_permission(permission_code: str):
+    """
+    PBAC Dependency: Require specific permission code
+    
+    NEW in Week 3 - Replaces role-based access with fine-grained permissions
+    
+    Args:
+        permission_code: Permission code (e.g., "cutting.create_wo", "admin.manage_users")
+    
+    Returns:
+        Async function that validates permission via PermissionService
+    
+    **Example**:
+    ```python
+    @router.post("/cutting/work-orders")
+    def create_work_order(
+        user: User = Depends(require_permission("cutting.create_wo")),
+        db: Session = Depends(get_db)
+    ):
+        return {"message": "Work order created"}
+    ```
+    
+    **Benefits**:
+    - Fine-grained access control (specific actions, not just roles)
+    - Redis caching (5-minute TTL for performance)
+    - Role hierarchy support (supervisors can perform operator actions)
+    - Custom user permissions (temporary elevated access)
+    """
+    async def check_permission(
+        current_user: User = Depends(get_current_user),
+        db: Session = Depends(get_db)
+    ) -> User:
+        """Check if user has required permission"""
+        perm_service = get_permission_service()
+        
+        # Check permission with caching
+        if perm_service.has_permission(db, current_user, permission_code):
+            return current_user
+        
+        # Permission denied
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Insufficient permissions. Required: {permission_code}. User: {current_user.username} ({current_user.role.value})"
+        )
+    
+    return check_permission
+
+
+def require_any_permission(permission_codes: List[str]):
+    """
+    PBAC Dependency: Require ANY of the specified permissions (OR logic)
+    
+    Args:
+        permission_codes: List of permission codes
+    
+    Returns:
+        Async function that validates if user has at least one permission
+    
+    **Example**:
+    ```python
+    @router.get("/production/work-orders")
+    def list_work_orders(
+        user: User = Depends(require_any_permission([
+            "cutting.view_wo",
+            "sewing.view_wo",
+            "finishing.view_wo"
+        ])),
+        db: Session = Depends(get_db)
+    ):
+        return {"work_orders": [...]}
+    ```
+    """
+    async def check_any_permission(
+        current_user: User = Depends(get_current_user),
+        db: Session = Depends(get_db)
+    ) -> User:
+        """Check if user has any of the required permissions"""
+        perm_service = get_permission_service()
+        
+        if perm_service.has_any_permission(db, current_user, permission_codes):
+            return current_user
+        
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Insufficient permissions. Required one of: {', '.join(permission_codes)}"
+        )
+    
+    return check_any_permission
 
 
 def require_supervisor_or_admin():

@@ -17,7 +17,7 @@ from app.core.schemas import (
     ManufacturingOrderCreate, ManufacturingOrderResponse,
     RoutingType, MOStatus
 )
-from app.core.dependencies import get_db, require_role
+from app.core.dependencies import get_db, require_permission
 from app.core.models.users import User
 from app.core.models.manufacturing import ManufacturingOrder, WorkOrder, Department, WorkOrderStatus
 from app.core.models.products import Product
@@ -33,11 +33,11 @@ router = APIRouter(
     "/manufacturing-order",
     response_model=ManufacturingOrderResponse,
     status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_role("ppic_manager"))]
+    dependencies=[Depends(require_permission("ppic.create_mo"))]
 )
 async def create_manufacturing_order(
     mo_data: ManufacturingOrderCreate,
-    current_user: User = Depends(require_role("ppic_manager")),
+    current_user: User = Depends(require_permission("ppic.create_mo")),
     db: Session = Depends(get_db)
 ):
     """
@@ -123,11 +123,11 @@ async def create_manufacturing_order(
 @router.get(
     "/manufacturing-order/{mo_id}",
     response_model=ManufacturingOrderResponse,
-    dependencies=[Depends(require_role("ppic_manager"))]
+    dependencies=[Depends(require_permission("ppic.view_mo"))]
 )
 async def get_manufacturing_order(
     mo_id: int,
-    current_user: User = Depends(require_role("ppic_manager")),
+    current_user: User = Depends(require_permission("ppic.view_mo")),
     db: Session = Depends(get_db)
 ):
     """
@@ -166,13 +166,13 @@ async def get_manufacturing_order(
 @router.get(
     "/manufacturing-orders",
     response_model=List[ManufacturingOrderResponse],
-    dependencies=[Depends(require_role("ppic_manager"))]
+    dependencies=[Depends(require_permission("ppic.schedule_production"))]
 )
 async def list_manufacturing_orders(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     status: str = Query(None),
-    current_user: User = Depends(require_role("ppic_manager")),
+    current_user: User = Depends(require_permission("ppic.schedule_production")),
     db: Session = Depends(get_db)
 ):
     """
@@ -216,11 +216,11 @@ async def list_manufacturing_orders(
 @router.post(
     "/manufacturing-order/{mo_id}/approve",
     response_model=ManufacturingOrderResponse,
-    dependencies=[Depends(require_role("ppic_manager"))]
+    dependencies=[Depends(require_permission("ppic.approve_mo"))]
 )
 async def approve_manufacturing_order(
     mo_id: int,
-    current_user: User = Depends(require_role("ppic_manager")),
+    current_user: User = Depends(require_permission("ppic.approve_mo")),
     db: Session = Depends(get_db)
 ):
     """

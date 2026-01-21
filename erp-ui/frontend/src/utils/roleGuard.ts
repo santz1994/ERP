@@ -319,9 +319,24 @@ export enum PermissionLevel {
 }
 
 /**
+ * Check if user can access a specific module
+ * Exported for external use (App.tsx, route guards)
+ *
+ * @param userRole - User's current role
+ * @param module - Module name to check access for
+ * @returns true if user has access, false otherwise
+ */
+export const canAccessModule = (
+  userRole: UserRole,
+  module: keyof typeof MODULE_ACCESS_MATRIX
+): boolean => {
+  return hasModuleAccess(userRole, module)
+}
+
+/**
  * Check if user can perform action on module
  * (Simplified - full implementation requires backend permission matrix)
- * 
+ *
  * @param userRole - The user's role
  * @param module - The module name
  * @param permission - The permission level required
@@ -336,12 +351,12 @@ export const hasPermission = (
   if (isHighPrivilegeRole(userRole)) {
     return true
   }
-  
+
   // Operator roles: only VIEW and EXECUTE on their department
   if (isOperatorRole(userRole)) {
     return permission === PermissionLevel.VIEW || permission === PermissionLevel.EXECUTE
   }
-  
+
   // Supervisor roles: VIEW, CREATE, UPDATE, EXECUTE, APPROVE on their modules
   const supervisorRoles = [
     UserRole.SPV_CUTTING,
@@ -350,7 +365,7 @@ export const hasPermission = (
     UserRole.WAREHOUSE_ADMIN,
     UserRole.QC_LAB,
   ]
-  
+
   if (supervisorRoles.includes(userRole)) {
     return [
       PermissionLevel.VIEW,
@@ -360,7 +375,7 @@ export const hasPermission = (
       PermissionLevel.APPROVE,
     ].includes(permission)
   }
-  
+
   // Default: check module access
   return hasModuleAccess(userRole, module as keyof typeof MODULE_ACCESS_MATRIX)
 }

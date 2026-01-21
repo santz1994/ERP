@@ -1,6 +1,7 @@
 /**
  * Copyright (c) 2026 PT Quty Karunia / Daniel Rizaldy - All Rights Reserved
  * File: FinishingPage.tsx | Author: Daniel Rizaldy | Date: 2026-01-19
+ * Updated: 2026-01-21 | Phase 16 Week 4 | PBAC Integration
  */
 
 import { useState } from 'react';
@@ -11,9 +12,11 @@ import {
   CheckCircle, 
   XOctagon, 
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  Lock
 } from 'lucide-react';
 import axios from 'axios';
+import { usePermission } from '@/hooks/usePermission';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
@@ -32,6 +35,16 @@ export default function FinishingPage() {
   const [stuffedQty, setStuffedQty] = useState<number>(0);
   const [defectQty, setDefectQty] = useState<number>(0);
   const queryClient = useQueryClient();
+
+  // Permission checks (PBAC - Phase 16 Week 4)
+  const canViewStatus = usePermission('finishing.view_status');
+  const canAcceptTransfer = usePermission('finishing.accept_transfer');
+  const canLineClearance = usePermission('finishing.line_clearance');
+  const canPerformStuffing = usePermission('finishing.perform_stuffing');
+  const canPerformClosing = usePermission('finishing.perform_closing');
+  const canMetalDetectorQC = usePermission('finishing.metal_detector_qc');
+  const canFinalQC = usePermission('finishing.final_qc');
+  const canConvertToFG = usePermission('finishing.convert_to_fg');
 
   const { data: workOrders, isLoading } = useQuery({
     queryKey: ['finishing-work-orders'],

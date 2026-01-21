@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from decimal import Decimal
 from typing import List
 
-from app.core.dependencies import get_db, require_role
+from app.core.dependencies import get_db, require_permission
 from app.core.models.users import User
 from app.modules.sewing.models import (
     AcceptTransferRequest, ValidateInputRequest, ProcessSewingStepRequest,
@@ -24,7 +24,7 @@ router = APIRouter(prefix="/production/sewing", tags=["Sewing Module"])
 @router.post("/accept-transfer", response_model=dict)
 async def accept_transfer_from_cutting(
     request: AcceptTransferRequest,
-    current_user: User = Depends(require_role(["SPV Sewing", "Operator_Sewing", "Admin"])),
+    current_user: User = Depends(require_permission("sewing.accept_transfer")),
     db: Session = Depends(get_db)
 ) -> dict:
     """
@@ -57,7 +57,7 @@ async def accept_transfer_from_cutting(
 @router.post("/validate-input", response_model=dict)
 async def validate_material_input(
     request: ValidateInputRequest,
-    current_user: User = Depends(require_role(["SPV Sewing", "QC Inspector", "Admin"])),
+    current_user: User = Depends(require_permission("sewing.validate_input")),
     db: Session = Depends(get_db)
 ) -> dict:
     """
@@ -91,7 +91,7 @@ async def process_sewing_stage(
     work_order_id: int,
     step_number: int,
     request: ProcessSewingStepRequest,
-    current_user: User = Depends(require_role(["Operator_Sewing", "SPV Sewing", "Admin"])),
+    current_user: User = Depends(require_permission("sewing.process_stage")),
     db: Session = Depends(get_db)
 ) -> dict:
     """
@@ -129,7 +129,7 @@ async def process_sewing_stage(
 @router.post("/qc-inspect", response_model=dict)
 async def perform_inline_qc_inspection(
     request: InlineQCRequest,
-    current_user: User = Depends(require_role(["QC Inspector", "SPV Sewing", "Admin"])),
+    current_user: User = Depends(require_permission("sewing.inline_qc")),
     db: Session = Depends(get_db)
 ) -> dict:
     """
@@ -174,7 +174,7 @@ async def perform_inline_qc_inspection(
 @router.get("/segregation-check/{work_order_id}", response_model=SegregationValidationResponse)
 async def check_segregation(
     work_order_id: int,
-    current_user: User = Depends(require_role(["SPV Sewing", "Admin"])),
+    current_user: User = Depends(require_permission("sewing.view_status")),
     db: Session = Depends(get_db)
 ) -> SegregationValidationResponse:
     """
@@ -222,7 +222,7 @@ async def check_segregation(
 @router.post("/transfer-to-finishing", response_model=dict)
 async def transfer_to_finishing_dept(
     request: TransferToFinishingRequest,
-    current_user: User = Depends(require_role(["SPV Sewing", "Admin"])),
+    current_user: User = Depends(require_permission("sewing.create_transfer")),
     db: Session = Depends(get_db)
 ) -> dict:
     """
@@ -265,7 +265,7 @@ async def transfer_to_finishing_dept(
 @router.get("/status/{work_order_id}", response_model=SewingWorkOrderResponse)
 async def get_sewing_work_order_status(
     work_order_id: int,
-    current_user: User = Depends(require_role(["Operator_Sewing", "SPV Sewing", "QC Inspector", "Admin"])),
+    current_user: User = Depends(require_permission("sewing.view_status")),
     db: Session = Depends(get_db)
 ) -> SewingWorkOrderResponse:
     """
@@ -304,7 +304,7 @@ async def get_sewing_work_order_status(
 
 @router.get("/pending", response_model=List[SewingWorkOrderResponse])
 async def get_pending_sewing_orders(
-    current_user: User = Depends(require_role(["SPV Sewing", "Operator_Sewing", "Admin"])),
+    current_user: User = Depends(require_permission("sewing.view_status")),
     db: Session = Depends(get_db)
 ) -> List[SewingWorkOrderResponse]:
     """
@@ -353,7 +353,7 @@ async def create_internal_loop(
     qty_to_return: float,
     reason: str,
     notes: str = None,
-    current_user: User = Depends(require_role(["SPV Sewing", "Admin"])),
+    current_user: User = Depends(require_permission("sewing.return_to_stage")),
     db: Session = Depends(get_db)
 ) -> dict:
     """

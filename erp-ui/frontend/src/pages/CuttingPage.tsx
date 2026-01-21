@@ -1,6 +1,7 @@
 /**
  * Copyright (c) 2026 PT Quty Karunia / Daniel Rizaldy - All Rights Reserved
  * File: CuttingPage.tsx | Author: Daniel Rizaldy | Date: 2026-01-19
+ * Updated: 2026-01-21 | Phase 16 Week 4 | PBAC Integration
  */
 
 import { useState, useEffect } from 'react';
@@ -14,9 +15,11 @@ import {
   Package,
   TrendingUp,
   TrendingDown,
-  ArrowRight
+  ArrowRight,
+  Lock
 } from 'lucide-react';
 import axios from 'axios';
+import { usePermission } from '@/hooks/usePermission';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
@@ -44,6 +47,14 @@ export default function CuttingPage() {
   const [outputQty, setOutputQty] = useState<number>(0);
   const [rejectQty, setRejectQty] = useState<number>(0);
   const queryClient = useQueryClient();
+
+  // Permission checks (PBAC - Phase 16 Week 4)
+  const canViewStatus = usePermission('cutting.view_status');
+  const canAllocateMaterial = usePermission('cutting.allocate_material');
+  const canCompleteOperation = usePermission('cutting.complete_operation');
+  const canHandleVariance = usePermission('cutting.handle_variance');
+  const canLineClearance = usePermission('cutting.line_clearance');
+  const canCreateTransfer = usePermission('cutting.create_transfer');
 
   // Fetch active work orders
   const { data: workOrders, isLoading } = useQuery({
@@ -250,7 +261,7 @@ export default function CuttingPage() {
 
                 {/* Actions */}
                 <div className="flex gap-2">
-                  {wo.status === 'Pending' && (
+                  {wo.status === 'Pending' && canAllocateMaterial && (
                     <button
                       onClick={() => startWO.mutate(wo.id)}
                       disabled={startWO.isPending}
@@ -259,8 +270,14 @@ export default function CuttingPage() {
                       Start Cutting
                     </button>
                   )}
+                  {wo.status === 'Pending' && !canAllocateMaterial && (
+                    <div className="flex-1 bg-gray-100 text-gray-500 px-4 py-2 rounded text-sm font-medium flex items-center justify-center">
+                      <Lock className="w-4 h-4 mr-2" />
+                      No Permission
+                    </div>
+                  )}
 
-                  {wo.status === 'Running' && (
+                  {wo.status === 'Running' && canCompleteOperation && (
                     <button
                       onClick={() => setSelectedWO(wo)}
                       className="flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition text-sm font-medium"
@@ -268,8 +285,14 @@ export default function CuttingPage() {
                       Complete
                     </button>
                   )}
+                  {wo.status === 'Running' && !canCompleteOperation && (
+                    <div className="flex-1 bg-gray-100 text-gray-500 px-4 py-2 rounded text-sm font-medium flex items-center justify-center">
+                      <Lock className="w-4 h-4 mr-2" />
+                      No Permission
+                    </div>
+                  )}
 
-                  {wo.status === 'Finished' && (
+                  {wo.status === 'Finished' && canCreateTransfer && (
                     <button
                       onClick={() => transferToNext.mutate(wo.id)}
                       disabled={transferToNext.isPending}
@@ -278,6 +301,12 @@ export default function CuttingPage() {
                       Transfer to Next
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </button>
+                  )}
+                  {wo.status === 'Finished' && !canCreateTransfer && (
+                    <div className="flex-1 bg-gray-100 text-gray-500 px-4 py-2 rounded text-sm font-medium flex items-center justify-center">
+                      <Lock className="w-4 h-4 mr-2" />
+                      No Permission
+                    </div>
                   )}
                 </div>
               </div>

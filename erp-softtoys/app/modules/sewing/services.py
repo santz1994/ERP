@@ -1,26 +1,43 @@
 """
 Sewing Module Business Logic & Services
 Handles material input validation, 3-stage sewing, inline QC, segregation, and transfer
+
+Refactored: Now extends BaseProductionService to eliminate code duplication
 """
 
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_
-from app.core.models.manufacturing import WorkOrder, ManufacturingOrder, MaterialConsumption, Department, WorkOrderStatus
-from app.core.models.transfer import TransferLog, TransferStatus, LineOccupancy, TransferDept
+from app.core.models.manufacturing import (
+    WorkOrder, ManufacturingOrder, MaterialConsumption,
+    Department, WorkOrderStatus
+)
+from app.core.models.transfer import (
+    TransferLog, TransferStatus, LineOccupancy, TransferDept
+)
 from app.core.models.products import Product
 from app.core.models.bom import BOMDetail, BOMHeader
 from app.core.models.quality import QCInspection
+from app.core.base_production_service import BaseProductionService
 from decimal import Decimal
 from datetime import datetime
 from typing import Optional, Tuple, Dict
 from fastapi import HTTPException
 
 
-class SewingService:
-    """Business logic for sewing department operations"""
+class SewingService(BaseProductionService):
+    """
+    Business logic for sewing department operations
+    Extends BaseProductionService for common production patterns
+    """
     
-    @staticmethod
+    # Department configuration
+    DEPARTMENT = Department.SEWING
+    DEPARTMENT_NAME = "Sewing"
+    TRANSFER_DEPT = TransferDept.SEWING
+    
+    @classmethod
     def accept_transfer_and_validate(
+        cls,
         db: Session,
         transfer_slip_number: str,
         received_qty: Decimal,
@@ -29,68 +46,22 @@ class SewingService:
     ) -> dict:
         """
         Step 300: Accept Transfer & Material Validation
-        - Scan transfer slip (Handshake ACCEPT from Cutting/Embroidery)
-        - Unlock stock from previous dept
-        - Record material receipt
-        - Prepare for qty validation vs BOM
+        Uses base class accept_transfer_from_previous_dept
         """
+        # Delegate to base class
+        result = cls.accept_transfer_from_previous_dept(
+            db=db,
+            transfer_slip_number=transfer_slip_number,
+            received_qty=received_qty,
+            user_id=user_id,
+            from_dept=TransferDept.CUTTING,  # Can also be from EMBROIDERY
+            notes=notes
+        )
         
-        # Find transfer log
-        transfer = db.query(TransferLog).filter(
-            TransferLog.status == TransferStatus.LOCKED
-        ).first()
+        # Add sewing-specific next step
+        result["next_step"] = "Validate input qty vs BOM"
         
-        if not transfer:
-            raise HTTPException(
-                status_code=404,
-                detail=f"No pending transfer found. Ensure Cutting has printed transfer slip."
-            )
-        
-        if transfer.status != TransferStatus.LOCKED:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Transfer status is {transfer.status.value}, expected LOCKED"
-            )
-        
-        # Step 293 (from Cutting): Digital Handshake - Accept
-        transfer.status = TransferStatus.ACCEPTED
-        transfer.qty_received = received_qty
-        transfer.timestamp_accept = datetime.utcnow()
-        transfer.accepted_by = user_id
-        
-        # Get work order
-        wo = db.query(WorkOrder).filter(
-            WorkOrder.mo_id == transfer.mo_id,
-            WorkOrder.department == Department.SEWING
-        ).first()
-        
-        if not wo:
-            raise HTTPException(status_code=404, detail="Sewing work order not found")
-        
-        wo.input_qty = received_qty
-        wo.status = WorkOrderStatus.RUNNING
-        wo.start_time = datetime.utcnow()
-        wo.worker_id = user_id
-        
-        # Update line occupancy - mark Cutting line as CLEAR (line clearance complete)
-        cutting_line = db.query(LineOccupancy).filter(
-            LineOccupancy.dept_name == TransferDept.CUTTING
-        ).first()
-        if cutting_line:
-            cutting_line.status = "Clear"
-            cutting_line.current_article = None
-        
-        db.commit()
-        
-        return {
-            "transfer_slip_number": transfer_slip_number,
-            "received_qty": float(received_qty),
-            "handshake_status": "ACCEPTED",
-            "work_order_id": wo.id,
-            "next_step": "Validate input qty vs BOM",
-            "notes": notes,
-            "timestamp": datetime.utcnow().isoformat()
-        }
+        return result
     
     @staticmethod
     def validate_input_vs_bom(
@@ -103,50 +74,10 @@ class SewingService:
         - Compare received material vs BOM requirements
         - If shortage: Auto-request additional material (Step 320)
         - If OK: Proceed to assembly
+        Uses base class validate_input_vs_bom
         """
-        
-        wo = db.query(WorkOrder).filter(WorkOrder.id == work_order_id).first()
-        if not wo:
-            raise HTTPException(status_code=404, detail=f"Work order {work_order_id} not found")
-        
-        # Get BOM
-        bom = db.query(BOMHeader).filter(
-            BOMHeader.product_id == wo.product_id,
-            BOMHeader.is_active == True
-        ).first()
-        
-        if not bom:
-            raise HTTPException(status_code=404, detail=f"No active BOM for product {wo.product_id}")
-        
-        # Get target from BOM
-        target_qty = bom.qty_output if bom.qty_output > 0 else received_qty
-        
-        # Compare
-        variance = received_qty - target_qty
-        
-        result = {
-            "work_order_id": work_order_id,
-            "received_qty": float(received_qty),
-            "target_qty": float(target_qty),
-            "variance": float(variance),
-            "status": "OK"
-        }
-        
-        if variance < 0:
-            # Shortage - Step 320: Auto-request supplementary materials
-            shortage = abs(variance)
-            result["status"] = "SHORTAGE"
-            result["shortage_qty"] = float(shortage)
-            result["action"] = "AUTO-REQ: Requesting additional label/benang"
-            result["requisition_status"] = "Pending Warehouse Approval"
-        
-        elif variance > 0:
-            # Surplus
-            result["status"] = "SURPLUS"
-            result["surplus_qty"] = float(variance)
-            result["action"] = "Material surplus - proceed with full qty"
-        
-        return result
+        # Delegate to base class
+        return cls.validate_input_vs_bom(db=db, work_order_id=work_order_id, received_qty=received_qty)
     
     @staticmethod
     def process_sewing_step(

@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from decimal import Decimal
 from typing import List
 
-from app.core.dependencies import get_db, require_role
+from app.core.dependencies import get_db, require_permission
 from app.core.models.users import User
 from app.modules.packing.models import (
     SortByDestinationRequest, PackageIntoCartonRequest,
@@ -23,7 +23,7 @@ router = APIRouter(prefix="/production/packing", tags=["Packing Module"])
 @router.post("/sort-by-destination", response_model=dict)
 async def sort_by_destination_and_week(
     request: SortByDestinationRequest,
-    current_user: User = Depends(require_role(["Operator_Packing", "SPV Packing", "Admin"])),
+    current_user: User = Depends(require_permission("packing.sort_by_destination")),
     db: Session = Depends(get_db)
 ) -> dict:
     """
@@ -55,7 +55,7 @@ async def sort_by_destination_and_week(
 @router.post("/package-cartons", response_model=dict)
 async def package_into_cartons(
     request: PackageIntoCartonRequest,
-    current_user: User = Depends(require_role(["Operator_Packing", "SPV Packing", "Admin"])),
+    current_user: User = Depends(require_permission("packing.pack_product")),
     db: Session = Depends(get_db)
 ) -> dict:
     """
@@ -94,7 +94,7 @@ async def package_into_cartons(
 @router.post("/shipping-mark", response_model=ShippingMarkResponse)
 async def generate_shipping_mark(
     request: GenerateShippingMarkRequest,
-    current_user: User = Depends(require_role(["SPV Packing", "Admin"])),
+    current_user: User = Depends(require_permission("packing.label_carton")),
     db: Session = Depends(get_db)
 ) -> ShippingMarkResponse:
     """
@@ -161,7 +161,7 @@ async def complete_packing_operation(
     work_order_id: int,
     total_cartons: int,
     total_pcs: Decimal,
-    current_user: User = Depends(require_role(["SPV Packing", "Admin"])),
+    current_user: User = Depends(require_permission("packing.complete_operation")),
     db: Session = Depends(get_db)
 ) -> dict:
     """
@@ -191,7 +191,7 @@ async def complete_packing_operation(
 @router.get("/status/{work_order_id}", response_model=PackingWorkOrderResponse)
 async def get_packing_work_order_status(
     work_order_id: int,
-    current_user: User = Depends(require_role(["Operator_Packing", "SPV Packing", "Admin"])),
+    current_user: User = Depends(require_permission("packing.view_status")),
     db: Session = Depends(get_db)
 ) -> PackingWorkOrderResponse:
     """
@@ -227,7 +227,7 @@ async def get_packing_work_order_status(
 
 @router.get("/pending", response_model=List[PackingWorkOrderResponse])
 async def get_pending_packing_orders(
-    current_user: User = Depends(require_role(["SPV Packing", "Operator_Packing", "Admin"])),
+    current_user: User = Depends(require_permission("packing.view_status")),
     db: Session = Depends(get_db)
 ) -> List[PackingWorkOrderResponse]:
     """

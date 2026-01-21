@@ -1,24 +1,40 @@
 """
 Finishing Module Business Logic & Services
 Handles stuffing, closing, metal detector QC, and conversion to FG
+
+Refactored: Now extends BaseProductionService to eliminate code duplication
 """
 
 from sqlalchemy.orm import Session
-from app.core.models.manufacturing import WorkOrder, ManufacturingOrder, Department, WorkOrderStatus
-from app.core.models.transfer import TransferLog, TransferStatus, LineOccupancy, TransferDept
+from app.core.models.manufacturing import (
+    WorkOrder, ManufacturingOrder, Department, WorkOrderStatus
+)
+from app.core.models.transfer import (
+    TransferLog, TransferStatus, LineOccupancy, TransferDept
+)
 from app.core.models.quality import QCInspection
 from app.core.models.products import Product
+from app.core.base_production_service import BaseProductionService
 from decimal import Decimal
 from datetime import datetime
 from typing import Optional, Tuple
 from fastapi import HTTPException
 
 
-class FinishingService:
-    """Business logic for finishing department operations"""
+class FinishingService(BaseProductionService):
+    """
+    Business logic for finishing department operations
+    Extends BaseProductionService for common production patterns
+    """
     
-    @staticmethod
+    # Department configuration
+    DEPARTMENT = Department.FINISHING
+    DEPARTMENT_NAME = "Finishing"
+    TRANSFER_DEPT = TransferDept.FINISHING
+    
+    @classmethod
     def accept_wip_transfer(
+        cls,
         db: Session,
         transfer_slip_number: str,
         received_qty: Decimal,
@@ -27,98 +43,39 @@ class FinishingService:
     ) -> dict:
         """
         Step 400: Accept WIP SEW from Sewing
-        - Scan transfer slip (Handshake ACCEPT)
-        - Unlock stock
-        - Check for line clearance before proceeding
+        Uses base class accept_transfer_from_previous_dept
         """
+        # Delegate to base class
+        result = cls.accept_transfer_from_previous_dept(
+            db=db,
+            transfer_slip_number=transfer_slip_number,
+            received_qty=received_qty,
+            user_id=user_id,
+            from_dept=TransferDept.SEWING,
+            notes=notes
+        )
         
-        # Find transfer log
-        transfer = db.query(TransferLog).filter(
-            TransferLog.status == TransferStatus.LOCKED,
-            TransferLog.from_dept == TransferDept.SEWING
-        ).first()
+        # Add finishing-specific next step
+        result["next_step"] = "Line Clearance Check (Step 405-406)"
         
-        if not transfer:
-            raise HTTPException(
-                status_code=404,
-                detail="No pending Sewing transfer found"
-            )
-        
-        # Accept transfer
-        transfer.status = TransferStatus.ACCEPTED
-        transfer.qty_received = received_qty
-        transfer.timestamp_accept = datetime.utcnow()
-        transfer.accepted_by = user_id
-        
-        # Get work order
-        wo = db.query(WorkOrder).filter(
-            WorkOrder.mo_id == transfer.mo_id,
-            WorkOrder.department == Department.FINISHING
-        ).first()
-        
-        if not wo:
-            raise HTTPException(status_code=404, detail="Finishing work order not found")
-        
-        wo.input_qty = received_qty
-        wo.status = WorkOrderStatus.RUNNING
-        wo.start_time = datetime.utcnow()
-        wo.worker_id = user_id
-        
-        # Mark Sewing line as CLEAR
-        sewing_line = db.query(LineOccupancy).filter(
-            LineOccupancy.dept_name == TransferDept.SEWING
-        ).first()
-        if sewing_line:
-            sewing_line.status = "Clear"
-            sewing_line.current_article = None
-        
-        db.commit()
-        
-        return {
-            "transfer_slip_number": transfer_slip_number,
-            "received_qty": float(received_qty),
-            "handshake_status": "ACCEPTED",
-            "work_order_id": wo.id,
-            "next_step": "Line Clearance Check (Step 405-406)",
-            "notes": notes,
-            "timestamp": datetime.utcnow().isoformat()
-        }
+        return result
     
-    @staticmethod
+    @classmethod
     def check_line_clearance_packing(
+        cls,
         db: Session,
         work_order_id: int
     ) -> Tuple[bool, Optional[str]]:
         """
-        Step 405-406: LINE CLEARANCE CHECK
-        - Check if previous batch still on Packing line
-        - Must clear before proceeding to stuffing
+        Step 405-406: LINE CLEARANCE CHECK (Packing Line)
+        Uses base class check_line_clearance
         """
-        
-        wo = db.query(WorkOrder).filter(WorkOrder.id == work_order_id).first()
-        if not wo:
-            raise HTTPException(status_code=404, detail=f"Work order {work_order_id} not found")
-        
-        # Check Packing line occupancy
-        packing_line = db.query(LineOccupancy).filter(
-            LineOccupancy.dept_name == TransferDept.PACKING
-        ).first()
-        
-        if not packing_line:
-            packing_line = LineOccupancy(
-                dept_name=TransferDept.PACKING,
-                status="Clear"
-            )
-            db.add(packing_line)
-            db.flush()
-        
-        is_clear = packing_line.status == "Clear" or packing_line.current_article is None
-        blocking_reason = None
-        
-        if not is_clear:
-            blocking_reason = f"Packing line still has: {packing_line.current_article} (batch: {packing_line.current_batch})"
-        
-        return is_clear, blocking_reason
+        # Delegate to base class
+        return cls.check_line_clearance(
+            db=db,
+            work_order_id=work_order_id,
+            target_dept=TransferDept.PACKING
+        )
     
     @staticmethod
     def perform_stuffing(

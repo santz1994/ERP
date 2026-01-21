@@ -15,72 +15,118 @@ class EndpointRoleRequirements:
     """
     
     # PPIC Module - Manufacturing Orders & Planning
-    PPIC_CREATE = [UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN, UserRole.ADMIN]
-    PPIC_READ = [UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN, UserRole.ADMIN, 
-                 UserRole.SPV_CUTTING, UserRole.SPV_SEWING, UserRole.SPV_FINISHING]
+    PPIC_CREATE = [
+        UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN, UserRole.ADMIN
+    ]
+    PPIC_READ = [
+        UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN, UserRole.ADMIN,
+        UserRole.SPV_CUTTING, UserRole.SPV_SEWING, UserRole.SPV_FINISHING
+    ]
     PPIC_APPROVE = [UserRole.PPIC_MANAGER, UserRole.ADMIN]
     
     # Purchasing Module
-    PURCHASING_CREATE = [UserRole.PURCHASING, UserRole.PURCHASING_HEAD, UserRole.ADMIN]
-    PURCHASING_APPROVE = [UserRole.PURCHASING_HEAD, UserRole.MANAGER, UserRole.ADMIN]
-    PURCHASING_READ = [UserRole.PURCHASING, UserRole.PURCHASING_HEAD, UserRole.ADMIN, 
-                       UserRole.WAREHOUSE_ADMIN, UserRole.FINANCE_MANAGER]
+    PURCHASING_CREATE = [
+        UserRole.PURCHASING, UserRole.PURCHASING_HEAD, UserRole.ADMIN
+    ]
+    PURCHASING_APPROVE = [
+        UserRole.PURCHASING_HEAD, UserRole.MANAGER, UserRole.ADMIN
+    ]
+    PURCHASING_READ = [
+        UserRole.PURCHASING, UserRole.PURCHASING_HEAD, UserRole.ADMIN,
+        UserRole.WAREHOUSE_ADMIN, UserRole.FINANCE_MANAGER
+    ]
     
     # Warehouse Module
-    WAREHOUSE_CREATE = [UserRole.WAREHOUSE_ADMIN, UserRole.WAREHOUSE_OP, UserRole.ADMIN]
+    WAREHOUSE_CREATE = [
+        UserRole.WAREHOUSE_ADMIN, UserRole.WAREHOUSE_OP, UserRole.ADMIN
+    ]
     WAREHOUSE_APPROVE = [UserRole.WAREHOUSE_ADMIN, UserRole.ADMIN]
-    WAREHOUSE_READ = [UserRole.WAREHOUSE_ADMIN, UserRole.WAREHOUSE_OP, UserRole.ADMIN,
-                      UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN]
+    WAREHOUSE_READ = [
+        UserRole.WAREHOUSE_ADMIN, UserRole.WAREHOUSE_OP, UserRole.ADMIN,
+        UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN
+    ]
     
     # Cutting Module
-    CUTTING_EXECUTE = [UserRole.OPERATOR_CUT, UserRole.SPV_CUTTING, UserRole.ADMIN]
+    CUTTING_EXECUTE = [
+        UserRole.OPERATOR_CUT, UserRole.SPV_CUTTING, UserRole.ADMIN
+    ]
     CUTTING_APPROVE = [UserRole.SPV_CUTTING, UserRole.ADMIN]
-    CUTTING_READ = [UserRole.OPERATOR_CUT, UserRole.SPV_CUTTING, UserRole.ADMIN, 
-                    UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN]
+    CUTTING_READ = [
+        UserRole.OPERATOR_CUT, UserRole.SPV_CUTTING, UserRole.ADMIN,
+        UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN
+    ]
     
     # Embroidery Module
-    EMBROIDERY_EXECUTE = [UserRole.OPERATOR_EMBRO, UserRole.SPV_CUTTING, UserRole.ADMIN]
-    EMBROIDERY_READ = [UserRole.OPERATOR_EMBRO, UserRole.SPV_CUTTING, UserRole.ADMIN,
-                       UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN]
+    EMBROIDERY_EXECUTE = [
+        UserRole.OPERATOR_EMBRO, UserRole.SPV_CUTTING, UserRole.ADMIN
+    ]
+    EMBROIDERY_READ = [
+        UserRole.OPERATOR_EMBRO, UserRole.SPV_CUTTING, UserRole.ADMIN,
+        UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN
+    ]
     
     # Sewing Module
-    SEWING_EXECUTE = [UserRole.OPERATOR_SEW, UserRole.SPV_SEWING, UserRole.ADMIN]
+    SEWING_EXECUTE = [
+        UserRole.OPERATOR_SEW, UserRole.SPV_SEWING, UserRole.ADMIN
+    ]
     SEWING_APPROVE = [UserRole.SPV_SEWING, UserRole.ADMIN]
-    SEWING_READ = [UserRole.OPERATOR_SEW, UserRole.SPV_SEWING, UserRole.ADMIN,
-                   UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN]
+    SEWING_READ = [
+        UserRole.OPERATOR_SEW, UserRole.SPV_SEWING, UserRole.ADMIN,
+        UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN
+    ]
     
     # Finishing Module
-    FINISHING_EXECUTE = [UserRole.OPERATOR_FINISH, UserRole.SPV_FINISHING, UserRole.ADMIN]
+    FINISHING_EXECUTE = [
+        UserRole.OPERATOR_FINISH, UserRole.SPV_FINISHING, UserRole.ADMIN
+    ]
     FINISHING_APPROVE = [UserRole.SPV_FINISHING, UserRole.ADMIN]
-    FINISHING_READ = [UserRole.OPERATOR_FINISH, UserRole.SPV_FINISHING, UserRole.ADMIN,
-                      UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN]
+    FINISHING_READ = [
+        UserRole.OPERATOR_FINISH, UserRole.SPV_FINISHING, UserRole.ADMIN,
+        UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN
+    ]
     
     # Packing Module
     PACKING_EXECUTE = [UserRole.OPERATOR_PACK, UserRole.ADMIN]
-    PACKING_READ = [UserRole.OPERATOR_PACK, UserRole.ADMIN, UserRole.WAREHOUSE_ADMIN,
-                    UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN]
+    PACKING_READ = [
+        UserRole.OPERATOR_PACK, UserRole.ADMIN, UserRole.WAREHOUSE_ADMIN,
+        UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN
+    ]
     
     # Quality Control Module
     QC_INSPECT = [UserRole.QC_INSPECTOR, UserRole.QC_LAB, UserRole.ADMIN]
     QC_LAB_TEST = [UserRole.QC_LAB, UserRole.ADMIN]
     QC_APPROVE = [UserRole.QC_LAB, UserRole.ADMIN]
-    QC_READ = [UserRole.QC_INSPECTOR, UserRole.QC_LAB, UserRole.ADMIN,
-               UserRole.SPV_CUTTING, UserRole.SPV_SEWING, UserRole.SPV_FINISHING]
+    QC_READ = [
+        UserRole.QC_INSPECTOR, UserRole.QC_LAB, UserRole.ADMIN,
+        UserRole.SPV_CUTTING, UserRole.SPV_SEWING, UserRole.SPV_FINISHING
+    ]
     
     # Finish Goods Module
-    FINISHGOODS_CREATE = [UserRole.WAREHOUSE_ADMIN, UserRole.WAREHOUSE_OP, UserRole.ADMIN]
-    FINISHGOODS_READ = [UserRole.WAREHOUSE_ADMIN, UserRole.WAREHOUSE_OP, UserRole.ADMIN,
-                        UserRole.PPIC_MANAGER, UserRole.SECURITY]
-    FINISHGOODS_SHIP = [UserRole.WAREHOUSE_ADMIN, UserRole.SECURITY, UserRole.ADMIN]
+    FINISHGOODS_CREATE = [
+        UserRole.WAREHOUSE_ADMIN, UserRole.WAREHOUSE_OP, UserRole.ADMIN
+    ]
+    FINISHGOODS_READ = [
+        UserRole.WAREHOUSE_ADMIN, UserRole.WAREHOUSE_OP, UserRole.ADMIN,
+        UserRole.PPIC_MANAGER, UserRole.SECURITY
+    ]
+    FINISHGOODS_SHIP = [
+        UserRole.WAREHOUSE_ADMIN, UserRole.SECURITY, UserRole.ADMIN
+    ]
     
     # Kanban Module
-    KANBAN_CREATE = [UserRole.OPERATOR_PACK, UserRole.WAREHOUSE_OP, UserRole.ADMIN]
+    KANBAN_CREATE = [
+        UserRole.OPERATOR_PACK, UserRole.WAREHOUSE_OP, UserRole.ADMIN
+    ]
     KANBAN_APPROVE = [UserRole.WAREHOUSE_ADMIN, UserRole.ADMIN]
-    KANBAN_FULFILL = [UserRole.WAREHOUSE_OP, UserRole.WAREHOUSE_ADMIN, UserRole.ADMIN]
+    KANBAN_FULFILL = [
+        UserRole.WAREHOUSE_OP, UserRole.WAREHOUSE_ADMIN, UserRole.ADMIN
+    ]
     
     # Reports Module
-    REPORTS_READ = [UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN, UserRole.MANAGER,
-                    UserRole.FINANCE_MANAGER, UserRole.ADMIN]
+    REPORTS_READ = [
+        UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN, UserRole.MANAGER,
+        UserRole.FINANCE_MANAGER, UserRole.ADMIN
+    ]
     REPORTS_CREATE = [UserRole.PPIC_MANAGER, UserRole.ADMIN]
     
     # Admin Module - User Management
@@ -90,13 +136,17 @@ class EndpointRoleRequirements:
     
     # Admin Module - Masterdata
     ADMIN_MASTERDATA_MANAGE = [UserRole.ADMIN, UserRole.PPIC_MANAGER]
-    ADMIN_MASTERDATA_READ = [UserRole.ADMIN, UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN,
-                             UserRole.PURCHASING, UserRole.WAREHOUSE_ADMIN]
-    
+    ADMIN_MASTERDATA_READ = [
+        UserRole.ADMIN, UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN,
+        UserRole.PURCHASING, UserRole.WAREHOUSE_ADMIN
+    ]
+
     # Admin Module - Import/Export
     ADMIN_IMPORT = [UserRole.ADMIN]
-    ADMIN_EXPORT = [UserRole.ADMIN, UserRole.PPIC_MANAGER, UserRole.WAREHOUSE_ADMIN,
-                    UserRole.FINANCE_MANAGER]
+    ADMIN_EXPORT = [
+        UserRole.ADMIN, UserRole.PPIC_MANAGER, UserRole.WAREHOUSE_ADMIN,
+        UserRole.FINANCE_MANAGER
+    ]
     
     # Audit Trail - Read Only for Auditors
     AUDIT_READ = [UserRole.DEVELOPER, UserRole.SUPERADMIN, UserRole.MANAGER,

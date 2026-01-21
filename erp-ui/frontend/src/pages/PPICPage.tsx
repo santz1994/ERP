@@ -1,6 +1,13 @@
+/**
+ * PPIC Page - Manufacturing Order Management
+ * Updated: 2026-01-21 | Phase 16 Week 4 | PBAC Integration
+ */
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Lock } from 'lucide-react';
 import apiClient from '../api/client';
+import { usePermission } from '@/hooks/usePermission';
 
 // Types
 interface ManufacturingOrder {
@@ -30,6 +37,12 @@ const PPICPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'mos' | 'bom' | 'planning'>('mos');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('all');
+
+  // Permission checks (PBAC - Phase 16 Week 4)
+  const canViewMO = usePermission('ppic.view_mo');
+  const canCreateMO = usePermission('ppic.create_mo');
+  const canScheduleProduction = usePermission('ppic.schedule_production');
+  const canApproveMO = usePermission('ppic.approve_mo');
 
   // Form state
   const [moForm, setMoForm] = useState({

@@ -21,28 +21,39 @@ import {
 } from 'lucide-react'
 import { useAuthStore, useUIStore } from '@/store'
 import { UserRole } from '@/types'
+import { useAnyPermission } from '@/hooks/usePermission'
 
 interface SubMenuItem {
   icon: React.ReactNode
   label: string
   path: string
-  roles: UserRole[]
+  roles?: UserRole[]  // Optional: backward compatible
+  permissions?: string[]  // NEW: permission-based access
 }
 
 interface MenuItem {
   icon: React.ReactNode
   label: string
   path?: string
-  roles: UserRole[]
+  roles?: UserRole[]  // Optional: backward compatible
+  permissions?: string[]  // NEW: permission-based access
   submenu?: SubMenuItem[]
 }
 
+/**
+ * Menu items with PBAC (Permission-Based Access Control)
+ * Phase 16 Week 4
+ * 
+ * Backward compatible:
+ * - If `permissions` is defined, use permission-based check
+ * - If only `roles` is defined, use role-based check (old behavior)
+ */
 const menuItems: MenuItem[] = [
   { 
     icon: <BarChart3 />, 
     label: 'Dashboard', 
     path: '/dashboard', 
-    roles: Object.values(UserRole) 
+    permissions: ['dashboard.view_stats', 'dashboard.view_production', 'dashboard.view_alerts']
   },
   { 
     icon: <ShoppingCart />, 
@@ -54,18 +65,18 @@ const menuItems: MenuItem[] = [
     icon: <ClipboardList />, 
     label: 'PPIC', 
     path: '/ppic', 
-    roles: [UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN, UserRole.ADMIN] 
+    permissions: ['ppic.view_mo', 'ppic.create_mo', 'ppic.schedule_production', 'ppic.approve_mo']
   },
   { 
     icon: <Factory />, 
     label: 'Production', 
-    roles: [UserRole.OPERATOR_CUT, UserRole.SPV_CUTTING, UserRole.OPERATOR_EMBRO, UserRole.OPERATOR_SEW, UserRole.SPV_SEWING, UserRole.OPERATOR_FINISH, UserRole.SPV_FINISHING, UserRole.OPERATOR_PACK, UserRole.ADMIN],
+    permissions: ['cutting.view_status', 'sewing.view_status', 'finishing.view_status', 'packing.view_status'],
     submenu: [
       { 
         icon: <Scissors />, 
         label: 'Cutting', 
         path: '/cutting', 
-        roles: [UserRole.OPERATOR_CUT, UserRole.SPV_CUTTING, UserRole.ADMIN] 
+        permissions: ['cutting.view_status', 'cutting.allocate_material', 'cutting.complete_operation']
       },
       { 
         icon: <Palette />, 
@@ -77,19 +88,19 @@ const menuItems: MenuItem[] = [
         icon: <Zap />, 
         label: 'Sewing', 
         path: '/sewing', 
-        roles: [UserRole.OPERATOR_SEW, UserRole.SPV_SEWING, UserRole.ADMIN] 
+        permissions: ['sewing.view_status', 'sewing.accept_transfer', 'sewing.inline_qc', 'sewing.create_transfer']
       },
       { 
         icon: <Sparkles />, 
         label: 'Finishing', 
         path: '/finishing', 
-        roles: [UserRole.OPERATOR_FINISH, UserRole.SPV_FINISHING, UserRole.ADMIN] 
+        permissions: ['finishing.view_status', 'finishing.accept_transfer', 'finishing.final_qc', 'finishing.convert_to_fg']
       },
       { 
         icon: <Package />, 
         label: 'Packing', 
         path: '/packing', 
-        roles: [UserRole.OPERATOR_PACK, UserRole.ADMIN] 
+        permissions: ['packing.view_status', 'packing.pack_product', 'packing.label_carton', 'packing.complete_operation']
       },
     ]
   },
@@ -120,13 +131,19 @@ const menuItems: MenuItem[] = [
   { 
     icon: <Users />, 
     label: 'Admin', 
-    roles: [UserRole.DEVELOPER, UserRole.SUPERADMIN, UserRole.ADMIN],
+    permissions: ['admin.manage_users', 'admin.view_system_info'],
     submenu: [
       { 
         icon: <Users />, 
         label: 'User Management', 
         path: '/admin/users', 
-        roles: [UserRole.DEVELOPER, UserRole.SUPERADMIN, UserRole.ADMIN] 
+        permissions: ['admin.manage_users']
+      },
+      { 
+        icon: <Shield />, 
+        label: 'Permissions', 
+        path: '/admin/permissions', 
+        permissions: ['admin.view_system_info']
       },
       { 
         icon: <Shield />, 
@@ -144,17 +161,36 @@ export const Sidebar: React.FC = () => {
   const location = useLocation()
   const [openDropdowns, setOpenDropdowns] = useState<string[]>([])
 
-  const visibleItems = menuItems.filter((item) => {
+  /**
+   * Check if user has access to a menu item
+   * Supports both permission-based (new) and role-based (old) checks
+   */
+  const hasAccess = (item: MenuItem | SubMenuItem): boolean => {
     if (!user) return false
     
-    // Check if user has access to main item
-    if (item.roles.includes(user.role as UserRole)) {
+    // Priority 1: Permission-based check (new system)
+    if (item.permissions && item.permissions.length > 0) {
+      return useAnyPermission(item.permissions)
+    }
+    
+    // Priority 2: Role-based check (backward compatible)
+    if (item.roles && item.roles.length > 0) {
+      return item.roles.includes(user.role as UserRole)
+    }
+    
+    // Default: no access
+    return false
+  }
+
+  const visibleItems = menuItems.filter((item) => {
+    // Check main item access
+    if (hasAccess(item)) {
       return true
     }
     
     // Check if user has access to any submenu item
     if (item.submenu) {
-      return item.submenu.some(sub => sub.roles.includes(user.role as UserRole))
+      return item.submenu.some(sub => hasAccess(sub))
     }
     
     return false
@@ -181,10 +217,8 @@ export const Sidebar: React.FC = () => {
     const isDropdownOpen = openDropdowns.includes(item.label)
     const active = isActive(item.path, item.submenu)
 
-    // Filter visible submenu items based on user role
-    const visibleSubmenu = item.submenu?.filter(sub => 
-      user && sub.roles.includes(user.role as UserRole)
-    )
+    // Filter visible submenu items using hasAccess (supports both permissions and roles)
+    const visibleSubmenu = item.submenu?.filter(sub => hasAccess(sub))
 
     if (hasSubmenu && visibleSubmenu && visibleSubmenu.length > 0) {
       return (

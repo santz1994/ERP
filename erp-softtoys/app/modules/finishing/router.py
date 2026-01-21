@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from decimal import Decimal
 from typing import List
 
-from app.core.dependencies import get_db, require_role
+from app.core.dependencies import get_db, require_permission
 from app.core.models.users import User
 from app.modules.finishing.models import (
     AcceptWIPRequest, StuffingRequest, ClosingAndGroomingRequest,
@@ -23,7 +23,7 @@ router = APIRouter(prefix="/production/finishing", tags=["Finishing Module"])
 @router.post("/accept-transfer", response_model=dict)
 async def accept_wip_from_sewing(
     request: AcceptWIPRequest,
-    current_user: User = Depends(require_role(["SPV Finishing", "Operator_Finishing", "Admin"])),
+    current_user: User = Depends(require_permission("finishing.accept_transfer")),
     db: Session = Depends(get_db)
 ) -> dict:
     """
@@ -52,7 +52,7 @@ async def accept_wip_from_sewing(
 @router.post("/line-clearance-check/{work_order_id}", response_model=dict)
 async def check_packing_line_clearance(
     work_order_id: int,
-    current_user: User = Depends(require_role(["SPV Finishing", "Admin"])),
+    current_user: User = Depends(require_permission("finishing.line_clearance")),
     db: Session = Depends(get_db)
 ) -> dict:
     """
@@ -89,7 +89,7 @@ async def check_packing_line_clearance(
 @router.post("/stuffing", response_model=dict)
 async def perform_stuffing_operation(
     request: StuffingRequest,
-    current_user: User = Depends(require_role(["Operator_Finishing", "SPV Finishing", "Admin"])),
+    current_user: User = Depends(require_permission("finishing.perform_stuffing")),
     db: Session = Depends(get_db)
 ) -> dict:
     """
@@ -117,7 +117,7 @@ async def perform_stuffing_operation(
 @router.post("/closing-grooming", response_model=dict)
 async def perform_closing_grooming(
     request: ClosingAndGroomingRequest,
-    current_user: User = Depends(require_role(["Operator_Finishing", "SPV Finishing", "Admin"])),
+    current_user: User = Depends(require_permission("finishing.perform_closing")),
     db: Session = Depends(get_db)
 ) -> dict:
     """
@@ -144,7 +144,7 @@ async def perform_closing_grooming(
 @router.post("/metal-detector-test", response_model=dict)
 async def perform_metal_detector_test(
     request: MetalDetectorTestRequest,
-    current_user: User = Depends(require_role(["QC Inspector", "SPV Finishing", "Admin"])),
+    current_user: User = Depends(require_permission("finishing.metal_detector_qc")),
     db: Session = Depends(get_db)
 ) -> dict:
     """
@@ -191,7 +191,7 @@ async def physical_and_symmetry_check(
     pass_qty: Decimal,
     repair_qty: Decimal = 0,
     notes: str = None,
-    current_user: User = Depends(require_role(["QC Inspector", "SPV Finishing", "Admin"])),
+    current_user: User = Depends(require_permission("finishing.final_qc")),
     db: Session = Depends(get_db)
 ) -> dict:
     """
@@ -221,7 +221,7 @@ async def physical_and_symmetry_check(
 @router.post("/convert-to-fg", response_model=dict)
 async def convert_wip_to_finish_good(
     request: ConversionRequest,
-    current_user: User = Depends(require_role(["SPV Finishing", "Admin"])),
+    current_user: User = Depends(require_permission("finishing.convert_to_fg")),
     db: Session = Depends(get_db)
 ) -> dict:
     """
@@ -271,7 +271,7 @@ async def convert_wip_to_finish_good(
 @router.get("/status/{work_order_id}", response_model=FinishingWorkOrderResponse)
 async def get_finishing_work_order_status(
     work_order_id: int,
-    current_user: User = Depends(require_role(["Operator_Finishing", "SPV Finishing", "QC Inspector", "Admin"])),
+    current_user: User = Depends(require_permission("finishing.view_status")),
     db: Session = Depends(get_db)
 ) -> FinishingWorkOrderResponse:
     """
@@ -310,7 +310,7 @@ async def get_finishing_work_order_status(
 
 @router.get("/pending", response_model=List[FinishingWorkOrderResponse])
 async def get_pending_finishing_orders(
-    current_user: User = Depends(require_role(["SPV Finishing", "Operator_Finishing", "Admin"])),
+    current_user: User = Depends(require_permission("finishing.view_status")),
     db: Session = Depends(get_db)
 ) -> List[FinishingWorkOrderResponse]:
     """

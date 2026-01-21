@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field, EmailStr
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.models.users import User, UserRole
-from app.core.dependencies import get_current_user, require_role
+from app.core.dependencies import get_current_user, require_permission
 from app.core.security import PasswordUtils
 from app.core.schemas import UserResponse
 
@@ -46,7 +46,7 @@ class UserListResponse(BaseModel):
 
 @router.get("/users", response_model=List[UserListResponse])
 async def list_users(
-    current_user: User = Depends(require_role("Admin")),
+    current_user: User = Depends(require_permission("admin.manage_users")),
     db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100
@@ -85,7 +85,7 @@ async def list_users(
 @router.get("/users/{user_id}", response_model=UserListResponse)
 async def get_user(
     user_id: int,
-    current_user: User = Depends(require_role("Admin")),
+    current_user: User = Depends(require_permission("admin.manage_users")),
     db: Session = Depends(get_db)
 ):
     """
@@ -126,7 +126,7 @@ async def get_user(
 async def update_user(
     user_id: int,
     update_data: UserUpdateRequest,
-    current_user: User = Depends(require_role("Admin")),
+    current_user: User = Depends(require_permission("admin.manage_users")),
     db: Session = Depends(get_db)
 ):
     """
@@ -195,7 +195,7 @@ async def update_user(
 @router.post("/users/{user_id}/deactivate")
 async def deactivate_user(
     user_id: int,
-    current_user: User = Depends(require_role("Admin")),
+    current_user: User = Depends(require_permission("admin.manage_users")),
     db: Session = Depends(get_db)
 ):
     """
@@ -237,7 +237,7 @@ async def deactivate_user(
 @router.post("/users/{user_id}/reactivate")
 async def reactivate_user(
     user_id: int,
-    current_user: User = Depends(require_role("Admin")),
+    current_user: User = Depends(require_permission("admin.manage_users")),
     db: Session = Depends(get_db)
 ):
     """
@@ -275,7 +275,7 @@ async def reactivate_user(
 @router.post("/users/{user_id}/reset-password")
 async def reset_user_password(
     user_id: int,
-    current_user: User = Depends(require_role("Admin")),
+    current_user: User = Depends(require_permission("admin.manage_users")),
     db: Session = Depends(get_db)
 ):
     """
@@ -320,7 +320,7 @@ async def reset_user_password(
 @router.get("/users/role/{role_name}")
 async def list_users_by_role(
     role_name: str,
-    current_user: User = Depends(require_role("Admin")),
+    current_user: User = Depends(require_permission("admin.manage_users")),
     db: Session = Depends(get_db)
 ):
     """
@@ -360,7 +360,7 @@ async def list_users_by_role(
 
 @router.get("/environment-info")
 async def get_environment_info(
-    current_user: User = Depends(require_role("Admin"))
+    current_user: User = Depends(require_permission("admin.view_system_info"))
 ):
     """
     Get environment information and access control policies

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/api/client';
-import { useAuthStore } from '@/store/authStore';
+import { useAuthStore } from '@/store/index';  // Fix: changed from authStore to index
 
 interface AuditLog {
   id: number;

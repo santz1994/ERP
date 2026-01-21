@@ -1,6 +1,7 @@
 /**
  * Copyright (c) 2026 PT Quty Karunia / Daniel Rizaldy - All Rights Reserved
  * File: SewingPage.tsx | Author: Daniel Rizaldy | Date: 2026-01-19
+ * Updated: 2026-01-21 | Phase 16 Week 4 | PBAC Integration
  */
 
 import { useState, useEffect } from 'react';
@@ -13,9 +14,11 @@ import {
   AlertTriangle,
   Tag,
   ArrowRight,
-  RefreshCw
+  RefreshCw,
+  Lock
 } from 'lucide-react';
 import axios from 'axios';
+import { usePermission } from '@/hooks/usePermission';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
@@ -49,6 +52,14 @@ export default function SewingPage() {
   const [failQty, setFailQty] = useState<number>(0);
   const [defects, setDefects] = useState<Record<string, number>>({});
   const queryClient = useQueryClient();
+
+  // Permission checks (PBAC - Phase 16 Week 4)
+  const canViewStatus = usePermission('sewing.view_status');
+  const canAcceptTransfer = usePermission('sewing.accept_transfer');
+  const canValidateInput = usePermission('sewing.validate_input');
+  const canInlineQC = usePermission('sewing.inline_qc');
+  const canCreateTransfer = usePermission('sewing.create_transfer');
+  const canReturnToStage = usePermission('sewing.return_to_stage');
 
   const defectTypes = [
     'Broken Stitch',
@@ -250,7 +261,7 @@ export default function SewingPage() {
 
               {/* Actions */}
               <div className="space-y-2">
-                {wo.status === 'Pending' && (
+                {wo.status === 'Pending' && canAcceptTransfer && (
                   <button
                     onClick={() => startWO.mutate(wo.id)}
                     disabled={startWO.isPending}
@@ -259,32 +270,47 @@ export default function SewingPage() {
                     Start Sewing
                   </button>
                 )}
+                {wo.status === 'Pending' && !canAcceptTransfer && (
+                  <div className="w-full bg-gray-100 text-gray-500 px-4 py-2 rounded text-sm font-medium flex items-center justify-center">
+                    <Lock className="w-4 h-4 mr-2" />
+                    No Permission
+                  </div>
+                )}
 
                 {wo.status === 'Running' && (
                   <>
-                    <button
-                      onClick={() => {
-                        setSelectedWO(wo.id);
-                        setQcMode(true);
-                      }}
-                      className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition text-sm font-medium flex items-center justify-center"
-                    >
-                      <CheckSquare className="w-4 h-4 mr-2" />
-                      QC Inspection
-                    </button>
+                    {canInlineQC ? (
+                      <button
+                        onClick={() => {
+                          setSelectedWO(wo.id);
+                          setQcMode(true);
+                        }}
+                        className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition text-sm font-medium flex items-center justify-center"
+                      >
+                        <CheckSquare className="w-4 h-4 mr-2" />
+                        QC Inspection (Inspector Only)
+                      </button>
+                    ) : (
+                      <div className="w-full bg-gray-100 text-gray-500 px-4 py-2 rounded text-sm font-medium flex items-center justify-center">
+                        <Lock className="w-4 h-4 mr-2" />
+                        QC Inspector Only
+                      </div>
+                    )}
 
-                    <button
-                      onClick={() => attachLabel.mutate(wo.id)}
-                      disabled={attachLabel.isPending}
-                      className="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition disabled:opacity-50 text-sm font-medium flex items-center justify-center"
-                    >
-                      <Tag className="w-4 h-4 mr-2" />
-                      Attach Label
-                    </button>
+                    {canValidateInput && (
+                      <button
+                        onClick={() => attachLabel.mutate(wo.id)}
+                        disabled={attachLabel.isPending}
+                        className="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition disabled:opacity-50 text-sm font-medium flex items-center justify-center"
+                      >
+                        <Tag className="w-4 h-4 mr-2" />
+                        Attach Label
+                      </button>
+                    )}
                   </>
                 )}
 
-                {wo.reject_qty > 0 && (
+                {wo.reject_qty > 0 && canReturnToStage && (
                   <button
                     onClick={() => {
                       const reason = prompt('Rework reason:');

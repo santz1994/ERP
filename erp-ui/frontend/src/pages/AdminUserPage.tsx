@@ -1,5 +1,12 @@
+/**
+ * AdminUserPage - User Management
+ * Updated: 2026-01-21 | Phase 16 Week 4 | PBAC Integration
+ */
+
 import React, { useState, useEffect } from 'react'
+import { Lock } from 'lucide-react'
 import { apiClient } from '@/api/client'
+import { usePermission } from '@/hooks/usePermission'
 
 interface User {
   id: number
@@ -18,6 +25,10 @@ const AdminUserPage: React.FC = () => {
   const [loading, setLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
+  
+  // Permission checks (PBAC - Phase 16 Week 4)
+  const canManageUsers = usePermission('admin.manage_users')
+  const canViewSystemInfo = usePermission('admin.view_system_info')
   
   const [userForm, setUserForm] = useState({
     username: '',
@@ -195,12 +206,19 @@ const AdminUserPage: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
           <p className="text-gray-600 mt-1">Manage system users and permissions</p>
         </div>
-        <button
-          onClick={openCreateModal}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-        >
-          + Create User
-        </button>
+        {canManageUsers ? (
+          <button
+            onClick={openCreateModal}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          >
+            + Create User
+          </button>
+        ) : (
+          <div className="px-4 py-2 bg-gray-100 text-gray-500 rounded-lg flex items-center">
+            <Lock className="w-4 h-4 mr-2" />
+            Admin Only
+          </div>
+        )}
       </div>
 
       {/* Statistics */}
@@ -273,33 +291,42 @@ const AdminUserPage: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 text-sm">
                       <div className="flex gap-2">
-                        <button
-                          onClick={() => openEditModal(user)}
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                          Edit
-                        </button>
-                        {user.is_active ? (
-                          <button
-                            onClick={() => handleDeactivateUser(user.id)}
-                            className="text-red-600 hover:text-red-800"
-                          >
-                            Deactivate
-                          </button>
+                        {canManageUsers ? (
+                          <>
+                            <button
+                              onClick={() => openEditModal(user)}
+                              className="text-blue-600 hover:text-blue-800"
+                            >
+                              Edit
+                            </button>
+                            {user.is_active ? (
+                              <button
+                                onClick={() => handleDeactivateUser(user.id)}
+                                className="text-red-600 hover:text-red-800"
+                              >
+                                Deactivate
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleReactivateUser(user.id)}
+                                className="text-green-600 hover:text-green-800"
+                              >
+                                Reactivate
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleResetPassword(user.id)}
+                              className="text-purple-600 hover:text-purple-800"
+                            >
+                              Reset Pwd
+                            </button>
+                          </>
                         ) : (
-                          <button
-                            onClick={() => handleReactivateUser(user.id)}
-                            className="text-green-600 hover:text-green-800"
-                          >
-                            Reactivate
-                          </button>
+                          <span className="text-gray-400 text-sm flex items-center">
+                            <Lock className="w-3 h-3 mr-1" />
+                            View Only
+                          </span>
                         )}
-                        <button
-                          onClick={() => handleResetPassword(user.id)}
-                          className="text-purple-600 hover:text-purple-800"
-                        >
-                          Reset Pwd
-                        </button>
                       </div>
                     </td>
                   </tr>

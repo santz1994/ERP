@@ -51,7 +51,7 @@ class TokenUtils:
         expires_delta: Optional[timedelta] = None
     ) -> str:
         """
-        Create JWT access token
+        Create JWT access token using current SECRET_KEY
         
         Args:
             user_id: User ID
@@ -77,9 +77,10 @@ class TokenUtils:
             "iat": datetime.utcnow()
         }
         
+        # Always use current key for new tokens
         encoded_jwt = jwt.encode(
             payload,
-            settings.JWT_SECRET_KEY,
+            settings.SECRET_KEY,  # Changed from JWT_SECRET_KEY
             algorithm=settings.JWT_ALGORITHM
         )
         
@@ -87,7 +88,7 @@ class TokenUtils:
     
     @staticmethod
     def create_refresh_token(user_id: int, username: str) -> str:
-        """Create JWT refresh token (longer expiration)"""
+        """Create JWT refresh token (longer expiration) using current SECRET_KEY"""
         expires_delta = timedelta(days=settings.JWT_REFRESH_EXPIRATION_DAYS)
         
         payload = {
@@ -97,9 +98,10 @@ class TokenUtils:
             "exp": datetime.utcnow() + expires_delta
         }
         
+        # Always use current key for new tokens
         encoded_jwt = jwt.encode(
             payload,
-            settings.JWT_SECRET_KEY,
+            settings.SECRET_KEY,  # Changed from JWT_SECRET_KEY
             algorithm=settings.JWT_ALGORITHM
         )
         
@@ -108,7 +110,10 @@ class TokenUtils:
     @staticmethod
     def decode_token(token: str) -> Optional[TokenData]:
         """
-        Decode and validate JWT token
+        Decode and validate JWT token using current + historical keys
+        
+        This supports SECRET_KEY rotation with grace period. If token was signed
+        with an old key (during rotation period), it will still be validated.
         
         Args:
             token: JWT token string
@@ -116,23 +121,31 @@ class TokenUtils:
         Returns:
             TokenData if valid, None if invalid
         """
-        try:
-            payload = jwt.decode(
-                token,
-                settings.JWT_SECRET_KEY,
-                algorithms=[settings.JWT_ALGORITHM]
-            )
-            
-            return TokenData(
-                user_id=payload.get("user_id"),
-                username=payload.get("username"),
-                email=payload.get("email"),
-                roles=payload.get("roles", []),
-                exp=payload.get("exp"),
-                iat=payload.get("iat")
-            )
-        except JWTError:
-            return None
+        # Try decoding with current key first (fastest path)
+        valid_keys = settings.all_valid_keys
+        
+        for secret_key in valid_keys:
+            try:
+                payload = jwt.decode(
+                    token,
+                    secret_key,
+                    algorithms=[settings.JWT_ALGORITHM]
+                )
+                
+                return TokenData(
+                    user_id=payload.get("user_id"),
+                    username=payload.get("username"),
+                    email=payload.get("email"),
+                    roles=payload.get("roles", []),
+                    exp=payload.get("exp"),
+                    iat=payload.get("iat")
+                )
+            except JWTError:
+                # Try next key in history
+                continue
+        
+        # Token invalid with all keys
+        return None
 
 
 # Role-based access control

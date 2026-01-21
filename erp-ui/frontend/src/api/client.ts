@@ -23,18 +23,43 @@ class ApiClient {
       return config
     })
 
-    // Handle auth errors
+    // Handle auth errors and permission denials
     this.client.interceptors.response.use(
       (response) => response,
       (error) => {
         if (error.response?.status === 401) {
+          // Unauthorized - token expired or invalid
           localStorage.removeItem('access_token')
           localStorage.removeItem('user')
           window.location.href = '/login'
+        } else if (error.response?.status === 403) {
+          // Forbidden - insufficient permissions
+          const message = error.response?.data?.detail || 'Insufficient permissions'
+          console.error('[API Client] Permission denied:', message)
+          
+          // Show notification (you can import useUIStore here if needed)
+          // For now, just log it - pages should handle 403 errors individually
         }
         return Promise.reject(error)
       }
     )
+  }
+
+  // Generic HTTP methods (for direct API access)
+  async get(url: string, config?: any) {
+    return this.client.get(url, config)
+  }
+
+  async post(url: string, data?: any, config?: any) {
+    return this.client.post(url, data, config)
+  }
+
+  async put(url: string, data?: any, config?: any) {
+    return this.client.put(url, data, config)
+  }
+
+  async delete(url: string, config?: any) {
+    return this.client.delete(url, config)
   }
 
   // Auth endpoints
@@ -213,3 +238,4 @@ class ApiClient {
 }
 
 export const apiClient = new ApiClient()
+export const api = apiClient  // Export as 'api' for backward compatibility

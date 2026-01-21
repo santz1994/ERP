@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { User } from '@/types'
 import { apiClient } from '@/api/client'
+import { usePermissionStore } from './permissionStore'
 
 interface AuthState {
   user: User | null
@@ -54,6 +55,12 @@ export const useAuthStore = create<AuthState>((set) => ({
         loading: false,
         initialized: true,
       })
+      
+      // Load permissions after successful login
+      const permStore = usePermissionStore.getState()
+      await permStore.loadPermissions()
+      console.log('[AuthStore] Login successful, permissions loaded')
+      
     } catch (error: any) {
       const message = error.response?.data?.detail || 'Login failed'
       set({ error: message, loading: false })
@@ -64,7 +71,13 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: () => {
     localStorage.removeItem('access_token')
     localStorage.removeItem('user')
+    
+    // Clear permissions on logout
+    const permStore = usePermissionStore.getState()
+    permStore.clearPermissions()
+    
     set({ user: null, token: null })
+    console.log('[AuthStore] Logged out, permissions cleared')
   },
 
   setUser: (user: User | null) => set({ user }),
@@ -78,6 +91,12 @@ export const useAuthStore = create<AuthState>((set) => ({
       try {
         const user = JSON.parse(userStr)
         set({ user, token, initialized: true })
+        
+        // Load permissions when rehydrating from storage
+        const permStore = usePermissionStore.getState()
+        permStore.loadPermissions()
+        console.log('[AuthStore] User loaded from storage, fetching permissions')
+        
       } catch (e) {
         localStorage.removeItem('user')
         localStorage.removeItem('access_token')

@@ -21,6 +21,7 @@ import KanbanPage from '@/pages/KanbanPage'
 import ReportsPage from '@/pages/ReportsPage'
 import QCPage from '@/pages/QCPage'
 import AdminUserPage from '@/pages/AdminUserPage'
+import PermissionManagementPage from '@/pages/PermissionManagementPage'
 import AdminMasterdataPage from '@/pages/AdminMasterdataPage'
 import AdminImportExportPage from '@/pages/AdminImportExportPage'
 import AuditTrailPage from '@/pages/AuditTrailPage'
@@ -254,6 +255,17 @@ function App() {
             <PrivateRoute module="admin">
               <ProtectedLayout>
                 <AdminUserPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/admin/permissions"
+          element={
+            <PrivateRoute module="admin">
+              <ProtectedLayout>
+                <PermissionManagementPage />
               </ProtectedLayout>
             </PrivateRoute>
           }

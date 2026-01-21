@@ -2,34 +2,83 @@ import React, { useEffect, useState } from 'react'
 import { BarChart3, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react'
 import { useUIStore } from '@/store'
 import { EnvironmentBanner } from '@/components/EnvironmentBanner'
+import { apiClient } from '@/api/client'
+
+interface DashboardStats {
+  total_mos: number
+  completed_today: number
+  pending_qc: number
+  critical_alerts: number
+  refreshed_at: string | null
+}
+
+interface ProductionStatus {
+  dept: string
+  total_jobs: number
+  completed: number
+  in_progress: number
+  pending: number
+  progress: number
+  status: 'Running' | 'Pending' | 'Idle'
+}
+
+interface Alert {
+  id: number
+  type: 'critical' | 'warning' | 'info'
+  message: string
+  created_at: string
+}
 
 export const DashboardPage: React.FC = () => {
   const { addNotification } = useUIStore()
-  const [stats, setStats] = useState({
-    totalMOs: 0,
-    completedToday: 0,
-    pendingQC: 0,
-    criticalAlerts: 0,
+  const [stats, setStats] = useState<DashboardStats>({
+    total_mos: 0,
+    completed_today: 0,
+    pending_qc: 0,
+    critical_alerts: 0,
+    refreshed_at: null
   })
+  const [productionStatus, setProductionStatus] = useState<ProductionStatus[]>([])
+  const [alerts, setAlerts] = useState<Alert[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Load dashboard data
-    loadDashboardStats()
+    loadDashboardData()
   }, [])
 
-  const loadDashboardStats = async () => {
+  const loadDashboardData = async () => {
     try {
-      // This would call actual API endpoints to fetch stats
-      // For now, showing placeholder data
-      setStats({
-        totalMOs: 42,
-        completedToday: 8,
-        pendingQC: 3,
-        criticalAlerts: 1,
-      })
+      setLoading(true)
+      
+      // Fetch dashboard stats (from materialized view - <100ms)
+      const statsResponse = await apiClient.get('/dashboard/stats')
+      setStats(statsResponse.data)
+      
+      // Fetch production status (from materialized view - <100ms)
+      const prodResponse = await apiClient.get('/dashboard/production-status')
+      setProductionStatus(prodResponse.data)
+      
+      // Fetch recent alerts (from materialized view - <100ms)
+      const alertsResponse = await apiClient.get('/dashboard/alerts')
+      setAlerts(alertsResponse.data)
+      
     } catch (error) {
+      console.error('Failed to load dashboard data:', error)
       addNotification('error', 'Failed to load dashboard data')
+    } finally {
+      setLoading(false)
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -38,36 +87,43 @@ export const DashboardPage: React.FC = () => {
       <div className="p-6">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600">Welcome back! Here's your production overview.</p>
+          <p className="text-gray-600">
+            Welcome back! Here's your production overview.
+            {stats.refreshed_at && (
+              <span className="text-xs text-gray-400 ml-2">
+                (Updated: {new Date(stats.refreshed_at).toLocaleTimeString()})
+              </span>
+            )}
+          </p>
         </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatCard
             title="Total MOs"
-            value={stats.totalMOs}
+            value={stats.total_mos}
             icon={<BarChart3 className="w-8 h-8" />}
             color="bg-blue-50 text-blue-600"
           />
           <StatCard
             title="Completed Today"
-          value={stats.completedToday}
-          icon={<CheckCircle className="w-8 h-8" />}
-          color="bg-green-50 text-green-600"
-        />
-        <StatCard
-          title="Pending QC"
-          value={stats.pendingQC}
-          icon={<AlertCircle className="w-8 h-8" />}
-          color="bg-yellow-50 text-yellow-600"
-        />
-        <StatCard
-          title="Critical Alerts"
-          value={stats.criticalAlerts}
-          icon={<TrendingUp className="w-8 h-8" />}
-          color="bg-red-50 text-red-600"
-        />
-      </div>
+            value={stats.completed_today}
+            icon={<CheckCircle className="w-8 h-8" />}
+            color="bg-green-50 text-green-600"
+          />
+          <StatCard
+            title="Pending QC"
+            value={stats.pending_qc}
+            icon={<AlertCircle className="w-8 h-8" />}
+            color="bg-yellow-50 text-yellow-600"
+          />
+          <StatCard
+            title="Critical Alerts"
+            value={stats.critical_alerts}
+            icon={<TrendingUp className="w-8 h-8" />}
+            color="bg-red-50 text-red-600"
+          />
+        </div>
 
       {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -75,10 +131,16 @@ export const DashboardPage: React.FC = () => {
         <div className="lg:col-span-2 bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Production Status</h2>
           <div className="space-y-4">
-            <ProductionStatus dept="Cutting" progress={75} status="Running" />
-            <ProductionStatus dept="Sewing" progress={60} status="Running" />
-            <ProductionStatus dept="Finishing" progress={45} status="Pending" />
-            <ProductionStatus dept="Packing" progress={30} status="Pending" />
+            {productionStatus.map((dept) => (
+              <ProductionStatusItem 
+                key={dept.dept}
+                dept={dept.dept} 
+                progress={dept.progress} 
+                status={dept.status}
+                totalJobs={dept.total_jobs}
+                inProgress={dept.in_progress}
+              />
+            ))}
           </div>
         </div>
 
@@ -86,9 +148,17 @@ export const DashboardPage: React.FC = () => {
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Alerts</h2>
           <div className="space-y-3">
-            <AlertItem type="critical" message="Metal detector fail - Batch 001" />
-            <AlertItem type="warning" message="Line clearance required - Cutting" />
-            <AlertItem type="info" message="New MO created - MO-2024-042" />
+            {alerts.length > 0 ? (
+              alerts.map((alert) => (
+                <AlertItem 
+                  key={alert.id}
+                  type={alert.type} 
+                  message={alert.message} 
+                />
+              ))
+            ) : (
+              <p className="text-sm text-gray-500 text-center py-4">No recent alerts</p>
+            )}
           </div>
         </div>
       </div>
@@ -116,13 +186,26 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color }) => (
 interface ProductionStatusProps {
   dept: string
   progress: number
-  status: 'Running' | 'Pending' | 'Completed'
+  status: 'Running' | 'Pending' | 'Idle'
+  totalJobs: number
+  inProgress: number
 }
 
-const ProductionStatus: React.FC<ProductionStatusProps> = ({ dept, progress, status }) => (
+const ProductionStatusItem: React.FC<ProductionStatusProps> = ({ 
+  dept, 
+  progress, 
+  status,
+  totalJobs,
+  inProgress 
+}) => (
   <div>
     <div className="flex justify-between mb-2">
-      <p className="text-sm font-medium text-gray-700">{dept}</p>
+      <div>
+        <p className="text-sm font-medium text-gray-700">{dept}</p>
+        <p className="text-xs text-gray-500">
+          {totalJobs} total jobs, {inProgress} in progress
+        </p>
+      </div>
       <p className={`text-xs font-semibold ${
         status === 'Running' ? 'text-green-600' :
         status === 'Pending' ? 'text-yellow-600' :

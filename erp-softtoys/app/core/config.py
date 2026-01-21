@@ -31,10 +31,23 @@ class Settings(BaseSettings):
     DATABASE_POOL_PRE_PING: bool = Field(default=True)
     
     # JWT/Security
-    JWT_SECRET_KEY: str = Field(default="your-secret-key-change-in-production")
+    SECRET_KEY: str = Field(default="your-secret-key-change-in-production")  # Current active key
+    SECRET_KEYS_HISTORY: str = Field(default="")  # Comma-separated list of previous keys
+    KEY_LAST_ROTATED: Optional[str] = Field(default=None)  # ISO timestamp of last rotation
+    KEY_ROTATION_DAYS: int = Field(default=90)  # Rotate every 90 days
+    
     JWT_ALGORITHM: str = Field(default="HS256")
     JWT_EXPIRATION_HOURS: int = Field(default=24)
     JWT_REFRESH_EXPIRATION_DAYS: int = Field(default=7)
+    
+    @property
+    def all_valid_keys(self) -> list:
+        """Return current key + historical keys for JWT validation"""
+        keys = [self.SECRET_KEY]
+        if self.SECRET_KEYS_HISTORY:
+            historical_keys = [k.strip() for k in self.SECRET_KEYS_HISTORY.split(",") if k.strip()]
+            keys.extend(historical_keys)
+        return keys
     
     # API
     API_TITLE: str = Field(default="ERP Quty Karunia")
