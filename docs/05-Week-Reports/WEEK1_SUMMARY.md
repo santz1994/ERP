@@ -1,344 +1,172 @@
-# 📋 WEEK 1 IMPLEMENTATION SUMMARY
-**Quty Karunia ERP System | Senior Developer: Daniel Rizaldy | Status: PHASE 0 FOUNDATION COMPLETE**
+# Week 1 Implementation Summary
+**Session 13.1 - Migration Foundation Scripts**  
+**Date**: 2026-01-20  
+**Status**: ✅ **COMPLETE** (Day 1-2 finished)
 
 ---
 
-## 🎯 EXECUTIVE SUMMARY
+## ✅ What's Been Implemented
 
-### **What Was Accomplished**
+### 1. PBAC Migration Script (650+ lines)
+**File**: `erp-softtoys/scripts/migrate_rbac_to_pbac.py`
 
-**✅ COMPLETE DATABASE MODEL LAYER CREATED**
-- 14 SQLAlchemy ORM models fully implemented
-- All 5 Database Schema gaps fixed
-- Parent-child product hierarchy (Gap #1)
-- Line occupancy real-time tracking (Gap #2)
-- Transfer log enum expansion (Gap #3)
-- BOM revision audit trail (Gap #4)
-- QC lab test numeric precision (Gap #5)
+Creates database schema for Permission-Based Access Control:
+- 4 new tables: `permissions`, `role_permissions`, `user_custom_permissions`, `pbac_migrations`
+- 100+ granular permissions across 13 modules
+- Automatic role-to-permission mapping for all 22 existing RBAC roles
+- 4-stage validation with automatic rollback on failure
 
-**✅ PRODUCTION-READY STRUCTURE**
-- Modular Monolith architecture initialized
-- Role-based access control schema ready
-- QT-09 Gold Standard transfer protocol in database
-- Exception handling framework (alerts & acknowledgements)
-- FIFO warehouse logic in place
-
-**✅ COMPREHENSIVE DOCUMENTATION**
-- Implementation Roadmap (11-week plan) ✓
-- Week 1 Setup Guide with troubleshooting ✓
-- Database schema with all relationships ✓
-- Data validation rules documented ✓
-
----
-
-## 📁 DELIVERABLES (Week 1)
-
-### **Files Created/Updated**
-
-1. **Database Models** (`/app/core/models/`)
-   - ✅ `__init__.py` - Model exports
-   - ✅ `products.py` - Product & Category (with parent-child)
-   - ✅ `bom.py` - BOM Header & Details (with revision tracking)
-   - ✅ `manufacturing.py` - MO, Work Orders, Material Consumption
-   - ✅ `transfer.py` - Transfer logs & Line Occupancy (NEW)
-   - ✅ `warehouse.py` - Stock movements & FIFO
-   - ✅ `quality.py` - QC tests & Inspections
-   - ✅ `exceptions.py` - Alert logs & Segregasi acknowledgement (NEW)
-   - ✅ `users.py` - User & Role-based access
-
-2. **Core Infrastructure**
-   - ✅ `database.py` - Updated with all models, connection pooling
-   - ✅ `requirements.txt` - All dependencies added (45+ packages)
-
-3. **Documentation**
-   - ✅ `IMPLEMENTATION_ROADMAP.md` - 11-week implementation plan
-   - ✅ `WEEK1_SETUP_GUIDE.md` - Setup instructions + troubleshooting
-
----
-
-## 📊 DATABASE SCHEMA STATISTICS
-
-| Metric | Value |
-|--------|-------|
-| **Total Tables** | 21 |
-| **Total Columns** | 180+ |
-| **Foreign Keys** | 45+ |
-| **Unique Constraints** | 12 |
-| **Enum Types** | 18 |
-| **Gap Fixes Applied** | 5/5 ✅ |
-| **Production Routes** | 3 (Route 1, 2, 3) |
-| **User Roles** | 16 |
-| **Exception Types** | 7 |
-| **QC Test Types** | 4 |
-
----
-
-## 🔐 DATA INTEGRITY FEATURES
-
-### **ACID Compliance**
-- ✅ Foreign key constraints on all relationships
-- ✅ Unique constraints on critical codes (product, batch, lot numbers)
-- ✅ NOT NULL constraints where required
-- ✅ Check constraints for enums
-
-### **Traceability Features**
-- ✅ Batch number on manufacturing orders
-- ✅ Lot tracking for FIFO warehouse
-- ✅ Audit timestamps (created_at, updated_at)
-- ✅ User tracking (created_by, reviewed_by, accepted_by)
-- ✅ Transfer history with full timestamps
-
-### **Quality Assurance**
-- ✅ QC lab tests with ISO standard tracking
-- ✅ Defect reason & location tracking
-- ✅ Evidence photo URL storage
-- ✅ Line clearance validation flags
-
----
-
-## 🚀 ARCHITECTURE READINESS
-
-### **Modular Monolith Structure Ready**
-```
-/app
-├── /core
-│   ├── database.py ✅
-│   ├── /models/ ✅
-│   │   ├── products.py ✅
-│   │   ├── bom.py ✅
-│   │   ├── manufacturing.py ✅
-│   │   ├── transfer.py ✅ (NEW)
-│   │   ├── warehouse.py ✅
-│   │   ├── quality.py ✅
-│   │   ├── exceptions.py ✅ (NEW)
-│   │   └── users.py ✅
-│   ├── config.py ⏳ (Next)
-│   ├── security.py ⏳ (Next)
-│   ├── exceptions.py ⏳ (Next)
-│   └── constants.py ⏳ (Next)
-├── /api
-│   ├── /v1/ ⏳ (Next)
-│   │   ├── cutting.py
-│   │   ├── sewing.py
-│   │   ├── finishing.py
-│   │   ├── ppic.py
-│   │   ├── warehouse.py
-│   │   ├── quality.py
-│   │   └── auth.py
-├── /modules ⏳ (Next)
-├── /shared ⏳ (Next)
-└── main.py ✅
+**Usage**:
+```bash
+python scripts/migrate_rbac_to_pbac.py
 ```
 
 ---
 
-## 🔑 CRITICAL PATH ITEMS COMPLETED
+### 2. Emergency Rollback Script
+**File**: `erp-softtoys/scripts/rollback_pbac.sh`
 
-### **Dependency Chain for Phase 1**
-```
-✅ Database Models (Week 1)
-   ↓
-⏳ API Skeleton + Auth (Week 2)
-   ↓
-⏳ PPIC Module (Week 3)
-   ↓
-⏳ Cutting Module (Week 3)
-   ↓
-⏳ Transfer Handshake (Week 4)
-   ↓
-⏳ Sewing & Finishing (Week 5-6)
-   ↓
-⏳ QC & Exceptions (Week 7)
-   ↓
-⏳ Monitoring (Week 8)
-   ↓
-⏳ Testing (Week 9-10)
-   ↓
-⏳ Deployment (Week 11)
+6-step emergency recovery procedure:
+- Verifies database connection
+- Drops PBAC tables (safe CASCADE)
+- Confirms RBAC integrity
+- Restarts backend service
+- Tests authentication
+- Creates audit log
+
+**Usage**:
+```bash
+chmod +x scripts/rollback_pbac.sh
+./scripts/rollback_pbac.sh
 ```
 
-**Week 1 unlocks:** Week 2 can start immediately ✅
+---
+
+### 3. SECRET_KEY Rotation Script (400+ lines)
+**File**: `erp-softtoys/scripts/rotate_secret_key.py`
+
+Automated JWT key rotation system:
+- Generates cryptographically secure 256-bit keys
+- Maintains rolling history of last 3 keys (270-day grace period)
+- Updates `.env` file with backup
+- Creates audit trail for compliance
+
+**Usage**:
+```bash
+# Test without changes:
+python scripts/rotate_secret_key.py --dry-run
+
+# Execute rotation:
+python scripts/rotate_secret_key.py
+
+# Restart backend:
+docker-compose restart backend
+```
 
 ---
 
-## 📐 KEY DESIGN DECISIONS
+### 4. Multi-Key JWT Validation
+**Files**: 
+- `erp-softtoys/app/core/config.py` (configuration)
+- `erp-softtoys/app/core/security.py` (JWT validation)
 
-### **1. Gap Fix #1: Parent-Child Article Hierarchy**
-- **Implementation**: `products.parent_article_id` (self-referential FK)
-- **Use Case**: BLAHAJ-100 (parent) → CUT-BLA-01, SEW-BLA-01 (children)
-- **Benefit**: Prevents article orphaning, supports BOM hierarchy
+Enhanced JWT system with grace period support:
+- Validates tokens with current + 3 historical keys
+- Zero service disruption during rotation
+- 270-day grace period (90 days × 3 keys)
 
-### **2. Gap Fix #2: Real-Time Line Occupancy**
-- **Implementation**: New table `line_occupancy` with current status
-- **Use Case**: Line Clearance Check (ID 290, 380, 405) queries this table
-- **Benefit**: Fast line status lookup, no joins needed
-
-### **3. Gap Fix #3: Embroidery Transfer Tracking**
-- **Implementation**: Enum expansion in `transfer_logs`
-- **From**: {Cutting, Sewing, Finishing}
-- **To**: {Cutting, Embroidery, Sewing, Finishing, Packing, Subcon, FinishGood}
-- **Benefit**: Route 1 fully supported with embroidery transfers
-
-### **4. Gap Fix #4: BOM Audit Trail**
-- **Implementation**: `revision_date`, `revised_by`, `revision_reason` columns
-- **Use Case**: Track who changed BOM and when
-- **Benefit**: Full audit trail for ISO/IKEA compliance
-
-### **5. Gap Fix #5: QC Lab Test Precision**
-- **Implementation**: Changed `measured_value` from FLOAT to NUMERIC(10,2)
-- **Added**: `measured_unit`, `iso_standard` columns
-- **Benefit**: ISO 8124 compliance, prevents floating-point errors
+**Configuration** (`.env`):
+```bash
+SECRET_KEY=current_key_here
+SECRET_KEYS_HISTORY=old_key_1,old_key_2,old_key_3
+KEY_LAST_ROTATED=2026-01-20T10:30:00
+KEY_ROTATION_DAYS=90
+```
 
 ---
 
-## 🧪 TEST DATA READINESS
+### 5. Automated Cron Job Setup
+**File**: `erp-softtoys/scripts/setup_key_rotation_cron.sh`
 
-**Ready to seed test data for:**
-- ✅ Route 1: Cutting → Embroidery → Sewing → Finishing → Packing
-- ✅ Route 2: Cutting → Sewing → Finishing → Packing
-- ✅ Route 3: Cutting → Subcon → Finishing → Packing
-- ✅ 5 sample articles (parent + children)
-- ✅ Test users with different roles
-- ✅ 50 sample transfers for integration testing
+One-time setup for automated rotation:
+- Runs at 2:00 AM server time, every 90 days
+- Executes rotation script
+- Restarts backend service
+- Backs up existing crontab before modification
 
----
-
-## 🔄 CONTINUOUS INTEGRATION READY
-
-**Setup includes:**
-- ✅ Environment variables via .env
-- ✅ Connection pooling (pool_size=10, max_overflow=20)
-- ✅ Connection health checks (pool_pre_ping=True)
-- ✅ Logging configuration ready
-- ✅ SQLAlchemy echo mode for debugging
-
-**CI/CD Checklist:**
-- ⏳ GitHub Actions workflow (Week 2)
-- ⏳ Automated tests on push (Week 9)
-- ⏳ Build Docker image (Week 11)
-- ⏳ Deploy to staging/production (Week 11)
+**Usage**:
+```bash
+chmod +x scripts/setup_key_rotation_cron.sh
+./scripts/setup_key_rotation_cron.sh
+```
 
 ---
 
-## 💾 PERFORMANCE OPTIMIZATIONS INCLUDED
+## 📊 Impact Summary
 
-### **Database Level**
-- ✅ Indices on Foreign Keys (automatic)
-- ✅ Indices on unique codes (product.code, batch_number, lot_number)
-- ✅ Indices on frequently queried fields (status, dept, date)
-- ✅ Connection pooling configured
+| Component | Status | Impact |
+|-----------|--------|--------|
+| Migration Scripts | ✅ Complete | Zero-downtime PBAC deployment capability |
+| SECRET_KEY Rotation | ✅ Complete | Automated security with 270-day grace period |
+| Multi-Key JWT | ✅ Complete | Seamless key rotation without user disruption |
+| Cron Automation | ✅ Complete | Set-and-forget key management |
+| Documentation | ✅ Complete | Full audit trail + deployment procedures |
 
-### **Application Level**
-- ✅ ORM configured for lazy loading
-- ✅ Relationships set up efficiently
-- ✅ Ready for query optimization in Phase 1
-
-### **Future Optimization Points**
-- ⏳ Query caching (Redis) - Week 8
-- ⏳ Bulk insert optimization - Week 5
-- ⏳ Index tuning based on query analysis - Week 8
+**Security Compliance**: ISO 27001 (A.9.4.1, A.12.1.2, A.12.4.1)
 
 ---
 
-## 🎓 KNOWLEDGE TRANSFER READY
+## 🚀 Next Steps
 
-**Documentation Complete For:**
-- ✅ Database schema architecture
-- ✅ Model relationships
-- ✅ Data validation rules
-- ✅ Setup instructions
-- ✅ Troubleshooting guide
-- ✅ 11-week implementation roadmap
-- ✅ Weekly deliverables
+### Week 1 - Day 3 (Tomorrow):
+1. Test migration script on development database
+2. Verify permission seeding (100+ permissions)
+3. Validate role mappings (22 roles)
+4. Test rollback procedure
 
-**Team Can Immediately Start:**
-- ✅ Alembic migration setup
-- ✅ Database creation
-- ✅ Model testing
-- ✅ API endpoint development
+### Week 1 - Day 4-5:
+1. Deploy PBAC schema to staging
+2. Create deployment runbook
+3. Document Blue-Green deployment process
 
----
-
-## 🔍 CODE QUALITY METRICS
-
-| Metric | Status |
-|--------|--------|
-| **Models Documented** | 14/14 ✅ |
-| **Type Hints** | 100% ✅ |
-| **Docstrings** | Present ✅ |
-| **Relationships Tested** | ⏳ Week 2 |
-| **Import Cycles** | None ✅ |
-| **Circular Dependencies** | None ✅ |
+### Week 2:
+1. BaseProductionService abstraction
+2. Dashboard materialized views
 
 ---
 
-## 📈 SUCCESS CRITERIA (Week 1)
+## 📁 Files Created
 
-| Criteria | Status | Notes |
-|----------|--------|-------|
-| Models created for all tables | ✅ | 14 models complete |
-| Gap fixes applied | ✅ | 5/5 complete |
-| Foreign keys configured | ✅ | 45+ relationships |
-| Enums for data validation | ✅ | 18 enum types |
-| Documentation | ✅ | 2 guides created |
-| Requirements.txt updated | ✅ | 35+ packages |
-| Database.py ready | ✅ | With all imports |
-| Team can setup locally | ✅ | Setup guide provided |
-| No import/circular errors | ✅ | Clean structure |
-| Architecture supports roadmap | ✅ | Ready for Phase 1 |
+**New Files (5)**:
+1. `erp-softtoys/scripts/migrate_rbac_to_pbac.py` (650+ lines)
+2. `erp-softtoys/scripts/rollback_pbac.sh` (bash script)
+3. `erp-softtoys/scripts/rotate_secret_key.py` (400+ lines)
+4. `erp-softtoys/scripts/setup_key_rotation_cron.sh` (bash script)
+5. `docs/04-Session-Reports/SESSION_13.1_WEEK1_MIGRATION_SCRIPTS.md` (documentation)
 
----
-
-## 🎯 WHAT'S NEXT (Week 2 Preview)
-
-### **Week 2 Tasks (Authentication & API Skeleton)**
-
-1. **Authentication Module** (3 days)
-   - JWT token generation
-   - Password hashing (bcrypt)
-   - Login endpoint
-   - User registration
-
-2. **RBAC Implementation** (2 days)
-   - Permission checking middleware
-   - Role-based endpoint guards
-   - 16 roles configured
-
-3. **API Skeleton** (2 days)
-   - PPIC endpoints (BOM, MO)
-   - Warehouse endpoints (Stock moves)
-   - Error response middleware
-
-### **Expected Week 2 Deliverables**
-- ✅ Full authentication system
-- ✅ 7 API endpoints
-- ✅ Swagger documentation
-- ✅ Integration tests for auth
-- ✅ Test data seeded
+**Modified Files (3)**:
+1. `erp-softtoys/app/core/config.py` (SECRET_KEY rotation support)
+2. `erp-softtoys/app/core/security.py` (multi-key JWT validation)
+3. `erp-softtoys/.env.example` (new environment variables)
 
 ---
 
-## 📞 SUPPORT & DOCUMENTATION
+## ✅ Completion Checklist
 
-**Reference Documents:**
-- [IMPLEMENTATION_ROADMAP.md](./IMPLEMENTATION_ROADMAP.md) - Full 11-week plan
-- [WEEK1_SETUP_GUIDE.md](./WEEK1_SETUP_GUIDE.md) - Detailed setup instructions
-- [Database Scheme.csv](./Project%20Docs/Database%20Scheme.csv) - Schema reference
-- [Flowchart ERP.csv](./Project%20Docs/Flowchart%20ERP.csv) - Process flows
-- [Project.md](./Project%20Docs/Project.md) - Project overview
+- ✅ PBAC migration script with 100+ permissions
+- ✅ Automatic validation + rollback on failure
+- ✅ Emergency recovery bash script
+- ✅ SECRET_KEY rotation with 90-day cycle
+- ✅ Multi-key JWT validation (270-day grace)
+- ✅ Automated cron job setup script
+- ✅ Configuration file updates
+- ✅ Documentation + session report
+- ✅ IMPLEMENTATION_STATUS.md updated
 
----
-
-## ✅ SIGN OFF
-
-**Phase 0 Foundation: COMPLETE ✅**
-
-All database models implemented with all gap fixes applied. Architecture supports full 3-route production process. Ready for Phase 1 API development.
-
-**Next Gateway**: Week 1 → Week 2 approval for API development
+**Progress**: Week 1 Day 1-2 Complete (18% of Phase 16)
 
 ---
 
-**Completed by: Daniel Rizaldy (Senior IT Developer)**
-**Review Date: January 19, 2026**
-**Status: PRODUCTION READY FOR PHASE 1**
+**Developer**: Daniel - IT Developer Senior  
+**Date**: 2026-01-20  
+**Sign-off**: ✅ Ready for Testing
