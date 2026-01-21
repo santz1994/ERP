@@ -14,6 +14,7 @@ from app.core.models.users import User, UserRole
 from app.core.dependencies import get_current_user, require_permission
 from app.core.security import PasswordUtils
 from app.core.schemas import UserResponse
+from app.core.base_production_service import BaseProductionService
 
 
 router = APIRouter(
@@ -101,13 +102,7 @@ async def get_user(
     - `403`: Forbidden
     - `404`: User not found
     """
-    user = db.query(User).filter(User.id == user_id).first()
-    
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
+    user = BaseProductionService.get_user(db, user_id)
     
     return UserListResponse(
         id=user.id,
@@ -149,13 +144,7 @@ async def update_user(
     - `404`: User not found
     - `400`: Invalid role
     """
-    user = db.query(User).filter(User.id == user_id).first()
-    
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
+    user = BaseProductionService.get_user(db, user_id)
     
     if update_data.full_name:
         user.full_name = update_data.full_name
@@ -211,13 +200,7 @@ async def deactivate_user(
     - `403`: Forbidden
     - `404`: User not found
     """
-    user = db.query(User).filter(User.id == user_id).first()
-    
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
+    user = BaseProductionService.get_user(db, user_id)
     
     if user.id == current_user.id:
         raise HTTPException(
@@ -253,13 +236,7 @@ async def reactivate_user(
     - `403`: Forbidden
     - `404`: User not found
     """
-    user = db.query(User).filter(User.id == user_id).first()
-    
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
+    user = BaseProductionService.get_user(db, user_id)
     
     user.is_active = True
     user.login_attempts = 0  # Reset login attempts
@@ -293,13 +270,7 @@ async def reset_user_password(
     
     **Note**: Generates temporary password, user must change on first login
     """
-    user = db.query(User).filter(User.id == user_id).first()
-    
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
+    user = BaseProductionService.get_user(db, user_id)
     
     # Generate temporary password (12 chars random)
     import secrets

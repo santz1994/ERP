@@ -12,7 +12,8 @@ from app.core.schemas import (
     StockTransferCreate, StockTransferResponse, StockCheckResponse,
     TransferDept, TransferStatus
 )
-from app.core.dependencies import get_db, require_any_role
+from app.core.dependencies import get_db, require_permission
+from app.core.permissions import ModuleName, Permission
 from app.core.models.users import User
 from app.core.models.warehouse import StockMove, StockQuant, Location
 from app.core.models.transfer import TransferLog, TransferDept as TransferDeptEnum, TransferStatus as TransferStatusEnum, LineOccupancy, LineStatus
@@ -27,19 +28,18 @@ router = APIRouter(
 
 @router.get(
     "/stock/{product_id}",
-    response_model=StockCheckResponse,
-    dependencies=[Depends(require_any_role("warehouse_admin", "ppic_manager", "spv_cutting"))]
+    response_model=StockCheckResponse
 )
 async def check_stock(
     product_id: int,
     location_id: int = Query(None),
-    current_user: User = Depends(require_any_role("warehouse_admin", "ppic_manager", "spv_cutting")),
+    current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.VIEW)),
     db: Session = Depends(get_db)
 ):
     """
     Check current stock for a product
     
-    **Roles Required**: warehouse_admin, ppic_manager, spv_cutting
+    **Required Permission**: warehouse.view_stock
     
     **Path Parameters**:
     - `product_id`: Product ID to check
@@ -98,18 +98,17 @@ async def check_stock(
 @router.post(
     "/transfer",
     response_model=StockTransferResponse,
-    status_code=status.HTTP_201_CREATED,
-    dependencies=[Depends(require_any_role("warehouse_admin", "spv_cutting", "spv_sewing"))]
+    status_code=status.HTTP_201_CREATED
 )
 async def create_stock_transfer(
     transfer_data: StockTransferCreate,
-    current_user: User = Depends(require_any_role("warehouse_admin", "spv_cutting", "spv_sewing")),
+    current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.CREATE)),
     db: Session = Depends(get_db)
 ):
     """
     Create inter-departmental stock transfer (QT-09 Protocol)
     
-    **Roles Required**: warehouse_admin, spv_cutting, spv_sewing
+    **Required Permission**: warehouse.create_transfer
     
     **Request Body**:
     - `from_dept`: Source department (Cutting, Embroidery, Sewing, etc)
@@ -260,19 +259,18 @@ async def create_stock_transfer(
 
 @router.post(
     "/transfer/{transfer_id}/accept",
-    response_model=StockTransferResponse,
-    dependencies=[Depends(require_any_role("warehouse_admin", "spv_sewing", "spv_finishing"))]
+    response_model=StockTransferResponse
 )
 async def accept_transfer(
     transfer_id: int,
     qty_received: Decimal = None,
-    current_user: User = Depends(require_any_role("warehouse_admin", "spv_sewing", "spv_finishing")),
+    current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.EXECUTE)),
     db: Session = Depends(get_db)
 ):
     """
     Accept transfer at receiving department (QT-09 Handshake - Step 3, ID 293 / 383)
     
-    **Roles Required**: warehouse_admin, spv_sewing, spv_finishing
+    **Required Permission**: warehouse.accept_transfer
     
     **Path Parameters**:
     - `transfer_id`: Transfer log ID

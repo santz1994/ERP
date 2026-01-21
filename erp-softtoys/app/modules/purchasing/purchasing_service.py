@@ -14,6 +14,7 @@ from app.core.models.warehouse import PurchaseOrder, POStatus, StockMove, StockQ
 from app.core.models.products import Product, ProductType
 from app.core.models.users import User
 from app.shared.audit import log_audit
+from app.core.base_production_service import BaseProductionService
 
 
 class PurchasingService:
@@ -110,7 +111,7 @@ class PurchasingService:
 
     def approve_purchase_order(self, po_id: int, user_id: int) -> PurchaseOrder:
         """Approve purchase order (Manager approval)"""
-        po = self.db.query(PurchaseOrder).filter(PurchaseOrder.id == po_id).first()
+        po = BaseProductionService.get_purchase_order_optional(self.db, po_id)
         
         if not po:
             raise ValueError("Purchase Order not found")
@@ -149,7 +150,7 @@ class PurchasingService:
         
         received_items format: [{"product_id": 1, "quantity": 95, "lot_number": "LOT-001"}]
         """
-        po = self.db.query(PurchaseOrder).filter(PurchaseOrder.id == po_id).first()
+        po = BaseProductionService.get_purchase_order_optional(self.db, po_id)
         
         if not po:
             raise ValueError("Purchase Order not found")
@@ -233,7 +234,7 @@ class PurchasingService:
 
     def cancel_purchase_order(self, po_id: int, reason: str, user_id: int) -> PurchaseOrder:
         """Cancel purchase order"""
-        po = self.db.query(PurchaseOrder).filter(PurchaseOrder.id == po_id).first()
+        po = BaseProductionService.get_purchase_order_optional(self.db, po_id)
         
         if not po:
             raise ValueError("Purchase Order not found")
@@ -268,6 +269,7 @@ class PurchasingService:
 
     def get_supplier_performance(self, supplier_id: int) -> dict:
         """Get supplier performance metrics"""
+        # Note: This uses .filter() for filtering, handled separately from simple get_*() helpers
         pos = self.db.query(PurchaseOrder).filter(
             PurchaseOrder.supplier_id == supplier_id
         ).all()

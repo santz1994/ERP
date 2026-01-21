@@ -4,9 +4,10 @@ Centralized settings for development, testing, and production
 """
 
 import os
+import json
 from enum import Enum
-from typing import Optional
-from pydantic import BaseSettings, Field
+from typing import Optional, Union, List
+from pydantic import BaseSettings, Field, validator
 
 
 class Environment(str, Enum):
@@ -56,10 +57,25 @@ class Settings(BaseSettings):
     API_PREFIX: str = Field(default="/api/v1")
     
     # CORS
-    CORS_ORIGINS: list = Field(default=["http://localhost:3000", "http://localhost:3001", "http://localhost:8080"])
+    CORS_ORIGINS: List[str] = Field(default=["http://localhost:3000", "http://localhost:3001", "http://localhost:8080"])
     CORS_ALLOW_CREDENTIALS: bool = Field(default=True)
     CORS_ALLOW_METHODS: list = Field(default=["*"])
     CORS_ALLOW_HEADERS: list = Field(default=["*"])
+    
+    @validator("CORS_ORIGINS", pre=True)
+    def parse_cors_origins(cls, v):
+        """Parse CORS_ORIGINS from string or list"""
+        if isinstance(v, str):
+            # Try to parse as JSON first
+            try:
+                return json.loads(v)
+            except (json.JSONDecodeError, ValueError):
+                # Fall back to comma-separated parsing
+                return [origin.strip() for origin in v.split(",") if origin.strip()]
+        elif isinstance(v, list):
+            return v
+        else:
+            return ["http://localhost:3000", "http://localhost:3001", "http://localhost:8080"]
     
     # Timezone
     TIMEZONE: str = Field(default="Asia/Jakarta")  # WIB (Indonesia)

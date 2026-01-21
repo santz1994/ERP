@@ -3,7 +3,7 @@ Audit Trail API
 Endpoints for viewing and querying audit logs
 
 ISO 27001 A.12.4.1: Event Logging
-Only accessible by DEVELOPER, SUPERADMIN, and MANAGER roles
+Only accessible by authorized roles with audit permissions
 """
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
@@ -12,9 +12,11 @@ from typing import Optional, List
 from datetime import datetime, timedelta
 
 from app.core.database import get_db
-from app.core.permissions import require_any_role
+from app.core.dependencies import require_permission
+from app.core.permissions import ModuleName, Permission
 from app.core.models.audit import AuditLog, AuditAction, AuditModule, UserActivityLog, SecurityLog
 from app.core.models.users import User
+from app.core.base_production_service import BaseProductionService
 from pydantic import BaseModel
 
 
@@ -89,7 +91,7 @@ class AuditSummaryResponse(BaseModel):
 @router.get("/logs", response_model=dict)
 def get_audit_logs(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_any_role(["DEVELOPER", "SUPERADMIN", "MANAGER"])),
+    current_user: User = Depends(require_permission("audit.view_logs")),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     user_id: Optional[int] = None,
@@ -104,7 +106,7 @@ def get_audit_logs(
     """
     Get audit logs with filtering and pagination
     
-    **Permissions**: DEVELOPER, SUPERADMIN, MANAGER
+    **Required Permission**: audit.view_logs
     
     **Filters**:
     - user_id: Filter by specific user
@@ -163,17 +165,14 @@ def get_audit_logs(
 def get_audit_log_detail(
     log_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_any_role(["DEVELOPER", "SUPERADMIN", "MANAGER"]))
+    current_user: User = Depends(require_permission("audit.view_logs"))
 ):
     """
     Get detailed information about a specific audit log entry
     
-    **Permissions**: DEVELOPER, SUPERADMIN, MANAGER
+    **Required Permission**: audit.view_logs
     """
-    log = db.query(AuditLog).filter(AuditLog.id == log_id).first()
-    
-    if not log:
-        raise HTTPException(status_code=404, detail="Audit log not found")
+    log = BaseProductionService.get_audit_log(db, log_id)
     
     return AuditLogResponse.from_orm(log)
 
@@ -183,14 +182,14 @@ def get_entity_audit_history(
     entity_type: str,
     entity_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_any_role(["DEVELOPER", "SUPERADMIN", "MANAGER"]))
+    current_user: User = Depends(require_permission("audit.view_logs"))
 ):
     """
     Get complete audit history for a specific entity
     
     **Use Case**: Track all changes to a Purchase Order, Manufacturing Order, etc.
     
-    **Permissions**: DEVELOPER, SUPERADMIN, MANAGER
+    **Required Permission**: audit.view_logs
     
     **Example**: GET /api/audit/entity/PurchaseOrder/123
     """
@@ -205,12 +204,12 @@ def get_entity_audit_history(
 @router.get("/summary", response_model=AuditSummaryResponse)
 def get_audit_summary(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_any_role(["DEVELOPER", "SUPERADMIN", "MANAGER"]))
+    current_user: User = Depends(require_permission("audit.view_summary"))
 ):
     """
     Get audit trail summary statistics
     
-    **Permissions**: DEVELOPER, SUPERADMIN, MANAGER
+    **Required Permission**: audit.view_summary
     
     **Returns**:
     - Total events count
@@ -286,7 +285,7 @@ def get_audit_summary(
 @router.get("/security-logs", response_model=dict)
 def get_security_logs(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_any_role(["DEVELOPER", "SUPERADMIN"])),
+    current_user: User = Depends(require_permission("audit.view_security_logs")),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     severity: Optional[str] = Query(None, regex="^(info|warning|critical)$"),
@@ -296,7 +295,7 @@ def get_security_logs(
     """
     Get security event logs
     
-    **Permissions**: DEVELOPER, SUPERADMIN only
+    **Required Permission**: audit.view_security_logs (ADMIN ONLY)
     
     **Tracks**: Failed logins, unauthorized access attempts, blocked IPs, etc.
     """
@@ -327,13 +326,13 @@ def get_security_logs(
 def get_user_activity(
     user_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_any_role(["DEVELOPER", "SUPERADMIN", "MANAGER"])),
+    current_user: User = Depends(require_permission("audit.view_user_activity")),
     days: int = Query(7, ge=1, le=90)
 ):
     """
     Get user activity history
     
-    **Permissions**: DEVELOPER, SUPERADMIN, MANAGER
+    **Required Permission**: audit.view_user_activity
     
     **Tracks**: Page views, API calls, session duration
     """
@@ -363,14 +362,14 @@ def get_user_activity(
 @router.get("/export/csv")
 def export_audit_logs_csv(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_any_role(["DEVELOPER", "SUPERADMIN"])),
+    current_user: User = Depends(require_permission("audit.export_logs")),
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None
 ):
     """
     Export audit logs to CSV format
     
-    **Permissions**: DEVELOPER, SUPERADMIN only
+    **Required Permission**: audit.export_logs
     
     **Use Case**: Compliance reporting, external audits
     """

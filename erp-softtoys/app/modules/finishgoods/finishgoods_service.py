@@ -16,6 +16,7 @@ from app.core.models.products import Product, ProductType
 from app.core.models.manufacturing import ManufacturingOrder
 from app.core.schemas import MOStatus
 from app.shared.audit import log_audit
+from app.core.base_production_service import BaseProductionService
 
 
 class FinishgoodsService:
@@ -293,7 +294,7 @@ class FinishgoodsService:
         
         ready_products = []
         for mo in completed_mos:
-            product = self.db.query(Product).filter(Product.id == mo.product_id).first()
+            product = BaseProductionService.get_product_optional(self.db, mo.product_id)
             if product:
                 stock = self.db.query(StockQuant).filter(
                     StockQuant.product_id == product.id
@@ -323,7 +324,7 @@ class FinishgoodsService:
         aging_data = []
         for move in stock_moves:
             days_in_stock = (datetime.utcnow() - move.move_date).days
-            product = self.db.query(Product).filter(Product.id == move.product_id).first()
+            product = BaseProductionService.get_product_optional(self.db, move.product_id)
             
             if product:
                 aging_data.append({

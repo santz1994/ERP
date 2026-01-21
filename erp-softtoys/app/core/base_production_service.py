@@ -35,6 +35,10 @@ from app.core.models.transfer import (
 )
 from app.core.models.products import Product
 from app.core.models.bom import BOMHeader, BOMDetail
+from app.core.models.users import User
+from app.core.models.audit import AuditLog
+from app.core.models.kanban import KanbanCard
+from app.core.models.warehouse import PurchaseOrder
 
 
 class BaseProductionService(ABC):
@@ -609,3 +613,288 @@ class BaseProductionService(ABC):
             "notes": notes,
             "timestamp": datetime.utcnow().isoformat()
         }
+
+    # ==================== ADDITIONAL QUERY HELPERS (Phase 16 Week 3) ====================
+    # These methods eliminate duplicate db.query patterns across admin, audit, and other modules
+    
+    @staticmethod
+    def get_user(db: Session, user_id: int) -> "User":
+        """
+        Get user by ID (REQUIRED - raises HTTPException if not found)
+        
+        Usage:
+            user = BaseProductionService.get_user(db, user_id)
+        
+        Args:
+            db: Database session
+            user_id: User identifier
+        
+        Returns:
+            User object
+        
+        Raises:
+            HTTPException(404): If user not found
+        """
+        user = db.query(User).filter(User.id == user_id).first()
+        
+        if not user:
+            raise HTTPException(
+                status_code=404,
+                detail=f"User {user_id} not found"
+            )
+        
+        return user
+    
+    @staticmethod
+    def get_user_optional(db: Session, user_id: int) -> Optional["User"]:
+        """
+        Get user by ID (OPTIONAL - returns None if not found)
+        
+        Usage:
+            user = BaseProductionService.get_user_optional(db, user_id)
+            if user:
+                # process user
+        
+        Args:
+            db: Database session
+            user_id: User identifier
+        
+        Returns:
+            User object or None
+        """
+        return db.query(User).filter(User.id == user_id).first()
+    
+    @staticmethod
+    def get_product(db: Session, product_id: int) -> "Product":
+        """
+        Get product by ID (REQUIRED - raises HTTPException if not found)
+        
+        Usage:
+            product = BaseProductionService.get_product(db, product_id)
+        
+        Args:
+            db: Database session
+            product_id: Product identifier
+        
+        Returns:
+            Product object
+        
+        Raises:
+            HTTPException(404): If product not found
+        """
+        product = db.query(Product).filter(Product.id == product_id).first()
+        
+        if not product:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Product {product_id} not found"
+            )
+        
+        return product
+    
+    @staticmethod
+    def get_product_optional(db: Session, product_id: int) -> Optional["Product"]:
+        """
+        Get product by ID (OPTIONAL - returns None if not found)
+        
+        Usage:
+            product = BaseProductionService.get_product_optional(db, product_id)
+            if product:
+                # process product
+        
+        Args:
+            db: Database session
+            product_id: Product identifier
+        
+        Returns:
+            Product object or None
+        """
+        return db.query(Product).filter(Product.id == product_id).first()
+    
+    @staticmethod
+    def get_kanban_card(db: Session, card_id: int) -> "KanbanCard":
+        """
+        Get kanban card by ID (REQUIRED - raises HTTPException if not found)
+        
+        Usage:
+            card = BaseProductionService.get_kanban_card(db, card_id)
+        
+        Args:
+            db: Database session
+            card_id: Kanban card identifier
+        
+        Returns:
+            KanbanCard object
+        
+        Raises:
+            HTTPException(404): If kanban card not found
+        """
+        card = db.query(KanbanCard).filter(KanbanCard.id == card_id).first()
+        
+        if not card:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Kanban card {card_id} not found"
+            )
+        
+        return card
+    
+    @staticmethod
+    def get_kanban_card_optional(db: Session, card_id: int) -> Optional["KanbanCard"]:
+        """
+        Get kanban card by ID (OPTIONAL - returns None if not found)
+        
+        Usage:
+            card = BaseProductionService.get_kanban_card_optional(db, card_id)
+            if card:
+                # process card
+        
+        Args:
+            db: Database session
+            card_id: Kanban card identifier
+        
+        Returns:
+            KanbanCard object or None
+        """
+        return db.query(KanbanCard).filter(KanbanCard.id == card_id).first()
+    
+    @staticmethod
+    def get_audit_log(db: Session, log_id: int) -> "AuditLog":
+        """
+        Get audit log by ID (REQUIRED - raises HTTPException if not found)
+        
+        Usage:
+            log = BaseProductionService.get_audit_log(db, log_id)
+        
+        Args:
+            db: Database session
+            log_id: Audit log identifier
+        
+        Returns:
+            AuditLog object
+        
+        Raises:
+            HTTPException(404): If audit log not found
+        """
+        log = db.query(AuditLog).filter(AuditLog.id == log_id).first()
+        
+        if not log:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Audit log {log_id} not found"
+            )
+        
+        return log
+    
+    @staticmethod
+    def get_audit_log_optional(db: Session, log_id: int) -> Optional["AuditLog"]:
+        """
+        Get audit log by ID (OPTIONAL - returns None if not found)
+        
+        Usage:
+            log = BaseProductionService.get_audit_log_optional(db, log_id)
+            if log:
+                # process log
+        
+        Args:
+            db: Database session
+            log_id: Audit log identifier
+        
+        Returns:
+            AuditLog object or None
+        """
+        return db.query(AuditLog).filter(AuditLog.id == log_id).first()
+    
+    @staticmethod
+    def get_manufacturing_order(db: Session, mo_id: int) -> "ManufacturingOrder":
+        """
+        Get manufacturing order by ID (REQUIRED - raises HTTPException if not found)
+        
+        Usage:
+            mo = BaseProductionService.get_manufacturing_order(db, mo_id)
+        
+        Args:
+            db: Database session
+            mo_id: Manufacturing order identifier
+        
+        Returns:
+            ManufacturingOrder object
+        
+        Raises:
+            HTTPException(404): If manufacturing order not found
+        """
+        mo = db.query(ManufacturingOrder).filter(ManufacturingOrder.id == mo_id).first()
+        
+        if not mo:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Manufacturing order {mo_id} not found"
+            )
+        
+        return mo
+    
+    @staticmethod
+    def get_manufacturing_order_optional(db: Session, mo_id: int) -> Optional["ManufacturingOrder"]:
+        """
+        Get manufacturing order by ID (OPTIONAL - returns None if not found)
+        
+        Usage:
+            mo = BaseProductionService.get_manufacturing_order_optional(db, mo_id)
+            if mo:
+                # process mo
+        
+        Args:
+            db: Database session
+            mo_id: Manufacturing order identifier
+        
+        Returns:
+            ManufacturingOrder object or None
+        """
+        return db.query(ManufacturingOrder).filter(ManufacturingOrder.id == mo_id).first()
+    
+    @staticmethod
+    def get_purchase_order(db: Session, po_id: int) -> "PurchaseOrder":
+        """
+        Get purchase order by ID (REQUIRED - raises HTTPException if not found)
+        
+        Usage:
+            po = BaseProductionService.get_purchase_order(db, po_id)
+        
+        Args:
+            db: Database session
+            po_id: Purchase order identifier
+        
+        Returns:
+            PurchaseOrder object
+        
+        Raises:
+            HTTPException(404): If purchase order not found
+        """
+        po = db.query(PurchaseOrder).filter(PurchaseOrder.id == po_id).first()
+        
+        if not po:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Purchase order {po_id} not found"
+            )
+        
+        return po
+    
+    @staticmethod
+    def get_purchase_order_optional(db: Session, po_id: int) -> Optional["PurchaseOrder"]:
+        """
+        Get purchase order by ID (OPTIONAL - returns None if not found)
+        
+        Usage:
+            po = BaseProductionService.get_purchase_order_optional(db, po_id)
+            if po:
+                # process po
+        
+        Args:
+            db: Database session
+            po_id: Purchase order identifier
+        
+        Returns:
+            PurchaseOrder object or None
+        """
+        return db.query(PurchaseOrder).filter(PurchaseOrder.id == po_id).first()

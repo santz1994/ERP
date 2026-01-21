@@ -13,6 +13,7 @@ from app.core.permissions import require_permission, ModuleName, Permission
 from app.core.models.users import User
 from app.core.models.kanban import KanbanCard, KanbanStatus, KanbanPriority, KanbanBoard, KanbanRule
 from app.core.models.products import Product
+from app.core.base_production_service import BaseProductionService
 from app.core.websocket import ws_manager
 from pydantic import BaseModel, Field
 
@@ -234,9 +235,7 @@ async def approve_kanban_card(
         )
     
     # Get kanban card
-    kanban = db.query(KanbanCard).filter(KanbanCard.id == card_id).first()
-    if not kanban:
-        raise HTTPException(status_code=404, detail="Kanban card not found")
+    kanban = BaseProductionService.get_kanban_card(db, card_id)
     
     if kanban.status != KanbanStatus.PENDING:
         raise HTTPException(
@@ -290,9 +289,7 @@ async def fulfill_kanban_card(
             detail="Only warehouse team can fulfill kanban cards"
         )
     
-    kanban = db.query(KanbanCard).filter(KanbanCard.id == card_id).first()
-    if not kanban:
-        raise HTTPException(status_code=404, detail="Kanban card not found")
+    kanban = BaseProductionService.get_kanban_card(db, card_id)
     
     if kanban.status not in [KanbanStatus.APPROVED, KanbanStatus.IN_PROGRESS]:
         raise HTTPException(

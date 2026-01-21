@@ -11,8 +11,8 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 from app.core.database import get_db
-from app.core.dependencies import get_current_user
-from app.core.permissions import require_module_access, ModuleName
+from app.core.dependencies import require_permission
+from app.core.permissions import ModuleName
 from app.core.models.users import User
 from app.core.models.warehouse import StockMove, StockQuant, StockLot
 from app.core.models.products import Product
@@ -75,7 +75,7 @@ class BarcodeHistoryResponse(BaseModel):
 async def validate_barcode(
     request: BarcodeValidationRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_module_access(ModuleName.WAREHOUSE))
+    current_user: User = Depends(require_permission("barcode.validate_product"))
 ):
     """
     Validate a barcode and return product information
@@ -142,7 +142,7 @@ async def validate_barcode(
 async def receive_goods(
     request: ReceiveGoodsRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_module_access(ModuleName.WAREHOUSE))
+    current_user: User = Depends(require_permission("barcode.receive_inventory"))
 ):
     """
     Receive goods using barcode scanner
@@ -255,7 +255,7 @@ async def receive_goods(
 async def pick_goods(
     request: PickGoodsRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_module_access(ModuleName.WAREHOUSE))
+    current_user: User = Depends(require_permission("barcode.pick_inventory"))
 ):
     """
     Pick goods using barcode scanner (FIFO logic)
@@ -373,7 +373,7 @@ async def get_barcode_history(
     location: Optional[str] = None,
     limit: int = 50,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_module_access(ModuleName.WAREHOUSE))
+    current_user: User = Depends(require_permission("barcode.view_history"))
 ):
     """
     Get barcode scanning history
@@ -420,7 +420,7 @@ async def get_barcode_history(
 @router.get("/stats")
 async def get_barcode_stats(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_module_access(ModuleName.WAREHOUSE))
+    current_user: User = Depends(require_permission("barcode.view_statistics"))
 ):
     """
     Get barcode scanning statistics

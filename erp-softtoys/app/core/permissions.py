@@ -27,6 +27,8 @@ class ModuleName(str, Enum):
     ADMIN = "admin"
     IMPORT_EXPORT = "import_export"
     MASTERDATA = "masterdata"
+    AUDIT = "audit"
+    BARCODE = "barcode"
 
 
 class Permission(str, Enum):
@@ -60,6 +62,8 @@ ROLE_PERMISSIONS = {
         ModuleName.ADMIN: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.DELETE],
         ModuleName.IMPORT_EXPORT: [Permission.VIEW, Permission.CREATE, Permission.UPDATE],
         ModuleName.MASTERDATA: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.DELETE],
+        ModuleName.AUDIT: [Permission.VIEW, Permission.CREATE],
+        ModuleName.BARCODE: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
     },
     
     UserRole.PPIC_MANAGER: {
@@ -76,6 +80,8 @@ ROLE_PERMISSIONS = {
         ModuleName.QC: [Permission.VIEW],
         ModuleName.REPORTS: [Permission.VIEW, Permission.CREATE],
         ModuleName.MASTERDATA: [Permission.VIEW],
+        ModuleName.AUDIT: [Permission.VIEW],
+        ModuleName.BARCODE: [Permission.VIEW],
     },
     
     UserRole.PPIC_ADMIN: {
@@ -168,12 +174,14 @@ ROLE_PERMISSIONS = {
         ModuleName.MASTERDATA: [Permission.VIEW, Permission.CREATE, Permission.UPDATE],
         ModuleName.REPORTS: [Permission.VIEW],
         ModuleName.IMPORT_EXPORT: [Permission.VIEW, Permission.CREATE],
+        ModuleName.BARCODE: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
     },
     
     UserRole.WAREHOUSE_OP: {
         ModuleName.DASHBOARD: [Permission.VIEW],
         ModuleName.WAREHOUSE: [Permission.VIEW, Permission.EXECUTE],
         ModuleName.FINISHGOODS: [Permission.VIEW],
+        ModuleName.BARCODE: [Permission.VIEW, Permission.EXECUTE],
     },
     
     UserRole.SECURITY: {

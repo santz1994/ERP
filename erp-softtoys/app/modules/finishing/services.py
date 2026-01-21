@@ -243,12 +243,9 @@ class FinishingService(BaseProductionService):
         
         mo = BaseProductionService.get_manufacturing_order(db, wo.mo_id)
         
-        # Get product codes
-        wip_product = db.query(Product).filter(Product.id == wip_product_id).first()
-        fg_product = db.query(Product).filter(Product.id == fg_product_id).first()
-        
-        if not wip_product or not fg_product:
-            raise HTTPException(status_code=404, detail="Product not found")
+        # Get product codes using centralized helper methods
+        wip_product = BaseProductionService.get_product(db, wip_product_id)
+        fg_product = BaseProductionService.get_product(db, fg_product_id)
         
         # Record conversion
         wo.output_qty = qty_converted
