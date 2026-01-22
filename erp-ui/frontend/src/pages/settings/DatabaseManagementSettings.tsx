@@ -43,8 +43,13 @@ export const DatabaseManagementSettings: React.FC = () => {
   const handleSave = async () => {
     try {
       setLoading(true)
-      localStorage.setItem('databaseSettings', JSON.stringify(settings))
-      addNotification('success', 'Database settings saved!')
+      const settingsToSave = {
+        ...settings,
+        savedAt: new Date().toISOString()
+      }
+      localStorage.setItem('databaseSettings', JSON.stringify(settingsToSave))
+      await new Promise(resolve => setTimeout(resolve, 500))
+      addNotification('success', '✓ Database settings saved successfully!')
     } catch (error) {
       addNotification('error', 'Failed to save settings')
     } finally {

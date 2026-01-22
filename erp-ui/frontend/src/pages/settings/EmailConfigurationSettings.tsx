@@ -45,8 +45,13 @@ export const EmailConfigurationSettings: React.FC = () => {
         addNotification('error', 'Please fill in all required fields')
         return
       }
-      localStorage.setItem('emailSettings', JSON.stringify(settings))
-      addNotification('success', 'Email configuration saved!')
+      const settingsToSave = {
+        ...settings,
+        savedAt: new Date().toISOString()
+      }
+      localStorage.setItem('emailSettings', JSON.stringify(settingsToSave))
+      await new Promise(resolve => setTimeout(resolve, 500))
+      addNotification('success', '✓ Email configuration saved successfully!')
     } catch (error) {
       addNotification('error', 'Failed to save settings')
     } finally {

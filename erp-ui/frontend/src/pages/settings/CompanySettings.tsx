@@ -56,8 +56,13 @@ export const CompanySettings: React.FC = () => {
         addNotification('error', 'Please fill in company name and code')
         return
       }
-      localStorage.setItem('companySettings', JSON.stringify(settings))
-      addNotification('success', 'Company settings saved!')
+      const settingsToSave = {
+        ...settings,
+        savedAt: new Date().toISOString()
+      }
+      localStorage.setItem('companySettings', JSON.stringify(settingsToSave))
+      await new Promise(resolve => setTimeout(resolve, 500))
+      addNotification('success', '✓ Company settings saved successfully!')
     } catch (error) {
       addNotification('error', 'Failed to save settings')
     } finally {

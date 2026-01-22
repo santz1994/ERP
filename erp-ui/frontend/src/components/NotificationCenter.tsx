@@ -29,9 +29,11 @@ interface NotificationProps {
 
 const Notification: React.FC<NotificationProps> = ({ notification, onClose }) => {
   useEffect(() => {
-    const timer = setTimeout(onClose, 5000)
+    // Longer timeout for important messages like settings saved
+    const timeout = notification.type === 'success' ? 8000 : 5000
+    const timer = setTimeout(onClose, timeout)
     return () => clearTimeout(timer)
-  }, [onClose])
+  }, [onClose, notification.type])
 
   const bgColor = {
     success: 'bg-green-50 border-green-200',

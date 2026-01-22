@@ -42,10 +42,26 @@ export const NotificationsSettings: React.FC = () => {
   const handleSave = async () => {
     try {
       setLoading(true)
-      localStorage.setItem('notificationSettings', JSON.stringify(settings))
-      addNotification('success', 'Notification settings saved!')
+      
+      // Validate at least one channel is enabled
+      const hasChannelEnabled = settings.emailNotifications || settings.pushNotifications
+      if (!hasChannelEnabled) {
+        addNotification('warning', 'Enable at least one notification channel')
+        return
+      }
+      
+      const settingsToSave = {
+        ...settings,
+        savedAt: new Date().toISOString()
+      }
+      localStorage.setItem('notificationSettings', JSON.stringify(settingsToSave))
+      
+      // Add small delay
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      addNotification('success', '✓ Notification settings saved successfully!')
     } catch (error) {
-      addNotification('error', 'Failed to save settings')
+      addNotification('error', 'Failed to save settings: ' + (error instanceof Error ? error.message : 'Unknown error'))
     } finally {
       setLoading(false)
     }

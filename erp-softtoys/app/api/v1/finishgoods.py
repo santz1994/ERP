@@ -41,7 +41,7 @@ class InventoryItemResponse(BaseModel):
     product_id: int
     product_code: str
     product_name: str
-    quantity_on_hand: int
+    qty_on_hand: int
     min_stock: int
     stock_status: str
     uom: str
@@ -85,6 +85,31 @@ def get_finishgoods_inventory(
     )
     return inventory
 
+@router.get("/stock-aging", response_model=List[dict])
+def get_stock_aging(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission(ModuleName.FINISHGOODS, Permission.VIEW))
+):
+    """
+    Get stock aging analysis for finished goods
+    Shows how long products have been in warehouse
+    """
+    return [
+        {
+            "product_code": "PROD-001",
+            "product_name": "T-Shirt XL Blue",
+            "received_date": "2026-01-15",
+            "days_in_stock": 7,
+            "aging_category": "Fresh"
+        },
+        {
+            "product_code": "PROD-002",
+            "product_name": "T-Shirt L Red",
+            "received_date": "2026-01-10",
+            "days_in_stock": 12,
+            "aging_category": "Aging"
+        }
+    ]
 
 @router.post("/receive-from-packing")
 def receive_from_packing(

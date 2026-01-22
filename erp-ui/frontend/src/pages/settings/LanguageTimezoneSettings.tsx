@@ -67,12 +67,26 @@ export const LanguageTimezoneSettings: React.FC = () => {
   const handleSave = async () => {
     try {
       setLoading(true)
-      // Save to localStorage
-      localStorage.setItem('languageSettings', JSON.stringify(settings))
       
-      addNotification('success', 'Language and timezone settings saved!')
+      // Validate settings
+      if (!settings.language || !settings.timezone) {
+        addNotification('error', 'Please select language and timezone')
+        return
+      }
+      
+      // Save to localStorage with timestamp
+      const settingsToSave = {
+        ...settings,
+        savedAt: new Date().toISOString()
+      }
+      localStorage.setItem('languageSettings', JSON.stringify(settingsToSave))
+      
+      // Add small delay to show button state
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      addNotification('success', '✓ Language and timezone settings saved successfully!')
     } catch (error) {
-      addNotification('error', 'Failed to save settings')
+      addNotification('error', 'Failed to save settings: ' + (error instanceof Error ? error.message : 'Unknown error'))
     } finally {
       setLoading(false)
     }

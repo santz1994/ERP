@@ -367,3 +367,105 @@ async def get_environment_info(
     }
     
     return env_info
+
+
+@router.get("/permissions")
+async def get_permissions(
+    current_user: User = Depends(require_permission("admin.manage_permissions")),
+    db: Session = Depends(get_db)
+):
+    """
+    Get all system permissions
+    
+    Returns list of available permissions grouped by module
+    """
+    return {
+        "modules": [
+            {
+                "name": "dashboard",
+                "permissions": ["view_stats", "view_production", "view_quality"]
+            },
+            {
+                "name": "cutting",
+                "permissions": ["create", "read", "update", "delete", "create_wo"]
+            },
+            {
+                "name": "embroidery",
+                "permissions": ["create", "read", "update", "delete"]
+            },
+            {
+                "name": "sewing",
+                "permissions": ["create", "read", "update", "delete"]
+            },
+            {
+                "name": "finishing",
+                "permissions": ["create", "read", "update", "delete"]
+            },
+            {
+                "name": "packing",
+                "permissions": ["create", "read", "update", "delete"]
+            },
+            {
+                "name": "finishgoods",
+                "permissions": ["create", "read", "update", "delete", "view"]
+            },
+            {
+                "name": "warehouse",
+                "permissions": ["create", "read", "update", "delete"]
+            },
+            {
+                "name": "qc",
+                "permissions": ["create", "read", "update", "delete"]
+            },
+            {
+                "name": "admin",
+                "permissions": ["manage_users", "manage_permissions", "manage_system"]
+            }
+        ]
+    }
+
+
+@router.get("/products")
+async def get_products(
+    current_user: User = Depends(require_permission("admin.manage_system")),
+    db: Session = Depends(get_db)
+):
+    """
+    Get all products for PPIC and manufacturing
+    
+    Returns list of products with their specifications
+    """
+    return {
+        "products": [
+            {
+                "id": 1,
+                "code": "PROD-001",
+                "name": "T-Shirt XL Blue",
+                "category": "Apparel",
+                "sku": "TS-XL-BLU",
+                "unit": "pieces",
+                "standard_qty": 100,
+                "lead_time_days": 5
+            },
+            {
+                "id": 2,
+                "code": "PROD-002",
+                "name": "T-Shirt L Red",
+                "category": "Apparel",
+                "sku": "TS-L-RED",
+                "unit": "pieces",
+                "standard_qty": 100,
+                "lead_time_days": 5
+            },
+            {
+                "id": 3,
+                "code": "PROD-003",
+                "name": "Hoodie M Black",
+                "category": "Apparel",
+                "sku": "HD-M-BLK",
+                "unit": "pieces",
+                "standard_qty": 50,
+                "lead_time_days": 7
+            }
+        ]
+    }

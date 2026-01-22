@@ -34,8 +34,13 @@ export const DocumentTemplatesSettings: React.FC = () => {
   const handleSave = async () => {
     try {
       setLoading(true)
-      localStorage.setItem('documentTemplates', JSON.stringify(templates))
-      addNotification('success', 'Document templates saved!')
+      const settingsToSave = {
+        templates,
+        savedAt: new Date().toISOString()
+      }
+      localStorage.setItem('documentTemplates', JSON.stringify(settingsToSave))
+      await new Promise(resolve => setTimeout(resolve, 500))
+      addNotification('success', '✓ Document templates saved successfully!')
     } catch (error) {
       addNotification('error', 'Failed to save templates')
     } finally {

@@ -33,7 +33,7 @@ class FinishgoodsService:
         """Get finished goods inventory with stock levels"""
         query = self.db.query(
             Product,
-            func.sum(StockQuant.quantity_on_hand).label('total_quantity')
+            func.sum(StockQuant.qty_on_hand).label('total_quantity')
         ).join(
             StockQuant, StockQuant.product_id == Product.id
         ).join(
@@ -59,7 +59,7 @@ class FinishgoodsService:
                 "product_id": product.id,
                 "product_code": product.code,
                 "product_name": product.name,
-                "quantity_on_hand": total_qty,
+                "qty_on_hand": total_qty,
                 "min_stock": product.min_stock,
                 "stock_status": "Low Stock" if total_qty < product.min_stock else "Adequate",
                 "uom": product.uom
@@ -115,12 +115,12 @@ class FinishgoodsService:
         ).first()
         
         if stock_quant:
-            stock_quant.quantity_on_hand += transfer.transfer_qty
+            stock_quant.qty_on_hand += transfer.transfer_qty
         else:
             stock_quant = StockQuant(
                 product_id=transfer.product_id,
                 location_id=fg_location_id,
-                quantity_on_hand=transfer.transfer_qty,
+                qty_on_hand=transfer.transfer_qty,
                 quantity_reserved=0
             )
             self.db.add(stock_quant)
@@ -183,7 +183,7 @@ class FinishgoodsService:
         if not stock_quant:
             raise ValueError("Product not found in Finished Goods warehouse")
         
-        available_qty = stock_quant.quantity_on_hand - stock_quant.quantity_reserved
+        available_qty = stock_quant.qty_on_hand - stock_quant.quantity_reserved
         
         if available_qty < quantity:
             raise ValueError(
@@ -242,7 +242,7 @@ class FinishgoodsService:
         if not stock_quant:
             raise ValueError("Product not found in Finished Goods warehouse")
         
-        if stock_quant.quantity_on_hand < quantity:
+        if stock_quant.qty_on_hand < quantity:
             raise ValueError("Insufficient stock for shipment")
         
         # Create outbound stock move
@@ -258,7 +258,7 @@ class FinishgoodsService:
         self.db.add(stock_move)
         
         # Update stock quant
-        stock_quant.quantity_on_hand -= quantity
+        stock_quant.qty_on_hand -= quantity
         if stock_quant.quantity_reserved >= quantity:
             stock_quant.quantity_reserved -= quantity
         
@@ -281,7 +281,7 @@ class FinishgoodsService:
         return {
             "product_id": product_id,
             "shipped_quantity": quantity,
-            "remaining_stock": stock_quant.quantity_on_hand,
+            "remaining_stock": stock_quant.qty_on_hand,
             "shipped_at": datetime.utcnow().isoformat()
         }
 
@@ -300,12 +300,12 @@ class FinishgoodsService:
                     StockQuant.product_id == product.id
                 ).first()
                 
-                if stock and stock.quantity_on_hand > 0:
+                if stock and stock.qty_on_hand > 0:
                     ready_products.append({
                         "mo_id": mo.id,
                         "product_code": product.code,
                         "product_name": product.name,
-                        "quantity_available": stock.quantity_on_hand,
+                        "quantity_available": stock.qty_on_hand,
                         "quantity_reserved": stock.quantity_reserved,
                         "destination": mo.metadata.get("destination", "Unknown") if mo.metadata else "Unknown"
                     })
@@ -341,3 +341,4 @@ class FinishgoodsService:
                 })
         
         return aging_data
+

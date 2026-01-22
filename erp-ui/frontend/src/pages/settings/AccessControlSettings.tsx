@@ -36,8 +36,13 @@ export const AccessControlSettings: React.FC = () => {
   const handleSave = async () => {
     try {
       setLoading(true)
-      localStorage.setItem('accessSettings', JSON.stringify(settings))
-      addNotification('success', 'Access control settings saved!')
+      const settingsToSave = {
+        ...settings,
+        savedAt: new Date().toISOString()
+      }
+      localStorage.setItem('accessSettings', JSON.stringify(settingsToSave))
+      await new Promise(resolve => setTimeout(resolve, 500))
+      addNotification('success', '✓ Access control settings saved successfully!')
     } catch (error) {
       addNotification('error', 'Failed to save settings')
     } finally {

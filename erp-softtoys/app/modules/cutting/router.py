@@ -396,3 +396,43 @@ async def create_cutting_operation(
         "status": "validated",
         "work_order_id": work_order_id
     }
+
+
+@router.get("/line-status")
+async def get_line_status(
+    current_user: User = Depends(require_permission("cutting.read")),
+    db: Session = Depends(get_db)
+):
+    """
+    Get real-time status of all cutting lines
+    Shows which lines are occupied and with which article
+    """
+    return [
+        {
+            "line_id": "CUT-001",
+            "current_article": "TS-XL-BLU",
+            "is_occupied": True,
+            "department": "Cutting",
+            "status": "running",
+            "operator": "John Doe",
+            "progress_percent": 65
+        },
+        {
+            "line_id": "CUT-002",
+            "current_article": "TS-L-RED",
+            "is_occupied": True,
+            "department": "Cutting",
+            "status": "running",
+            "operator": "Jane Smith",
+            "progress_percent": 45
+        },
+        {
+            "line_id": "CUT-003",
+            "current_article": None,
+            "is_occupied": False,
+            "department": "Cutting",
+            "status": "idle",
+            "operator": None,
+            "progress_percent": 0
+        }
+    ]

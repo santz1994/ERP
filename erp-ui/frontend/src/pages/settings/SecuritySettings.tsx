@@ -48,8 +48,13 @@ export const SecuritySettings: React.FC = () => {
   const handleSave = async () => {
     try {
       setLoading(true)
-      localStorage.setItem('securitySettings', JSON.stringify(settings))
-      addNotification('success', 'Security settings saved!')
+      const settingsToSave = {
+        ...settings,
+        savedAt: new Date().toISOString()
+      }
+      localStorage.setItem('securitySettings', JSON.stringify(settingsToSave))
+      await new Promise(resolve => setTimeout(resolve, 500))
+      addNotification('success', '✓ Security settings saved successfully!')
     } catch (error) {
       addNotification('error', 'Failed to save settings')
     } finally {

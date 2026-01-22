@@ -34,8 +34,14 @@ export const DisplayPreferencesSettings: React.FC = () => {
   const handleSave = async () => {
     try {
       setLoading(true)
-      localStorage.setItem('displaySettings', JSON.stringify(settings))
-      addNotification('success', 'Display preferences saved!')
+      const settingsToSave = {
+        ...settings,
+        savedAt: new Date().toISOString()
+      }
+      localStorage.setItem('displaySettings', JSON.stringify(settingsToSave))
+      
+      await new Promise(resolve => setTimeout(resolve, 500))
+      addNotification('success', '✓ Display preferences saved successfully!')
     } catch (error) {
       addNotification('error', 'Failed to save settings')
     } finally {

@@ -198,7 +198,8 @@ class AccessControl:
     @staticmethod
     def has_module_access(user: User, module: ModuleName) -> bool:
         """Check if user has access to a module"""
-        if user.role == UserRole.ADMIN:
+        # SUPERADMIN, DEVELOPER, ADMIN have full access
+        if user.role in [UserRole.SUPERADMIN, UserRole.DEVELOPER, UserRole.ADMIN]:
             return True
         
         role_permissions = ROLE_PERMISSIONS.get(user.role, {})
@@ -207,7 +208,8 @@ class AccessControl:
     @staticmethod
     def has_permission(user: User, module: ModuleName, permission: Permission) -> bool:
         """Check if user has specific permission for a module"""
-        if user.role == UserRole.ADMIN:
+        # SUPERADMIN, DEVELOPER, ADMIN have full permissions
+        if user.role in [UserRole.SUPERADMIN, UserRole.DEVELOPER, UserRole.ADMIN]:
             return True
         
         role_permissions = ROLE_PERMISSIONS.get(user.role, {})
@@ -217,7 +219,8 @@ class AccessControl:
     @staticmethod
     def get_user_modules(user: User) -> List[ModuleName]:
         """Get list of modules accessible by user"""
-        if user.role == UserRole.ADMIN:
+        # SUPERADMIN, DEVELOPER, ADMIN have access to all modules
+        if user.role in [UserRole.SUPERADMIN, UserRole.DEVELOPER, UserRole.ADMIN]:
             return list(ModuleName)
         
         role_permissions = ROLE_PERMISSIONS.get(user.role, {})
@@ -226,7 +229,8 @@ class AccessControl:
     @staticmethod
     def get_module_permissions(user: User, module: ModuleName) -> List[Permission]:
         """Get user's permissions for a specific module"""
-        if user.role == UserRole.ADMIN:
+        # SUPERADMIN, DEVELOPER, ADMIN have all permissions
+        if user.role in [UserRole.SUPERADMIN, UserRole.DEVELOPER, UserRole.ADMIN]:
             return [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.DELETE, Permission.APPROVE, Permission.EXECUTE]
         
         role_permissions = ROLE_PERMISSIONS.get(user.role, {})
