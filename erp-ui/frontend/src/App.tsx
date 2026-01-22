@@ -28,14 +28,6 @@ import AuditTrailPage from '@/pages/AuditTrailPage'
 import ChangePasswordPage from '@/pages/settings/ChangePasswordPage'
 import { SettingsPlaceholder } from '@/pages/settings/SettingsPlaceholder'
 
-// Placeholder for other pages
-const PlaceholderPage = ({ title }: { title: string }) => (
-  <div className="p-6">
-    <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
-    <p className="text-gray-600 mt-2">Page under development...</p>
-  </div>
-)
-
 const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div className="flex h-screen bg-gray-100 relative">
     {/* Sidebar */}

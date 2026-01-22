@@ -1,0 +1,81 @@
+========================================
+BROWSER CACHE ISSUE - HOW TO FIX
+========================================
+
+PROBLEM:
+Browser showing "Page under development" because it's loading OLD cached JavaScript bundle.
+Status 304 = Browser using cached version, NOT the new build!
+
+SOLUTION (Follow EXACTLY):
+========================================
+
+METHOD 1: Disable Cache in DevTools (RECOMMENDED FOR DEVELOPMENT)
+------------------------------------------------------------------
+1. Open browser to http://localhost:3001
+2. Press F12 (open DevTools)
+3. Click "Network" tab
+4. Check the box "Disable cache" (checkbox at top of Network panel)
+5. KEEP DevTools window OPEN
+6. Press Ctrl+Shift+R (hard reload)
+7. Watch Network tab - index-CCX_MXeQ.js should show "200 OK" (NOT 304!)
+8. Navigate to /cutting
+
+Expected result:
+✅ Full Cutting page UI loads
+✅ Work orders visible
+✅ Statistics cards showing
+✅ NO "Page under development" text
+
+
+METHOD 2: Clear Browser Cache Completely
+------------------------------------------------------------------
+1. Press Ctrl+Shift+Delete
+2. Select "Cached images and files"
+3. Time range: "All time"
+4. Click "Clear data"
+5. Reload page: Ctrl+F5
+6. Navigate to /cutting
+
+
+METHOD 3: Hard Reload (Quick Test)
+------------------------------------------------------------------
+1. Hold Ctrl+Shift
+2. Click Refresh button
+3. Or press Ctrl+Shift+R
+
+
+VERIFICATION:
+========================================
+After clearing cache, check Network tab:
+
+BEFORE (WRONG):
+❌ index-CCX_MXeQ.js - 304 Not Modified - (disk cache)
+
+AFTER (CORRECT):
+✅ index-CCX_MXeQ.js - 200 OK - 223 KB
+
+
+WHAT YOU SHOULD SEE:
+========================================
+✅ Dashboard: Metrics, charts, real data
+✅ PPIC: Schedule calendar
+✅ Cutting: Work order cards, line status, statistics
+✅ Sewing: Production tracking interface  
+✅ Finishing: QC operations
+✅ Packing: Package management
+✅ Admin: User management
+✅ Settings: Password change (others coming soon)
+
+
+STILL SHOWING OLD CONTENT?
+========================================
+1. Make sure "Disable cache" is CHECKED in Network tab
+2. Make sure DevTools is OPEN when reloading
+3. Try different browser (Chrome → Firefox or Edge)
+4. Try Incognito/Private window: Ctrl+Shift+N
+
+
+FOR PERMANENT FIX (DEVELOPMENT):
+========================================
+Keep DevTools open with "Disable cache" checked while developing.
+This prevents browser from caching during development.
