@@ -61,7 +61,7 @@ export default function CuttingPage() {
     queryKey: ['cutting-work-orders'],
     queryFn: async () => {
       const token = localStorage.getItem('access_token');
-      const response = await axios.get(`${API_BASE}/cutting/work-orders`, {
+      const response = await axios.get(`${API_BASE}/production/cutting/pending`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       return response.data;
@@ -86,7 +86,7 @@ export default function CuttingPage() {
   const startWO = useMutation({
     mutationFn: async (woId: number) => {
       const token = localStorage.getItem('access_token');
-      return axios.post(`${API_BASE}/cutting/work-order/${woId}/start`, {}, {
+      return axios.post(`${API_BASE}/production/cutting/work-order/${woId}/start`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
     },
@@ -99,7 +99,7 @@ export default function CuttingPage() {
   const completeWO = useMutation({
     mutationFn: async (data: { woId: number; output_qty: number; reject_qty: number }) => {
       const token = localStorage.getItem('access_token');
-      return axios.post(`${API_BASE}/cutting/work-order/${data.woId}/complete`, {
+      return axios.post(`${API_BASE}/production/cutting/work-order/${data.woId}/complete`, {
         output_qty: data.output_qty,
         reject_qty: data.reject_qty
       }, {
@@ -118,7 +118,7 @@ export default function CuttingPage() {
   const transferToNext = useMutation({
     mutationFn: async (woId: number) => {
       const token = localStorage.getItem('access_token');
-      return axios.post(`${API_BASE}/cutting/work-order/${woId}/transfer`, {}, {
+      return axios.post(`${API_BASE}/production/cutting/work-order/${woId}/transfer`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
     },

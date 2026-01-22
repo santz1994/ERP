@@ -41,70 +41,71 @@ async def get_dashboard_stats(
     Performance: <100ms (from materialized view)
     """
     try:
-        query = text("""
-            SELECT 
-                total_mos,
-                completed_today,
-                pending_qc,
-                critical_alerts,
-                refreshed_at
-            FROM mv_dashboard_stats
-            LIMIT 1
-        """)
+        # Try materialized view first
+        try:
+            query = text("""
+                SELECT 
+                    total_mos,
+                    completed_today,
+                    pending_qc,
+                    critical_alerts,
+                    refreshed_at
+                FROM mv_dashboard_stats
+                LIMIT 1
+            """)
+            
+            result = db.execute(query).fetchone()
+            
+            if result:
+                return {
+                    "total_mos": result.total_mos,
+                    "completed_today": result.completed_today,
+                    "pending_qc": result.pending_qc,
+                    "critical_alerts": result.critical_alerts,
+                    "refreshed_at": result.refreshed_at.isoformat() if result.refreshed_at else None,
+                    "data_source": "materialized_view"
+                }
+        except Exception as mv_error:
+            # Rollback failed transaction and use fallback
+            db.rollback()
+            pass
         
-        result = db.execute(query).fetchone()
+        # Fallback to direct query if materialized view fails or not populated
+        from app.core.models.manufacturing import ManufacturingOrder
+        from datetime import datetime, timedelta
         
-        if not result:
-            # Fallback to direct query if materialized view not populated
-            from app.core.models.manufacturing import ManufacturingOrder, WorkOrderStatus
-            from datetime import datetime, timedelta
-            
-            total_mos = db.query(ManufacturingOrder).filter(
-                ManufacturingOrder.state.in_(['In Progress', 'Pending'])
-            ).count()
-            
-            completed_today = db.query(ManufacturingOrder).filter(
-                ManufacturingOrder.state == 'Done',
-                ManufacturingOrder.updated_at >= datetime.utcnow().date()
-            ).count()
-            
-            pending_qc = 0  # Simplified for fallback
-            critical_alerts = 0  # Simplified for fallback
-            
-            return {
-                "total_mos": total_mos,
-                "completed_today": completed_today,
-                "pending_qc": pending_qc,
-                "critical_alerts": critical_alerts,
-                "refreshed_at": None,
-                "data_source": "direct_query_fallback",
-                "note": "Materialized view not available, using direct query"
-            }
+        total_mos = db.query(ManufacturingOrder).filter(
+            ManufacturingOrder.state.in_(['In Progress', 'Pending'])
+        ).count()
+        
+        completed_today = db.query(ManufacturingOrder).filter(
+            ManufacturingOrder.state == 'Done',
+            ManufacturingOrder.updated_at >= datetime.utcnow().date()
+        ).count()
+        
+        pending_qc = 0  # Simplified for fallback
+        critical_alerts = 0  # Simplified for fallback
         
         return {
-            "total_mos": result.total_mos,
-            "completed_today": result.completed_today,
-            "pending_qc": result.pending_qc,
-            "critical_alerts": result.critical_alerts,
-            "refreshed_at": result.refreshed_at.isoformat() if result.refreshed_at else None,  # noqa: E501
-            "data_source": "materialized_view"
+            "total_mos": total_mos,
+            "completed_today": completed_today,
+            "pending_qc": pending_qc,
+            "critical_alerts": critical_alerts,
+            "refreshed_at": None,
+            "data_source": "direct_query_fallback"
         }
     
     except Exception as e:
-        # Comprehensive error handling to prevent 500 errors
-        from app.core.models.manufacturing import ManufacturingOrder
-        from datetime import datetime
-        
-        # Return safe defaults with error info
+        # Final safety net - return safe defaults
+        db.rollback()
         return {
-            "total_mos": db.query(ManufacturingOrder).count() if db else 0,
+            "total_mos": 0,
             "completed_today": 0,
             "pending_qc": 0,
             "critical_alerts": 0,
             "refreshed_at": None,
             "data_source": "error_fallback",
-            "error": str(e),
-            "note": "Error accessing dashboard data, showing safe defaults"
+            "error": str(e)[:100]
         }
 
 

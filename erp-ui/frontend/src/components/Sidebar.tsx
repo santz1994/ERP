@@ -18,6 +18,15 @@ import {
   FileText,
   ClipboardList,
   Shield,
+  Settings,
+  Lock,
+  Globe,
+  Bell,
+  Palette as PaletteIcon,
+  Mail,
+  FileEdit,
+  Building,
+  Database,
 } from 'lucide-react'
 import { useAuthStore, useUIStore, usePermissionStore } from '@/store'
 import { UserRole } from '@/types'
@@ -152,6 +161,72 @@ const menuItems: MenuItem[] = [
       },
     ]
   },
+  { 
+    icon: <Settings />, 
+    label: 'Settings', 
+    submenu: [
+      { 
+        icon: <Lock />, 
+        label: 'Change Password', 
+        path: '/settings/password',
+        // All users can change their password
+      },
+      { 
+        icon: <Globe />, 
+        label: 'Language & Timezone', 
+        path: '/settings/language',
+        // All users can set preferences
+      },
+      { 
+        icon: <Bell />, 
+        label: 'Notifications', 
+        path: '/settings/notifications',
+        // All users can manage notifications
+      },
+      { 
+        icon: <PaletteIcon />, 
+        label: 'Display Preferences', 
+        path: '/settings/display',
+        // All users can customize display
+      },
+      { 
+        icon: <Users />, 
+        label: 'User Access Control', 
+        path: '/settings/access-control',
+        roles: [UserRole.SUPERADMIN, UserRole.ADMIN]
+      },
+      { 
+        icon: <Mail />, 
+        label: 'Email Configuration', 
+        path: '/settings/email',
+        roles: [UserRole.SUPERADMIN, UserRole.ADMIN]
+      },
+      { 
+        icon: <FileEdit />, 
+        label: 'Document Templates', 
+        path: '/settings/templates',
+        roles: [UserRole.SUPERADMIN, UserRole.ADMIN]
+      },
+      { 
+        icon: <Building />, 
+        label: 'Company Settings', 
+        path: '/settings/company',
+        roles: [UserRole.SUPERADMIN]
+      },
+      { 
+        icon: <Lock />, 
+        label: 'Security Settings', 
+        path: '/settings/security',
+        roles: [UserRole.SUPERADMIN, UserRole.DEVELOPER]
+      },
+      { 
+        icon: <Database />, 
+        label: 'Database Management', 
+        path: '/settings/database',
+        roles: [UserRole.SUPERADMIN, UserRole.DEVELOPER]
+      },
+    ]
+  },
 ]
 
 export const Sidebar: React.FC = () => {
@@ -170,9 +245,15 @@ export const Sidebar: React.FC = () => {
   const hasAccess = (item: MenuItem | SubMenuItem): boolean => {
     if (!user) return false
     
-    // BYPASS: Developer and Superadmin have full access (matches backend)
-    // Backend: UserRole.DEVELOPER, UserRole.SUPERADMIN
-    if (user.role === 'Developer' || user.role === 'Superadmin') {
+    // BYPASS: Developer, Superadmin, and ADMIN have full access (matches backend)
+    // Handle both database format (ADMIN, DEVELOPER, SUPERADMIN) and TypeScript enum format
+    const userRoleUpper = user.role.toUpperCase()
+    if (userRoleUpper === 'DEVELOPER' || userRoleUpper === 'SUPERADMIN' || userRoleUpper === 'ADMIN') {
+      return true
+    }
+    
+    // Settings submenu items without roles/permissions are accessible to all logged-in users
+    if (!item.roles && !item.permissions) {
       return true
     }
     

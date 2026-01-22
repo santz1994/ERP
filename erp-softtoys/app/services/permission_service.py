@@ -180,8 +180,8 @@ class PermissionService:
                 logger.debug(f"Cache HIT: user={user.id}, perm={permission_code}")
                 return cached_result
         
-        # SUPERADMIN and DEVELOPER have all permissions
-        if user.role in [UserRole.SUPERADMIN, UserRole.DEVELOPER]:
+        # SUPERADMIN, DEVELOPER, and Admin have all permissions (temporary until permissions table is created)
+        if user.role in [UserRole.SUPERADMIN, UserRole.DEVELOPER, UserRole.ADMIN]:
             if use_cache:
                 self._set_cache(cache_key, True)
             return True

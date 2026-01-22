@@ -7,6 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool  # Required for in-memory SQLite
 from datetime import datetime, timedelta
 
 from app.main import app
@@ -16,11 +17,13 @@ from app.core.security import PasswordUtils, TokenUtils
 from app.core.config import settings
 
 
-# Use in-memory SQLite for testing
-SQLALCHEMY_TEST_DATABASE_URL = "sqlite:///./test.db"
+# Use in-memory SQLite for testing (faster and isolated)
+SQLALCHEMY_TEST_DATABASE_URL = "sqlite:///:memory:"
 
 engine = create_engine(
-    SQLALCHEMY_TEST_DATABASE_URL, connect_args={"check_same_thread": False}
+    SQLALCHEMY_TEST_DATABASE_URL, 
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool  # Required for in-memory SQLite with TestClient
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -40,12 +43,13 @@ app.dependency_overrides[get_db] = override_get_db
 client = TestClient(app)
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, scope="function")
 def setup_teardown():
-    """Setup and teardown for each test"""
-    Base.metadata.create_all(bind=engine)
+    """Setup and teardown for each test - clear database before each test"""
+    Base.metadata.drop_all(bind=engine)  # Clear first
+    Base.metadata.create_all(bind=engine)  # Then create fresh
     yield
-    Base.metadata.drop_all(bind=engine)
+    Base.metadata.drop_all(bind=engine)  # Clean after test
 
 
 @pytest.fixture
@@ -56,13 +60,13 @@ def test_user_data():
         "email": "test@example.com",
         "password": "securepass123",
         "full_name": "Test User",
-        "roles": ["operator_cutting"]
+        "roles": ["Operator Cutting"]  # Use exact UserRole enum value
     }
 
 
 @pytest.fixture
-def admin_user(test_user_data):
-    """Create admin user"""
+def admin_user():
+    """Create admin user for tests that need authentication"""
     db = TestingSessionLocal()
     admin = User(
         username="admin",
@@ -76,8 +80,9 @@ def admin_user(test_user_data):
     db.add(admin)
     db.commit()
     db.refresh(admin)
+    user_id = admin.id
     db.close()
-    return admin
+    return user_id
 
 
 # ==================== REGISTRATION TESTS ====================
@@ -88,6 +93,9 @@ class TestUserRegistration:
     def test_register_success(self, test_user_data):
         """Test successful user registration"""
         response = client.post("/api/v1/auth/register", json=test_user_data)
+        if response.status_code != 201:
+            print(f"ERROR: Expected 201, got {response.status_code}")
+            print(f"Response: {response.text}")
         assert response.status_code == 201
         data = response.json()
         assert data["username"] == test_user_data["username"]

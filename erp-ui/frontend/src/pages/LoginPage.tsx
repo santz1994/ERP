@@ -46,6 +46,7 @@ export const LoginPage: React.FC = () => {
               onChange={(e) => setUsername(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-600 focus:border-transparent"
               placeholder="Enter your username"
+              autoComplete="username"
               required
             />
           </div>
@@ -60,6 +61,7 @@ export const LoginPage: React.FC = () => {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-600 focus:border-transparent"
               placeholder="Enter your password"
+              autoComplete="current-password"
               required
             />
           </div>

@@ -84,7 +84,7 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
         username=new_user.username,
         email=new_user.email,
         full_name=new_user.full_name,
-        roles=[new_user.role.value],
+        role=new_user.role.value,  # Fixed: single role as string
         is_active=new_user.is_active,
         created_at=new_user.created_at
     )
@@ -123,8 +123,9 @@ async def login(credentials: UserLogin, db: Session = Depends(get_db)):
             detail="Invalid username or password"
         )
     
-    # Check if account is locked
-    if user.locked_until and user.locked_until > datetime.utcnow():
+    # Check if account is locked (use timezone-naive datetime consistently)
+    now = datetime.utcnow()
+    if user.locked_until and user.locked_until > now:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail=f"Account locked. Try again after {user.locked_until}"

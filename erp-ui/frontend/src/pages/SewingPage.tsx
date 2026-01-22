@@ -77,7 +77,7 @@ export default function SewingPage() {
     queryKey: ['sewing-work-orders'],
     queryFn: async () => {
       const token = localStorage.getItem('access_token');
-      const response = await axios.get(`${API_BASE}/sewing/work-orders`, {
+      const response = await axios.get(`${API_BASE}/production/sewing/pending`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       return response.data;
@@ -103,7 +103,7 @@ export default function SewingPage() {
   const startWO = useMutation({
     mutationFn: async (woId: number) => {
       const token = localStorage.getItem('access_token');
-      return axios.post(`${API_BASE}/sewing/work-order/${woId}/start`, {}, {
+      return axios.post(`${API_BASE}/production/sewing/work-order/${woId}/start`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
     },
@@ -137,7 +137,7 @@ export default function SewingPage() {
   const attachLabel = useMutation({
     mutationFn: async (woId: number) => {
       const token = localStorage.getItem('access_token');
-      return axios.post(`${API_BASE}/sewing/work-order/${woId}/attach-label`, {}, {
+      return axios.post(`${API_BASE}/production/sewing/work-order/${woId}/attach-label`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
     },
@@ -150,7 +150,7 @@ export default function SewingPage() {
   const requestRework = useMutation({
     mutationFn: async (data: { woId: number; rework_qty: number; reason: string }) => {
       const token = localStorage.getItem('access_token');
-      return axios.post(`${API_BASE}/sewing/work-order/${data.woId}/rework`, {
+      return axios.post(`${API_BASE}/production/sewing/work-order/${data.woId}/rework`, {
         rework_qty: data.rework_qty,
         reason: data.reason
       }, {

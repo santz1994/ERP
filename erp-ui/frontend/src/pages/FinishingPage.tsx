@@ -50,7 +50,7 @@ export default function FinishingPage() {
     queryKey: ['finishing-work-orders'],
     queryFn: async () => {
       const token = localStorage.getItem('access_token');
-      const response = await axios.get(`${API_BASE}/finishing/work-orders`, {
+      const response = await axios.get(`${API_BASE}/production/finishing/pending`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       return response.data;
@@ -61,7 +61,7 @@ export default function FinishingPage() {
   const startWO = useMutation({
     mutationFn: async (woId: number) => {
       const token = localStorage.getItem('access_token');
-      return axios.post(`${API_BASE}/finishing/work-order/${woId}/start`, {}, {
+      return axios.post(`${API_BASE}/production/finishing/work-order/${woId}/start`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
     },
@@ -73,7 +73,7 @@ export default function FinishingPage() {
   const recordStuffing = useMutation({
     mutationFn: async (data: { woId: number; stuffed_qty: number }) => {
       const token = localStorage.getItem('access_token');
-      return axios.post(`${API_BASE}/finishing/work-order/${data.woId}/stuffing`, {
+      return axios.post(`${API_BASE}/production/finishing/work-order/${data.woId}/stuffing`, {
         stuffed_qty: data.stuffed_qty
       }, {
         headers: { Authorization: `Bearer ${token}` }
@@ -89,7 +89,7 @@ export default function FinishingPage() {
   const finalQC = useMutation({
     mutationFn: async (data: { woId: number; pass_qty: number; defect_qty: number }) => {
       const token = localStorage.getItem('access_token');
-      return axios.post(`${API_BASE}/finishing/work-order/${data.woId}/final-qc`, {
+      return axios.post(`${API_BASE}/production/finishing/work-order/${data.woId}/final-qc`, {
         pass_qty: data.pass_qty,
         defect_qty: data.defect_qty
       }, {
@@ -106,7 +106,7 @@ export default function FinishingPage() {
   const completeFinishing = useMutation({
     mutationFn: async (woId: number) => {
       const token = localStorage.getItem('access_token');
-      return axios.post(`${API_BASE}/finishing/work-order/${woId}/complete`, {}, {
+      return axios.post(`${API_BASE}/production/finishing/work-order/${woId}/complete`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
     },

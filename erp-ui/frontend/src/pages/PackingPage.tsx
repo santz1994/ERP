@@ -61,7 +61,7 @@ export default function PackingPage() {
     queryKey: ['packing-work-orders'],
     queryFn: async () => {
       const token = localStorage.getItem('access_token');
-      const response = await axios.get(`${API_BASE}/packing/work-orders`, {
+      const response = await axios.get(`${API_BASE}/production/packing/pending`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       return response.data;
@@ -84,7 +84,7 @@ export default function PackingPage() {
   const startWO = useMutation({
     mutationFn: async (woId: number) => {
       const token = localStorage.getItem('access_token');
-      return axios.post(`${API_BASE}/packing/work-order/${woId}/start`, {}, {
+      return axios.post(`${API_BASE}/production/packing/work-order/${woId}/start`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
     },
@@ -96,7 +96,7 @@ export default function PackingPage() {
   const recordPacking = useMutation({
     mutationFn: async (data: { woId: number; carton_qty: number; pcs_per_carton: number }) => {
       const token = localStorage.getItem('access_token');
-      return axios.post(`${API_BASE}/packing/work-order/${data.woId}/pack`, {
+      return axios.post(`${API_BASE}/production/packing/work-order/${data.woId}/pack`, {
         carton_qty: data.carton_qty,
         pcs_per_carton: data.pcs_per_carton
       }, {
@@ -114,7 +114,7 @@ export default function PackingPage() {
   const completePacking = useMutation({
     mutationFn: async (woId: number) => {
       const token = localStorage.getItem('access_token');
-      return axios.post(`${API_BASE}/packing/work-order/${woId}/complete`, {}, {
+      return axios.post(`${API_BASE}/production/packing/work-order/${woId}/complete`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
     },

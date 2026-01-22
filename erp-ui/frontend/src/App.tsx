@@ -25,6 +25,8 @@ import PermissionManagementPage from '@/pages/PermissionManagementPage'
 import AdminMasterdataPage from '@/pages/AdminMasterdataPage'
 import AdminImportExportPage from '@/pages/AdminImportExportPage'
 import AuditTrailPage from '@/pages/AuditTrailPage'
+import ChangePasswordPage from '@/pages/settings/ChangePasswordPage'
+import { SettingsPlaceholder } from '@/pages/settings/SettingsPlaceholder'
 
 // Placeholder for other pages
 const PlaceholderPage = ({ title }: { title: string }) => (
@@ -258,11 +260,7 @@ function App() {
 
         <Route
           path="/admin"
-          element={
-            <ProtectedLayout>
-              <PlaceholderPage title="System Administration" />
-            </ProtectedLayout>
-          }
+          element={<Navigate to="/admin/users" replace />}
         />
 
         <Route
@@ -315,6 +313,144 @@ function App() {
             <PrivateRoute module="audit">
               <ProtectedLayout>
                 <AuditTrailPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        {/* Settings Routes */}
+        <Route
+          path="/settings/password"
+          element={
+            <PrivateRoute>
+              <ProtectedLayout>
+                <ChangePasswordPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/settings/language"
+          element={
+            <PrivateRoute>
+              <ProtectedLayout>
+                <SettingsPlaceholder 
+                  title="Language & Timezone Settings" 
+                  description="Configure your language, timezone, date format, and regional preferences"
+                />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/settings/notifications"
+          element={
+            <PrivateRoute>
+              <ProtectedLayout>
+                <SettingsPlaceholder 
+                  title="Notification Preferences" 
+                  description="Manage your notification settings and email alerts"
+                />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/settings/display"
+          element={
+            <PrivateRoute>
+              <ProtectedLayout>
+                <SettingsPlaceholder 
+                  title="Display Preferences" 
+                  description="Customize the appearance and theme of your interface"
+                />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/settings/access-control"
+          element={
+            <PrivateRoute module="admin">
+              <ProtectedLayout>
+                <SettingsPlaceholder 
+                  title="User Access Control" 
+                  description="Manage user roles, permissions, and access levels"
+                />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/settings/email"
+          element={
+            <PrivateRoute module="admin">
+              <ProtectedLayout>
+                <SettingsPlaceholder 
+                  title="Email Configuration" 
+                  description="Configure SMTP and IMAP settings for email integration"
+                />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/settings/templates"
+          element={
+            <PrivateRoute module="admin">
+              <ProtectedLayout>
+                <SettingsPlaceholder 
+                  title="Document Templates" 
+                  description="Customize invoice, PO, and other document templates"
+                />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/settings/company"
+          element={
+            <PrivateRoute module="admin">
+              <ProtectedLayout>
+                <SettingsPlaceholder 
+                  title="Company Settings" 
+                  description="Manage company information, multi-company support, and organization settings"
+                />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/settings/security"
+          element={
+            <PrivateRoute module="admin">
+              <ProtectedLayout>
+                <SettingsPlaceholder 
+                  title="Security Settings" 
+                  description="Configure 2FA, session timeout, IP whitelist, and security policies"
+                />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/settings/database"
+          element={
+            <PrivateRoute module="admin">
+              <ProtectedLayout>
+                <SettingsPlaceholder 
+                  title="Database Management" 
+                  description="Backup, restore, and maintain database operations"
+                />
               </ProtectedLayout>
             </PrivateRoute>
           }
