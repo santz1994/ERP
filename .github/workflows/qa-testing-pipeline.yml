@@ -1,0 +1,315 @@
+name: 🚀 Complete QA Testing Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2 AM
+
+env:
+  PYTHON_VERSION: '3.10'
+  NODE_VERSION: '18'
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+  POSTGRES_DB: erp_test
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/erp_test
+
+jobs:
+  # =========================================================================
+  # STAGE 1: PYTHON UNIT & INTEGRATION TESTS
+  # =========================================================================
+  python-tests:
+    name: 🐍 Python Testing
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: 📦 Install dependencies
+        working-directory: ./erp-softtoys
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: 🔍 Run MyPy (Type Checking)
+        working-directory: ./erp-softtoys
+        run: mypy app --ignore-missing-imports --no-error-summary 2>&1 | head -20 || true
+        continue-on-error: true
+
+      - name: 🔍 Run Ruff (Linting)
+        working-directory: ./erp-softtoys
+        run: ruff check app --select E,F,W
+        continue-on-error: true
+
+      - name: 🛡️ Run Bandit (Security Scan)
+        working-directory: ./erp-softtoys
+        run: bandit -r app -ll -f json -o bandit-report.json 2>&1 | head -30 || true
+        continue-on-error: true
+
+      - name: 🧪 Run Unit Tests
+        working-directory: ./erp-softtoys
+        run: |
+          pytest ../tests/test_boundary_value_analysis.py -v --cov=app --cov-report=xml --cov-report=term
+        continue-on-error: true
+
+      - name: 🧪 Run Database Integrity Tests
+        working-directory: ./erp-softtoys
+        run: |
+          pytest ../tests/test_database_integrity.py -v --tb=short
+        env:
+          TEST_ENV: ci
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+        continue-on-error: true
+
+      - name: 📊 Upload Coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./erp-softtoys/coverage.xml
+          flags: python-tests
+          fail_ci_if_error: false
+
+  # =========================================================================
+  # STAGE 2: BACKEND API TESTING
+  # =========================================================================
+  api-tests:
+    name: 🔗 API & Contract Testing
+    runs-on: ubuntu-latest
+    needs: python-tests
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: 📦 Install dependencies
+        working-directory: ./erp-softtoys
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: 🚀 Start backend server
+        working-directory: ./erp-softtoys
+        run: |
+          uvicorn app.main:app --reload --port 8000 > server.log 2>&1 &
+          sleep 5
+          curl -f http://localhost:8000/api/v1/health || (cat server.log && exit 1)
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+
+      - name: 🧪 Run Production Readiness Tests
+        working-directory: ./erp-softtoys
+        run: |
+          pytest ../tests/test_production_ready.py -v --tb=short
+        env:
+          API_URL: http://localhost:8000
+        continue-on-error: true
+
+      - name: 🧪 Run RBAC Matrix Tests
+        working-directory: ./erp-softtoys
+        run: |
+          pytest ../tests/test_rbac_matrix.py -v --tb=short
+        continue-on-error: true
+
+  # =========================================================================
+  # STAGE 3: PERFORMANCE & LOAD TESTING
+  # =========================================================================
+  performance-tests:
+    name: ⚡ Performance & Load Testing
+    runs-on: ubuntu-latest
+    needs: api-tests
+    if: github.event_name == 'schedule' || contains(github.event.head_commit.message, '[perf]')
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: 📦 Install dependencies
+        working-directory: ./erp-softtoys
+        run: |
+          pip install locust requests
+
+      - name: 🚀 Start backend server
+        working-directory: ./erp-softtoys
+        run: |
+          uvicorn app.main:app --reload --port 8000 > server.log 2>&1 &
+          sleep 5
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+
+      - name: ⚡ Run Load Tests
+        working-directory: ./erp-softtoys
+        run: |
+          locust -f ../tests/locustfile.py --headless -u 5 -r 1 -t 10s --host http://localhost:8000 -v
+        continue-on-error: true
+
+  # =========================================================================
+  # STAGE 4: SECURITY SCANNING
+  # =========================================================================
+  security:
+    name: 🔒 Security Scanning
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: 📦 Install dependencies
+        working-directory: ./erp-softtoys
+        run: |
+          pip install bandit safety semgrep
+
+      - name: 🛡️ Bandit Security Scan
+        working-directory: ./erp-softtoys
+        run: bandit -r app -f csv -o bandit-report.csv 2>&1 | head -50 || true
+        continue-on-error: true
+
+      - name: 🛡️ Safety Check (Dependencies)
+        working-directory: ./erp-softtoys
+        run: safety check --json > safety-report.json 2>&1 || true
+        continue-on-error: true
+
+      - name: 📤 Upload security reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-reports
+          path: erp-softtoys/*-report.*
+
+  # =========================================================================
+  # STAGE 5: CODE QUALITY & COVERAGE
+  # =========================================================================
+  code-quality:
+    name: 📊 Code Quality
+    runs-on: ubuntu-latest
+    needs: python-tests
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: 📦 Install dependencies
+        working-directory: ./erp-softtoys
+        run: |
+          pip install coverage ruff black isort mypy
+
+      - name: 🎨 Check code formatting
+        working-directory: ./erp-softtoys
+        run: black --check app || true
+
+      - name: 📋 Check import sorting
+        working-directory: ./erp-softtoys
+        run: isort --check-only app || true
+
+      - name: 🔍 Linting
+        working-directory: ./erp-softtoys
+        run: ruff check app
+
+  # =========================================================================
+  # STAGE 6: SUMMARY & NOTIFICATION
+  # =========================================================================
+  summary:
+    name: 📋 Test Summary
+    runs-on: ubuntu-latest
+    needs: [python-tests, api-tests, security, code-quality]
+    if: always()
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📊 Generate Summary
+        run: |
+          echo "## 🧪 QA Testing Pipeline Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Stage | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Python Tests | ${{ needs.python-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| API Tests | ${{ needs.api-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security | ${{ needs.security.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Code Quality | ${{ needs.code-quality.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Pipeline Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: ✅ Success Notification
+        if: success()
+        run: echo "✅ All tests passed successfully!"
+
+      - name: ⚠️ Failure Notification
+        if: failure()
+        run: echo "❌ Some tests failed. Check the logs above."

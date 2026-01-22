@@ -11,7 +11,8 @@ from app.core import models  # noqa: F401
 from app.api.v1 import (
     auth, ppic, warehouse, admin, websocket, 
     kanban, reports, import_export, embroidery,
-    purchasing, finishgoods, report_builder, barcode, audit, dashboard
+    purchasing, finishgoods, report_builder, barcode, audit, dashboard,
+    qa_convenience_endpoints
 )
 from app.modules.cutting import cutting_router
 from app.modules.sewing import sewing_router
@@ -159,6 +160,12 @@ app.include_router(
 # Barcode Scanner Module
 app.include_router(
     barcode.router,
+    prefix=settings.API_PREFIX
+)
+
+# QA Convenience Endpoints (for testing)
+app.include_router(
+    qa_convenience_endpoints.router,
     prefix=settings.API_PREFIX
 )
 
