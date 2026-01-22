@@ -3,6 +3,7 @@ import { Menu, X, LogOut, Bell } from 'lucide-react'
 import { useAuthStore, useUIStore } from '@/store'
 import { useNavigate } from 'react-router-dom'
 import { EnvironmentIndicator } from './EnvironmentBanner'
+import { UserRole } from '@/types'
 
 export const Navbar: React.FC = () => {
   const { user, logout } = useAuthStore()
@@ -28,7 +29,7 @@ export const Navbar: React.FC = () => {
             <h1 className="ml-4 text-2xl font-bold text-brand-600">
               Quty Karunia ERP
             </h1>
-            {(user?.role === 'Developer' || user?.role === 'Admin' || user?.role === 'Superadmin') && (
+            {(user?.role === UserRole.DEVELOPER || user?.role === UserRole.ADMIN || user?.role === UserRole.SUPERADMIN) && (
               <EnvironmentIndicator />
             )}
           </div>

@@ -35,15 +35,27 @@ const PlaceholderPage = ({ title }: { title: string }) => (
 )
 
 const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="flex h-screen bg-gray-100">
+  <div className="flex h-screen bg-gray-100 relative">
+    {/* Sidebar */}
     <Sidebar />
-    <div className="flex-1 flex flex-col overflow-hidden">
-      <Navbar />
+    
+    {/* Main Content Area */}
+    <div className="flex-1 flex flex-col overflow-hidden relative z-0">
+      {/* Navbar - positioned above main content */}
+      <div className="relative z-10">
+        <Navbar />
+      </div>
+      
+      {/* Page Content */}
       <main className="flex-1 overflow-auto">
         {children}
       </main>
     </div>
-    <NotificationCenter />
+    
+    {/* Notifications - positioned at top right with high z-index */}
+    <div className="absolute top-0 right-0 z-50">
+      <NotificationCenter />
+    </div>
   </div>
 )
 
@@ -53,13 +65,17 @@ const PrivateRoute: React.FC<{
 }> = ({ children, module }) => {
   const { user, initialized } = useAuthStore()
   
-  // Wait for auth initialization
+  console.log('[PrivateRoute] Check:', { initialized, hasUser: !!user, userRole: user?.role })
+  
+  // CRITICAL: Wait for auth initialization before checking user
+  // initializeAuth() is synchronous but we need to ensure React has processed it
   if (!initialized) {
+    console.log('[PrivateRoute] Still initializing auth...')
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-gray-600">Initializing...</p>
         </div>
       </div>
     )
@@ -67,14 +83,17 @@ const PrivateRoute: React.FC<{
   
   // Check authentication
   if (!user) {
+    console.log('[PrivateRoute] No user found, redirecting to login')
     return <Navigate to="/login" replace />
   }
   
   // Check module access if specified
   if (module && !canAccessModule(user.role, module)) {
+    console.log('[PrivateRoute] Module access denied:', module, 'for role:', user.role)
     return <Navigate to="/unauthorized" replace />
   }
   
+  console.log('[PrivateRoute] Access granted to:', module || 'page', 'for user:', user.username)
   return <>{children}</>
 }
 
@@ -84,12 +103,9 @@ const RootRedirect: React.FC = () => {
 }
 
 function App() {
-  const { loadUserFromStorage } = useAuthStore()
-
-  useEffect(() => {
-    loadUserFromStorage()
-  }, [])
-
+  // Note: Auth initialization happens automatically in store via initializeAuth()
+  // No need to call loadUserFromStorage() here as it causes race condition
+  
   return (
     <Router>
       <Routes>

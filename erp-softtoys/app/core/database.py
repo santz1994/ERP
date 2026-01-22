@@ -3,21 +3,24 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import os
 from dotenv import load_dotenv
+from .config import settings
 
 load_dotenv()
 
 # Database configuration
 SQLALCHEMY_DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://postgres:password@localhost:5432/erp_quty_karunia"
+    settings.DATABASE_URL
 )
 
-# Pool configuration for connection management
+# Pool configuration for connection management - Optimized for production
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
     pool_pre_ping=True,  # Check connection before using
-    pool_size=10,
-    max_overflow=20,
+    pool_size=settings.DB_POOL_SIZE,  # Increased to 20 for concurrency
+    max_overflow=settings.DB_MAX_OVERFLOW,  # Increased to 40
+    pool_timeout=settings.DB_POOL_TIMEOUT,  # 30 seconds timeout
+    pool_recycle=settings.DB_POOL_RECYCLE,  # Recycle after 1 hour
     echo=False  # Set to True for SQL debugging
 )
 

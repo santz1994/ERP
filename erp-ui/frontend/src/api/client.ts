@@ -29,9 +29,21 @@ class ApiClient {
       (error) => {
         if (error.response?.status === 401) {
           // Unauthorized - token expired or invalid
+          console.error('[API Client] 401 Unauthorized:', error.config?.url)
+          
+          // IMPORTANT: Don't force redirect here - let PrivateRoute handle it
+          // This allows graceful handling of failed auth checks on page load
           localStorage.removeItem('access_token')
           localStorage.removeItem('user')
-          window.location.href = '/login'
+          
+          // Only redirect if we're not already on login page
+          const currentPath = window.location.pathname
+          if (!currentPath.includes('/login')) {
+            // Add small delay to allow cleanup
+            setTimeout(() => {
+              window.location.href = '/login'
+            }, 100)
+          }
         } else if (error.response?.status === 403) {
           // Forbidden - insufficient permissions
           const message = error.response?.data?.detail || 'Insufficient permissions'

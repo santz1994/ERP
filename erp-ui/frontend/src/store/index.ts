@@ -18,21 +18,26 @@ interface AuthState {
   loadUserFromStorage: () => void
 }
 
-// Initialize auth state from localStorage
+// Initialize auth state from localStorage SYNCHRONOUSLY
 const initializeAuth = () => {
   try {
     const token = localStorage.getItem('access_token')
     const userStr = localStorage.getItem('user')
     
+    // IMPORTANT: Must initialize before React renders
+    console.log('[AuthStore] Initialization: token exists?', !!token, 'user exists?', !!userStr)
+    
     if (token && userStr) {
       const user = JSON.parse(userStr)
+      console.log('[AuthStore] Loaded user from storage:', user.username, 'role:', user.role)
       return { user, token, initialized: true }
     }
   } catch (e) {
-    console.error('Failed to load auth from storage:', e)
+    console.error('[AuthStore] Storage error:', e)
     localStorage.removeItem('user')
     localStorage.removeItem('access_token')
   }
+  console.log('[AuthStore] No valid auth data in storage')
   return { user: null, token: null, initialized: true }
 }
 
@@ -94,27 +99,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   setToken: (token: string | null) => set({ token }),
 
   loadUserFromStorage: () => {
-    const token = localStorage.getItem('access_token')
-    const userStr = localStorage.getItem('user')
-    
-    if (token && userStr) {
-      try {
-        const user = JSON.parse(userStr)
-        set({ user, token, initialized: true })
-        
-        // Load permissions when rehydrating from storage
-        const permStore = usePermissionStore.getState()
-        permStore.loadPermissions()
-        console.log('[AuthStore] User loaded from storage, fetching permissions')
-        
-      } catch (e) {
-        localStorage.removeItem('user')
-        localStorage.removeItem('access_token')
-        set({ initialized: true })
-      }
-    } else {
-      set({ initialized: true })
-    }
+    console.log('[AuthStore.loadUserFromStorage] Called - DEPRECATED, using initializeAuth instead')
+    // This is kept for backward compatibility but shouldn't be called
   },
 }))
 

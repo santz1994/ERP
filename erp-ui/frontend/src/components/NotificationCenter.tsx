@@ -6,7 +6,7 @@ export const NotificationCenter: React.FC = () => {
   const { notifications, removeNotification } = useUIStore()
 
   return (
-    <div className="fixed top-20 right-4 z-50 space-y-2 max-w-sm">
+    <div className="fixed top-0 right-0 p-4 z-50 space-y-2 max-w-sm pointer-events-none">
       {notifications.map((notif) => (
         <Notification
           key={notif.id}
@@ -56,7 +56,7 @@ const Notification: React.FC<NotificationProps> = ({ notification, onClose }) =>
 
   return (
     <div
-      className={`flex items-center gap-3 p-4 border rounded-lg ${bgColor} animate-slide-in`}
+      className={`flex items-center gap-3 p-4 border rounded-lg ${bgColor} animate-slide-in pointer-events-auto`}
     >
       <Icon className={`w-5 h-5 ${textColor} flex-shrink-0`} />
       <p className={`flex-1 text-sm ${textColor}`}>{notification.message}</p>

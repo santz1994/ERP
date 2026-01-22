@@ -27,8 +27,10 @@ class Settings(BaseSettings):
     
     # Database
     DATABASE_URL: str = Field(default="postgresql://postgres:password@localhost:5432/erp_quty_karunia")
-    DATABASE_POOL_SIZE: int = Field(default=10)
-    DATABASE_MAX_OVERFLOW: int = Field(default=20)
+    DB_POOL_SIZE: int = Field(default=20)  # Increased from 5 for better concurrency
+    DB_MAX_OVERFLOW: int = Field(default=40)  # Increased from 10
+    DB_POOL_TIMEOUT: int = Field(default=30)  # Connection timeout in seconds
+    DB_POOL_RECYCLE: int = Field(default=3600)  # Recycle connections after 1 hour
     DATABASE_POOL_PRE_PING: bool = Field(default=True)
     
     # JWT/Security

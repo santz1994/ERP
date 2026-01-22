@@ -76,12 +76,13 @@ export const LoginPage: React.FC = () => {
 
         <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
           <p className="text-xs text-gray-600 mb-2">
-            <strong>Demo Credentials:</strong>
+            <strong>Demo Credentials (All users use password: password123):</strong>
           </p>
           <ul className="text-xs text-gray-600 space-y-1">
-            <li>Admin: admin / Admin@123456</li>
-            <li>Operator: operator / Operator@123</li>
-            <li>QC: qc / QC@123</li>
+            <li>👨‍💻 Developer: <code className="bg-gray-200 px-1">developer</code> / <code className="bg-gray-200 px-1">password123</code></li>
+            <li>👤 Admin: <code className="bg-gray-200 px-1">admin</code> / <code className="bg-gray-200 px-1">password123</code></li>
+            <li>👨‍🏭 Operator: <code className="bg-gray-200 px-1">operator_cut</code> / <code className="bg-gray-200 px-1">password123</code></li>
+            <li>🔬 QC: <code className="bg-gray-200 px-1">qc_lab</code> / <code className="bg-gray-200 px-1">password123</code></li>
           </ul>
         </div>
       </div>

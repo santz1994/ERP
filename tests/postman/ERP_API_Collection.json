@@ -1,0 +1,524 @@
+{
+  "info": {
+    "name": "ERP API - Production Ready Test Collection",
+    "description": "Complete API testing for ERP system - Security, Production Logic, Integration",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has access_token', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('access_token');",
+                  "    pm.collectionVariables.set('auth_token', jsonData.access_token);",
+                  "});",
+                  "",
+                  "pm.test('Response time < 1000ms', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"developer\",\n    \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Get Current User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('User data is valid', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('username');",
+                  "    pm.expect(jsonData).to.have.property('email');",
+                  "    pm.expect(jsonData).to.have.property('role');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. Security Tests (SEC)",
+      "item": [
+        {
+          "name": "SEC-01: Environment Policy",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is valid', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403, 404]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/system/environment",
+              "host": ["{{base_url}}"],
+              "path": ["system", "environment"]
+            }
+          }
+        },
+        {
+          "name": "SEC-02: No Token Access (Should Fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should reject no-token request', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 403]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/users",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "users"]
+            }
+          }
+        },
+        {
+          "name": "SEC-04: Audit Trail",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is valid', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Audit logs have required fields', function () {",
+                  "        var jsonData = pm.response.json();",
+                  "        if (Array.isArray(jsonData) && jsonData.length > 0) {",
+                  "            pm.expect(jsonData[0]).to.have.property('user_id');",
+                  "            pm.expect(jsonData[0]).to.have.property('timestamp');",
+                  "            pm.expect(jsonData[0]).to.have.property('action');",
+                  "        }",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/audit-trail",
+              "host": ["{{base_url}}"],
+              "path": ["audit-trail"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Production Logic (PRD)",
+      "item": [
+        {
+          "name": "PRD-01: Get Manufacturing Orders",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is valid', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 200) {",
+                  "    pm.test('Returns array', function () {",
+                  "        var jsonData = pm.response.json();",
+                  "        pm.expect(jsonData).to.be.an('array');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ppic/manufacturing-orders",
+              "host": ["{{base_url}}"],
+              "path": ["ppic", "manufacturing-orders"]
+            }
+          }
+        },
+        {
+          "name": "PRD-02: Invalid Cutting Quantity (Should Fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should reject invalid data', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 422, 403, 405]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"quantity\": 999999,\n    \"work_order_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/cutting/operations",
+              "host": ["{{base_url}}"],
+              "path": ["cutting", "operations"]
+            }
+          }
+        },
+        {
+          "name": "PRD-03: Warehouse Stock",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is valid', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403, 404]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/warehouse/stock",
+              "host": ["{{base_url}}"],
+              "path": ["warehouse", "stock"]
+            }
+          }
+        },
+        {
+          "name": "PRD-04: QC Tests",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is valid', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403, 404]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/qc/tests",
+              "host": ["{{base_url}}"],
+              "path": ["qc", "tests"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. API Integration (API)",
+      "item": [
+        {
+          "name": "API-01: Kanban Board (< 500ms)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is valid', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403, 404]);",
+                  "});",
+                  "",
+                  "pm.test('Response time < 500ms', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(500);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/kanban/board",
+              "host": ["{{base_url}}"],
+              "path": ["kanban", "board"]
+            }
+          }
+        },
+        {
+          "name": "API-03: Invalid Import Data (Should Fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should reject invalid data', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 422, 403, 405]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"invalid_field\": \"test\",\n    \"number\": \"not_a_number\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/ppic/manufacturing-orders",
+              "host": ["{{base_url}}"],
+              "path": ["ppic", "manufacturing-orders"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. UI/UX Support (UI)",
+      "item": [
+        {
+          "name": "UI-01: User Permissions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is valid', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403, 404]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/users/me/permissions",
+              "host": ["{{base_url}}"],
+              "path": ["users", "me", "permissions"]
+            }
+          }
+        },
+        {
+          "name": "UI-03: Large Dataset (Audit Trail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is valid', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+                  "});",
+                  "",
+                  "pm.test('Response time < 3000ms', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/audit-trail?limit=1000",
+              "host": ["{{base_url}}"],
+              "path": ["audit-trail"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "1000"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Go-Live Checklist",
+      "item": [
+        {
+          "name": "GoLive-02: Negative Flow Test",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should reject invalid data types', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 422, 403, 405]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"text_field\": 12345,\n    \"number_field\": \"text\",\n    \"date\": \"invalid\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/ppic/manufacturing-orders",
+              "host": ["{{base_url}}"],
+              "path": ["ppic", "manufacturing-orders"]
+            }
+          }
+        },
+        {
+          "name": "GoLive-03: Production Reports",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is valid', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 403, 405]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reports/production",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "production"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

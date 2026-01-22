@@ -299,7 +299,7 @@ export const Sidebar: React.FC = () => {
 
   return (
     <div
-      className={`bg-gray-900 text-white h-screen shadow-lg transition-all duration-300 overflow-y-auto ${
+      className={`bg-gray-900 text-white h-screen shadow-lg transition-all duration-300 overflow-y-auto relative z-20 ${
         sidebarOpen ? 'w-64' : 'w-20'
       }`}
     >
