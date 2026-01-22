@@ -25,6 +25,7 @@ const AdminUserPage: React.FC = () => {
   const [loading, setLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set())
   
   // Permission checks (PBAC - Phase 16 Week 4)
   const canManageUsers = usePermission('admin.manage_users')
@@ -198,6 +199,40 @@ const AdminUserPage: React.FC = () => {
     })
   }
 
+  // Select functionality
+  const toggleSelectUser = (userId: number) => {
+    const newSelected = new Set(selectedUsers)
+    if (newSelected.has(userId)) {
+      newSelected.delete(userId)
+    } else {
+      newSelected.add(userId)
+    }
+    setSelectedUsers(newSelected)
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedUsers.size === users.length) {
+      setSelectedUsers(new Set())
+    } else {
+      setSelectedUsers(new Set(users.map(u => u.id)))
+    }
+  }
+
+  const bulkDeactivate = async () => {
+    if (selectedUsers.size === 0) return
+    if (!confirm(`Deactivate ${selectedUsers.size} user(s)?`)) return
+    
+    try {
+      for (const userId of selectedUsers) {
+        await apiClient.put(`/admin/users/${userId}`, { is_active: false })
+      }
+      setSelectedUsers(new Set())
+      fetchUsers()
+    } catch (error) {
+      console.error('Error deactivating users:', error)
+    }
+  }
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -243,10 +278,32 @@ const AdminUserPage: React.FC = () => {
 
       {/* Users Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
+        {/* Bulk actions bar */}
+        {selectedUsers.size > 0 && (
+          <div className="bg-blue-50 border-b border-blue-200 px-6 py-3 flex justify-between items-center">
+            <span className="text-sm font-medium text-blue-900">
+              {selectedUsers.size} user(s) selected
+            </span>
+            <button
+              onClick={bulkDeactivate}
+              className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition"
+            >
+              Deactivate Selected
+            </button>
+          </div>
+        )}
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
+                <th className="px-6 py-3 text-left">
+                  <input
+                    type="checkbox"
+                    checked={selectedUsers.size === users.length && users.length > 0}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 cursor-pointer"
+                  />
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
@@ -259,13 +316,21 @@ const AdminUserPage: React.FC = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
                     No users found.
                   </td>
                 </tr>
               ) : (
                 users.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50">
+                  <tr key={user.id} className={`hover:bg-gray-50 ${selectedUsers.has(user.id) ? 'bg-blue-50' : ''}`}>
+                    <td className="px-6 py-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedUsers.has(user.id)}
+                        onChange={() => toggleSelectUser(user.id)}
+                        className="w-4 h-4 cursor-pointer"
+                      />
+                    </td>
                     <td className="px-6 py-4">
                       <div>
                         <div className="font-medium text-gray-900">{user.full_name}</div>

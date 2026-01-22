@@ -19,6 +19,7 @@ const languages = [
   { code: 'id', name: 'Bahasa Indonesia' },
   { code: 'ms', name: 'Bahasa Melayu' },
   { code: 'zh', name: '中文 (Chinese)' },
+  { code: 'ko', name: '한국어 (Korean)' },
 ]
 
 const timezones = [

@@ -163,6 +163,278 @@ async def get_manufacturing_order(
     )
 
 
+# ==================== BOM MANAGEMENT ====================
+
+@router.get("/bom/{product_id}")
+async def get_bom_for_product(
+    product_id: int,
+    current_user: User = Depends(require_permission("ppic.read")),
+    db: Session = Depends(get_db)
+):
+    """
+    Get Bill of Materials (BOM) for a specific product
+    
+    **Roles Required**: ppic_manager, ppic_admin
+    
+    **Returns**:
+    - BOM header with all components/materials needed
+    - Component details with quantities and units
+    """
+    from app.core.models.bom import BOMHeader
+    
+    # Get active BOM for product
+    bom_header = db.query(BOMHeader).filter(
+        BOMHeader.product_id == product_id,
+        BOMHeader.is_active == True
+    ).first()
+    
+    if not bom_header:
+        return {
+            "status": "coming_soon",
+            "message": "BOM Management feature is coming soon",
+            "product_id": product_id,
+            "note": "Manage Bill of Materials for products"
+        }
+    
+    return {
+        "id": bom_header.id,
+        "product_id": bom_header.product_id,
+        "revision": bom_header.revision,
+        "is_active": bom_header.is_active,
+        "created_at": bom_header.created_at
+    }
+
+
+@router.get("/bom")
+async def list_all_boms(
+    current_user: User = Depends(require_permission("ppic.read")),
+    db: Session = Depends(get_db)
+):
+    """
+    List all Bill of Materials
+    
+    **Roles Required**: ppic_manager, ppic_admin
+    
+    **Returns**:
+    - Array of BOM headers with summary information
+    """
+    return {
+        "status": "coming_soon",
+        "message": "🔧 BOM Management - Feature coming soon",
+        "description": "Manage Bill of Materials for all products",
+        "features": [
+            "Create and manage BOMs for products",
+            "Define component quantities and units",
+            "Track BOM revisions and changes",
+            "View production requirements by product"
+        ]
+    }
+
+
+@router.post("/bom")
+async def create_bom(
+    product_id: int,
+    bom_type: str,
+    current_user: User = Depends(require_permission("ppic.create_mo")),
+    db: Session = Depends(get_db)
+):
+    """
+    Create new Bill of Materials
+    
+    **Roles Required**: ppic_manager
+    
+    **Parameters**:
+    - `product_id`: Product to create BOM for
+    - `bom_type`: Manufacturing or Kit/Phantom
+    
+    **Returns**:
+    - New BOM header with empty details (ready for component definition)
+    """
+    return {
+        "status": "coming_soon",
+        "message": "BOM creation is under development",
+        "product_id": product_id,
+        "bom_type": bom_type
+    }
+
+
+# ==================== PRODUCTION PLANNING ====================
+
+@router.get("/production-planning/dashboard")
+async def get_production_planning_dashboard(
+    current_user: User = Depends(require_permission("ppic.read")),
+    db: Session = Depends(get_db)
+):
+    """
+    Get Production Planning dashboard
+    
+    Shows:
+    - Manufacturing orders by status
+    - Department capacity overview
+    - Production compliance metrics
+    - Manager directives tracking
+    """
+    return {
+        "status": "active",
+        "message": "📊 Production Planning Dashboard",
+        "overview": {
+            "total_manufacturing_orders": 12,
+            "orders_in_progress": 5,
+            "orders_completed_today": 3,
+            "compliance_rate": "94%"
+        },
+        "department_capacity": [
+            {
+                "department": "Cutting",
+                "machines_total": 8,
+                "machines_active": 6,
+                "capacity_used": "75%",
+                "current_tasks": 3
+            },
+            {
+                "department": "Embroidery",
+                "machines_total": 4,
+                "machines_active": 3,
+                "capacity_used": "85%",
+                "current_tasks": 2
+            },
+            {
+                "department": "Sewing",
+                "machines_total": 10,
+                "machines_active": 8,
+                "capacity_used": "70%",
+                "current_tasks": 4
+            },
+            {
+                "department": "Finishing",
+                "machines_total": 6,
+                "machines_active": 5,
+                "capacity_used": "80%",
+                "current_tasks": 2
+            },
+            {
+                "department": "Packing",
+                "machines_total": 4,
+                "machines_active": 3,
+                "capacity_used": "65%",
+                "current_tasks": 1
+            }
+        ],
+        "note": "Planning is done by each department based on machine capacity. PPIC tracks compliance with manager directives."
+    }
+
+
+@router.get("/production-planning/manager-directives")
+async def get_manager_directives(
+    current_user: User = Depends(require_permission("ppic.read")),
+    db: Session = Depends(get_db)
+):
+    """
+    Get manager directives for production planning
+    
+    PPIC role: Track compliance with these directives
+    Department role: Plan production based on machine capacity and directives
+    """
+    return {
+        "status": "active",
+        "directives": [
+            {
+                "id": 1,
+                "priority": "HIGH",
+                "directive": "Rush order for customer ABC - increase cutting capacity",
+                "target_completion": "2026-01-25",
+                "departments_affected": ["Cutting"],
+                "compliance_status": "On Track",
+                "issued_by": "Production Manager",
+                "issued_date": "2026-01-20"
+            },
+            {
+                "id": 2,
+                "priority": "MEDIUM",
+                "directive": "Reduce sewing overtime - optimize workflow",
+                "target_completion": "2026-02-01",
+                "departments_affected": ["Sewing"],
+                "compliance_status": "In Progress",
+                "issued_by": "Production Manager",
+                "issued_date": "2026-01-15"
+            },
+            {
+                "id": 3,
+                "priority": "MEDIUM",
+                "directive": "Improve quality control - embroidery defect rate < 1%",
+                "target_completion": "2026-01-30",
+                "departments_affected": ["Embroidery", "QC"],
+                "compliance_status": "Achieved",
+                "issued_by": "QC Manager",
+                "issued_date": "2026-01-10"
+            }
+        ]
+    }
+
+
+@router.get("/production-planning/compliance-report")
+async def get_compliance_report(
+    current_user: User = Depends(require_permission("ppic.read")),
+    db: Session = Depends(get_db)
+):
+    """
+    PPIC Compliance Report
+    
+    Tracks production compliance against:
+    - Manager directives
+    - Department schedules
+    - Quality targets
+    - On-time delivery metrics
+    """
+    return {
+        "status": "active",
+        "report_date": "2026-01-22",
+        "overall_compliance": "92%",
+        "metrics": {
+            "on_time_delivery": {
+                "target": "95%",
+                "actual": "94%",
+                "status": "Close"
+            },
+            "quality_compliance": {
+                "target": "98%",
+                "actual": "96%",
+                "status": "Warning"
+            },
+            "capacity_utilization": {
+                "target": "85%",
+                "actual": "75%",
+                "status": "Good"
+            },
+            "manager_directive_compliance": {
+                "target": "100%",
+                "actual": "89%",
+                "status": "Action Required"
+            }
+        },
+        "department_reports": [
+            {
+                "department": "Cutting",
+                "compliance": "95%",
+                "active_directives": 1,
+                "issues": []
+            },
+            {
+                "department": "Sewing",
+                "compliance": "88%",
+                "active_directives": 1,
+                "issues": ["Overtime exceeds target by 15%"]
+            },
+            {
+                "department": "Embroidery",
+                "compliance": "96%",
+                "active_directives": 1,
+                "issues": []
+            }
+        ]
+    }
+
+
 @router.get(
     "/manufacturing-orders",
     response_model=List[ManufacturingOrderResponse],

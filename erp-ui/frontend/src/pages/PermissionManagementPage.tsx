@@ -84,9 +84,34 @@ const PermissionManagementPage: React.FC = () => {
   const fetchPermissions = async () => {
     try {
       const response = await apiClient.get('/admin/permissions')
-      setPermissions(response.data)
+      // Handle both array and object response formats
+      if (Array.isArray(response.data)) {
+        setPermissions(response.data)
+      } else if (response.data.modules) {
+        // Convert modules format to flat permission array
+        const flatPermissions: Permission[] = []
+        response.data.modules.forEach((module: any) => {
+          module.permissions.forEach((perm: string, index: number) => {
+            flatPermissions.push({
+              id: flatPermissions.length + 1,
+              code: `${module.name}.${perm}`,
+              name: perm,
+              description: `${perm} permission for ${module.name}`,
+              module: module.name,
+              category: 'system'
+            })
+          })
+        })
+        setPermissions(flatPermissions)
+      } else if (response.data.permissions) {
+        setPermissions(response.data.permissions)
+      } else {
+        // Fallback - set empty array
+        setPermissions([])
+      }
     } catch (error) {
       console.error('Error fetching permissions:', error)
+      setPermissions([])
     }
   }
 
@@ -142,10 +167,14 @@ const PermissionManagementPage: React.FC = () => {
   }
 
   // Filter permissions by module
-  const modules = Array.from(new Set(permissions.map(p => p.module)))
-  const filteredPermissions = filterModule === 'all' 
-    ? permissions 
-    : permissions.filter(p => p.module === filterModule)
+  const modules = permissions && Array.isArray(permissions) 
+    ? Array.from(new Set(permissions.map(p => p.module))) 
+    : []
+  const filteredPermissions = (permissions && Array.isArray(permissions))
+    ? (filterModule === 'all' 
+      ? permissions 
+      : permissions.filter(p => p.module === filterModule))
+    : []
 
   // Filter users by search term
   const filteredUsers = users.filter(u =>

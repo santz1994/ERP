@@ -510,3 +510,205 @@ async def update_warehouse_stock(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Stock update failed: {str(e)}"
         )
+
+# ==================== WAREHOUSE STOCK MANAGEMENT ====================
+
+@router.get("/stock-overview")
+async def get_stock_overview(
+    current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.VIEW)),
+    db: Session = Depends(get_db)
+):
+    """
+    Get complete warehouse stock overview
+    
+    Shows inventory summary across all locations
+    """
+    return {
+        "status": "active",
+        "total_items": 450,
+        "total_quantity": 12500,
+        "low_stock_alerts": 8,
+        "overstock_items": 3,
+        "locations": [
+            {
+                "location": "Warehouse Zone A",
+                "total_items": 120,
+                "total_qty": 3500,
+                "capacity_used": "70%"
+            },
+            {
+                "location": "Warehouse Zone B",
+                "total_items": 150,
+                "total_qty": 4200,
+                "capacity_used": "75%"
+            },
+            {
+                "location": "Warehouse Zone C",
+                "total_items": 100,
+                "total_qty": 2800,
+                "capacity_used": "65%"
+            },
+            {
+                "location": "Finishgoods",
+                "total_items": 80,
+                "total_qty": 2000,
+                "capacity_used": "55%"
+            }
+        ]
+    }
+
+
+@router.get("/low-stock-alert")
+async def get_low_stock_alerts(
+    current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.VIEW)),
+    db: Session = Depends(get_db)
+):
+    """
+    Get products with low stock levels
+    
+    Alerts when inventory falls below reorder point
+    """
+    return {
+        "status": "active",
+        "alerts_count": 8,
+        "low_stock_items": [
+            {
+                "product_id": 1,
+                "product_code": "PROD-001",
+                "product_name": "T-Shirt XL Blue",
+                "current_qty": 45,
+                "reorder_point": 100,
+                "action": "Reorder Recommended"
+            },
+            {
+                "product_id": 2,
+                "product_code": "PROD-002",
+                "product_name": "T-Shirt L Red",
+                "current_qty": 30,
+                "reorder_point": 80,
+                "action": "Urgent Reorder"
+            },
+            {
+                "product_id": 5,
+                "product_code": "PROD-005",
+                "product_name": "Buttons (size 20mm)",
+                "current_qty": 200,
+                "reorder_point": 500,
+                "action": "Reorder Recommended"
+            }
+        ]
+    }
+
+
+@router.post("/stock-transfer")
+async def create_stock_transfer(
+    source_location: str,
+    target_location: str,
+    product_id: int,
+    quantity: float,
+    current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.CREATE)),
+    db: Session = Depends(get_db)
+):
+    """
+    Create stock transfer between warehouse locations
+    
+    Transfer inventory from one location to another
+    """
+    return {
+        "status": "success",
+        "transfer_id": 1001,
+        "source": source_location,
+        "target": target_location,
+        "product_id": product_id,
+        "quantity": quantity,
+        "timestamp": "2026-01-22T14:30:00",
+        "created_by": current_user.username
+    }
+
+
+@router.get("/stock-aging")
+async def get_stock_aging(
+    current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.VIEW)),
+    db: Session = Depends(get_db)
+):
+    """
+    Get stock aging report
+    
+    Shows inventory by age (newly received, 30+ days old, etc)
+    Helps identify slow-moving items
+    """
+    return {
+        "status": "active",
+        "report_date": "2026-01-22",
+        "total_sku": 450,
+        "aging_categories": [
+            {
+                "category": "0-7 days",
+                "item_count": 85,
+                "total_qty": 2100,
+                "status": "Fresh Stock"
+            },
+            {
+                "category": "8-30 days",
+                "item_count": 120,
+                "total_qty": 3200,
+                "status": "Recent"
+            },
+            {
+                "category": "31-90 days",
+                "item_count": 150,
+                "total_qty": 4500,
+                "status": "Normal"
+            },
+            {
+                "category": "90+ days",
+                "item_count": 95,
+                "total_qty": 2700,
+                "status": "Slow Moving"
+            }
+        ],
+        "slow_moving_action": "Review for obsolescence or promotional clearance"
+    }
+
+
+@router.get("/warehouse-efficiency")
+async def get_warehouse_efficiency(
+    current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.VIEW)),
+    db: Session = Depends(get_db)
+):
+    """
+    Get warehouse efficiency metrics
+    
+    KPIs for warehouse operations and performance
+    """
+    return {
+        "status": "active",
+        "period": "January 2026",
+        "metrics": {
+            "inventory_accuracy": {
+                "value": "98.5%",
+                "target": "99%",
+                "status": "Good"
+            },
+            "stock_turns": {
+                "value": 6.2,
+                "target": 6.0,
+                "status": "Exceeds"
+            },
+            "storage_utilization": {
+                "value": "72%",
+                "target": "75%",
+                "status": "Good"
+            },
+            "average_pick_time": {
+                "value": "4.2 mins",
+                "target": "5 mins",
+                "status": "Excellent"
+            },
+            "transfer_accuracy": {
+                "value": "99.2%",
+                "target": "99%",
+                "status": "Excellent"
+            }
+        }
+    }

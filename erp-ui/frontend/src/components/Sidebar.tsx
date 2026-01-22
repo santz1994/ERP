@@ -159,6 +159,12 @@ const menuItems: MenuItem[] = [
         path: '/admin/audit-trail', 
         roles: [UserRole.DEVELOPER, UserRole.SUPERADMIN, UserRole.MANAGER] 
       },
+      { 
+        icon: <FileText />, 
+        label: 'Import/Export', 
+        path: '/admin/import-export', 
+        permissions: ['import_export.import_data', 'import_export.export_data']
+      },
     ]
   },
   { 

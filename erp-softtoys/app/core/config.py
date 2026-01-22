@@ -63,7 +63,16 @@ class Settings(BaseSettings):
         "http://localhost:3000", 
         "http://localhost:3001", 
         "http://localhost:5173",  # Vite default dev port
-        "http://localhost:8080"
+        "http://localhost:8080",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:8080",
+        "http://192.168.1.122:3000",  # Local network dev
+        "http://192.168.1.122:3001",
+        "http://192.168.1.122:5173",
+        "http://192.168.1.122:8080",
+        "*"  # Allow all origins for development (restrict in production)
     ])
     CORS_ALLOW_CREDENTIALS: bool = Field(default=True)
     CORS_ALLOW_METHODS: list = Field(default=["*"])
