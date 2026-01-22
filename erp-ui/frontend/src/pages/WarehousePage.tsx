@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import apiClient from '../api/client';
+import { apiClient } from '@/api/client';
 import BarcodeScanner from '../components/BarcodeScanner';
 
 // Types
@@ -29,7 +29,7 @@ interface StockMovement {
 }
 
 const WarehousePage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'inventory' | 'movements' | 'barcode'>('inventory');
+  const [activeTab, setActiveTab] = useState<'inventory' | 'movements' | 'barcode' | 'transfers'>('inventory');
   const [searchTerm, setSearchTerm] = useState('');
   const [showLowStockOnly, setShowLowStockOnly] = useState(false);
   

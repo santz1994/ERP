@@ -137,3 +137,5 @@ export const useUIStore = create<UIState>((set) => ({
       notifications: state.notifications.filter((n) => n.id !== id),
     })),
 }))
+
+export { usePermissionStore } from './permissionStore'

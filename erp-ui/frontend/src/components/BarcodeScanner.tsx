@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Html5QrcodeScanner, Html5Qrcode } from 'html5-qrcode';
-import apiClient from '../api/client';
+import { apiClient } from '@/api/client';
 
 interface BarcodeScannerProps {
   onScan: (barcode: string) => void;

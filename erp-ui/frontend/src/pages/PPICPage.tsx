@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Lock } from 'lucide-react';
-import apiClient from '../api/client';
+import { apiClient } from '@/api/client';
 import { usePermission } from '@/hooks/usePermission';
 
 // Types

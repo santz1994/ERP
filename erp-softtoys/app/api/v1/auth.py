@@ -125,11 +125,14 @@ async def login(credentials: UserLogin, db: Session = Depends(get_db)):
     
     # Check if account is locked (use timezone-naive datetime consistently)
     now = datetime.utcnow()
-    if user.locked_until and user.locked_until > now:
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail=f"Account locked. Try again after {user.locked_until}"
-        )
+    if user.locked_until:
+        # Ensure both datetimes are naive for comparison
+        locked_until = user.locked_until.replace(tzinfo=None) if user.locked_until.tzinfo else user.locked_until
+        if locked_until > now:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=f"Account locked. Try again after {locked_until}"
+            )
     
     if not user.is_active:
         raise HTTPException(

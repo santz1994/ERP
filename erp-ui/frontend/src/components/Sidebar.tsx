@@ -384,7 +384,7 @@ export const Sidebar: React.FC = () => {
         sidebarOpen ? 'w-64' : 'w-20'
       }`}
     >
-      <div className="p-4">
+      <div className="p-4 pb-20">
         {sidebarOpen && (
           <div className="text-center mb-8">
             <h2 className="text-xl font-bold text-brand-400">QK ERP</h2>
@@ -392,17 +392,17 @@ export const Sidebar: React.FC = () => {
           </div>
         )}
 
-        <nav className="space-y-2">
+        <nav className="space-y-2 mb-8">
           {visibleItems.map(renderMenuItem)}
         </nav>
+        
+        {sidebarOpen && (
+          <div className="mt-8 p-4 bg-gray-800 rounded-lg">
+            <p className="text-xs text-gray-400 mb-2">Version</p>
+            <p className="text-sm font-semibold">1.0.0</p>
+          </div>
+        )}
       </div>
-
-      {sidebarOpen && (
-        <div className="absolute bottom-4 left-4 right-4 p-4 bg-gray-800 rounded-lg">
-          <p className="text-xs text-gray-400 mb-2">Version</p>
-          <p className="text-sm font-semibold">1.0.0</p>
-        </div>
-      )}
     </div>
   )
 }

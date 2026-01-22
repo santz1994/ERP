@@ -9,6 +9,20 @@
 import { create } from 'zustand'
 import { apiClient } from '../api/client'
 
+// Import auth store to check user role for bypass
+const getUserRole = (): string | null => {
+  try {
+    const userStr = localStorage.getItem('user')
+    if (userStr) {
+      const user = JSON.parse(userStr)
+      return user.role
+    }
+  } catch (e) {
+    console.error('[PermissionStore] Error reading user role:', e)
+  }
+  return null
+}
+
 interface PermissionState {
   permissions: string[]
   loading: boolean
@@ -82,16 +96,29 @@ export const usePermissionStore = create<PermissionState>((set, get) => ({
   /**
    * Check if user has a specific permission
    * 
+   * BYPASS: DEVELOPER, SUPERADMIN, and ADMIN roles have full access
+   * 
    * @param code - Permission code (e.g., 'cutting.allocate_material')
    * @returns true if user has permission
    */
   hasPermission: (code: string): boolean => {
+    // Check for bypass roles first
+    const userRole = getUserRole()
+    if (userRole) {
+      const roleUpper = userRole.toUpperCase()
+      if (roleUpper === 'DEVELOPER' || roleUpper === 'SUPERADMIN' || roleUpper === 'ADMIN') {
+        return true // Full access bypass
+      }
+    }
+    
     const { permissions } = get()
     return permissions.includes(code)
   },
   
   /**
    * Check if user has ANY of the specified permissions (OR logic)
+   * 
+   * BYPASS: DEVELOPER, SUPERADMIN, and ADMIN roles have full access
    * 
    * @param codes - Array of permission codes
    * @returns true if user has at least one permission
@@ -100,12 +127,23 @@ export const usePermissionStore = create<PermissionState>((set, get) => ({
    * hasAnyPermission(['cutting.view_status', 'cutting.allocate_material'])
    */
   hasAnyPermission: (codes: string[]): boolean => {
+    // Check for bypass roles first
+    const userRole = getUserRole()
+    if (userRole) {
+      const roleUpper = userRole.toUpperCase()
+      if (roleUpper === 'DEVELOPER' || roleUpper === 'SUPERADMIN' || roleUpper === 'ADMIN') {
+        return true // Full access bypass
+      }
+    }
+    
     const { permissions } = get()
     return codes.some(code => permissions.includes(code))
   },
   
   /**
    * Check if user has ALL of the specified permissions (AND logic)
+   * 
+   * BYPASS: DEVELOPER, SUPERADMIN, and ADMIN roles have full access
    * 
    * @param codes - Array of permission codes
    * @returns true if user has all permissions
@@ -114,6 +152,15 @@ export const usePermissionStore = create<PermissionState>((set, get) => ({
    * hasAllPermissions(['cutting.allocate_material', 'cutting.complete_operation'])
    */
   hasAllPermissions: (codes: string[]): boolean => {
+    // Check for bypass roles first
+    const userRole = getUserRole()
+    if (userRole) {
+      const roleUpper = userRole.toUpperCase()
+      if (roleUpper === 'DEVELOPER' || roleUpper === 'SUPERADMIN' || roleUpper === 'ADMIN') {
+        return true // Full access bypass
+      }
+    }
+    
     const { permissions } = get()
     return codes.every(code => permissions.includes(code))
   },

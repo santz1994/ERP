@@ -125,8 +125,8 @@ export const DashboardPage: React.FC = () => {
           />
         </div>
 
-      {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Production Status */}
         <div className="lg:col-span-2 bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Production Status</h2>
@@ -162,6 +162,7 @@ export const DashboardPage: React.FC = () => {
           </div>
         </div>
       </div>
+    </div>
     </div>
   )
 }

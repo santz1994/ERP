@@ -181,6 +181,8 @@ export const MODULE_ACCESS_MATRIX: Record<string, UserRole[]> = {
 /**
  * Check if user has access to a specific module
  * 
+ * BYPASS: DEVELOPER, SUPERADMIN, and ADMIN roles have full access to all modules
+ * 
  * @param userRole - The user's role
  * @param module - The module to check access for
  * @returns true if user has access, false otherwise
@@ -189,6 +191,11 @@ export const hasModuleAccess = (
   userRole: UserRole,
   module: keyof typeof MODULE_ACCESS_MATRIX
 ): boolean => {
+  // BYPASS: Developer, Superadmin, and Admin have full module access
+  if (userRole === UserRole.DEVELOPER || userRole === UserRole.SUPERADMIN || userRole === UserRole.ADMIN) {
+    return true
+  }
+  
   const allowedRoles = MODULE_ACCESS_MATRIX[module]
   return allowedRoles ? allowedRoles.includes(userRole) : false
 }
