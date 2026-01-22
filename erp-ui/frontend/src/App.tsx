@@ -28,6 +28,15 @@ import AdminImportExportPage from '@/pages/AdminImportExportPage'
 import AuditTrailPage from '@/pages/AuditTrailPage'
 import ChangePasswordPage from '@/pages/settings/ChangePasswordPage'
 import { SettingsPlaceholder } from '@/pages/settings/SettingsPlaceholder'
+import { LanguageTimezoneSettings } from '@/pages/settings/LanguageTimezoneSettings'
+import { NotificationsSettings } from '@/pages/settings/NotificationsSettings'
+import { DisplayPreferencesSettings } from '@/pages/settings/DisplayPreferencesSettings'
+import { AccessControlSettings } from '@/pages/settings/AccessControlSettings'
+import { EmailConfigurationSettings } from '@/pages/settings/EmailConfigurationSettings'
+import { DocumentTemplatesSettings } from '@/pages/settings/DocumentTemplatesSettings'
+import { CompanySettings } from '@/pages/settings/CompanySettings'
+import { SecuritySettings } from '@/pages/settings/SecuritySettings'
+import { DatabaseManagementSettings } from '@/pages/settings/DatabaseManagementSettings'
 
 // Create QueryClient instance
 const queryClient = new QueryClient({
@@ -340,10 +349,7 @@ function App() {
           element={
             <PrivateRoute>
               <ProtectedLayout>
-                <SettingsPlaceholder 
-                  title="Language & Timezone Settings" 
-                  description="Configure your language, timezone, date format, and regional preferences"
-                />
+                <LanguageTimezoneSettings />
               </ProtectedLayout>
             </PrivateRoute>
           }
@@ -354,10 +360,7 @@ function App() {
           element={
             <PrivateRoute>
               <ProtectedLayout>
-                <SettingsPlaceholder 
-                  title="Notification Preferences" 
-                  description="Manage your notification settings and email alerts"
-                />
+                <NotificationsSettings />
               </ProtectedLayout>
             </PrivateRoute>
           }
@@ -368,10 +371,7 @@ function App() {
           element={
             <PrivateRoute>
               <ProtectedLayout>
-                <SettingsPlaceholder 
-                  title="Display Preferences" 
-                  description="Customize the appearance and theme of your interface"
-                />
+                <DisplayPreferencesSettings />
               </ProtectedLayout>
             </PrivateRoute>
           }
@@ -382,10 +382,7 @@ function App() {
           element={
             <PrivateRoute module="admin">
               <ProtectedLayout>
-                <SettingsPlaceholder 
-                  title="User Access Control" 
-                  description="Manage user roles, permissions, and access levels"
-                />
+                <AccessControlSettings />
               </ProtectedLayout>
             </PrivateRoute>
           }
@@ -396,10 +393,7 @@ function App() {
           element={
             <PrivateRoute module="admin">
               <ProtectedLayout>
-                <SettingsPlaceholder 
-                  title="Email Configuration" 
-                  description="Configure SMTP and IMAP settings for email integration"
-                />
+                <EmailConfigurationSettings />
               </ProtectedLayout>
             </PrivateRoute>
           }
@@ -410,10 +404,7 @@ function App() {
           element={
             <PrivateRoute module="admin">
               <ProtectedLayout>
-                <SettingsPlaceholder 
-                  title="Document Templates" 
-                  description="Customize invoice, PO, and other document templates"
-                />
+                <DocumentTemplatesSettings />
               </ProtectedLayout>
             </PrivateRoute>
           }
@@ -424,10 +415,7 @@ function App() {
           element={
             <PrivateRoute module="admin">
               <ProtectedLayout>
-                <SettingsPlaceholder 
-                  title="Company Settings" 
-                  description="Manage company information, multi-company support, and organization settings"
-                />
+                <CompanySettings />
               </ProtectedLayout>
             </PrivateRoute>
           }
@@ -438,10 +426,7 @@ function App() {
           element={
             <PrivateRoute module="admin">
               <ProtectedLayout>
-                <SettingsPlaceholder 
-                  title="Security Settings" 
-                  description="Configure 2FA, session timeout, IP whitelist, and security policies"
-                />
+                <SecuritySettings />
               </ProtectedLayout>
             </PrivateRoute>
           }
@@ -452,10 +437,7 @@ function App() {
           element={
             <PrivateRoute module="admin">
               <ProtectedLayout>
-                <SettingsPlaceholder 
-                  title="Database Management" 
-                  description="Backup, restore, and maintain database operations"
-                />
+                <DatabaseManagementSettings />
               </ProtectedLayout>
             </PrivateRoute>
           }
