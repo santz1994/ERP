@@ -110,7 +110,7 @@ jobs:
 
       - name: 📤 Upload Test Results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-results-python
           path: |
@@ -189,7 +189,7 @@ jobs:
 
       - name: 📤 Upload API Test Results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-results-api
           path: erp-softtoys/test-results.xml
@@ -278,7 +278,7 @@ jobs:
         continue-on-error: true
 
       - name: 📤 Upload security reports
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: security-reports
           path: erp-softtoys/*-report.*
