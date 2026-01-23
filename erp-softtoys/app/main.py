@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_client import Counter, Histogram, generate_latest, CollectorRegistry
+import time
 
 from app.api.v1 import (
     admin,
@@ -49,6 +51,79 @@ app = FastAPI(
     description=settings.API_DESCRIPTION,
     version=settings.API_VERSION
 )
+
+# ============================================================================
+# Prometheus Metrics Configuration
+# ============================================================================
+registry = CollectorRegistry()
+
+# Request metrics
+REQUEST_COUNT = Counter(
+    'http_requests_total',
+    'Total HTTP requests',
+    ['method', 'endpoint', 'status'],
+    registry=registry
+)
+
+REQUEST_LATENCY = Histogram(
+    'http_request_duration_seconds',
+    'HTTP request latency in seconds',
+    ['method', 'endpoint'],
+    registry=registry
+)
+
+# Database metrics
+DB_CONNECTIONS = Counter(
+    'database_connections_total',
+    'Total database connections',
+    ['status'],
+    registry=registry
+)
+
+# Application metrics
+API_ERRORS = Counter(
+    'api_errors_total',
+    'Total API errors',
+    ['endpoint', 'error_type'],
+    registry=registry
+)
+
+# ============================================================================
+# Prometheus Middleware
+# ============================================================================
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import Response
+
+class PrometheusMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next) -> Response:
+        start_time = time.time()
+        
+        # Track request
+        try:
+            response = await call_next(request)
+            REQUEST_COUNT.labels(
+                method=request.method,
+                endpoint=request.url.path,
+                status=response.status_code
+            ).inc()
+            
+            # Track latency
+            process_time = time.time() - start_time
+            REQUEST_LATENCY.labels(
+                method=request.method,
+                endpoint=request.url.path
+            ).observe(process_time)
+            
+            return response
+        except Exception as e:
+            API_ERRORS.labels(
+                endpoint=request.url.path,
+                error_type=type(e).__name__
+            ).inc()
+            raise
+
+app.add_middleware(PrometheusMiddleware)
 
 # Audit Context Middleware (First - captures user info)
 app.add_middleware(AuditContextMiddleware)
@@ -197,3 +272,13 @@ def health_check():
         "status": "healthy",
         "environment": settings.ENVIRONMENT
     }
+
+@app.get("/metrics")
+def metrics():
+    """Prometheus metrics endpoint.
+    
+    Exposes application metrics for Prometheus scraping.
+    Used by monitoring systems like Prometheus and Grafana.
+    """
+    return generate_latest(registry)
+

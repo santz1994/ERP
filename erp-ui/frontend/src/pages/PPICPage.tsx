@@ -36,6 +36,7 @@ const PPICPage: React.FC = () => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'mos' | 'bom' | 'planning'>('mos');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showBOMForm, setShowBOMForm] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
   // Permission checks (PBAC - Phase 16 Week 4)
@@ -358,10 +359,308 @@ const PPICPage: React.FC = () => {
 
         {/* BOM Management Tab */}
         {activeTab === 'bom' && (
-          <div className="p-12 text-center">
-            <div className="text-6xl mb-4">🔧</div>
-            <p className="text-gray-500 text-lg">BOM Management</p>
-            <p className="text-gray-400 text-sm mt-2">Feature coming soon - Manage Bill of Materials</p>
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-800">📦 BOM Management</h2>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowBOMForm(!showBOMForm)}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+                >
+                  ➕ Add BOM Manually
+                </button>
+                <a 
+                  href="/admin/import-export" 
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                >
+                  📥 Import BOM
+                </a>
+                <a 
+                  href="/admin/import-export" 
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                >
+                  📤 Export BOM
+                </a>
+              </div>
+            </div>
+
+            {/* BOM Manual Entry Form */}
+            {showBOMForm && (
+              <div className="bg-white rounded-lg shadow p-6 border-2 border-purple-300">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">➕ Add BOM Manually</h3>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Product Name *</label>
+                    <input
+                      type="text"
+                      placeholder="e.g., T-Shirt Premium"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Product Code *</label>
+                    <input
+                      type="text"
+                      placeholder="e.g., TS-001"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Material/Component *</label>
+                    <input
+                      type="text"
+                      placeholder="e.g., Cotton Fabric"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Quantity Required *</label>
+                    <input
+                      type="number"
+                      placeholder="e.g., 1.5"
+                      min="0"
+                      step="0.01"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Unit *</label>
+                    <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500">
+                      <option value="">Select Unit</option>
+                      <option value="kg">Kilogram (kg)</option>
+                      <option value="meter">Meter (m)</option>
+                      <option value="pcs">Pieces (pcs)</option>
+                      <option value="liter">Liter (L)</option>
+                      <option value="box">Box</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Unit Price</label>
+                    <input
+                      type="number"
+                      placeholder="e.g., 25000"
+                      min="0"
+                      step="0.01"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Material Type</label>
+                    <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500">
+                      <option value="">Select Type</option>
+                      <option value="fabric">Fabric</option>
+                      <option value="thread">Thread</option>
+                      <option value="button">Button</option>
+                      <option value="zipper">Zipper</option>
+                      <option value="elastic">Elastic</option>
+                      <option value="lace">Lace</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Status</label>
+                    <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500">
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Notes/Description</label>
+                  <textarea
+                    placeholder="e.g., Premium quality cotton, 100% cotton, white color"
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
+                  ></textarea>
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={() => setShowBOMForm(false)}
+                    className="px-4 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition"
+                  >
+                    Cancel
+                  </button>
+                  <button className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+                    ✅ Save BOM
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Quick Instructions */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="text-lg font-semibold text-blue-900 mb-2">📥 Import BOM</div>
+                <ol className="text-sm text-blue-700 space-y-1">
+                  <li>1. Go to Admin → Import/Export</li>
+                  <li>2. Select "Bill of Materials"</li>
+                  <li>3. Upload CSV/Excel file</li>
+                  <li>4. Confirm import</li>
+                </ol>
+              </div>
+
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="text-lg font-semibold text-green-900 mb-2">📤 Export BOM</div>
+                <ol className="text-sm text-green-700 space-y-1">
+                  <li>1. Go to Admin → Import/Export</li>
+                  <li>2. Select "Bill of Materials"</li>
+                  <li>3. Choose format (CSV/Excel)</li>
+                  <li>4. Download file</li>
+                </ol>
+              </div>
+
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                <div className="text-lg font-semibold text-purple-900 mb-2">✏️ Manual BOM Entry</div>
+                <ol className="text-sm text-purple-700 space-y-1">
+                  <li>1. Click "Add BOM Manually" button</li>
+                  <li>2. Fill in product and material details</li>
+                  <li>3. Enter quantity, unit, and price</li>
+                  <li>4. Click "Save BOM"</li>
+                </ol>
+              </div>
+            </div>
+
+            {/* Quick Instructions */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="text-lg font-semibold text-blue-900 mb-2">📥 Import BOM</div>
+                <ol className="text-sm text-blue-700 space-y-1">
+                  <li>1. Go to Admin → Import/Export</li>
+                  <li>2. Select "Bill of Materials"</li>
+                  <li>3. Upload CSV/Excel file</li>
+                  <li>4. Confirm import</li>
+                </ol>
+              </div>
+
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="text-lg font-semibold text-green-900 mb-2">📤 Export BOM</div>
+                <ol className="text-sm text-green-700 space-y-1">
+                  <li>1. Go to Admin → Import/Export</li>
+                  <li>2. Select "Bill of Materials"</li>
+                  <li>3. Choose format (CSV/Excel)</li>
+                  <li>4. Download file</li>
+                </ol>
+              </div>
+                <li>✅ <strong>BOM Features:</strong> Create, Edit, Delete, Import, Export</li>
+                <li>✅ <strong>Integration:</strong> BOMs linked to Products automatically</li>
+                <li>✅ <strong>Usage:</strong> Used in all production modules (Cutting, Sewing, Finishing, etc.)</li>
+                <li>ℹ️ <strong>Tip:</strong> For large BOM management, use CSV/Excel import for batch operations</li>
+              </ul>
+            </div>
+
+            {/* Production Modules using BOM */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">🏭 Modules Using BOM</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded">
+                  <span className="text-2xl">✂️</span>
+                  <div>
+                    <div className="font-semibold text-gray-800">Cutting Module</div>
+                    <div className="text-sm text-gray-600">Validates material vs BOM</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded">
+                  <span className="text-2xl">🧵</span>
+                  <div>
+                    <div className="font-semibold text-gray-800">Sewing Module</div>
+                    <div className="text-sm text-gray-600">Input validation vs BOM</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded">
+                  <span className="text-2xl">✨</span>
+                  <div>
+                    <div className="font-semibold text-gray-800">Finishing Module</div>
+                    <div className="text-sm text-gray-600">Material tracking</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded">
+                  <span className="text-2xl">📦</span>
+                  <div>
+                    <div className="font-semibold text-gray-800">Packing Module</div>
+                    <div className="text-sm text-gray-600">Final BOM verification</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* BOM List - View & Edit */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">📋 BOM List - View & Edit</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b-2 border-gray-300">
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Product</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Material/Component</th>
+                      <th className="text-center py-3 px-4 font-semibold text-gray-700">Qty Required</th>
+                      <th className="text-center py-3 px-4 font-semibold text-gray-700">Unit</th>
+                      <th className="text-center py-3 px-4 font-semibold text-gray-700">Unit Price</th>
+                      <th className="text-center py-3 px-4 font-semibold text-gray-700">Status</th>
+                      <th className="text-center py-3 px-4 font-semibold text-gray-700">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-gray-200 hover:bg-gray-50">
+                      <td className="py-3 px-4">T-Shirt Premium (TS-001)</td>
+                      <td className="py-3 px-4">Cotton Fabric</td>
+                      <td className="text-center py-3 px-4">1.5</td>
+                      <td className="text-center py-3 px-4">m</td>
+                      <td className="text-center py-3 px-4">Rp 25,000</td>
+                      <td className="text-center py-3 px-4">
+                        <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">Active</span>
+                      </td>
+                      <td className="text-center py-3 px-4 space-x-2">
+                        <button className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition text-xs">✏️ Edit</button>
+                        <button className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition text-xs">🗑️ Delete</button>
+                      </td>
+                    </tr>
+                    <tr className="border-b border-gray-200 hover:bg-gray-50">
+                      <td className="py-3 px-4">T-Shirt Premium (TS-001)</td>
+                      <td className="py-3 px-4">Thread White</td>
+                      <td className="text-center py-3 px-4">2</td>
+                      <td className="text-center py-3 px-4">pcs</td>
+                      <td className="text-center py-3 px-4">Rp 5,000</td>
+                      <td className="text-center py-3 px-4">
+                        <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">Active</span>
+                      </td>
+                      <td className="text-center py-3 px-4 space-x-2">
+                        <button className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition text-xs">✏️ Edit</button>
+                        <button className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition text-xs">🗑️ Delete</button>
+                      </td>
+                    </tr>
+                    <tr className="border-b border-gray-200 hover:bg-gray-50">
+                      <td className="py-3 px-4">T-Shirt Premium (TS-001)</td>
+                      <td className="py-3 px-4">Button (4 hole)</td>
+                      <td className="text-center py-3 px-4">5</td>
+                      <td className="text-center py-3 px-4">pcs</td>
+                      <td className="text-center py-3 px-4">Rp 2,000</td>
+                      <td className="text-center py-3 px-4">
+                        <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">Active</span>
+                      </td>
+                      <td className="text-center py-3 px-4 space-x-2">
+                        <button className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition text-xs">✏️ Edit</button>
+                        <button className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition text-xs">🗑️ Delete</button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div className="mt-4 text-center text-sm text-gray-600">
+                Showing 3 BOM items | Total Cost: Rp 47,500 per unit
+              </div>
+            </div>
+
+            {/* Action Links */}
+            <div className="flex gap-2 justify-end">
+              <a 
+                href="/admin/import-export"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+              >
+                Go to Import/Export
+              </a>
+            </div>
           </div>
         )}
 

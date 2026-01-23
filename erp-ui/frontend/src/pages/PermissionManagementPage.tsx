@@ -166,7 +166,7 @@ const PermissionManagementPage: React.FC = () => {
     }
   }
 
-  // Filter permissions by module
+  // Filter permissions by module - with defensive checks
   const modules = permissions && Array.isArray(permissions) 
     ? Array.from(new Set(permissions.map(p => p.module))) 
     : []
@@ -174,6 +174,17 @@ const PermissionManagementPage: React.FC = () => {
     ? (filterModule === 'all' 
       ? permissions 
       : permissions.filter(p => p.module === filterModule))
+    : []
+
+  // Defensive: Ensure role_permissions and custom_permissions are always arrays
+  const rolePermissionsArray = Array.isArray(userPermissions?.role_permissions) 
+    ? userPermissions.role_permissions 
+    : []
+  const customPermissionsArray = Array.isArray(userPermissions?.custom_permissions)
+    ? userPermissions.custom_permissions
+    : []
+  const effectivePermissionsArray = Array.isArray(userPermissions?.effective_permissions)
+    ? userPermissions.effective_permissions
     : []
 
   // Filter users by search term
@@ -292,19 +303,19 @@ const PermissionManagementPage: React.FC = () => {
                   <div className="grid grid-cols-3 gap-4 mb-6">
                     <div className="bg-blue-50 p-4 rounded-lg">
                       <div className="text-2xl font-bold text-blue-600">
-                        {userPermissions.effective_permissions.length}
+                        {effectivePermissionsArray.length}
                       </div>
                       <div className="text-sm text-gray-600">Total Permissions</div>
                     </div>
                     <div className="bg-purple-50 p-4 rounded-lg">
                       <div className="text-2xl font-bold text-purple-600">
-                        {userPermissions.role_permissions.length}
+                        {rolePermissionsArray.length}
                       </div>
                       <div className="text-sm text-gray-600">From Role</div>
                     </div>
                     <div className="bg-green-50 p-4 rounded-lg">
                       <div className="text-2xl font-bold text-green-600">
-                        {userPermissions.custom_permissions.length}
+                        {customPermissionsArray.length}
                       </div>
                       <div className="text-sm text-gray-600">Custom</div>
                     </div>
@@ -314,10 +325,10 @@ const PermissionManagementPage: React.FC = () => {
                   <div className="mb-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
                       <Shield className="w-5 h-5 text-purple-600" />
-                      Role Permissions ({userPermissions.role_permissions.length})
+                      Role Permissions ({rolePermissionsArray.length})
                     </h3>
                     <div className="grid grid-cols-2 gap-2">
-                      {userPermissions.role_permissions.map((perm) => (
+                      {rolePermissionsArray.map((perm) => (
                         <div
                           key={perm}
                           className="px-3 py-2 bg-purple-50 border border-purple-200 rounded-lg text-sm"
@@ -329,14 +340,14 @@ const PermissionManagementPage: React.FC = () => {
                   </div>
 
                   {/* Custom Permissions */}
-                  {userPermissions.custom_permissions.length > 0 && (
+                  {customPermissionsArray.length > 0 && (
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
                         <CheckCircle className="w-5 h-5 text-green-600" />
-                        Custom Permissions ({userPermissions.custom_permissions.length})
+                        Custom Permissions ({customPermissionsArray.length})
                       </h3>
                       <div className="space-y-3">
-                        {userPermissions.custom_permissions.map((perm) => (
+                        {customPermissionsArray.map((perm) => (
                           <div
                             key={perm.permission_code}
                             className="p-4 bg-green-50 border border-green-200 rounded-lg"
