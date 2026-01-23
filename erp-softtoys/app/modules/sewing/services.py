@@ -1,12 +1,12 @@
 """Sewing Module Business Logic & Services
-Handles material input validation, 3-stage sewing, inline QC, segregation, and transfer
+Handles material input validation, 3-stage sewing, inline QC, and transfer
 
 Refactored: Now extends BaseProductionService to eliminate code duplication
 """
 
 from datetime import datetime
 from decimal import Decimal
-from typing import tuple
+from typing import Optional
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from app.core.base_production_service import BaseProductionService
 from app.core.models.manufacturing import (
     Department,
+    WorkOrder,
     WorkOrderStatus,
 )
 from app.core.models.quality import QCInspection
@@ -57,20 +58,37 @@ class SewingService(BaseProductionService):
 
         return result
 
-    @staticmethod
+    @classmethod
     def validate_input_vs_bom(
+        cls,
         db: Session,
         work_order_id: int,
-        received_qty: Decimal
+        received_qty: Decimal,
+        expected_product_id: int = None
     ) -> dict:
-        """Step 310: VALIDASI INPUT - Check Received Qty vs BOM Target
+        """Step 310: VALIDASI INPUT - Validate Received Qty vs BOM Target.
         - Compare received material vs BOM requirements
-        - If shortage: Auto-request additional material (Step 320)
+        - If shortage: Auto-request additional material
         - If OK: Proceed to assembly
-        Uses base class validate_input_vs_bom
         """
-        # Delegate to base class
-        return cls.validate_input_vs_bom(db=db, work_order_id=work_order_id, received_qty=received_qty)
+        # Get work order to find product ID if not provided
+        wo = db.query(WorkOrder).filter(
+            WorkOrder.id == work_order_id
+        ).first()
+
+        if not wo:
+            raise HTTPException(status_code=404, detail="Work order not found")
+
+        if expected_product_id is None:
+            expected_product_id = wo.product_id
+
+        # Call parent class implementation
+        return super().validate_input_vs_bom(
+            db=db,
+            work_order_id=work_order_id,
+            received_qty=received_qty,
+            expected_product_id=expected_product_id,
+        )
 
     @staticmethod
     def process_sewing_step(
@@ -94,7 +112,10 @@ class SewingService(BaseProductionService):
         }
 
         if step_number not in [1, 2, 3]:
-            raise HTTPException(status_code=400, detail="Invalid step number. Must be 1, 2, or 3")
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid step number. Must be 1, 2, or 3",
+            )
 
         stage_name = stage_names[step_number]
 
@@ -144,7 +165,10 @@ class SewingService(BaseProductionService):
         if total_qty != wo.input_qty:
             raise HTTPException(
                 status_code=400,
-                detail=f"Total inspected qty ({total_qty}) != input qty ({wo.input_qty})"
+                detail=(
+                    f"Total inspected qty ({total_qty}) != "
+                    f"input qty ({wo.input_qty})"
+                ),
             )
 
         # Create QC inspection record
@@ -164,12 +188,19 @@ class SewingService(BaseProductionService):
             "pass_qty": float(pass_qty),
             "rework_qty": float(rework_qty),
             "scrap_qty": float(scrap_qty),
-            "pass_rate": float(pass_qty / wo.input_qty * 100 if wo.input_qty > 0 else 0),
+            "pass_rate": float(
+                pass_qty / wo.input_qty * 100
+                if wo.input_qty > 0
+                else 0
+            ),
             "timestamp": datetime.utcnow().isoformat()
         }
 
         if rework_qty > 0:
-            result["rework_action"] = "Step 370: Send to rework - return to Stik Balik"
+            result["rework_action"] = (
+                "Step 370: Send to rework - "
+                "return to Stik Balik"
+            )
             result["next_step"] = "Rework/Repair"
             wo.status = WorkOrderStatus.RUNNING
 
@@ -209,10 +240,17 @@ class SewingService(BaseProductionService):
             LineOccupancy.dept_name == TransferDept.FINISHING
         ).first()
 
-        current_destination = finishing_line.destination if finishing_line else None
-        batch_destination = mo.destination if hasattr(mo, 'destination') else None
+        current_destination = (
+            finishing_line.destination if finishing_line else None
+        )
+        batch_destination = (
+            mo.destination if hasattr(mo, 'destination') else None
+        )
 
-        destinations_match = (current_destination == batch_destination) or (current_destination is None)
+        destinations_match = (
+            (current_destination == batch_destination)
+            or (current_destination is None)
+        )
 
         check_result = {
             "work_order_id": work_order_id,
@@ -224,9 +262,16 @@ class SewingService(BaseProductionService):
 
         blocking_reason = None
         if not destinations_match:
-            blocking_reason = f"ALARM: Destination mismatch - Line has {current_destination}, batch is {batch_destination}. Require 5m jeda or line clearance."
+            blocking_reason = (
+                f"ALARM: Destination mismatch - "
+                f"Line has {current_destination}, "
+                f"batch is {batch_destination}. "
+                f"Require 5m jeda or line clearance."
+            )
             check_result["alarm"] = blocking_reason
-            check_result["segregation_status"] = "BLOCKED - Destination Mismatch"
+            check_result["segregation_status"] = (
+                "BLOCKED - Destination Mismatch"
+            )
             check_result["requires_jeda"] = True
             check_result["jeda_duration_minutes"] = 5
         else:
@@ -269,9 +314,9 @@ class SewingService(BaseProductionService):
         qty_to_return: Decimal,
         reason: str,
         user_id: int,
-        notes: Optional[str] = None
+        notes: str | None = None
     ) -> dict:
-        """Internal Loop/Return - Sewing Department Internal Transfer
+        """Internal Loop/Return - Sewing Department Internal Transfer.
 
         Handles Note 1: Sewing Loop (Balik lagi)
         - Internal Line Balancing within Sewing department
@@ -279,18 +324,25 @@ class SewingService(BaseProductionService):
         - Uses internal work card/control card (Kartu Kendali Meja)
 
         Common use cases:
-        - After Stik (Stage 3) → Return to Assembly (Stage 1) for final assembly
-        - Finger stitching on dolls requiring additional stik work
-        - Complex patterns needing multiple assembly passes
+        - After Stik (Stage 3) → Return to Assembly
+          (Stage 1) for final assembly
+        - Finger stitching on dolls requiring
+          additional stik work
+        - Complex patterns needing multiple
+          assembly passes
 
-        This is NOT a rework due to defects - it's part of the normal process flow
-        for certain product types.
+        This is NOT a rework due to defects - it's part
+        of the normal process flow for certain product
+        types.
 
         Args:
-            from_stage: Current stage (1=Assembly, 2=Labeling, 3=Stik)
+            from_stage: Current stage (1=Assembly,
+              2=Labeling, 3=Stik)
             to_stage: Target stage to return to
             qty_to_return: Quantity for internal loop
-            reason: Business reason (e.g., "Final Assembly after Stik", "Finger Stitching")
+            reason: Business reason (e.g.,
+              "Final Assembly after Stik",
+              "Finger Stitching")
 
         """
         wo = BaseProductionService.get_work_order(db, work_order_id)
@@ -304,13 +356,19 @@ class SewingService(BaseProductionService):
         if from_stage not in [1, 2, 3] or to_stage not in [1, 2, 3]:
             raise HTTPException(
                 status_code=400,
-                detail="Invalid stage number. Must be 1 (Assembly), 2 (Labeling), or 3 (Stik)"
+                detail=(
+                    "Invalid stage number. Must be 1 (Assembly), "
+                    "2 (Labeling), or 3 (Stik)"
+                ),
             )
 
         if from_stage <= to_stage:
             raise HTTPException(
                 status_code=400,
-                detail="Internal loop must return to PREVIOUS stage (from_stage > to_stage)"
+                detail=(
+                    "Internal loop must return to PREVIOUS stage "
+                    "(from_stage > to_stage)"
+                ),
             )
 
         # Create internal control card record (not a full transfer log)
@@ -351,7 +409,10 @@ class SewingService(BaseProductionService):
                 "type": "Internal Line Balancing",
                 "no_external_transfer": True,
                 "tracking_method": "Kartu Kendali Meja",
-                "next_action": f"Process {float(qty_to_return)} units at {stage_names[to_stage]} station"
+                "next_action": (
+                    f"Process {float(qty_to_return)} units at "
+                    f"{stage_names[to_stage]} station"
+                ),
             },
             "reference": "Note 1: Sewing Loop - Flow Production.md"
         }

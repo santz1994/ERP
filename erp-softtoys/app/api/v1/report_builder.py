@@ -3,7 +3,7 @@ Allows users to create, modify, and manage custom reports
 """
 
 from datetime import datetime
-from typing import Any
+from typing import Any, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field

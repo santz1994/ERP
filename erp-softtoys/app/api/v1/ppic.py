@@ -35,6 +35,12 @@ router = APIRouter(
     status_code=status.HTTP_201_CREATED,
     dependencies=[Depends(require_permission("ppic.create_mo"))]
 )
+@router.post(
+    "/manufacturing-orders",
+    response_model=ManufacturingOrderResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_permission("ppic.create_mo"))]
+)
 async def create_manufacturing_order(
     mo_data: ManufacturingOrderCreate,
     current_user: User = Depends(require_permission("ppic.create_mo")),

@@ -20,7 +20,7 @@ Target: Eliminate 30-40% code duplication
 from abc import ABC
 from datetime import datetime
 from decimal import Decimal
-from typing import dict, tuple
+from typing import Any, Optional
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
@@ -636,7 +636,7 @@ class BaseProductionService(ABC):
         return user
 
     @staticmethod
-    def get_user_optional(db: Session, user_id: int) -> "User" | None:
+    def get_user_optional(db: Session, user_id: int) -> "User | None":
         """Get user by ID (OPTIONAL - returns None if not found)
 
         Usage:
@@ -683,7 +683,7 @@ class BaseProductionService(ABC):
         return product
 
     @staticmethod
-    def get_product_optional(db: Session, product_id: int) -> "Product" | None:
+    def get_product_optional(db: Session, product_id: int) -> "Product | None":
         """Get product by ID (OPTIONAL - returns None if not found)
 
         Usage:
@@ -730,7 +730,7 @@ class BaseProductionService(ABC):
         return card
 
     @staticmethod
-    def get_kanban_card_optional(db: Session, card_id: int) -> "KanbanCard" | None:
+    def get_kanban_card_optional(db: Session, card_id: int) -> "KanbanCard | None":
         """Get kanban card by ID (OPTIONAL - returns None if not found)
 
         Usage:
@@ -777,7 +777,7 @@ class BaseProductionService(ABC):
         return log
 
     @staticmethod
-    def get_audit_log_optional(db: Session, log_id: int) -> "AuditLog" | None:
+    def get_audit_log_optional(db: Session, log_id: int) -> "AuditLog | None":
         """Get audit log by ID (OPTIONAL - returns None if not found)
 
         Usage:
@@ -824,7 +824,7 @@ class BaseProductionService(ABC):
         return mo
 
     @staticmethod
-    def get_manufacturing_order_optional(db: Session, mo_id: int) -> "ManufacturingOrder" | None:
+    def get_manufacturing_order_optional(db: Session, mo_id: int) -> "ManufacturingOrder | None":
         """Get manufacturing order by ID (OPTIONAL - returns None if not found)
 
         Usage:
@@ -871,7 +871,7 @@ class BaseProductionService(ABC):
         return po
 
     @staticmethod
-    def get_purchase_order_optional(db: Session, po_id: int) -> "PurchaseOrder" | None:
+    def get_purchase_order_optional(db: Session, po_id: int) -> "PurchaseOrder | None":
         """Get purchase order by ID (OPTIONAL - returns None if not found)
 
         Usage:

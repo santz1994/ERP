@@ -117,7 +117,7 @@ class TokenUtils:
         return encoded_jwt
 
     @staticmethod
-    def decode_token(token: str) -> "TokenData" | None:
+    def decode_token(token: str) -> "TokenData | None":
         """Decode and validate JWT token
 
         Performance optimized: Only uses current SECRET_KEY for fast validation.

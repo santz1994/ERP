@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_db, require_permission
+from app.core.schemas import StockUpdateCreate
 from app.core.models.products import Product
 from app.core.models.transfer import LineOccupancy, LineStatus, TransferLog
 from app.core.models.transfer import TransferDept as TransferDeptEnum
@@ -347,7 +348,7 @@ async def accept_transfer(
 
 @router.post("/stock", response_model=dict)
 async def update_warehouse_stock(
-    data: dict,
+    stock_data: StockUpdateCreate,
     current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.EXECUTE)),
     db: Session = Depends(get_db)
 ):
@@ -390,30 +391,19 @@ async def update_warehouse_stock(
         - 400: Invalid operation or insufficient stock
         - 404: Item or location not found
         - 409: Concurrent update conflict (retry)
+        - 422: Validation error (invalid types or values)
 
     """
     from sqlalchemy.exc import OperationalError
 
-    # Extract parameters
-    item_id = data.get("item_id")
-    quantity = data.get("quantity", 0)
-    operation = data.get("operation", "add")  # add or subtract
-    location_id = data.get("location_id", 1)  # Default warehouse location
-    reason = data.get("reason", "Stock adjustment")
+    # Extract parameters (now validated by Pydantic)
+    item_id = stock_data.item_id
+    quantity = stock_data.quantity
+    operation = stock_data.operation
+    location_id = stock_data.location_id
+    reason = stock_data.reason
 
-    # Validation
-    if not item_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="item_id is required"
-        )
-
-    if quantity <= 0:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Quantity must be positive"
-        )
-
+    # Additional validation
     if operation not in ["add", "subtract"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

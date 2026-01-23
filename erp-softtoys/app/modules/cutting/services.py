@@ -6,7 +6,7 @@ Refactored: Now extends BaseProductionService to eliminate code duplication
 
 from datetime import datetime
 from decimal import Decimal
-from typing import tuple
+from typing import Any, Optional
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
@@ -33,8 +33,9 @@ class CuttingService(BaseProductionService):
     DEPARTMENT_NAME = "Cutting"
     TRANSFER_DEPT = TransferDept.CUTTING
 
-    @staticmethod
+    @classmethod
     def receive_spk_and_allocate_material(
+        cls,
         db: Session,
         work_order_id: int,
         operator_id: int
@@ -190,8 +191,9 @@ class CuttingService(BaseProductionService):
 
         return result
 
-    @staticmethod
+    @classmethod
     def handle_shortage(
+        cls,
         db: Session,
         work_order_id: int,
         shortage_qty: Decimal,
@@ -230,8 +232,9 @@ class CuttingService(BaseProductionService):
             ]
         }
 
-    @staticmethod
+    @classmethod
     def check_line_clearance(
+        cls,
         db: Session,
         work_order_id: int,
         destination_dept: str

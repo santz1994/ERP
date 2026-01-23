@@ -10,6 +10,7 @@ Date: 2026-01-22
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -66,8 +67,8 @@ async def get_audit_trail_simple(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error retrieving audit trail: {str(e)}"
-        )
+            detail=f"Error retrieving audit trail: {str(e)}",
+        ) from e
 
 
 # ============================================================================
@@ -77,7 +78,9 @@ async def get_audit_trail_simple(
 @router.get("/warehouse/stock")
 async def list_warehouse_stock(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.VIEW))
+    current_user: User = Depends(
+        require_permission(ModuleName.WAREHOUSE, Permission.VIEW)
+    ),
 ) -> dict[str, Any]:
     """List all warehouse stock summary.
     Returns aggregate stock information for all products.
@@ -91,7 +94,7 @@ async def list_warehouse_stock(
         # Get total stock count
         total_products = db.query(StockQuant).count()
         total_quantity = db.query(
-            db.func.sum(StockQuant.quantity)
+            func.sum(StockQuant.quantity)
         ).scalar() or 0
 
         return {
@@ -103,8 +106,8 @@ async def list_warehouse_stock(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error retrieving warehouse stock: {str(e)}"
-        )
+            detail=f"Error retrieving warehouse stock: {str(e)}",
+        ) from e
 
 
 # ============================================================================
@@ -114,7 +117,9 @@ async def list_warehouse_stock(
 @router.get("/kanban/board")
 async def get_kanban_board(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_permission(ModuleName.KANBAN, Permission.VIEW))
+    current_user: User = Depends(
+        require_permission(ModuleName.KANBAN, Permission.VIEW)
+    ),
 ) -> dict[str, Any]:
     """Get simplified kanban board view.
     Returns kanban card counts by status for current user's department.
@@ -123,8 +128,6 @@ async def get_kanban_board(
     **Returns**: Kanban board status summary
     """
     try:
-        from sqlalchemy import func
-
         from app.core.models.kanban import KanbanCard
 
         department = getattr(current_user, 'department', 'UNKNOWN')
@@ -155,8 +158,8 @@ async def get_kanban_board(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error retrieving kanban board: {str(e)}"
-        )
+            detail=f"Error retrieving kanban board: {str(e)}",
+        ) from e
 
 
 # ============================================================================
@@ -166,7 +169,9 @@ async def get_kanban_board(
 @router.get("/qc/tests")
 async def list_qc_tests(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_permission(ModuleName.QUALITY, Permission.VIEW))
+    current_user: User = Depends(
+        require_permission(ModuleName.QC, Permission.VIEW)
+    ),
 ) -> dict[str, Any]:
     """List QC inspection tests/records.
     Returns summary of QC inspections.
@@ -208,8 +213,8 @@ async def list_qc_tests(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error retrieving QC tests: {str(e)}"
-        )
+            detail=f"Error retrieving QC tests: {str(e)}",
+        ) from e
 
 
 # ============================================================================
@@ -218,8 +223,9 @@ async def list_qc_tests(
 
 @router.get("/reports")
 async def list_reports(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_permission(ModuleName.REPORTS, Permission.VIEW))
+    current_user: User = Depends(
+        require_permission(ModuleName.REPORTS, Permission.VIEW)
+    ),
 ) -> dict[str, Any]:
     """List available reports and summaries.
     Returns production, QC, and inventory report summaries.
@@ -240,8 +246,8 @@ async def list_reports(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error retrieving reports: {str(e)}"
-        )
+            detail=f"Error retrieving reports: {str(e)}",
+        ) from e
 
 
 # ============================================================================
@@ -264,7 +270,11 @@ async def get_dashboard(
             "user": {
                 "id": current_user.id,
                 "username": current_user.username,
-                "role": current_user.role.value if current_user.role else "USER",
+                "role": (
+                    current_user.role.value
+                    if current_user.role
+                    else "USER"
+                ),
                 "department": getattr(current_user, 'department', 'UNKNOWN')
             },
             "metrics": {
@@ -277,8 +287,8 @@ async def get_dashboard(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error loading dashboard: {str(e)}"
-        )
+            detail=f"Error loading dashboard: {str(e)}",
+        ) from e
 
 
 # ============================================================================

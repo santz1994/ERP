@@ -6,7 +6,7 @@ Refactored: Now extends BaseProductionService to eliminate code duplication
 
 from datetime import datetime
 from decimal import Decimal
-from typing import tuple
+from typing import Any, Optional
 
 from sqlalchemy.orm import Session
 

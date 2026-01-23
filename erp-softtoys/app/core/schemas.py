@@ -28,8 +28,8 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     """User login request"""
 
-    username: str
-    password: str
+    username: str = Field(..., min_length=1, max_length=50, description="Username must not be empty")
+    password: str = Field(..., min_length=1, description="Password must not be empty")
 
 
 class TokenResponse(BaseModel):
@@ -309,3 +309,18 @@ class ValidationError(BaseModel):
     status_code: int = 422
     message: str = "Validation error"
     errors: list[dict]
+
+
+# ==================== WAREHOUSE SCHEMAS ====================
+
+class StockUpdateCreate(BaseModel):
+    """Stock update request - validates types strictly"""
+
+    item_id: int = Field(..., gt=0, description="Product/Item ID must be positive")
+    quantity: Decimal = Field(..., gt=0, description="Quantity must be positive")
+    operation: str = Field(..., description="Operation type: add or subtract")
+    location_id: int = Field(default=1, gt=0, description="Warehouse location ID")
+    reason: str = Field(default="Stock adjustment", max_length=255, description="Reason for adjustment")
+
+    class Config:
+        from_attributes = True

@@ -3,6 +3,7 @@ Production reports, QC reports, inventory reports
 """
 import io
 from datetime import datetime
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel

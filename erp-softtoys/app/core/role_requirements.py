@@ -3,7 +3,7 @@ Centralized role-based access control mapping
 ISO 27001 Compliant - Segregation of Duties (SoD)
 """
 
-from typing import list
+from typing import Dict, Final, List
 
 from app.core.models.users import UserRole
 

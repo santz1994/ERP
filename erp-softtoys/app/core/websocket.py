@@ -2,9 +2,9 @@
 Handles real-time alerts, line clearance notifications, and system events
 """
 from datetime import datetime
-from typing import dict, list, set
+from typing import Any, Set
 
-from fastapi import WebSocket
+from fastapi import WebSocket, status
 
 
 class ConnectionManager:

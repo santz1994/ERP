@@ -2,11 +2,13 @@
 Endpoints for lab testing, inline QC, metal detector checks, quality analytics
 """
 
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user, get_db
+from app.core.models.quality import QCInspection
 from app.modules.quality.models import PerformInlineQCRequest, PerformLabTestRequest
 from app.modules.quality.services import QualityService
 

@@ -24,7 +24,7 @@ Features:
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import dict, list, tuple
+from typing import Any
 
 from sqlalchemy import text
 from sqlalchemy.orm import Session
