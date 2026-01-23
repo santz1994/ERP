@@ -102,3 +102,8 @@ temp/
 # Confidential Documentation (DO NOT SHARE)
 Project Docs/
 docs/Project.md
+
+# SSH Keys (NEVER commit)
+key/
+*.pem
+*.key
