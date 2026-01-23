@@ -118,11 +118,27 @@ select = [
     "PTH",
 ]
 ignore = [
-    "D100",
-    "D104",
-    "E501",
-    "W505",
-    "A003"
+    "D100",  # Missing module docstring
+    "D101",  # Missing class docstring
+    "D102",  # Missing method docstring
+    "D103",  # Missing function docstring
+    "D104",  # Missing package docstring
+    "D105",  # Missing magic method docstring
+    "D106",  # Missing nested class docstring
+    "D107",  # Missing __init__ docstring
+    "D205",  # 1 blank line required between summary line and description
+    "D401",  # First line should be imperative
+    "D417",  # Missing argument documentation
+    "E501",  # Line too long
+    "E722",  # Do not use bare `except` (sometimes necessary for connection cleanup)
+    "W505",  # Doc line too long
+    "A003",  # Builtin shadowing
+    "A002",  # Builtin shadowing in argument
+    "A001",  # Builtin shadowing in variable
+    "C901",  # Function too complex
+    "E402",  # Module level import not at top of file
+    "F811",  # Redefined while unused
+    "N806"   # Variable name too capitalized
 ]
 exclude = [
     ".git",

@@ -1,4 +1,4 @@
-"""Copyright (c) 2026 PT Quty Karunia / Daniel Rizaldy - All Rights Reserved
+"""Copyright (c) 2026 PT Quty Karunia / Daniel Rizaldy - All Rights Reserved.
 
 Purchasing Service - Raw Material Procurement Business Logic
 Handles PO creation, approval, receiving, and stock updates
@@ -16,7 +16,7 @@ from app.shared.audit import log_audit
 
 
 class PurchasingService:
-    """Business logic for Purchasing operations"""
+    """Business logic for Purchasing operations."""
 
     def __init__(self, db: Session):
         self.db = db
@@ -26,7 +26,7 @@ class PurchasingService:
         status: str | None = None,
         supplier_id: int | None = None
     ) -> list[PurchaseOrder]:
-        """Get all purchase orders with filters"""
+        """Get all purchase orders with filters."""
         query = self.db.query(PurchaseOrder)
 
         if status:
@@ -46,7 +46,7 @@ class PurchasingService:
         items: list[dict],
         user_id: int
     ) -> PurchaseOrder:
-        """Create new purchase order
+        """Create new purchase order.
 
         items format: [{"product_id": 1, "quantity": 100, "unit_price": 50000}]
         """
@@ -107,7 +107,7 @@ class PurchasingService:
         return po
 
     def approve_purchase_order(self, po_id: int, user_id: int) -> PurchaseOrder:
-        """Approve purchase order (Manager approval)"""
+        """Approve purchase order (Manager approval)."""
         po = BaseProductionService.get_purchase_order_optional(self.db, po_id)
 
         if not po:
@@ -142,7 +142,7 @@ class PurchasingService:
         user_id: int,
         location_id: int = 1  # Default warehouse location
     ) -> PurchaseOrder:
-        """Receive materials from PO
+        """Receive materials from PO.
 
         received_items format: [{"product_id": 1, "quantity": 95, "lot_number": "LOT-001"}]
         """
@@ -229,7 +229,7 @@ class PurchasingService:
         return po
 
     def cancel_purchase_order(self, po_id: int, reason: str, user_id: int) -> PurchaseOrder:
-        """Cancel purchase order"""
+        """Cancel purchase order."""
         po = BaseProductionService.get_purchase_order_optional(self.db, po_id)
 
         if not po:
@@ -264,7 +264,7 @@ class PurchasingService:
         return po
 
     def get_supplier_performance(self, supplier_id: int) -> dict:
-        """Get supplier performance metrics"""
+        """Get supplier performance metrics."""
         # Note: This uses .filter() for filtering, handled separately from simple get_*() helpers
         pos = self.db.query(PurchaseOrder).filter(
             PurchaseOrder.supplier_id == supplier_id

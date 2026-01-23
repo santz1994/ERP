@@ -1,5 +1,5 @@
 """Environment-Aware Permission Enforcement
-Restricts DEVELOPER role to read-only in production
+Restricts DEVELOPER role to read-only in production.
 
 ISO 27001 A.12.1.2: Segregation of Duties
 SOX 404: Production Access Control
@@ -12,7 +12,7 @@ from app.core.permissions import Permission
 
 
 class EnvironmentAccessControl:
-    """Environment-aware access control
+    """Environment-aware access control.
 
     Rules:
     1. DEVELOPER role is READ-ONLY in PRODUCTION environment
@@ -28,7 +28,7 @@ class EnvironmentAccessControl:
 
     @staticmethod
     def is_developer_in_production(user: User) -> bool:
-        """Check if user is DEVELOPER role in PRODUCTION environment"""
+        """Check if user is DEVELOPER role in PRODUCTION environment."""
         return (
             user.role == UserRole.DEVELOPER and
             settings.ENVIRONMENT == Environment.PRODUCTION
@@ -36,7 +36,7 @@ class EnvironmentAccessControl:
 
     @staticmethod
     def is_permission_allowed(user: User, permission: Permission) -> bool:
-        """Check if permission is allowed based on environment
+        """Check if permission is allowed based on environment.
 
         Returns:
             True if permission allowed, False otherwise
@@ -55,7 +55,7 @@ class EnvironmentAccessControl:
 
     @staticmethod
     def enforce_environment_restriction(user: User, permission: Permission):
-        """Raise exception if permission not allowed
+        """Raise exception if permission not allowed.
 
         Raises:
             HTTPException: 403 Forbidden if DEVELOPER tries write operation in production
@@ -77,7 +77,7 @@ class EnvironmentAccessControl:
 
 
 def enforce_environment_policy(user: User, permission: Permission):
-    """Wrapper function for environment policy enforcement
+    """Wrapper function for environment policy enforcement.
 
     Usage in API endpoints:
         @router.post("/resource")
@@ -89,7 +89,7 @@ def enforce_environment_policy(user: User, permission: Permission):
 
 
 def get_environment_info():
-    """Get current environment information
+    """Get current environment information.
 
     Returns:
         dict: Environment details including restrictions

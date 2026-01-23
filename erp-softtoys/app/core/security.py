@@ -1,5 +1,5 @@
 """Security & Authentication Module
-JWT token generation, password hashing, and role-based access control
+JWT token generation, password hashing, and role-based access control.
 """
 
 from datetime import datetime, timedelta
@@ -18,7 +18,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds
 
 
 class TokenData(BaseModel):
-    """JWT token payload"""
+    """JWT token payload."""
 
     user_id: int
     username: str
@@ -29,11 +29,11 @@ class TokenData(BaseModel):
 
 
 class PasswordUtils:
-    """Password hashing utilities"""
+    """Password hashing utilities."""
 
     @staticmethod
     def hash_password(password: str) -> str:
-        """Hash password using bcrypt (truncate to 72 bytes if needed)"""
+        """Hash password using bcrypt (truncate to 72 bytes if needed)."""
         # bcrypt has max 72 bytes limit
         if len(password.encode('utf-8')) > 72:
             password = password[:72]
@@ -41,7 +41,7 @@ class PasswordUtils:
 
     @staticmethod
     def verify_password(plain_password: str, hashed_password: str) -> bool:
-        """Verify password against hash"""
+        """Verify password against hash."""
         # bcrypt has max 72 bytes limit
         if len(plain_password.encode('utf-8')) > 72:
             plain_password = plain_password[:72]
@@ -49,7 +49,7 @@ class PasswordUtils:
 
 
 class TokenUtils:
-    """JWT token utilities"""
+    """JWT token utilities."""
 
     @staticmethod
     def create_access_token(
@@ -59,7 +59,7 @@ class TokenUtils:
         roles: list[str],
         expires_delta: timedelta | None = None
     ) -> str:
-        """Create JWT access token using current SECRET_KEY
+        """Create JWT access token using current SECRET_KEY.
 
         Args:
             user_id: User ID
@@ -97,7 +97,7 @@ class TokenUtils:
 
     @staticmethod
     def create_refresh_token(user_id: int, username: str) -> str:
-        """Create JWT refresh token (longer expiration) using current SECRET_KEY"""
+        """Create JWT refresh token (longer expiration) using current SECRET_KEY."""
         expires_delta = timedelta(days=settings.JWT_REFRESH_EXPIRATION_DAYS)
 
         payload = {
@@ -118,7 +118,7 @@ class TokenUtils:
 
     @staticmethod
     def decode_token(token: str) -> "TokenData | None":
-        """Decode and validate JWT token
+        """Decode and validate JWT token.
 
         Performance optimized: Only uses current SECRET_KEY for fast validation.
         Key rotation should be handled via token re-issue rather than multi-key validation.
@@ -171,7 +171,7 @@ ROLE_HIERARCHY = {
 
 
 def has_role(user_roles: list[str], required_role: str) -> bool:
-    """Check if user has required role or higher
+    """Check if user has required role or higher.
 
     Args:
         user_roles: List of user's roles
@@ -190,7 +190,7 @@ def has_role(user_roles: list[str], required_role: str) -> bool:
 
 
 def has_any_role(user_roles: list[str], allowed_roles: list[str]) -> bool:
-    """Check if user has any of the allowed roles"""
+    """Check if user has any of the allowed roles."""
     for role in user_roles:
         if role in allowed_roles:
             return True

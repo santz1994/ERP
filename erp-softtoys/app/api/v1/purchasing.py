@@ -1,4 +1,4 @@
-"""Copyright (c) 2026 PT Quty Karunia / Daniel Rizaldy - All Rights Reserved
+"""Copyright (c) 2026 PT Quty Karunia / Daniel Rizaldy - All Rights Reserved.
 
 Purchasing API Endpoints
 Handles purchase orders, supplier management, material receiving
@@ -84,7 +84,7 @@ def get_purchase_orders(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.PURCHASING, Permission.VIEW))
 ):
-    """Get all purchase orders with optional filters
+    """Get all purchase orders with optional filters.
 
     - **status**: Filter by status (Draft, Sent, Received, Done, Cancelled)
     - **supplier_id**: Filter by supplier
@@ -100,7 +100,7 @@ def create_purchase_order(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.PURCHASING, Permission.CREATE))
 ):
-    """Create new purchase order for raw materials
+    """Create new purchase order for raw materials.
 
     - **po_number**: Unique PO number
     - **supplier_id**: Supplier/vendor ID
@@ -129,7 +129,7 @@ def approve_purchase_order(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.PURCHASING, Permission.APPROVE))
 ):
-    """Approve purchase order (Manager only)
+    """Approve purchase order (Manager only).
 
     Changes status from Draft to Sent
     """
@@ -148,7 +148,7 @@ def receive_purchase_order(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.PURCHASING, Permission.EXECUTE))
 ):
-    """Receive materials from purchase order
+    """Receive materials from purchase order.
 
     - Creates stock lots for traceability
     - Updates inventory quantities (FIFO)
@@ -175,7 +175,7 @@ def cancel_purchase_order(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.PURCHASING, Permission.DELETE))
 ):
-    """Cancel purchase order
+    """Cancel purchase order.
 
     Can only cancel Draft or Sent POs, not Received/Done
     """
@@ -193,7 +193,7 @@ def get_supplier_performance(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.PURCHASING, Permission.VIEW))
 ):
-    """Get supplier performance metrics
+    """Get supplier performance metrics.
 
     - Total purchase orders
     - Completion rate

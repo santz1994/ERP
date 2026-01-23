@@ -35,7 +35,7 @@ Base = declarative_base()
 # Dependency injection for database sessions
 def get_db():
     """Database session dependency
-    Usage: def my_endpoint(db: Session = Depends(get_db))
+    Usage: def my_endpoint(db: Session = Depends(get_db)).
     """
     db = SessionLocal()
     try:

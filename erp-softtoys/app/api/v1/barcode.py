@@ -1,6 +1,6 @@
 """Barcode Scanner Module for Warehouse and Finishgoods
 Handles barcode scanning for receiving and picking operations
-Future: RFID integration planned
+Future: RFID integration planned.
 """
 from datetime import datetime
 
@@ -76,7 +76,7 @@ async def validate_barcode(
     current_user: User = Depends(require_permission("barcode.validate_product"))
 ):
     """Validate a barcode and return product information
-    Used before receive/pick operations
+    Used before receive/pick operations.
     """
     # Find product by barcode (assuming barcode = product code)
     result = await db.execute(
@@ -141,7 +141,7 @@ async def receive_goods(
     current_user: User = Depends(require_permission("barcode.receive_inventory"))
 ):
     """Receive goods using barcode scanner
-    Creates stock move and updates inventory
+    Creates stock move and updates inventory.
     """
     # Validate barcode first
     result = await db.execute(
@@ -252,7 +252,7 @@ async def pick_goods(
     current_user: User = Depends(require_permission("barcode.pick_inventory"))
 ):
     """Pick goods using barcode scanner (FIFO logic)
-    Creates stock move and updates inventory
+    Creates stock move and updates inventory.
     """
     # Validate barcode
     result = await db.execute(
@@ -367,7 +367,7 @@ def get_barcode_history(
     db = Depends(get_db),
     current_user: User = Depends(require_permission("barcode.view_history"))
 ):
-    """Get barcode scanning history for warehouse or finishgoods
+    """Get barcode scanning history for warehouse or finishgoods.
 
     Parameters
     ----------
@@ -409,8 +409,7 @@ async def get_barcode_stats(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_permission("barcode.view_statistics"))
 ):
-    """Get barcode scanning statistics
-    """
+    """Get barcode scanning statistics."""
     today = datetime.now().date()
 
     # Today's receives

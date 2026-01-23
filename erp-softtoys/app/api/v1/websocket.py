@@ -1,5 +1,4 @@
-"""WebSocket API Endpoints for Real-time Notifications
-"""
+"""WebSocket API Endpoints for Real-time Notifications."""
 import logging
 
 from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
@@ -17,7 +16,7 @@ async def websocket_notifications(
     websocket: WebSocket,
     token: str = Query(..., description="JWT access token")
 ):
-    """WebSocket endpoint for real-time notifications
+    """WebSocket endpoint for real-time notifications.
 
     **Connection**: ws://localhost:8000/api/v1/ws/notifications?token=<JWT_TOKEN>
 
@@ -93,7 +92,7 @@ async def websocket_department(
     department: str,
     token: str = Query(..., description="JWT access token")
 ):
-    """WebSocket endpoint for department-specific notifications
+    """WebSocket endpoint for department-specific notifications.
 
     **Departments**: Cutting, Embroidery, Sewing, Finishing, Packing, QC, Warehouse, PPIC
     """

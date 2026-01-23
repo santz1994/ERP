@@ -1,5 +1,5 @@
 """Audit Trail Utilities
-Helper functions for logging audit events
+Helper functions for logging audit events.
 """
 from datetime import datetime
 from typing import Any
@@ -11,7 +11,7 @@ from app.core.models.users import User
 
 
 class AuditLogger:
-    """Centralized audit logging utility"""
+    """Centralized audit logging utility."""
 
     @staticmethod
     def log_action(
@@ -29,7 +29,7 @@ class AuditLogger:
         request_path: str | None = None,
         response_status: int | None = None
     ):
-        """Log an audit event
+        """Log an audit event.
 
         Args:
             db: Database session
@@ -79,7 +79,7 @@ class AuditLogger:
         values: dict[str, Any],
         description: str | None = None
     ):
-        """Log creation of new record"""
+        """Log creation of new record."""
         if not description:
             description = f"Created {entity_type} #{entity_id}"
 
@@ -105,7 +105,7 @@ class AuditLogger:
         new_values: dict[str, Any],
         description: str | None = None
     ):
-        """Log update of existing record"""
+        """Log update of existing record."""
         if not description:
             changed_fields = list(new_values.keys())
             description = f"Updated {entity_type} #{entity_id}: {', '.join(changed_fields)}"
@@ -132,7 +132,7 @@ class AuditLogger:
         values: dict[str, Any],
         description: str | None = None
     ):
-        """Log deletion of record"""
+        """Log deletion of record."""
         if not description:
             description = f"Deleted {entity_type} #{entity_id}"
 
@@ -158,7 +158,7 @@ class AuditLogger:
         qty: int,
         transfer_id: int
     ):
-        """Log department transfer"""
+        """Log department transfer."""
         description = f"Transfer {qty} units of {article_code} from {from_dept} to {to_dept}"
 
         return AuditLogger.log_action(
@@ -186,7 +186,7 @@ class AuditLogger:
         entity_id: int,
         description: str
     ):
-        """Log approval action"""
+        """Log approval action."""
         return AuditLogger.log_action(
             db=db,
             user=user,
@@ -204,7 +204,7 @@ class AuditLogger:
         ip_address: str,
         success: bool = True
     ):
-        """Log user login attempt"""
+        """Log user login attempt."""
         if success:
             description = f"User {user.username} logged in successfully"
             action = AuditAction.LOGIN
@@ -236,7 +236,7 @@ class AuditLogger:
         export_type: str,
         filters: dict[str, Any]
     ):
-        """Log data export"""
+        """Log data export."""
         description = f"Exported {export_type} data"
 
         return AuditLogger.log_action(
@@ -251,7 +251,7 @@ class AuditLogger:
 
 
 class SecurityLogger:
-    """Security event logging"""
+    """Security event logging."""
 
     @staticmethod
     def log_failed_login(
@@ -260,7 +260,7 @@ class SecurityLogger:
         ip_address: str,
         user_id: int | None = None
     ):
-        """Log failed login attempt"""
+        """Log failed login attempt."""
         log = SecurityLog(
             ip_address=ip_address,
             event_type="failed_login",
@@ -295,7 +295,7 @@ class SecurityLogger:
         attempted_action: str,
         resource: str
     ):
-        """Log unauthorized access attempt"""
+        """Log unauthorized access attempt."""
         log = SecurityLog(
             ip_address=ip_address,
             event_type="unauthorized_access",
@@ -313,7 +313,7 @@ class SecurityLogger:
 
 
 class ActivityLogger:
-    """User activity tracking"""
+    """User activity tracking."""
 
     @staticmethod
     def log_activity(
@@ -324,7 +324,7 @@ class ActivityLogger:
         session_id: str | None = None,
         ip_address: str | None = None
     ):
-        """Log user activity"""
+        """Log user activity."""
         log = UserActivityLog(
             user_id=user.id,
             activity_type=activity_type,

@@ -1,12 +1,11 @@
 """Sewing Module Business Logic & Services
-Handles material input validation, 3-stage sewing, inline QC, and transfer
+Handles material input validation, 3-stage sewing, inline QC, and transfer.
 
 Refactored: Now extends BaseProductionService to eliminate code duplication
 """
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
@@ -23,7 +22,7 @@ from app.core.models.transfer import LineOccupancy, TransferDept
 
 class SewingService(BaseProductionService):
     """Business logic for sewing department operations
-    Extends BaseProductionService for common production patterns
+    Extends BaseProductionService for common production patterns.
     """
 
     # Department configuration
@@ -38,10 +37,10 @@ class SewingService(BaseProductionService):
         transfer_slip_number: str,
         received_qty: Decimal,
         user_id: int,
-        notes: Optional[str] = None
+        notes: str | None = None
     ) -> dict:
         """Step 300: Accept Transfer & Material Validation
-        Uses base class accept_transfer_from_previous_dept
+        Uses base class accept_transfer_from_previous_dept.
         """
         # Delegate to base class
         result = cls.accept_transfer_from_previous_dept(
@@ -69,7 +68,7 @@ class SewingService(BaseProductionService):
         """Step 310: VALIDASI INPUT - Validate Received Qty vs BOM Target.
         - Compare received material vs BOM requirements
         - If shortage: Auto-request additional material
-        - If OK: Proceed to assembly
+        - If OK: Proceed to assembly.
         """
         # Get work order to find product ID if not provided
         wo = db.query(WorkOrder).filter(
@@ -96,12 +95,12 @@ class SewingService(BaseProductionService):
         work_order_id: int,
         step_number: int,
         qty_processed: Decimal,
-        notes: Optional[str] = None
+        notes: str | None = None
     ) -> dict:
         """Step 330-350: 3-Stage Sewing Process
         - Step 330: Proses Jahit 1 - Assembly (rakit body)
         - Step 340: Proses Jahit 2 - Labeling (attach label)
-        - Step 350: Proses Jahit 3 - Stik Balik (loop stitching)
+        - Step 350: Proses Jahit 3 - Stik Balik (loop stitching).
         """
         wo = BaseProductionService.get_work_order(db, work_order_id)
 
@@ -151,12 +150,12 @@ class SewingService(BaseProductionService):
         pass_qty: Decimal,
         rework_qty: Decimal,
         scrap_qty: Decimal,
-        defect_reason: Optional[str] = None
+        defect_reason: str | None = None
     ) -> dict:
         """Step 360-375: INLINE QC INSPECTION
         - Step 360: Check jahitan quality
         - Step 370: Rework process (can go back to step 350)
-        - Step 375: Scrap/reject flow
+        - Step 375: Scrap/reject flow.
         """
         wo = BaseProductionService.get_work_order(db, work_order_id)
 
@@ -224,7 +223,7 @@ class SewingService(BaseProductionService):
         db: Session,
         work_order_id: int
     ) -> tuple[bool, str | None, dict]:
-        """Step 380: SEGREGASI CHECK - Verify Destination Consistency
+        """Step 380: SEGREGASI CHECK - Verify Destination Consistency.
 
         QT-09 Segregation Rule:
         - All WIP in same batch MUST go to same destination/week
@@ -290,7 +289,7 @@ class SewingService(BaseProductionService):
     ) -> dict:
         """Step 381-383: Print Transfer & Handshake Digital
         - Step 381: Print Surat Jalan to Finishing
-        - Step 383: HANDSHAKE - Lock WIP SEW
+        - Step 383: HANDSHAKE - Lock WIP SEW.
 
         REFACTORED: Now uses BaseProductionService.create_transfer_log()
         Eliminates 65 lines of duplicate code (22.4% reduction)

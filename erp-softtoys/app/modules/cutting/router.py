@@ -1,5 +1,5 @@
 """Cutting Module API Endpoints
-Production workflow: SPK reception → Material allocation → Cutting execution → QC → Transfer
+Production workflow: SPK reception → Material allocation → Cutting execution → QC → Transfer.
 """
 
 from datetime import datetime
@@ -30,7 +30,7 @@ async def receive_spk_and_allocate_material(
     current_user: User = Depends(require_permission("cutting.allocate_material")),
     db: Session = Depends(get_db)
 ) -> dict:
-    """**POST** - Step 200: Receive SPK & Allocate Material
+    """**POST** - Step 200: Receive SPK & Allocate Material.
 
     Workflow:
     1. Validate SPK for Cutting department
@@ -55,7 +55,7 @@ async def start_cutting_operation(
     current_user: User = Depends(require_permission("cutting.complete_operation")),
     db: Session = Depends(get_db)
 ) -> dict:
-    """**POST** - Step 210: Begin Cutting Operation
+    """**POST** - Step 210: Begin Cutting Operation.
 
     Updates work order status to RUNNING with operator assignment.
     Marks start time for production tracking.
@@ -86,7 +86,7 @@ async def complete_cutting_operation(
     current_user: User = Depends(require_permission("cutting.complete_operation")),
     db: Session = Depends(get_db)
 ) -> dict:
-    """**POST** - Step 220: Record Output & Detect Shortage/Surplus
+    """**POST** - Step 220: Record Output & Detect Shortage/Surplus.
 
     Records actual cutting output and initiates variance handling:
 
@@ -120,7 +120,7 @@ async def handle_material_shortage(
     current_user: User = Depends(require_permission("cutting.handle_variance")),
     db: Session = Depends(get_db)
 ) -> dict:
-    """**POST** - Step 230-250: SHORTAGE LOGIC Handling
+    """**POST** - Step 230-250: SHORTAGE LOGIC Handling.
 
     When actual output < target, this endpoint:
     1. Creates Waste Report with shortage details
@@ -148,7 +148,7 @@ async def check_line_clearance(
     current_user: User = Depends(require_permission("cutting.line_clearance")),
     db: Session = Depends(get_db)
 ) -> LineClearanceCheckResponse:
-    """**GET** - Step 290: LINE CLEARANCE CHECK (QT-09 Requirement)
+    """**GET** - Step 290: LINE CLEARANCE CHECK (QT-09 Requirement).
 
     Before Cutting can transfer output to Sewing/Embroidery:
 
@@ -187,7 +187,7 @@ async def transfer_to_next_department(
     current_user: User = Depends(require_permission("cutting.create_transfer")),
     db: Session = Depends(get_db)
 ) -> dict:
-    """**POST** - Step 291-293: TRANSFER & HANDSHAKE DIGITAL
+    """**POST** - Step 291-293: TRANSFER & HANDSHAKE DIGITAL.
 
     **QT-09 Gold Standard Implementation:**
 
@@ -229,7 +229,7 @@ async def get_cutting_work_order_status(
     current_user: User = Depends(require_permission("cutting.view_status")),
     db: Session = Depends(get_db)
 ) -> CuttingWorkOrderResponse:
-    """**GET** - Retrieve Current Cutting Work Order Status
+    """**GET** - Retrieve Current Cutting Work Order Status.
 
     Real-time status of cutting operation:
     - Current processing stage
@@ -259,7 +259,7 @@ async def get_pending_cutting_orders(
     current_user: User = Depends(require_permission("cutting.view_status")),
     db: Session = Depends(get_db)
 ) -> list[CuttingWorkOrderResponse]:
-    """**GET** - List All Pending Cutting Work Orders
+    """**GET** - List All Pending Cutting Work Orders.
 
     Returns work orders awaiting execution:
     - Status = Pending (not started)
@@ -299,7 +299,7 @@ async def create_cutting_operation(
     current_user: User = Depends(require_permission("cutting.complete_operation")),
     db: Session = Depends(get_db)
 ):
-    """**POST** - Create Cutting Operation with Quantity Validation (PRD-02 Test)
+    """**POST** - Create Cutting Operation with Quantity Validation (PRD-02 Test).
 
     Validates cutting quantity against business rules:
     - Quantity must be positive (> 0)
@@ -372,7 +372,7 @@ async def create_cutting_operation(
         )
 
     # Create operation record (simplified - extend as needed)
-    operation_data = {
+    {
         "work_order_id": work_order_id,
         "quantity": quantity,
         "operator_id": current_user.id,
@@ -395,7 +395,7 @@ async def get_line_status(
     db: Session = Depends(get_db)
 ):
     """Get real-time status of all cutting lines
-    Shows which lines are occupied and with which article
+    Shows which lines are occupied and with which article.
     """
     return [
         {

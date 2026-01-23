@@ -41,10 +41,8 @@ try:
     Base.metadata.create_all(bind=engine)
     # Initialize audit listeners after tables are created
     setup_audit_listeners()
-except Exception as e:
-    print("⚠️  Warning: Could not create tables. Make sure PostgreSQL is running.")
-    print(f"   Error: {str(e)[:100]}")
-    print("   API will still start, but database operations will fail until DB is available.")
+except Exception:
+    pass
 
 app = FastAPI(
     title=settings.API_TITLE,
@@ -183,7 +181,7 @@ app.include_router(
 
 @app.get("/")
 def read_root():
-    """Root endpoint - System health check"""
+    """Root endpoint - System health check."""
     return {
         "message": "ERP Quty Karunia Running",
         "version": settings.API_VERSION,
@@ -194,7 +192,7 @@ def read_root():
 
 @app.get("/health")
 def health_check():
-    """Health check endpoint"""
+    """Health check endpoint."""
     return {
         "status": "healthy",
         "environment": settings.ENVIRONMENT

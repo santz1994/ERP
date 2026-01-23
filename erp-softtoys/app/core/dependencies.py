@@ -1,5 +1,5 @@
 """FastAPI Dependencies
-Reusable dependency injection for routes
+Reusable dependency injection for routes.
 
 ACCESS CONTROL STRATEGY (Session 13.1 - Week 3):
 ==================================================
@@ -40,7 +40,7 @@ from app.services.permission_service import get_permission_service
 # Database session dependency
 def get_db() -> Generator[Session, None, None]:
     """Database session dependency
-    Provides SQLAlchemy session to routes
+    Provides SQLAlchemy session to routes.
     """
     db = SessionLocal()
     try:
@@ -57,7 +57,7 @@ async def get_current_user(
     token: str = Depends(security),
     db: Session = Depends(get_db)
 ) -> User:
-    """Get current authenticated user from JWT token
+    """Get current authenticated user from JWT token.
 
     Args:
         token: HTTP Bearer token
@@ -104,8 +104,7 @@ async def get_optional_user(
     token: str | None = Depends(security),
     db: Session = Depends(get_db)
 ) -> User | None:
-    """Get current user (optional, returns None if not authenticated)
-    """
+    """Get current user (optional, returns None if not authenticated)."""
     if not token:
         return None
 
@@ -113,7 +112,7 @@ async def get_optional_user(
 
 
 def require_role(required_role: str):
-    """Dependency to require specific role
+    """Dependency to require specific role.
 
     Args:
         required_role: Role name required (e.g., "admin", "ppic_manager")
@@ -130,7 +129,7 @@ def require_role(required_role: str):
 
     """
     async def check_role(current_user: User = Depends(get_current_user)) -> User:
-        """Check if user has required role"""
+        """Check if user has required role."""
         user_role = current_user.role.value
 
         if user_role == "Admin" or user_role == required_role:
@@ -145,7 +144,7 @@ def require_role(required_role: str):
 
 
 def require_any_role(*allowed_roles: str):
-    """Dependency to require any of multiple roles
+    """Dependency to require any of multiple roles.
 
     Args:
         allowed_roles: Role names allowed (e.g., "admin", "ppic_manager")
@@ -164,7 +163,7 @@ def require_any_role(*allowed_roles: str):
 
     """
     async def check_any_role(current_user: User = Depends(get_current_user)) -> User:
-        """Check if user has any allowed role"""
+        """Check if user has any allowed role."""
         user_role = current_user.role.value
 
         if user_role == "Admin":
@@ -183,7 +182,7 @@ def require_any_role(*allowed_roles: str):
 
 
 def require_roles(allowed_roles: list[UserRole]):
-    """Dependency to require any role from UserRole enum list
+    """Dependency to require any role from UserRole enum list.
 
     Args:
         allowed_roles: List of UserRole enums allowed
@@ -204,7 +203,7 @@ def require_roles(allowed_roles: list[UserRole]):
 
     """
     async def check_roles(current_user: User = Depends(get_current_user)) -> User:
-        """Check if user has any of the allowed roles"""
+        """Check if user has any of the allowed roles."""
         if current_user.role in allowed_roles:
             return current_user
 
@@ -220,7 +219,7 @@ def require_roles(allowed_roles: list[UserRole]):
 
 
 def require_permission(permission_code: str = None, permission_type: str = None):
-    """PBAC Dependency: Require specific permission code
+    """PBAC Dependency: Require specific permission code.
 
     NEW in Week 3 - Replaces role-based access with fine-grained permissions
 
@@ -273,7 +272,7 @@ def require_permission(permission_code: str = None, permission_type: str = None)
         current_user: User = Depends(get_current_user),
         db: Session = Depends(get_db)
     ) -> User:
-        """Check if user has required permission"""
+        """Check if user has required permission."""
         perm_service = get_permission_service()
 
         # Check permission with caching
@@ -290,7 +289,7 @@ def require_permission(permission_code: str = None, permission_type: str = None)
 
 
 def require_any_permission(permission_codes: list[str]):
-    """PBAC Dependency: Require ANY of the specified permissions (OR logic)
+    """PBAC Dependency: Require ANY of the specified permissions (OR logic).
 
     Args:
         permission_codes: List of permission codes
@@ -317,7 +316,7 @@ def require_any_permission(permission_codes: list[str]):
         current_user: User = Depends(get_current_user),
         db: Session = Depends(get_db)
     ) -> User:
-        """Check if user has any of the required permissions"""
+        """Check if user has any of the required permissions."""
         perm_service = get_permission_service()
 
         if perm_service.has_any_permission(db, current_user, permission_codes):
@@ -332,7 +331,7 @@ def require_any_permission(permission_codes: list[str]):
 
 
 def require_supervisor_or_admin():
-    """Require supervisor or admin role"""
+    """Require supervisor or admin role."""
     async def check_supervisor(current_user: User = Depends(get_current_user)) -> User:
         if current_user.is_supervisor() or current_user.role.value == "Admin":
             return current_user
@@ -346,7 +345,7 @@ def require_supervisor_or_admin():
 
 
 def require_operator():
-    """Require operator role"""
+    """Require operator role."""
     async def check_operator(current_user: User = Depends(get_current_user)) -> User:
         if current_user.is_operator() or current_user.role.value == "Admin":
             return current_user
@@ -361,7 +360,7 @@ def require_operator():
 
 # Pagination dependency
 class PaginationParams:
-    """Pagination parameters"""
+    """Pagination parameters."""
 
     def __init__(self, skip: int = 0, limit: int = 100):
         self.skip = max(0, skip)
@@ -372,13 +371,13 @@ def get_pagination(
     skip: int = 0,
     limit: int = 100
 ) -> PaginationParams:
-    """Pagination dependency"""
+    """Pagination dependency."""
     return PaginationParams(skip=skip, limit=limit)
 
 
 async def get_current_user_ws(token: str) -> User:
     """Get current authenticated user from JWT token (WebSocket version)
-    Used in WebSocket endpoints where we can't use HTTPBearer
+    Used in WebSocket endpoints where we can't use HTTPBearer.
 
     Args:
         token: JWT token string

@@ -1,5 +1,5 @@
 """Pydantic schemas for API requests/responses
-Data validation and serialization
+Data validation and serialization.
 """
 
 from datetime import datetime
@@ -16,7 +16,7 @@ from app.core.models.users import UserRole  # Import from database models
 
 
 class UserCreate(BaseModel):
-    """Create user request"""
+    """Create user request."""
 
     username: str = Field(..., min_length=3, max_length=50)
     email: EmailStr
@@ -26,14 +26,14 @@ class UserCreate(BaseModel):
 
 
 class UserLogin(BaseModel):
-    """User login request"""
+    """User login request."""
 
     username: str = Field(..., min_length=1, max_length=50, description="Username must not be empty")
     password: str = Field(..., min_length=1, description="Password must not be empty")
 
 
 class TokenResponse(BaseModel):
-    """Token response"""
+    """Token response."""
 
     access_token: str
     refresh_token: str
@@ -42,7 +42,7 @@ class TokenResponse(BaseModel):
 
 
 class UserResponse(BaseModel):
-    """User response"""
+    """User response."""
 
     id: int
     username: str
@@ -57,7 +57,7 @@ class UserResponse(BaseModel):
 
 
 class AuthResponse(BaseModel):
-    """Authentication response with tokens and user data"""
+    """Authentication response with tokens and user data."""
 
     access_token: str
     refresh_token: str
@@ -69,7 +69,7 @@ class AuthResponse(BaseModel):
 # ==================== PRODUCT SCHEMAS ====================
 
 class ProductType(str, Enum):
-    """Product type enum"""
+    """Product type enum."""
 
     RAW_MATERIAL = "Raw Material"
     WIP = "WIP"
@@ -78,7 +78,7 @@ class ProductType(str, Enum):
 
 
 class UOM(str, Enum):
-    """Unit of measurement"""
+    """Unit of measurement."""
 
     PCS = "Pcs"
     METER = "Meter"
@@ -88,14 +88,14 @@ class UOM(str, Enum):
 
 
 class CategoryCreate(BaseModel):
-    """Create category request"""
+    """Create category request."""
 
     name: str = Field(..., min_length=1, max_length=100)
     description: str | None = None
 
 
 class CategoryResponse(BaseModel):
-    """Category response"""
+    """Category response."""
 
     id: int
     name: str
@@ -104,7 +104,7 @@ class CategoryResponse(BaseModel):
 
 
 class ProductCreate(BaseModel):
-    """Create product request"""
+    """Create product request."""
 
     code: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=255)
@@ -116,7 +116,7 @@ class ProductCreate(BaseModel):
 
 
 class ProductResponse(BaseModel):
-    """Product response"""
+    """Product response."""
 
     id: int
     code: str
@@ -135,7 +135,7 @@ class ProductResponse(BaseModel):
 # ==================== MANUFACTURING SCHEMAS ====================
 
 class RoutingType(str, Enum):
-    """Production route type"""
+    """Production route type."""
 
     ROUTE_1_FULL = "Route 1"  # Full process with embroidery
     ROUTE_2_DIRECT = "Route 2"  # Direct sewing without embroidery
@@ -143,7 +143,7 @@ class RoutingType(str, Enum):
 
 
 class MOStatus(str, Enum):
-    """Manufacturing order status"""
+    """Manufacturing order status."""
 
     DRAFT = "Draft"
     IN_PROGRESS = "In Progress"
@@ -152,7 +152,7 @@ class MOStatus(str, Enum):
 
 
 class ManufacturingOrderCreate(BaseModel):
-    """Create manufacturing order request"""
+    """Create manufacturing order request."""
 
     so_line_id: int = Field(..., description="Sales order line ID")
     product_id: int = Field(..., description="WIP/FG product ID")
@@ -162,7 +162,7 @@ class ManufacturingOrderCreate(BaseModel):
 
 
 class ManufacturingOrderResponse(BaseModel):
-    """Manufacturing order response"""
+    """Manufacturing order response."""
 
     id: int
     so_line_id: int
@@ -181,7 +181,7 @@ class ManufacturingOrderResponse(BaseModel):
 # ==================== WAREHOUSE SCHEMAS ====================
 
 class TransferDept(str, Enum):
-    """Department enum"""
+    """Department enum."""
 
     CUTTING = "Cutting"
     EMBROIDERY = "Embroidery"
@@ -193,7 +193,7 @@ class TransferDept(str, Enum):
 
 
 class TransferStatus(str, Enum):
-    """Transfer status"""
+    """Transfer status."""
 
     INITIATED = "Initiated"
     BLOCKED = "Blocked"
@@ -204,7 +204,7 @@ class TransferStatus(str, Enum):
 
 
 class StockTransferCreate(BaseModel):
-    """Create stock transfer request"""
+    """Create stock transfer request."""
 
     from_dept: TransferDept
     to_dept: TransferDept
@@ -216,7 +216,7 @@ class StockTransferCreate(BaseModel):
 
 
 class StockTransferResponse(BaseModel):
-    """Stock transfer response"""
+    """Stock transfer response."""
 
     id: int
     from_dept: TransferDept
@@ -235,7 +235,7 @@ class StockTransferResponse(BaseModel):
 
 
 class StockCheckResponse(BaseModel):
-    """Stock check response"""
+    """Stock check response."""
 
     product_id: int
     location: str
@@ -248,7 +248,7 @@ class StockCheckResponse(BaseModel):
 # ==================== QC SCHEMAS ====================
 
 class TestType(str, Enum):
-    """QC test type"""
+    """QC test type."""
 
     DROP_TEST = "Drop Test"
     STABILITY_10 = "Stability 10"
@@ -257,14 +257,14 @@ class TestType(str, Enum):
 
 
 class TestResult(str, Enum):
-    """Test result"""
+    """Test result."""
 
     PASS = "Pass"
     FAIL = "Fail"
 
 
 class QCTestCreate(BaseModel):
-    """Create QC lab test request"""
+    """Create QC lab test request."""
 
     batch_number: str
     test_type: TestType
@@ -276,7 +276,7 @@ class QCTestCreate(BaseModel):
 
 
 class QCTestResponse(BaseModel):
-    """QC test response"""
+    """QC test response."""
 
     id: int
     batch_number: str
@@ -295,7 +295,7 @@ class QCTestResponse(BaseModel):
 # ==================== ERROR SCHEMAS ====================
 
 class ErrorResponse(BaseModel):
-    """Error response schema"""
+    """Error response schema."""
 
     status_code: int
     message: str
@@ -304,7 +304,7 @@ class ErrorResponse(BaseModel):
 
 
 class ValidationError(BaseModel):
-    """Validation error response"""
+    """Validation error response."""
 
     status_code: int = 422
     message: str = "Validation error"
@@ -314,7 +314,7 @@ class ValidationError(BaseModel):
 # ==================== WAREHOUSE SCHEMAS ====================
 
 class StockUpdateCreate(BaseModel):
-    """Stock update request - validates types strictly"""
+    """Stock update request - validates types strictly."""
 
     item_id: int = Field(..., gt=0, description="Product/Item ID must be positive")
     quantity: Decimal = Field(..., gt=0, description="Quantity must be positive")

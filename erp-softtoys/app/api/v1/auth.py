@@ -1,5 +1,5 @@
 """Authentication API Endpoints (Phase 1)
-User registration, login, token management, profile
+User registration, login, token management, profile.
 """
 
 from datetime import datetime, timedelta
@@ -23,7 +23,7 @@ router = APIRouter(
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register(user_data: UserCreate, db: Session = Depends(get_db)):
-    """Register new user
+    """Register new user.
 
     **Roles Required**: None (public endpoint)
 
@@ -91,7 +91,7 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=AuthResponse)
 async def login(credentials: UserLogin, db: Session = Depends(get_db)):
-    """User login endpoint
+    """User login endpoint.
 
     **Roles Required**: None (public endpoint)
 
@@ -203,7 +203,7 @@ async def refresh_token(
     refresh_token_str: str,
     db: Session = Depends(get_db)
 ):
-    """Refresh access token using refresh token
+    """Refresh access token using refresh token.
 
     **Roles Required**: None
 
@@ -255,7 +255,7 @@ async def refresh_token(
 
 @router.get("/me", response_model=UserResponse)
 async def get_current_user_info(current_user: User = Depends(get_current_user)):
-    """Get current authenticated user information (OPTIMIZED for API-02 Test)
+    """Get current authenticated user information (OPTIMIZED for API-02 Test).
 
     **Performance Optimization:**
     - Direct object access (no additional DB query)
@@ -286,7 +286,7 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
 
 
 class PasswordChangeRequest(BaseModel):
-    """Password change request"""
+    """Password change request."""
 
     old_password: str = Field(..., min_length=1)
     new_password: str = Field(..., min_length=8)
@@ -298,7 +298,7 @@ async def change_password(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Change user password
+    """Change user password.
 
     **Roles Required**: Any authenticated user
 
@@ -332,7 +332,7 @@ async def change_password(
 
 @router.post("/logout")
 async def logout(current_user: User = Depends(get_current_user)):
-    """Logout endpoint
+    """Logout endpoint.
 
     **Roles Required**: Any authenticated user
 
@@ -353,7 +353,7 @@ async def get_user_permissions(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Get current user's permissions summary (PBAC - Permission-Based Access Control)
+    """Get current user's permissions summary (PBAC - Permission-Based Access Control).
 
     **Roles Required**: Any authenticated user
 

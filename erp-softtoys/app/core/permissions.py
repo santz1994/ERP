@@ -1,5 +1,5 @@
 """User Access Control (UAC) and Module Permissions System
-Role-Based Access Control (RBAC) for ERP modules
+Role-Based Access Control (RBAC) for ERP modules.
 """
 
 from enum import Enum
@@ -10,7 +10,7 @@ from app.core.models.users import User, UserRole
 
 
 class ModuleName(str, Enum):
-    """ERP Modules"""
+    """ERP Modules."""
 
     DASHBOARD = "dashboard"
     PPIC = "ppic"
@@ -33,7 +33,7 @@ class ModuleName(str, Enum):
 
 
 class Permission(str, Enum):
-    """Access permissions"""
+    """Access permissions."""
 
     VIEW = "view"
     CREATE = "create"
@@ -195,11 +195,11 @@ ROLE_PERMISSIONS = {
 
 
 class AccessControl:
-    """Access control utility functions"""
+    """Access control utility functions."""
 
     @staticmethod
     def has_module_access(user: User, module: ModuleName) -> bool:
-        """Check if user has access to a module"""
+        """Check if user has access to a module."""
         # SUPERADMIN, DEVELOPER, ADMIN have full access
         if user.role in [UserRole.SUPERADMIN, UserRole.DEVELOPER, UserRole.ADMIN]:
             return True
@@ -209,7 +209,7 @@ class AccessControl:
 
     @staticmethod
     def has_permission(user: User, module: ModuleName, permission: Permission) -> bool:
-        """Check if user has specific permission for a module"""
+        """Check if user has specific permission for a module."""
         # SUPERADMIN, DEVELOPER, ADMIN have full permissions
         if user.role in [UserRole.SUPERADMIN, UserRole.DEVELOPER, UserRole.ADMIN]:
             return True
@@ -220,7 +220,7 @@ class AccessControl:
 
     @staticmethod
     def get_user_modules(user: User) -> list[ModuleName]:
-        """Get list of modules accessible by user"""
+        """Get list of modules accessible by user."""
         # SUPERADMIN, DEVELOPER, ADMIN have access to all modules
         if user.role in [UserRole.SUPERADMIN, UserRole.DEVELOPER, UserRole.ADMIN]:
             return list(ModuleName)
@@ -230,7 +230,7 @@ class AccessControl:
 
     @staticmethod
     def get_module_permissions(user: User, module: ModuleName) -> list[Permission]:
-        """Get user's permissions for a specific module"""
+        """Get user's permissions for a specific module."""
         # SUPERADMIN, DEVELOPER, ADMIN have all permissions
         if user.role in [UserRole.SUPERADMIN, UserRole.DEVELOPER, UserRole.ADMIN]:
             return [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.DELETE, Permission.APPROVE, Permission.EXECUTE]
@@ -240,7 +240,7 @@ class AccessControl:
 
     @staticmethod
     def check_module_access(user: User, module: ModuleName) -> None:
-        """Check module access and raise exception if denied"""
+        """Check module access and raise exception if denied."""
         if not AccessControl.has_module_access(user, module):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -249,7 +249,7 @@ class AccessControl:
 
     @staticmethod
     def check_permission(user: User, module: ModuleName, permission: Permission) -> None:
-        """Check permission and raise exception if denied"""
+        """Check permission and raise exception if denied."""
         if not AccessControl.has_permission(user, module, permission):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -258,7 +258,7 @@ class AccessControl:
 
     @staticmethod
     def get_user_permissions_summary(user: User) -> dict:
-        """Get complete permissions summary for user"""
+        """Get complete permissions summary for user."""
         modules = AccessControl.get_user_modules(user)
         summary = {
             "user_id": user.id,
@@ -276,7 +276,7 @@ class AccessControl:
 
 
 def require_module_access(module: ModuleName):
-    """Dependency to require module access
+    """Dependency to require module access.
 
     Usage:
     ```python
@@ -297,7 +297,7 @@ def require_module_access(module: ModuleName):
 
 
 def require_permission(module: ModuleName, permission: Permission):
-    """Dependency to require specific permission on module
+    """Dependency to require specific permission on module.
 
     Enforces both RBAC and environment-based restrictions (DEVELOPER read-only in production)
 

@@ -1,5 +1,5 @@
 """Sewing Module Models & Schemas
-Handles material input validation, sewing process, QC, and transfer to Finishing
+Handles material input validation, sewing process, QC, and transfer to Finishing.
 """
 
 from datetime import datetime
@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 
 
 class SewingStatus(str, Enum):
-    """Sewing work order status"""
+    """Sewing work order status."""
 
     PENDING = "Pending"
     MATERIAL_CHECK = "Material Check"
@@ -23,7 +23,7 @@ class SewingStatus(str, Enum):
 
 
 class SewingQCResult(str, Enum):
-    """QC inspection result for sewing"""
+    """QC inspection result for sewing."""
 
     PASS = "Pass"
     REWORK = "Rework"
@@ -31,7 +31,7 @@ class SewingQCResult(str, Enum):
 
 
 class AcceptTransferRequest(BaseModel):
-    """Request to accept transfer from Cutting/Embroidery"""
+    """Request to accept transfer from Cutting/Embroidery."""
 
     transfer_slip_number: str = Field(..., description="Transfer slip barcode number")
     received_qty: Decimal = Field(..., description="Actual qty received")
@@ -48,7 +48,7 @@ class AcceptTransferRequest(BaseModel):
 
 
 class ValidateInputRequest(BaseModel):
-    """Request to validate material input vs BOM requirements"""
+    """Request to validate material input vs BOM requirements."""
 
     work_order_id: int = Field(..., description="Work order ID")
     received_qty: Decimal = Field(..., description="Material qty received")
@@ -63,7 +63,7 @@ class ValidateInputRequest(BaseModel):
 
 
 class ProcessSewingStepRequest(BaseModel):
-    """Request to record sewing process step"""
+    """Request to record sewing process step."""
 
     work_order_id: int = Field(..., description="Work order ID")
     step_number: int = Field(..., description="1=Assembly, 2=Labeling, 3=Stik")
@@ -82,7 +82,7 @@ class ProcessSewingStepRequest(BaseModel):
 
 
 class InlineQCRequest(BaseModel):
-    """Request to record inline QC inspection result"""
+    """Request to record inline QC inspection result."""
 
     work_order_id: int = Field(..., description="Work order ID")
     inspector_id: int = Field(..., description="QC inspector user ID")
@@ -105,7 +105,7 @@ class InlineQCRequest(BaseModel):
 
 
 class SegregationCheckRequest(BaseModel):
-    """Request to verify product segregation before transfer"""
+    """Request to verify product segregation before transfer."""
 
     work_order_id: int = Field(..., description="Work order ID")
     destination_dept: str = Field(default="Finishing", description="Destination department")
@@ -120,7 +120,7 @@ class SegregationCheckRequest(BaseModel):
 
 
 class TransferToFinishingRequest(BaseModel):
-    """Request to create transfer from Sewing to Finishing"""
+    """Request to create transfer from Sewing to Finishing."""
 
     work_order_id: int = Field(..., description="Work order ID")
     transfer_qty: Decimal = Field(..., description="Quantity to transfer")
@@ -135,7 +135,7 @@ class TransferToFinishingRequest(BaseModel):
 
 
 class SewingWorkOrderResponse(BaseModel):
-    """Response: Current sewing work order status"""
+    """Response: Current sewing work order status."""
 
     id: int
     mo_id: int
@@ -173,7 +173,7 @@ class SewingWorkOrderResponse(BaseModel):
 
 
 class SegregationValidationResponse(BaseModel):
-    """Response: Segregation check (destination consistency)"""
+    """Response: Segregation check (destination consistency)."""
 
     work_order_id: int
     current_destination: str | None
@@ -198,7 +198,7 @@ class SegregationValidationResponse(BaseModel):
 
 
 class SewingProcessTrack(BaseModel):
-    """Track sewing process progress through 3 stages"""
+    """Track sewing process progress through 3 stages."""
 
     work_order_id: int
     stage_1_assembly: datetime | None = Field(None, description="Assembly completion time")

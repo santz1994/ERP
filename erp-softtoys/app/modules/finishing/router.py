@@ -1,5 +1,5 @@
 """Finishing Module API Endpoints
-Production workflow: WIP receipt → Line clearance → Stuffing → Closing → Metal detector QC → Conversion to FG
+Production workflow: WIP receipt → Line clearance → Stuffing → Closing → Metal detector QC → Conversion to FG.
 """
 
 from decimal import Decimal
@@ -29,7 +29,7 @@ async def accept_wip_from_sewing(
     current_user: User = Depends(require_permission("finishing.accept_transfer")),
     db: Session = Depends(get_db)
 ) -> dict:
-    """**POST** - Step 400: Accept WIP SEW Transfer
+    """**POST** - Step 400: Accept WIP SEW Transfer.
 
     **Handshake Digital (QT-09):**
     1. Operator scans transfer slip from Sewing
@@ -57,7 +57,7 @@ async def check_packing_line_clearance(
     current_user: User = Depends(require_permission("finishing.line_clearance")),
     db: Session = Depends(get_db)
 ) -> dict:
-    """**POST** - Step 405-406: LINE CLEARANCE CHECK
+    """**POST** - Step 405-406: LINE CLEARANCE CHECK.
 
     Before stuffing can begin:
     - Check if Packing line has finished previous batch
@@ -93,7 +93,7 @@ async def perform_stuffing_operation(
     current_user: User = Depends(require_permission("finishing.perform_stuffing")),
     db: Session = Depends(get_db)
 ) -> dict:
-    """**POST** - Step 410: Perform Stuffing (Isi Dacron)
+    """**POST** - Step 410: Perform Stuffing (Isi Dacron).
 
     Add filling material:
     - Usually Dacron polyester fiber
@@ -120,7 +120,7 @@ async def perform_closing_grooming(
     current_user: User = Depends(require_permission("finishing.perform_closing")),
     db: Session = Depends(get_db)
 ) -> dict:
-    """**POST** - Step 420: Closing & Grooming (Jahit Tutup & Rapih)
+    """**POST** - Step 420: Closing & Grooming (Jahit Tutup & Rapih).
 
     Final assembly steps:
     - Sew closing seams with sturdy stitching
@@ -146,7 +146,7 @@ async def perform_metal_detector_test(
     current_user: User = Depends(require_permission("finishing.metal_detector_qc")),
     db: Session = Depends(get_db)
 ) -> dict:
-    """**POST** - Step 430-435: CRITICAL POINT - Metal Detector Test
+    """**POST** - Step 430-435: CRITICAL POINT - Metal Detector Test.
 
     **⚠️ SAFETY CRITICAL - IKEA ISO 8124 Requirement:**
 
@@ -192,7 +192,7 @@ async def physical_and_symmetry_check(
     current_user: User = Depends(require_permission("finishing.final_qc")),
     db: Session = Depends(get_db)
 ) -> dict:
-    """**POST** - Step 440-445: Physical & Symmetry QC Check
+    """**POST** - Step 440-445: Physical & Symmetry QC Check.
 
     Final visual inspection:
     - Check physical appearance (color, texture, seams)
@@ -221,7 +221,7 @@ async def convert_wip_to_finish_good(
     current_user: User = Depends(require_permission("finishing.convert_to_fg")),
     db: Session = Depends(get_db)
 ) -> dict:
-    """**POST** - Step 450: CONVERSION to Finish Good Code
+    """**POST** - Step 450: CONVERSION to Finish Good Code.
 
     **Critical Step - Product Becomes FG:**
 
@@ -271,7 +271,7 @@ async def get_finishing_work_order_status(
     current_user: User = Depends(require_permission("finishing.view_status")),
     db: Session = Depends(get_db)
 ) -> FinishingWorkOrderResponse:
-    """**GET** - Retrieve Current Finishing Work Order Status
+    """**GET** - Retrieve Current Finishing Work Order Status.
 
     Real-time status showing:
     - Current stage (stuffing/closing/QC/conversion)
@@ -305,7 +305,7 @@ async def get_pending_finishing_orders(
     current_user: User = Depends(require_permission("finishing.view_status")),
     db: Session = Depends(get_db)
 ) -> list[FinishingWorkOrderResponse]:
-    """**GET** - List All Pending Finishing Work Orders
+    """**GET** - List All Pending Finishing Work Orders.
 
     Returns work orders awaiting:
     - WIP transfer acceptance

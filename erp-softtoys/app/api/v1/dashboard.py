@@ -1,4 +1,4 @@
-"""Dashboard API - Optimized with Materialized Views
+"""Dashboard API - Optimized with Materialized Views.
 ==================================================
 High-performance dashboard endpoints using PostgreSQL materialized views
 
@@ -28,7 +28,7 @@ async def get_dashboard_stats(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("dashboard.view_stats"))
 ):
-    """Get dashboard top-level statistics
+    """Get dashboard top-level statistics.
 
     Returns:
         - total_mos: Total active manufacturing orders
@@ -44,7 +44,7 @@ async def get_dashboard_stats(
         # Try materialized view first
         try:
             query = text("""
-                SELECT 
+                SELECT
                     total_mos,
                     completed_today,
                     pending_qc,
@@ -118,7 +118,7 @@ async def get_production_status(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("dashboard.view_production"))
 ):
-    """Get production department status and progress
+    """Get production department status and progress.
 
     Returns list of departments with:
         - dept: Department name (Cutting, Sewing, Finishing, Packing)
@@ -180,7 +180,7 @@ async def get_recent_alerts(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("dashboard.view_alerts"))
 ):
-    """Get recent alerts (last 24 hours, top 10)
+    """Get recent alerts (last 24 hours, top 10).
 
     Returns list of alerts with:
         - id: Alert ID
@@ -192,7 +192,7 @@ async def get_recent_alerts(
     """
     try:
         query = text("""
-            SELECT 
+            SELECT
                 id,
                 alert_type AS type,
                 message,
@@ -245,7 +245,7 @@ async def get_mo_trends(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("dashboard.view_trends"))
 ):
-    """Get manufacturing order trends (last 7 days)
+    """Get manufacturing order trends (last 7 days).
 
     Returns daily aggregations with:
         - date: Date (YYYY-MM-DD)
@@ -258,7 +258,7 @@ async def get_mo_trends(
     Useful for: Dashboard charts/graphs
     """
     query = text("""
-        SELECT 
+        SELECT
             date,
             created_count,
             completed_count,
@@ -290,7 +290,7 @@ async def refresh_materialized_views(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("dashboard.refresh_views"))
 ):
-    """Manually refresh all dashboard materialized views
+    """Manually refresh all dashboard materialized views.
 
     Requires: DEVELOPER, SUPERADMIN, or ADMIN role
 

@@ -1,5 +1,5 @@
 """Cutting Module Models & Schemas
-Handles SPK execution, material allocation, and output tracking
+Handles SPK execution, material allocation, and output tracking.
 """
 
 from datetime import datetime
@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 
 
 class CuttingStatus(str, Enum):
-    """Cutting work order status"""
+    """Cutting work order status."""
 
     PENDING = "Pending"
     SPREADING = "Spreading"
@@ -23,7 +23,7 @@ class CuttingStatus(str, Enum):
 
 
 class MaterialIssueRequest(BaseModel):
-    """Request to issue material from warehouse to cutting line"""
+    """Request to issue material from warehouse to cutting line."""
 
     work_order_id: int = Field(..., description="Work order ID")
     product_id: int = Field(..., description="Material product ID")
@@ -40,7 +40,7 @@ class MaterialIssueRequest(BaseModel):
 
 
 class StartCuttingRequest(BaseModel):
-    """Request to start cutting operation"""
+    """Request to start cutting operation."""
 
     work_order_id: int = Field(..., description="Work order ID")
     operator_id: int = Field(..., description="Operator performing cut")
@@ -55,7 +55,7 @@ class StartCuttingRequest(BaseModel):
 
 
 class CompleteCuttingRequest(BaseModel):
-    """Request to complete cutting and record output"""
+    """Request to complete cutting and record output."""
 
     work_order_id: int = Field(..., description="Work order ID")
     actual_output: Decimal = Field(..., description="Actual pieces cut")
@@ -74,7 +74,7 @@ class CompleteCuttingRequest(BaseModel):
 
 
 class ShortageHandlingRequest(BaseModel):
-    """Request additional material due to shortage"""
+    """Request additional material due to shortage."""
 
     work_order_id: int = Field(..., description="Work order ID")
     shortage_qty: Decimal = Field(..., description="Additional qty needed")
@@ -91,7 +91,7 @@ class ShortageHandlingRequest(BaseModel):
 
 
 class LineTransferRequest(BaseModel):
-    """Request to transfer cutting output to sewing/embroidery"""
+    """Request to transfer cutting output to sewing/embroidery."""
 
     work_order_id: int = Field(..., description="Work order ID")
     destination_dept: str = Field(..., description="Destination: Sewing or Embroidery")
@@ -108,7 +108,7 @@ class LineTransferRequest(BaseModel):
 
 
 class CuttingWorkOrderResponse(BaseModel):
-    """Response: Current cutting work order status"""
+    """Response: Current cutting work order status."""
 
     id: int
     mo_id: int
@@ -138,7 +138,7 @@ class CuttingWorkOrderResponse(BaseModel):
 
 
 class MaterialShortageAlert(BaseModel):
-    """Alert when material shortage detected"""
+    """Alert when material shortage detected."""
 
     work_order_id: int
     product_id: int
@@ -149,7 +149,7 @@ class MaterialShortageAlert(BaseModel):
 
 
 class SurplusHandlingLog(BaseModel):
-    """Log for surplus material handling"""
+    """Log for surplus material handling."""
 
     work_order_id: int
     surplus_qty: Decimal
@@ -159,7 +159,7 @@ class SurplusHandlingLog(BaseModel):
 
 
 class LineClearanceCheckResponse(BaseModel):
-    """Response: Line clearance status check"""
+    """Response: Line clearance status check."""
 
     work_order_id: int
     destination_dept: str

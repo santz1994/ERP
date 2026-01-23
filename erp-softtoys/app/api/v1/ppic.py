@@ -1,5 +1,5 @@
 """PPIC (Production Planning & Inventory Control) API Endpoints
-ADMIN-ONLY module for Manufacturing Order management
+ADMIN-ONLY module for Manufacturing Order management.
 
 NOTE: PPIC at Quty Karunia is ADMINISTRATIVE ONLY.
 - Does NOT perform detailed production planning
@@ -46,7 +46,7 @@ async def create_manufacturing_order(
     current_user: User = Depends(require_permission("ppic.create_mo")),
     db: Session = Depends(get_db)
 ):
-    """Create new Manufacturing Order (SPK Induk)
+    """Create new Manufacturing Order (SPK Induk).
 
     **Roles Required**: ppic_manager
 
@@ -135,7 +135,7 @@ async def get_manufacturing_order(
     current_user: User = Depends(require_permission("ppic.view_mo")),
     db: Session = Depends(get_db)
 ):
-    """Get Manufacturing Order details
+    """Get Manufacturing Order details.
 
     **Roles Required**: ppic_manager
 
@@ -175,7 +175,7 @@ async def get_bom_for_product(
     current_user: User = Depends(require_permission("ppic.read")),
     db: Session = Depends(get_db)
 ):
-    """Get Bill of Materials (BOM) for a specific product
+    """Get Bill of Materials (BOM) for a specific product.
 
     **Roles Required**: ppic_manager, ppic_admin
 
@@ -188,7 +188,7 @@ async def get_bom_for_product(
     # Get active BOM for product
     bom_header = db.query(BOMHeader).filter(
         BOMHeader.product_id == product_id,
-        BOMHeader.is_active == True
+        BOMHeader.is_active
     ).first()
 
     if not bom_header:
@@ -213,7 +213,7 @@ async def list_all_boms(
     current_user: User = Depends(require_permission("ppic.read")),
     db: Session = Depends(get_db)
 ):
-    """List all Bill of Materials
+    """List all Bill of Materials.
 
     **Roles Required**: ppic_manager, ppic_admin
 
@@ -240,7 +240,7 @@ async def create_bom(
     current_user: User = Depends(require_permission("ppic.create_mo")),
     db: Session = Depends(get_db)
 ):
-    """Create new Bill of Materials
+    """Create new Bill of Materials.
 
     **Roles Required**: ppic_manager
 
@@ -266,7 +266,7 @@ async def get_production_planning_dashboard(
     current_user: User = Depends(require_permission("ppic.read")),
     db: Session = Depends(get_db)
 ):
-    """Get Production Planning dashboard
+    """Get Production Planning dashboard.
 
     Shows:
     - Manufacturing orders by status
@@ -329,7 +329,7 @@ async def get_manager_directives(
     current_user: User = Depends(require_permission("ppic.read")),
     db: Session = Depends(get_db)
 ):
-    """Get manager directives for production planning
+    """Get manager directives for production planning.
 
     PPIC role: Track compliance with these directives
     Department role: Plan production based on machine capacity and directives
@@ -376,7 +376,7 @@ async def get_compliance_report(
     current_user: User = Depends(require_permission("ppic.read")),
     db: Session = Depends(get_db)
 ):
-    """PPIC Compliance Report
+    """PPIC Compliance Report.
 
     Tracks production compliance against:
     - Manager directives
@@ -445,7 +445,7 @@ async def list_manufacturing_orders(
     current_user: User = Depends(require_permission("ppic.schedule_production")),
     db: Session = Depends(get_db)
 ):
-    """List Manufacturing Orders with pagination
+    """List Manufacturing Orders with pagination.
 
     **Roles Required**: ppic_manager
 
@@ -492,7 +492,7 @@ async def approve_manufacturing_order(
     current_user: User = Depends(require_permission("ppic.approve_mo")),
     db: Session = Depends(get_db)
 ):
-    """Approve Manufacturing Order to move to IN_PROGRESS
+    """Approve Manufacturing Order to move to IN_PROGRESS.
 
     **Roles Required**: ppic_manager
 

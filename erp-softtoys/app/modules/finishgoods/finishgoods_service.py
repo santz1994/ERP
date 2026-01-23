@@ -1,4 +1,4 @@
-"""Copyright (c) 2026 PT Quty Karunia / Daniel Rizaldy - All Rights Reserved
+"""Copyright (c) 2026 PT Quty Karunia / Daniel Rizaldy - All Rights Reserved.
 
 Finishgoods Service - Finished Goods Warehouse Management
 Handles FG receiving from packing, storage, inventory monitoring, and shipping preparation
@@ -19,7 +19,7 @@ from app.shared.audit import log_audit
 
 
 class FinishgoodsService:
-    """Business logic for Finishgoods Warehouse operations"""
+    """Business logic for Finishgoods Warehouse operations."""
 
     def __init__(self, db: Session):
         self.db = db
@@ -29,7 +29,7 @@ class FinishgoodsService:
         product_code: str | None = None,
         low_stock_only: bool = False
     ) -> list[dict]:
-        """Get finished goods inventory with stock levels"""
+        """Get finished goods inventory with stock levels."""
         query = self.db.query(
             Product,
             func.sum(StockQuant.qty_on_hand).label('total_quantity')
@@ -72,7 +72,7 @@ class FinishgoodsService:
         user_id: int,
         fg_location_id: int = 2  # Default FG warehouse location
     ) -> TransferLog:
-        """Receive finished goods from Packing department
+        """Receive finished goods from Packing department.
 
         - Validates transfer from Packing
         - Creates stock movement
@@ -156,7 +156,7 @@ class FinishgoodsService:
         shipping_marks: list[str],
         user_id: int
     ) -> dict:
-        """Prepare finished goods for shipment
+        """Prepare finished goods for shipment.
 
         - Validates stock availability
         - Reserves stock for shipment
@@ -222,7 +222,7 @@ class FinishgoodsService:
         user_id: int,
         fg_location_id: int = 2
     ) -> dict:
-        """Ship finished goods (reduce FG inventory)
+        """Ship finished goods (reduce FG inventory).
 
         - Creates outbound stock movement
         - Updates FG inventory
@@ -282,7 +282,7 @@ class FinishgoodsService:
         }
 
     def get_shipment_ready_products(self) -> list[dict]:
-        """Get list of products ready for shipment"""
+        """Get list of products ready for shipment."""
         # Get completed MOs
         completed_mos = self.db.query(ManufacturingOrder).filter(
             ManufacturingOrder.state == MOStatus.DONE
@@ -309,7 +309,7 @@ class FinishgoodsService:
         return ready_products
 
     def get_stock_aging(self) -> list[dict]:
-        """Get finished goods stock aging analysis"""
+        """Get finished goods stock aging analysis."""
         stock_moves = self.db.query(StockMove).filter(
             and_(
                 StockMove.move_type == "IN",

@@ -1,5 +1,4 @@
-"""Products & Category Models
-"""
+"""Products & Category Models."""
 
 import enum
 
@@ -21,7 +20,7 @@ from app.core.database import Base
 
 
 class ProductType(str, enum.Enum):
-    """Product types as per Database Scheme"""
+    """Product types as per Database Scheme."""
 
     RAW_MATERIAL = "Raw Material"
     WIP = "WIP"
@@ -30,7 +29,7 @@ class ProductType(str, enum.Enum):
 
 
 class UOM(str, enum.Enum):
-    """Unit of Measurement"""
+    """Unit of Measurement."""
 
     PCS = "Pcs"
     METER = "Meter"
@@ -41,7 +40,7 @@ class UOM(str, enum.Enum):
 
 
 class PartnerType(str, enum.Enum):
-    """Partner types"""
+    """Partner types."""
 
     CUSTOMER = "Customer"
     SUPPLIER = "Supplier"
@@ -49,8 +48,7 @@ class PartnerType(str, enum.Enum):
 
 
 class Partner(Base):
-    """Partners - Customers, Suppliers, Subcontractors
-    """
+    """Partners - Customers, Suppliers, Subcontractors."""
 
     __tablename__ = "partners"
 
@@ -68,7 +66,7 @@ class Partner(Base):
 
 
 class Category(Base):
-    """Product Categories"""
+    """Product Categories."""
 
     __tablename__ = "categories"
 
@@ -83,7 +81,7 @@ class Category(Base):
 
 class Product(Base):
     """Master Product Table
-    Gap Fix: Added parent_article_id for parent-child relationship
+    Gap Fix: Added parent_article_id for parent-child relationship.
     """
 
     __tablename__ = "products"

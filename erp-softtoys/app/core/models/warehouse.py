@@ -1,5 +1,4 @@
-"""Warehouse & Stock Management Models
-"""
+"""Warehouse & Stock Management Models."""
 
 import enum
 
@@ -21,7 +20,7 @@ from app.core.database import Base
 
 
 class LocationType(str, enum.Enum):
-    """Warehouse location types"""
+    """Warehouse location types."""
 
     VIEW = "View"  # Goods on display
     INTERNAL = "Internal"  # Internal warehouse
@@ -32,14 +31,14 @@ class LocationType(str, enum.Enum):
 
 
 class StockMoveStatus(str, enum.Enum):
-    """Stock movement status"""
+    """Stock movement status."""
 
     DRAFT = "Draft"
     DONE = "Done"
 
 
 class POStatus(str, enum.Enum):
-    """Purchase Order Status"""
+    """Purchase Order Status."""
 
     DRAFT = "Draft"
     SENT = "Sent"
@@ -49,7 +48,7 @@ class POStatus(str, enum.Enum):
 
 class PurchaseOrder(Base):
     """Purchase Orders - Orders placed with suppliers
-    Tracks material procurement
+    Tracks material procurement.
     """
 
     __tablename__ = "purchase_orders"
@@ -79,7 +78,7 @@ class PurchaseOrder(Base):
 
 class Location(Base):
     """Warehouse Locations & Production Lines
-    Stores all physical locations where inventory can be held
+    Stores all physical locations where inventory can be held.
     """
 
     __tablename__ = "locations"
@@ -105,7 +104,7 @@ class Location(Base):
 
 class StockMove(Base):
     """Stock Movements
-    Tracks all inventory movements between locations (FIFO)
+    Tracks all inventory movements between locations (FIFO).
     """
 
     __tablename__ = "stock_moves"
@@ -145,7 +144,7 @@ class StockMove(Base):
 
 class StockQuant(Base):
     """Stock Quantities
-    Current inventory balance by product, location, and lot (FIFO support)
+    Current inventory balance by product, location, and lot (FIFO support).
     """
 
     __tablename__ = "stock_quants"
@@ -167,7 +166,7 @@ class StockQuant(Base):
     location = relationship("Location", back_populates="stock_quants")
 
     def get_available_qty(self) -> float:
-        """Calculate available qty = on_hand - reserved"""
+        """Calculate available qty = on_hand - reserved."""
         return float(self.qty_on_hand - self.qty_reserved)
 
     def __repr__(self):
@@ -176,7 +175,7 @@ class StockQuant(Base):
 
 class StockLot(Base):
     """Stock Lots/Batches
-    Tracks batches/rolls of material for traceability (FIFO)
+    Tracks batches/rolls of material for traceability (FIFO).
     """
 
     __tablename__ = "stock_lots"

@@ -1,5 +1,5 @@
 """Internationalization (i18n) Module - Multi-language support
-Supports: Indonesia (id) and English (en)
+Supports: Indonesia (id) and English (en).
 """
 
 # Language translations
@@ -136,10 +136,10 @@ TRANSLATIONS = {
 
 
 class I18n:
-    """Internationalization handler"""
+    """Internationalization handler."""
 
     def __init__(self, lang: str = "id"):
-        """Initialize i18n with language
+        """Initialize i18n with language.
 
         Args:
             lang: Language code ('en' or 'id')
@@ -148,7 +148,7 @@ class I18n:
         self.lang = lang if lang in TRANSLATIONS else "id"
 
     def t(self, key: str, **kwargs) -> str:
-        """Translate key to current language
+        """Translate key to current language.
 
         Args:
             key: Translation key (e.g., 'auth.login.success')
@@ -169,21 +169,21 @@ class I18n:
         return translation
 
     def set_language(self, lang: str):
-        """Change language"""
+        """Change language."""
         if lang in TRANSLATIONS:
             self.lang = lang
 
     def get_language(self) -> str:
-        """Get current language"""
+        """Get current language."""
         return self.lang
 
     def get_available_languages(self) -> list:
-        """Get list of available languages"""
+        """Get list of available languages."""
         return list(TRANSLATIONS.keys())
 
 
 def get_i18n(lang: str = "id") -> I18n:
-    """Get i18n instance
+    """Get i18n instance.
 
     Args:
         lang: Language code from request header (Accept-Language)
@@ -200,7 +200,7 @@ from fastapi import Header
 
 
 async def get_translation(accept_language: str = Header("id")) -> I18n:
-    """FastAPI dependency for i18n
+    """FastAPI dependency for i18n.
 
     Usage in route:
         @router.get("/example")

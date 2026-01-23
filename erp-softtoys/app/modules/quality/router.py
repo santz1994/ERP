@@ -1,8 +1,7 @@
 """Quality Control Module - API Router
-Endpoints for lab testing, inline QC, metal detector checks, quality analytics
+Endpoints for lab testing, inline QC, metal detector checks, quality analytics.
 """
 
-from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -25,7 +24,7 @@ def perform_lab_test(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> dict:
-    """[QC-PHASE] Perform QC Lab Test
+    """[QC-PHASE] Perform QC Lab Test.
 
     Records lab test results (Drop Test, Stability, Seam Strength) with ISO compliance.
 
@@ -70,7 +69,7 @@ def get_batch_test_summary(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> dict:
-    """[QC-PHASE] Get Lab Test Summary for Batch
+    """[QC-PHASE] Get Lab Test Summary for Batch.
 
     Returns QC lab test pass rate, failed tests, critical failures.
     Used to determine if batch can be shipped (95%+ pass rate required).
@@ -96,7 +95,7 @@ def perform_inline_qc(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> dict:
-    """[PRODUCTION] Perform Inline QC Inspection
+    """[PRODUCTION] Perform Inline QC Inspection.
 
     Records inline quality inspections during production.
     Types: Incoming, Inline Sewing, Final Metal Detector
@@ -141,7 +140,7 @@ def metal_detector_check(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> dict:
-    """[CRITICAL QC] Metal Detector Scan
+    """[CRITICAL QC] Metal Detector Scan.
 
     CRITICAL: Metal detection triggers P1 ALERT and blocks transfer.
     Used at Finishing department (Step 430 in production flowchart).
@@ -184,7 +183,7 @@ def get_wo_inspection_history(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> dict:
-    """[QUALITY AUDIT] Get Work Order QC History
+    """[QUALITY AUDIT] Get Work Order QC History.
 
     Returns all QC inspections performed on a work order
     (Incoming, Inline Sewing, Metal Detector, etc.)
@@ -212,7 +211,7 @@ def get_dept_pass_rate_analytics(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> dict:
-    """[ANALYTICS] Department QC Pass Rate Analysis
+    """[ANALYTICS] Department QC Pass Rate Analysis.
 
     Returns QC statistics for a department over specified period.
 
@@ -240,7 +239,7 @@ def qc_system_health_check(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> dict:
-    """[SYSTEM] QC Module Health Check
+    """[SYSTEM] QC Module Health Check.
 
     Verifies QC system is operational and database connected.
 
@@ -282,7 +281,7 @@ def generate_batch_compliance_report(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> dict:
-    """[QUALITY REPORT] Generate Batch Compliance Report
+    """[QUALITY REPORT] Generate Batch Compliance Report.
 
     Generates comprehensive QC compliance report for a batch.
     Includes all lab tests, inspections, pass/fail status.
@@ -322,7 +321,7 @@ def get_quality_stats(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> dict:
-    """Get quality control statistics and metrics
+    """Get quality control statistics and metrics.
 
     Returns:
     - total_tests: Total tests performed
@@ -349,7 +348,7 @@ def get_quality_inspections(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> dict:
-    """Get all quality control inspections
+    """Get all quality control inspections.
 
     Returns list of all QC inspections with:
     - inspection_id

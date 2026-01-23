@@ -1,9 +1,8 @@
 """Reporting Module - Generate PDF and Excel Reports
-Production reports, QC reports, inventory reports
+Production reports, QC reports, inventory reports.
 """
 import io
 from datetime import datetime
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
@@ -23,27 +22,27 @@ router = APIRouter(prefix="/reports", tags=["Reporting"])
 # ========== SCHEMAS ==========
 
 class ProductionReportRequest(BaseModel):
-    """Request for production report"""
+    """Request for production report."""
 
     start_date: datetime
     end_date: datetime
-    department: Optional[str] = None
+    department: str | None = None
     format: str = "excel"  # excel or pdf
 
 
 class QCReportRequest(BaseModel):
-    """Request for QC report"""
+    """Request for QC report."""
 
     start_date: datetime
     end_date: datetime
-    test_type: Optional[str] = None
+    test_type: str | None = None
     format: str = "excel"
 
 
 # ========== HELPER FUNCTIONS ==========
 
 def generate_excel_report(data: dict, title: str) -> bytes:
-    """Generate Excel report using openpyxl
+    """Generate Excel report using openpyxl.
 
     Args:
         data: Report data dict with headers, rows, etc.
@@ -94,7 +93,7 @@ def generate_excel_report(data: dict, title: str) -> bytes:
         # Auto-adjust column widths
         for column in ws.columns:
             max_length = 0
-            column_cells = [cell for cell in column]
+            column_cells = list(column)
             for cell in column_cells:
                 try:
                     if cell.value and len(str(cell.value)) > max_length:
@@ -123,7 +122,7 @@ def generate_excel_report(data: dict, title: str) -> bytes:
 
 
 def generate_pdf_report(data: dict, title: str) -> bytes:
-    """Generate PDF report using ReportLab
+    """Generate PDF report using ReportLab.
 
     Returns: PDF file as bytes
     """
@@ -195,7 +194,7 @@ async def generate_production_report(
     ),
     db: Session = Depends(get_db)
 ):
-    """Generate Production Report
+    """Generate Production Report.
 
     **Report Contents**:
     - Manufacturing Orders summary
@@ -283,7 +282,7 @@ async def generate_qc_report(
     ),
     db: Session = Depends(get_db)
 ):
-    """Generate Quality Control Report
+    """Generate Quality Control Report.
 
     **Report Contents**:
     - QC inspections summary
@@ -330,10 +329,7 @@ async def generate_qc_report(
     }
 
     for row in results:
-        if row.total_inspections > 0:
-            pass_rate = (row.passed / row.total_inspections) * 100
-        else:
-            pass_rate = 0
+        pass_rate = row.passed / row.total_inspections * 100 if row.total_inspections > 0 else 0
 
         report_data['rows'].append([
             row.type,
@@ -375,7 +371,7 @@ async def generate_inventory_report(
     ),
     db: Session = Depends(get_db)
 ):
-    """Generate Inventory Report
+    """Generate Inventory Report.
 
     **Report Contents**:
     - Current stock levels
@@ -444,11 +440,11 @@ async def generate_inventory_report(
 
 @router.get("/production-stats")
 def get_production_stats(
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
     db: Session = Depends(get_db)
 ) -> dict:
-    """Get production statistics for date range"""
+    """Get production statistics for date range."""
     try:
         if not start_date:
             start_date = datetime.now().strftime("%Y-%m-%d")
@@ -471,11 +467,11 @@ def get_production_stats(
 
 @router.get("/qc-stats")
 def get_qc_stats(
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
     db: Session = Depends(get_db)
 ) -> dict:
-    """Get quality control statistics"""
+    """Get quality control statistics."""
     try:
         if not start_date:
             start_date = datetime.now().strftime("%Y-%m-%d")
@@ -498,7 +494,7 @@ def get_qc_stats(
 
 @router.get("/inventory-summary")
 def get_inventory_summary(db: Session = Depends(get_db)) -> dict:
-    """Get current inventory summary"""
+    """Get current inventory summary."""
     try:
         return {
             "status": "success",
@@ -513,11 +509,11 @@ def get_inventory_summary(db: Session = Depends(get_db)) -> dict:
 
 @router.get("/production-stats")
 def get_production_stats(
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
     db: Session = Depends(get_db)
 ) -> dict:
-    """Get production statistics for date range"""
+    """Get production statistics for date range."""
     try:
         if not start_date:
             start_date = datetime.now().strftime("%Y-%m-%d")
@@ -540,11 +536,11 @@ def get_production_stats(
 
 @router.get("/qc-stats")
 def get_qc_stats(
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
     db: Session = Depends(get_db)
 ) -> dict:
-    """Get quality control statistics"""
+    """Get quality control statistics."""
     try:
         if not start_date:
             start_date = datetime.now().strftime("%Y-%m-%d")
@@ -567,7 +563,7 @@ def get_qc_stats(
 
 @router.get("/inventory-summary")
 def get_inventory_summary(db: Session = Depends(get_db)) -> dict:
-    """Get current inventory summary"""
+    """Get current inventory summary."""
     try:
         return {
             "status": "success",

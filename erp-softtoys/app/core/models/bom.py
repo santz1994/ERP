@@ -1,5 +1,4 @@
-"""BOM (Bill of Materials) Models
-"""
+"""BOM (Bill of Materials) Models."""
 
 import enum
 
@@ -21,7 +20,7 @@ from app.core.database import Base
 
 
 class BOMType(str, enum.Enum):
-    """BOM types"""
+    """BOM types."""
 
     MANUFACTURING = "Manufacturing"
     KIT_PHANTOM = "Kit/Phantom"
@@ -29,7 +28,7 @@ class BOMType(str, enum.Enum):
 
 class BOMHeader(Base):
     """BOM Header Table
-    Gap Fix: Added revision_date, revised_by, revision_reason for audit trail
+    Gap Fix: Added revision_date, revised_by, revision_reason for audit trail.
     """
 
     __tablename__ = "bom_headers"
@@ -59,8 +58,7 @@ class BOMHeader(Base):
 
 
 class BOMDetail(Base):
-    """BOM Detail Table - Line items for each BOM
-    """
+    """BOM Detail Table - Line items for each BOM."""
 
     __tablename__ = "bom_details"
 

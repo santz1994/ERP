@@ -1,12 +1,11 @@
 """Cutting Module Business Logic & Services
-Handles material allocation, output tracking, QT-09 protocol
+Handles material allocation, output tracking, QT-09 protocol.
 
 Refactored: Now extends BaseProductionService to eliminate code duplication
 """
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, Optional
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
@@ -25,7 +24,7 @@ from app.core.models.warehouse import Location, StockMove, StockQuant
 
 class CuttingService(BaseProductionService):
     """Business logic for cutting department operations
-    Extends BaseProductionService for common production patterns
+    Extends BaseProductionService for common production patterns.
     """
 
     # Department configuration
@@ -43,7 +42,7 @@ class CuttingService(BaseProductionService):
         """Step 200: Receive SPK & Allocate Material
         - Check material availability
         - Create stock move (warehouse → cutting line)
-        - Return material issue slip info
+        - Return material issue slip info.
         """
         # Fetch work order using centralized helper
         wo = cls.get_work_order(db, work_order_id)
@@ -88,7 +87,7 @@ class CuttingService(BaseProductionService):
             ).order_by(StockQuant.lot_id).first()  # FIFO by lot
 
             if not stock or (stock.qty_on_hand - stock.qty_reserved) < total_needed:
-                shortage = total_needed - (stock.qty_on_hand - stock.qty_reserved if stock else 0)
+                total_needed - (stock.qty_on_hand - stock.qty_reserved if stock else 0)
                 raise HTTPException(
                     status_code=400,
                     detail=f"Material shortage for product {detail.component_id}: need {total_needed}, available {stock.qty_on_hand - stock.qty_reserved if stock else 0}"
@@ -163,10 +162,10 @@ class CuttingService(BaseProductionService):
         work_order_id: int,
         actual_output: Decimal,
         reject_qty: Decimal,
-        notes: Optional[str] = None
+        notes: str | None = None
     ) -> dict:
         """Step 220: Record cutting output and handle shortage/surplus
-        Uses base class record_output_and_variance for common logic
+        Uses base class record_output_and_variance for common logic.
         """
         # Delegate to base class for common variance analysis
         result = cls.record_output_and_variance(
@@ -202,7 +201,7 @@ class CuttingService(BaseProductionService):
         """Step 230-250: SHORTAGE LOGIC
         - Record waste report
         - Generate unplanned requisition
-        - Await SPV approval
+        - Await SPV approval.
         """
         wo = cls.get_work_order(db, work_order_id)
 
@@ -240,7 +239,7 @@ class CuttingService(BaseProductionService):
         destination_dept: str
     ) -> tuple[bool, str | None, dict]:
         """Step 290: LINE CLEARANCE CHECK (QT-09 Cek 1-2)
-        Uses base class check_line_clearance
+        Uses base class check_line_clearance.
         """
         # Map destination_dept string to TransferDept enum
         dept_mapping = {
@@ -266,7 +265,7 @@ class CuttingService(BaseProductionService):
         user_id: int
     ) -> dict:
         """Step 291-293: Print Transfer Slip & Handshake Digital
-        Uses base class create_transfer_log
+        Uses base class create_transfer_log.
         """
         # Map to transfer dept
         dept_mapping = {

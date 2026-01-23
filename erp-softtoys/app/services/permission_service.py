@@ -1,5 +1,5 @@
 """Permission Service for PBAC (Permission-Based Access Control)
-Provides efficient permission checking with Redis caching and role hierarchy support
+Provides efficient permission checking with Redis caching and role hierarchy support.
 
 Session 13.1 - Week 3: PBAC Implementation
 """
@@ -18,11 +18,11 @@ logger = logging.getLogger(__name__)
 
 class PermissionService:
     """Centralized permission checking service with caching
-    Supports PBAC with role hierarchy and custom permissions
+    Supports PBAC with role hierarchy and custom permissions.
     """
 
     def __init__(self, redis_client: redis.Redis | None = None):
-        """Initialize PermissionService with optional Redis caching
+        """Initialize PermissionService with optional Redis caching.
 
         Args:
             redis_client: Redis connection for caching (optional)
@@ -70,15 +70,15 @@ class PermissionService:
         }
 
     def _get_cache_key(self, user_id: int, permission_code: str) -> str:
-        """Generate Redis cache key for permission check"""
+        """Generate Redis cache key for permission check."""
         return f"pbac:user:{user_id}:perm:{permission_code}"
 
     def _get_user_permissions_cache_key(self, user_id: int) -> str:
-        """Generate Redis cache key for user's all permissions"""
+        """Generate Redis cache key for user's all permissions."""
         return f"pbac:user:{user_id}:all_perms"
 
     def _check_cache(self, cache_key: str) -> bool | None:
-        """Check Redis cache for permission result
+        """Check Redis cache for permission result.
 
         Returns:
             True if allowed, False if denied, None if not cached
@@ -97,7 +97,7 @@ class PermissionService:
         return None
 
     def _set_cache(self, cache_key: str, value: bool):
-        """Store permission check result in Redis cache"""
+        """Store permission check result in Redis cache."""
         if not self.redis_client:
             return
 
@@ -111,7 +111,7 @@ class PermissionService:
             logger.warning(f"Redis cache write failed: {e}")
 
     def get_effective_roles(self, user_role: UserRole) -> list[UserRole]:
-        """Get all roles that this user effectively has (including inherited)
+        """Get all roles that this user effectively has (including inherited).
 
         Example: SPV_CUTTING can also perform OPERATOR_CUTTING actions
         """
@@ -123,7 +123,7 @@ class PermissionService:
         user_id: int
     ) -> set[str]:
         """Fetch all permissions for a user from database
-        Combines role-based + custom user permissions
+        Combines role-based + custom user permissions.
 
         Returns:
             Set of permission codes (e.g., {"cutting.create_wo", "admin.view_users"})
@@ -156,7 +156,7 @@ class PermissionService:
         permission_code: str,
         use_cache: bool = True
     ) -> bool:
-        """Check if user has a specific permission
+        """Check if user has a specific permission.
 
         Args:
             db: Database session
@@ -204,7 +204,7 @@ class PermissionService:
         permission_codes: list[str],
         use_cache: bool = True
     ) -> bool:
-        """Check if user has ANY of the specified permissions (OR logic)
+        """Check if user has ANY of the specified permissions (OR logic).
 
         Args:
             db: Database session
@@ -228,7 +228,7 @@ class PermissionService:
         permission_codes: list[str],
         use_cache: bool = True
     ) -> bool:
-        """Check if user has ALL specified permissions (AND logic)
+        """Check if user has ALL specified permissions (AND logic).
 
         Args:
             db: Database session
@@ -251,7 +251,7 @@ class PermissionService:
         required_roles: list[UserRole]
     ) -> bool:
         """Legacy role-based access check with hierarchy support
-        Used during migration period for backward compatibility
+        Used during migration period for backward compatibility.
 
         Args:
             user: User object
@@ -272,7 +272,7 @@ class PermissionService:
 
     def invalidate_user_cache(self, user_id: int):
         """Invalidate all cached permissions for a user
-        Call this when user permissions change
+        Call this when user permissions change.
         """
         if not self.redis_client:
             return
@@ -293,7 +293,7 @@ class PermissionService:
         user_id: int,
         use_cache: bool = True
     ) -> list[dict]:
-        """Get all permissions for a user (for admin UI)
+        """Get all permissions for a user (for admin UI).
 
         Returns:
             List of permission dicts with code, name, module, source
@@ -366,7 +366,7 @@ _permission_service: PermissionService | None = None
 
 
 def get_permission_service() -> PermissionService:
-    """Get global PermissionService instance"""
+    """Get global PermissionService instance."""
     global _permission_service
     if _permission_service is None:
         # Initialize without Redis for now (will be configured in startup)
@@ -376,7 +376,7 @@ def get_permission_service() -> PermissionService:
 
 def init_permission_service(redis_client: redis.Redis | None = None):
     """Initialize PermissionService with Redis client
-    Call this during app startup
+    Call this during app startup.
     """
     global _permission_service
     _permission_service = PermissionService(redis_client)

@@ -1,5 +1,5 @@
 """Application Configuration
-Centralized settings for development, testing, and production
+Centralized settings for development, testing, and production.
 """
 
 import json
@@ -9,7 +9,7 @@ from pydantic import BaseSettings, Field, validator
 
 
 class Environment(str, Enum):
-    """Environment types"""
+    """Environment types."""
 
     DEVELOPMENT = "development"
     TESTING = "testing"
@@ -17,8 +17,7 @@ class Environment(str, Enum):
 
 
 class Settings(BaseSettings):
-    """Application settings loaded from environment variables
-    """
+    """Application settings loaded from environment variables."""
 
     # Environment
     ENVIRONMENT: Environment = Field(default=Environment.DEVELOPMENT)
@@ -44,7 +43,7 @@ class Settings(BaseSettings):
 
     @property
     def all_valid_keys(self) -> list:
-        """Return current key + historical keys for JWT validation"""
+        """Return current key + historical keys for JWT validation."""
         keys = [self.SECRET_KEY]
         if self.SECRET_KEYS_HISTORY:
             historical_keys = [k.strip() for k in self.SECRET_KEYS_HISTORY.split(",") if k.strip()]
@@ -78,8 +77,8 @@ class Settings(BaseSettings):
     CORS_ALLOW_HEADERS: list = Field(default=["*"])
 
     @validator("CORS_ORIGINS", pre=True)
-    def parse_cors_origins(cls, v):
-        """Parse CORS_ORIGINS from string or list"""
+    def parse_cors_origins(self, v):
+        """Parse CORS_ORIGINS from string or list."""
         if isinstance(v, str):
             # Try to parse as JSON first
             try:
@@ -118,7 +117,7 @@ settings = Settings()
 
 
 def get_settings() -> Settings:
-    """Get settings instance"""
+    """Get settings instance."""
     return settings
 
 

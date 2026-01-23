@@ -1,5 +1,5 @@
 """Packing Module Business Logic & Services
-Handles sorting, packaging, and shipping mark generation
+Handles sorting, packaging, and shipping mark generation.
 """
 
 from datetime import datetime
@@ -13,7 +13,7 @@ from app.core.models.manufacturing import WorkOrderStatus
 
 
 class PackingService(BaseProductionService):
-    """Business logic for packing department operations"""
+    """Business logic for packing department operations."""
 
     @staticmethod
     def sort_by_destination_and_week(
@@ -26,7 +26,7 @@ class PackingService(BaseProductionService):
         """Step 470: Sortir by Week & Destination
         - Categorize finish good by destination country
         - Group by delivery week
-        - Prepare for cartonization
+        - Prepare for cartonization.
         """
         wo = BaseProductionService.get_work_order(db, work_order_id)
 
@@ -56,9 +56,9 @@ class PackingService(BaseProductionService):
         """Step 480: Masukkan Polybag & Carton
         - Pack items into individual polybags (for product protection)
         - Place polybag-wrapped items into shipping cartons
-        - Record carton count and packing details
+        - Record carton count and packing details.
         """
-        wo = BaseProductionService.get_work_order(db, work_order_id)
+        BaseProductionService.get_work_order(db, work_order_id)
 
         # Validate carton count
         expected_cartons = qty_packaged / pcs_per_carton
@@ -96,7 +96,7 @@ class PackingService(BaseProductionService):
         - Create barcode label for carton
         - Include: Article code, qty, destination, week
         - Generate QR code for tracking
-        - Print physical label
+        - Print physical label.
         """
         wo = BaseProductionService.get_work_order(db, work_order_id)
 
@@ -134,7 +134,7 @@ class PackingService(BaseProductionService):
         """Complete packing operation
         - Final qty confirmation
         - Mark WO as completed
-        - Prepare for logistics/FG warehouse
+        - Prepare for logistics/FG warehouse.
         """
         wo = BaseProductionService.get_work_order(db, work_order_id)
 

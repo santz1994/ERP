@@ -1,16 +1,15 @@
 """Role Requirements for API Endpoints
 Centralized role-based access control mapping
-ISO 27001 Compliant - Segregation of Duties (SoD)
+ISO 27001 Compliant - Segregation of Duties (SoD).
 """
 
-from typing import Dict, Final, List
 
 from app.core.models.users import UserRole
 
 
 class EndpointRoleRequirements:
     """Centralized role requirements for all API endpoints
-    Based on SEGREGATION_OF_DUTIES_MATRIX.md
+    Based on SEGREGATION_OF_DUTIES_MATRIX.md.
     """
 
     # PPIC Module - Manufacturing Orders & Planning
@@ -160,12 +159,12 @@ class EndpointRoleRequirements:
 
 # Helper function to convert role list to role name strings
 def get_role_names(roles: list[UserRole]) -> list[str]:
-    """Convert UserRole enum list to role name strings"""
+    """Convert UserRole enum list to role name strings."""
     return [role.value for role in roles]
 
 
 # Endpoint to Role Mapping (for documentation and validation)
-ENDPOINT_ROLE_MAP: Dict[str, Dict[str, List[UserRole]]] = {
+ENDPOINT_ROLE_MAP: dict[str, dict[str, list[UserRole]]] = {
     "ppic": {
         "create_mo": EndpointRoleRequirements.PPIC_CREATE,
         "approve_mo": EndpointRoleRequirements.PPIC_APPROVE,

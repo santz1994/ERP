@@ -1,9 +1,9 @@
 """Dynamic Report Builder API
-Allows users to create, modify, and manage custom reports
+Allows users to create, modify, and manage custom reports.
 """
 
 from datetime import datetime
-from typing import Any, List, Optional
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -22,7 +22,7 @@ router = APIRouter(
 
 # Pydantic Models
 class ReportColumn(BaseModel):
-    """Report column definition"""
+    """Report column definition."""
 
     name: str = Field(..., description="Column name from database")
     label: str = Field(..., description="Display label for column")
@@ -32,7 +32,7 @@ class ReportColumn(BaseModel):
 
 
 class ReportFilter(BaseModel):
-    """Report filter definition"""
+    """Report filter definition."""
 
     column: str = Field(..., description="Column name to filter")
     operator: str = Field(..., description="Operator: =, !=, >, <, >=, <=, LIKE, IN, BETWEEN")
@@ -40,14 +40,14 @@ class ReportFilter(BaseModel):
 
 
 class ReportSort(BaseModel):
-    """Report sort definition"""
+    """Report sort definition."""
 
     column: str
     direction: str = Field(default="ASC", description="ASC or DESC")
 
 
 class CreateReportRequest(BaseModel):
-    """Request to create a new report template"""
+    """Request to create a new report template."""
 
     name: str = Field(..., description="Report name")
     description: str | None = Field(None, description="Report description")
@@ -61,7 +61,7 @@ class CreateReportRequest(BaseModel):
 
 
 class UpdateReportRequest(BaseModel):
-    """Request to update an existing report template"""
+    """Request to update an existing report template."""
 
     name: str | None = None
     description: str | None = None
@@ -73,7 +73,7 @@ class UpdateReportRequest(BaseModel):
 
 
 class ReportTemplate(BaseModel):
-    """Report template response"""
+    """Report template response."""
 
     id: int
     name: str
@@ -93,7 +93,7 @@ class ReportTemplate(BaseModel):
 
 
 class ExecuteReportRequest(BaseModel):
-    """Request to execute a report"""
+    """Request to execute a report."""
 
     template_id: int
     override_filters: list[ReportFilter] | None = Field(default=[], description="Override/add filters")
@@ -103,7 +103,7 @@ class ExecuteReportRequest(BaseModel):
 
 
 class ReportResult(BaseModel):
-    """Report execution result"""
+    """Report execution result."""
 
     template_id: int
     template_name: str
@@ -191,13 +191,13 @@ DATA_SOURCES = {
 }
 
 
-@router.get("/templates", response_model=List[ReportTemplate])
+@router.get("/templates", response_model=list[ReportTemplate])
 async def list_report_templates(
-    category: Optional[str] = None,
+    category: str | None = None,
     current_user: User = Depends(require_permission(ModuleName.REPORTS, Permission.VIEW)),
     db: Session = Depends(get_db)
 ):
-    """List all available report templates
+    """List all available report templates.
 
     - Returns user's own templates and public templates
     - Can filter by category
@@ -260,7 +260,7 @@ async def create_report_template(
     current_user: User = Depends(require_permission(ModuleName.REPORTS, Permission.CREATE)),
     db: Session = Depends(get_db)
 ):
-    """Create a new report template
+    """Create a new report template.
 
     - Define columns, filters, sorting, and grouping
     - Templates can be made public for other users
@@ -308,7 +308,7 @@ async def execute_report(
     current_user: User = Depends(require_permission(ModuleName.REPORTS, Permission.VIEW)),
     db: Session = Depends(get_db)
 ):
-    """Execute a report template and return results
+    """Execute a report template and return results.
 
     - Apply filters and sorting
     - Support pagination
@@ -383,7 +383,7 @@ async def execute_report(
     try:
         result = db.execute(text(query))
         rows = result.fetchall()
-        columns_info = [{"name": col, "label": col, "type": "string"} for col in result.keys()]
+        columns_info = [{"name": col, "label": col, "type": "string"} for col in result]
         data = [dict(row._mapping) for row in rows]
     except Exception as e:
         raise HTTPException(
@@ -408,7 +408,7 @@ async def execute_report(
 async def get_available_data_sources(
     current_user: User = Depends(require_permission(ModuleName.REPORTS, Permission.VIEW))
 ):
-    """Get list of available data sources and their columns
+    """Get list of available data sources and their columns.
 
     - Useful for building report templates
     - Returns available columns and their types
@@ -418,7 +418,7 @@ async def get_available_data_sources(
             "table": config["table"],
             "columns": [
                 {"name": col_name, "label": col_name.replace("_", " ").title()}
-                for col_name in config["columns"].keys()
+                for col_name in config["columns"]
             ]
         }
         for source_name, config in DATA_SOURCES.items()
@@ -431,7 +431,7 @@ async def delete_report_template(
     current_user: User = Depends(require_permission(ModuleName.REPORTS, Permission.DELETE)),
     db: Session = Depends(get_db)
 ):
-    """Delete a report template
+    """Delete a report template.
 
     - Only creator or admin can delete
     """

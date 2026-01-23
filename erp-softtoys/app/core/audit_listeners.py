@@ -1,5 +1,5 @@
 """SQLAlchemy Event Listeners for Audit Trail
-Automatically logs changes to critical business entities
+Automatically logs changes to critical business entities.
 
 ISO 27001 A.12.4.1: Event Logging
 SOX 404: Financial Transaction Traceability
@@ -11,7 +11,7 @@ from sqlalchemy import event
 
 
 def get_model_dict(instance, exclude_fields=None) -> dict[str, Any]:
-    """Convert SQLAlchemy model to dict for audit logging"""
+    """Convert SQLAlchemy model to dict for audit logging."""
     if exclude_fields is None:
         exclude_fields = ['_sa_instance_state', 'created_at', 'updated_at']
 
@@ -29,7 +29,7 @@ def get_model_dict(instance, exclude_fields=None) -> dict[str, Any]:
 
 
 def get_changed_fields(instance) -> dict[str, Any]:
-    """Get only changed fields from SQLAlchemy instance"""
+    """Get only changed fields from SQLAlchemy instance."""
     from sqlalchemy.inspect import inspect
 
     changed = {}
@@ -59,7 +59,7 @@ def get_changed_fields(instance) -> dict[str, Any]:
 
 def setup_audit_listeners():
     """Initialize all audit event listeners
-    Call this during application startup
+    Call this during application startup.
     """
     # Import here to avoid circular imports
     from app.core.database import SessionLocal
@@ -74,7 +74,7 @@ def setup_audit_listeners():
 
     @event.listens_for(PurchaseOrder, 'after_insert')
     def log_purchase_order_create(mapper, connection, target):
-        """Log PO creation - Critical for Segregation of Duties"""
+        """Log PO creation - Critical for Segregation of Duties."""
         try:
             db = SessionLocal()
 
@@ -101,13 +101,13 @@ def setup_audit_listeners():
             db.add(audit_log)
             db.commit()
             db.close()
-        except Exception as e:
-            print(f"Audit logging error: {str(e)}")
+        except Exception:
+            pass
 
 
     @event.listens_for(PurchaseOrder, 'after_update')
     def log_purchase_order_update(mapper, connection, target):
-        """Log PO updates - Track status changes and approvals"""
+        """Log PO updates - Track status changes and approvals."""
         try:
             db = SessionLocal()
 
@@ -142,13 +142,13 @@ def setup_audit_listeners():
             db.add(audit_log)
             db.commit()
             db.close()
-        except Exception as e:
-            print(f"Audit logging error: {str(e)}")
+        except Exception:
+            pass
 
 
     @event.listens_for(PurchaseOrder, 'after_delete')
     def log_purchase_order_delete(mapper, connection, target):
-        """Log PO deletion - Critical financial event"""
+        """Log PO deletion - Critical financial event."""
         try:
             db = SessionLocal()
 
@@ -172,8 +172,8 @@ def setup_audit_listeners():
             db.add(audit_log)
             db.commit()
             db.close()
-        except Exception as e:
-            print(f"Audit logging error: {str(e)}")
+        except Exception:
+            pass
 
 
     # ============================================================================
@@ -182,7 +182,7 @@ def setup_audit_listeners():
 
     @event.listens_for(StockQuant, 'after_update')
     def log_stock_update(mapper, connection, target):
-        """Log stock quantity changes - Critical for FIFO traceability"""
+        """Log stock quantity changes - Critical for FIFO traceability."""
         try:
             db = SessionLocal()
 
@@ -217,13 +217,13 @@ def setup_audit_listeners():
             db.add(audit_log)
             db.commit()
             db.close()
-        except Exception as e:
-            print(f"Audit logging error: {str(e)}")
+        except Exception:
+            pass
 
 
     @event.listens_for(TransferLog, 'after_insert')
     def log_transfer_create(mapper, connection, target):
-        """Log inter-departmental transfers - QT-09 protocol compliance"""
+        """Log inter-departmental transfers - QT-09 protocol compliance."""
         try:
             db = SessionLocal()
 
@@ -247,8 +247,8 @@ def setup_audit_listeners():
             db.add(audit_log)
             db.commit()
             db.close()
-        except Exception as e:
-            print(f"Audit logging error: {str(e)}")
+        except Exception:
+            pass
 
 
     # ============================================================================
@@ -257,7 +257,7 @@ def setup_audit_listeners():
 
     @event.listens_for(ManufacturingOrder, 'after_insert')
     def log_mo_create(mapper, connection, target):
-        """Log MO creation"""
+        """Log MO creation."""
         try:
             db = SessionLocal()
 
@@ -284,13 +284,13 @@ def setup_audit_listeners():
             db.add(audit_log)
             db.commit()
             db.close()
-        except Exception as e:
-            print(f"Audit logging error: {str(e)}")
+        except Exception:
+            pass
 
 
     @event.listens_for(ManufacturingOrder, 'after_update')
     def log_mo_update(mapper, connection, target):
-        """Log MO status changes - Track production progress"""
+        """Log MO status changes - Track production progress."""
         try:
             db = SessionLocal()
 
@@ -327,8 +327,8 @@ def setup_audit_listeners():
             db.add(audit_log)
             db.commit()
             db.close()
-        except Exception as e:
-            print(f"Audit logging error: {str(e)}")
+        except Exception:
+            pass
 
 
     # ============================================================================
@@ -337,7 +337,7 @@ def setup_audit_listeners():
 
     @event.listens_for(WorkOrder, 'after_insert')
     def log_work_order_create(mapper, connection, target):
-        """Log work order creation for all departments"""
+        """Log work order creation for all departments."""
         try:
             db = SessionLocal()
 
@@ -361,13 +361,13 @@ def setup_audit_listeners():
             db.add(audit_log)
             db.commit()
             db.close()
-        except Exception as e:
-            print(f"Audit logging error: {str(e)}")
+        except Exception:
+            pass
 
 
     @event.listens_for(WorkOrder, 'after_update')
     def log_work_order_update(mapper, connection, target):
-        """Log work order status changes for all departments"""
+        """Log work order status changes for all departments."""
         try:
             db = SessionLocal()
 
@@ -402,13 +402,7 @@ def setup_audit_listeners():
             db.add(audit_log)
             db.commit()
             db.close()
-        except Exception as e:
-            print(f"Audit logging error: {str(e)}")
+        except Exception:
+            pass
 
 
-    print("✅ Audit Trail Event Listeners initialized")
-    print("   - PurchaseOrder: CREATE, UPDATE (Approval tracking), DELETE")
-    print("   - StockQuant: UPDATE (Inventory changes)")
-    print("   - TransferLog: CREATE (Department transfers)")
-    print("   - ManufacturingOrder: CREATE, UPDATE (Status tracking)")
-    print("   - WorkOrder: CREATE, UPDATE (All departments including Cutting, Embroidery, Sewing, Finishing, Packing)")

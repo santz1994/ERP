@@ -1,5 +1,4 @@
-"""Quality Control Models
-"""
+"""Quality Control Models."""
 
 import enum
 
@@ -10,7 +9,7 @@ from app.core.database import Base
 
 
 class TestType(str, enum.Enum):
-    """QC Lab Test Types"""
+    """QC Lab Test Types."""
 
     DROP_TEST = "Drop Test"
     STABILITY_10 = "Stability 10"
@@ -19,14 +18,14 @@ class TestType(str, enum.Enum):
 
 
 class TestResult(str, enum.Enum):
-    """Test result"""
+    """Test result."""
 
     PASS = "Pass"
     FAIL = "Fail"
 
 
 class QCInspectionType(str, enum.Enum):
-    """QC Inspection types"""
+    """QC Inspection types."""
 
     INCOMING = "Incoming"
     INLINE_SEWING = "Inline Sewing"
@@ -34,7 +33,7 @@ class QCInspectionType(str, enum.Enum):
 
 
 class QCStatus(str, enum.Enum):
-    """Inspection status"""
+    """Inspection status."""
 
     PASS = "Pass"
     FAIL = "Fail"
@@ -42,7 +41,7 @@ class QCStatus(str, enum.Enum):
 
 class QCLabTest(Base):
     """QC Lab Testing Results
-    Gap Fix #5: Changed measured_value from FLOAT to NUMERIC for ISO precision
+    Gap Fix #5: Changed measured_value from FLOAT to NUMERIC for ISO precision.
     """
 
     __tablename__ = "qc_lab_tests"
@@ -79,7 +78,7 @@ class QCLabTest(Base):
 
 class QCInspection(Base):
     """QC Inspections - Pass/Fail at various stages
-    Inline inspection, metal detector, final QC
+    Inline inspection, metal detector, final QC.
     """
 
     __tablename__ = "qc_inspections"

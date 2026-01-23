@@ -1,5 +1,5 @@
 """Quality Control Module - Business Logic & Services
-Handles lab testing, inline inspections, metal detector QC
+Handles lab testing, inline inspections, metal detector QC.
 """
 
 from datetime import datetime
@@ -21,7 +21,7 @@ from app.core.models.quality import (
 
 
 class QualityService(BaseProductionService):
-    """Business logic for quality control operations"""
+    """Business logic for quality control operations."""
 
     @staticmethod
     def perform_lab_test(
@@ -37,7 +37,7 @@ class QualityService(BaseProductionService):
         evidence_photo_url: str | None = None
     ) -> dict:
         """Perform QC Lab Test (Drop Test, Stability, Seam Strength, etc.)
-        Records test results with measured values for ISO compliance
+        Records test results with measured values for ISO compliance.
         """
         # Validate batch exists
         mo = db.query(ManufacturingOrder).filter(
@@ -108,9 +108,9 @@ class QualityService(BaseProductionService):
         inspected_by: int | None = None
     ) -> dict:
         """Perform Inline QC Inspection (Sewing, Metal Detector, etc.)
-        Records pass/fail status with defect tracking
+        Records pass/fail status with defect tracking.
         """
-        wo = BaseProductionService.get_work_order(db, work_order_id)
+        BaseProductionService.get_work_order(db, work_order_id)
 
         # Map string to enum
         try:
@@ -166,11 +166,11 @@ class QualityService(BaseProductionService):
         inspected_by: int | None = None
     ) -> dict:
         """Metal Detector QC Check
-        CRITICAL: Metal detection = P1 Alert + Block Transfer
+        CRITICAL: Metal detection = P1 Alert + Block Transfer.
         """
         wo = BaseProductionService.get_work_order(db, work_order_id)
 
-        mo = BaseProductionService.get_manufacturing_order(db, wo.mo_id)
+        BaseProductionService.get_manufacturing_order(db, wo.mo_id)
 
         # Record inspection
         inspection = QCInspection(
@@ -221,7 +221,7 @@ class QualityService(BaseProductionService):
         batch_number: str
     ) -> dict:
         """Get QC Lab Test summary for a batch
-        Pass rate, failed tests, critical failures
+        Pass rate, failed tests, critical failures.
         """
         tests = db.query(QCLabTest).filter(
             QCLabTest.batch_number == batch_number
@@ -267,8 +267,7 @@ class QualityService(BaseProductionService):
         db: Session,
         work_order_id: int
     ) -> list[dict]:
-        """Get all QC inspections for a work order
-        """
+        """Get all QC inspections for a work order."""
         inspections = db.query(QCInspection).filter(
             QCInspection.work_order_id == work_order_id
         ).order_by(desc(QCInspection.inspected_at)).all()
@@ -292,8 +291,7 @@ class QualityService(BaseProductionService):
         dept: str,
         days: int = 7
     ) -> dict:
-        """QC Pass Rate analysis by department
-        """
+        """QC Pass Rate analysis by department."""
         from datetime import timedelta
         cutoff = datetime.utcnow() - timedelta(days=days)
 

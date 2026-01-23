@@ -1,5 +1,5 @@
 """Audit Trail System
-Comprehensive logging of all system activities for ISO/IKEA compliance
+Comprehensive logging of all system activities for ISO/IKEA compliance.
 """
 import enum as py_enum
 from datetime import datetime
@@ -11,7 +11,7 @@ from app.core.database import Base
 
 
 class AuditAction(str, py_enum.Enum):
-    """Types of audited actions"""
+    """Types of audited actions."""
 
     CREATE = "CREATE"
     READ = "READ"
@@ -27,7 +27,7 @@ class AuditAction(str, py_enum.Enum):
 
 
 class AuditModule(str, py_enum.Enum):
-    """System modules"""
+    """System modules."""
 
     AUTH = "Authentication"
     PPIC = "PPIC"
@@ -44,7 +44,7 @@ class AuditModule(str, py_enum.Enum):
 
 
 class AuditLog(Base):
-    """Audit Trail Log
+    """Audit Trail Log.
 
     Tracks all significant system activities for compliance and security.
     Required for ISO 9001 and IKEA IWAY standards.
@@ -95,7 +95,7 @@ class AuditLog(Base):
 
 
 class UserActivityLog(Base):
-    """User Activity Log (Lightweight tracking)
+    """User Activity Log (Lightweight tracking).
 
     Tracks user presence and session activity.
     Different from AuditLog - this is for monitoring active users and sessions.
@@ -131,7 +131,7 @@ class UserActivityLog(Base):
 
 
 class SecurityLog(Base):
-    """Security Event Log
+    """Security Event Log.
 
     Tracks security-related events: failed logins, unauthorized access, etc.
     """

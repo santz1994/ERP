@@ -1,5 +1,5 @@
 """Import/Export Module - CSV/Excel Import Export functionality
-Supports: Products, BOM, Master Data, Inventory, Users
+Supports: Products, BOM, Master Data, Inventory, Users.
 """
 import csv
 import io
@@ -28,7 +28,7 @@ async def import_products(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("import_export.import_data"))
 ):
-    """Import products from CSV/Excel file
+    """Import products from CSV/Excel file.
 
     CSV Format:
     code,name,type,uom,category_id,min_stock
@@ -46,7 +46,7 @@ async def import_products(
 
 
 async def _import_products_csv(file: UploadFile, db: Session, current_user: User):
-    """Import products from CSV"""
+    """Import products from CSV."""
     content = await file.read()
     decoded = content.decode('utf-8')
     csv_reader = csv.DictReader(io.StringIO(decoded))
@@ -105,7 +105,7 @@ async def _import_products_csv(file: UploadFile, db: Session, current_user: User
 
 
 async def _import_products_excel(file: UploadFile, db: Session, current_user: User):
-    """Import products from Excel"""
+    """Import products from Excel."""
     content = await file.read()
     workbook = openpyxl.load_workbook(io.BytesIO(content))
     sheet = workbook.active
@@ -174,7 +174,7 @@ async def import_bom(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("import_export.import_data"))
 ):
-    """Import BOM (Bill of Materials) from CSV/Excel
+    """Import BOM (Bill of Materials) from CSV/Excel.
 
     CSV Format:
     product_code,component_code,qty_needed,wastage_percent
@@ -192,7 +192,7 @@ async def import_bom(
 
 
 async def _import_bom_csv(file: UploadFile, db: Session, current_user: User):
-    """Import BOM from CSV"""
+    """Import BOM from CSV."""
     content = await file.read()
     decoded = content.decode('utf-8')
     csv_reader = csv.DictReader(io.StringIO(decoded))
@@ -263,7 +263,7 @@ async def _import_bom_csv(file: UploadFile, db: Session, current_user: User):
 
 
 async def _import_bom_excel(file: UploadFile, db: Session, current_user: User):
-    """Import BOM from Excel"""
+    """Import BOM from Excel."""
     content = await file.read()
     workbook = openpyxl.load_workbook(io.BytesIO(content))
     sheet = workbook.active
@@ -344,7 +344,7 @@ async def export_products(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("import_export.export_data"))
 ):
-    """Export all products to CSV or Excel
+    """Export all products to CSV or Excel.
 
     Query Parameters:
     - format: csv or excel
@@ -358,7 +358,7 @@ async def export_products(
 
 
 def _export_products_csv(products: list[Product]):
-    """Export products to CSV"""
+    """Export products to CSV."""
     output = io.StringIO()
     writer = csv.writer(output)
 
@@ -386,7 +386,7 @@ def _export_products_csv(products: list[Product]):
 
 
 def _export_products_excel(products: list[Product]):
-    """Export products to Excel"""
+    """Export products to Excel."""
     workbook = openpyxl.Workbook()
     sheet = workbook.active
     sheet.title = "Products"
@@ -425,7 +425,7 @@ async def export_bom(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("import_export.export_data"))
 ):
-    """Export BOM (Bill of Materials) to CSV or Excel
+    """Export BOM (Bill of Materials) to CSV or Excel.
 
     Query Parameters:
     - format: csv or excel
@@ -449,7 +449,7 @@ async def export_bom(
 
 
 def _export_bom_csv(bom_data, db: Session):
-    """Export BOM to CSV"""
+    """Export BOM to CSV."""
     output = io.StringIO()
     writer = csv.writer(output)
 
@@ -477,7 +477,7 @@ def _export_bom_csv(bom_data, db: Session):
 
 
 def _export_bom_excel(bom_data, db: Session):
-    """Export BOM to Excel"""
+    """Export BOM to Excel."""
     workbook = openpyxl.Workbook()
     sheet = workbook.active
     sheet.title = "BOM"
@@ -517,7 +517,7 @@ async def export_inventory(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("import_export.export_data"))
 ):
-    """Export current inventory to CSV or Excel
+    """Export current inventory to CSV or Excel.
 
     Query Parameters:
     - format: csv or excel
@@ -541,7 +541,7 @@ async def export_inventory(
 
 
 def _export_inventory_csv(inventory_data):
-    """Export inventory to CSV"""
+    """Export inventory to CSV."""
     output = io.StringIO()
     writer = csv.writer(output)
 
@@ -568,7 +568,7 @@ def _export_inventory_csv(inventory_data):
 
 
 def _export_inventory_excel(inventory_data):
-    """Export inventory to Excel"""
+    """Export inventory to Excel."""
     workbook = openpyxl.Workbook()
     sheet = workbook.active
     sheet.title = "Inventory"
@@ -606,7 +606,7 @@ async def export_users(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("import_export.export_data"))
 ):
-    """Export users to CSV or Excel (for backup/audit)
+    """Export users to CSV or Excel (for backup/audit).
 
     Query Parameters:
     - format: csv or excel
@@ -620,7 +620,7 @@ async def export_users(
 
 
 def _export_users_csv(users: list[User]):
-    """Export users to CSV"""
+    """Export users to CSV."""
     output = io.StringIO()
     writer = csv.writer(output)
 
@@ -648,7 +648,7 @@ def _export_users_csv(users: list[User]):
 
 
 def _export_users_excel(users: list[User]):
-    """Export users to Excel"""
+    """Export users to Excel."""
     workbook = openpyxl.Workbook()
     sheet = workbook.active
     sheet.title = "Users"

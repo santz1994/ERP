@@ -1,4 +1,4 @@
-"""Copyright (c) 2026 PT Quty Karunia / Daniel Rizaldy - All Rights Reserved
+"""Copyright (c) 2026 PT Quty Karunia / Daniel Rizaldy - All Rights Reserved.
 
 Finishgoods API Endpoints
 Handles finished goods warehouse management and shipping
@@ -70,7 +70,7 @@ def get_finishgoods_inventory(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.FINISHGOODS, Permission.VIEW))
 ):
-    """Get finished goods inventory with stock levels
+    """Get finished goods inventory with stock levels.
 
     - **product_code**: Filter by product code (partial match)
     - **low_stock_only**: Show only products below minimum stock
@@ -88,7 +88,7 @@ def get_stock_aging(
     current_user: User = Depends(require_permission(ModuleName.FINISHGOODS, Permission.VIEW))
 ):
     """Get stock aging analysis for finished goods
-    Shows how long products have been in warehouse
+    Shows how long products have been in warehouse.
     """
     return [
         {
@@ -113,7 +113,7 @@ def receive_from_packing(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.FINISHGOODS, Permission.EXECUTE))
 ):
-    """Receive finished goods from Packing department
+    """Receive finished goods from Packing department.
 
     - Validates transfer from Packing
     - Creates stock movement
@@ -143,7 +143,7 @@ def prepare_shipment(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.FINISHGOODS, Permission.CREATE))
 ):
-    """Prepare finished goods for shipment
+    """Prepare finished goods for shipment.
 
     - Validates stock availability
     - Reserves stock for shipment
@@ -169,7 +169,7 @@ def ship_finishgoods(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.FINISHGOODS, Permission.EXECUTE))
 ):
-    """Ship finished goods (reduce FG inventory)
+    """Ship finished goods (reduce FG inventory).
 
     - Creates outbound stock movement
     - Updates FG inventory
@@ -192,7 +192,7 @@ def get_shipment_ready_products(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.FINISHGOODS, Permission.VIEW))
 ):
-    """Get list of products ready for shipment
+    """Get list of products ready for shipment.
 
     Shows completed manufacturing orders with available stock
     """
@@ -206,7 +206,7 @@ def get_stock_aging(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.FINISHGOODS, Permission.VIEW))
 ):
-    """Get finished goods stock aging analysis
+    """Get finished goods stock aging analysis.
 
     Categories:
     - Fresh: < 7 days

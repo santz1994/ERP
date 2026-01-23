@@ -1,10 +1,9 @@
 """Packing Module API Endpoints
-Final production stage: Sort → Package → Generate shipping marks
+Final production stage: Sort → Package → Generate shipping marks.
 """
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Any
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -30,7 +29,7 @@ async def sort_by_destination_and_week(
     current_user: User = Depends(require_permission("packing.sort_by_destination")),
     db: Session = Depends(get_db)
 ) -> dict:
-    """**POST** - Step 470: Sort by Week & Destination
+    """**POST** - Step 470: Sort by Week & Destination.
 
     Categorize finished goods:
     - By destination country (US, DE, JP, etc.)
@@ -61,7 +60,7 @@ async def package_into_cartons(
     current_user: User = Depends(require_permission("packing.pack_product")),
     db: Session = Depends(get_db)
 ) -> dict:
-    """**POST** - Step 480: Package into Cartons
+    """**POST** - Step 480: Package into Cartons.
 
     Physical packaging process:
     1. **Wrap each item** in polybag (moisture protection, handling safety)
@@ -99,7 +98,7 @@ async def generate_shipping_mark(
     current_user: User = Depends(require_permission("packing.label_carton")),
     db: Session = Depends(get_db)
 ) -> ShippingMarkResponse:
-    """**POST** - Step 490: Generate Shipping Mark
+    """**POST** - Step 490: Generate Shipping Mark.
 
     Create barcode label for carton:
 
@@ -165,7 +164,7 @@ async def complete_packing_operation(
     current_user: User = Depends(require_permission("packing.complete_operation")),
     db: Session = Depends(get_db)
 ) -> dict:
-    """**POST** - Complete Packing Operation
+    """**POST** - Complete Packing Operation.
 
     Mark work order as complete after all cartons labeled and ready:
     - Final qty confirmation (must match original FG qty)
@@ -192,7 +191,7 @@ async def get_packing_work_order_status(
     current_user: User = Depends(require_permission("packing.view_status")),
     db: Session = Depends(get_db)
 ) -> PackingWorkOrderResponse:
-    """**GET** - Retrieve Current Packing Work Order Status
+    """**GET** - Retrieve Current Packing Work Order Status.
 
     Real-time status showing:
     - Current stage (sorting/packaging/shipping marks)
@@ -223,7 +222,7 @@ async def get_pending_packing_orders(
     current_user: User = Depends(require_permission("packing.view_status")),
     db: Session = Depends(get_db)
 ) -> list[PackingWorkOrderResponse]:
-    """**GET** - List All Pending Packing Work Orders
+    """**GET** - List All Pending Packing Work Orders.
 
     Returns work orders awaiting:
     - Sorting by destination/week

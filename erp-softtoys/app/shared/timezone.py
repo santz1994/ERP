@@ -1,5 +1,5 @@
 """Timezone Configuration - WIB (GMT+7)
-Ensures all datetime operations use Jakarta timezone
+Ensures all datetime operations use Jakarta timezone.
 """
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
@@ -10,7 +10,7 @@ WIB_OFFSET = timedelta(hours=7)
 
 
 def now_wib() -> datetime:
-    """Get current datetime in WIB timezone
+    """Get current datetime in WIB timezone.
 
     Returns:
         datetime: Current datetime with WIB timezone
@@ -24,7 +24,7 @@ def now_wib() -> datetime:
 
 
 def to_wib(dt: datetime) -> datetime:
-    """Convert datetime to WIB timezone
+    """Convert datetime to WIB timezone.
 
     Args:
         dt: Datetime object (can be naive or aware)
@@ -44,7 +44,7 @@ def to_wib(dt: datetime) -> datetime:
 
 
 def utc_to_wib(utc_dt: datetime) -> datetime:
-    """Convert UTC datetime to WIB
+    """Convert UTC datetime to WIB.
 
     Args:
         utc_dt: UTC datetime
@@ -59,7 +59,7 @@ def utc_to_wib(utc_dt: datetime) -> datetime:
 
 
 def wib_to_utc(wib_dt: datetime) -> datetime:
-    """Convert WIB datetime to UTC
+    """Convert WIB datetime to UTC.
 
     Args:
         wib_dt: WIB datetime
@@ -74,7 +74,7 @@ def wib_to_utc(wib_dt: datetime) -> datetime:
 
 
 def format_wib(dt: datetime | None, format: str = "%Y-%m-%d %H:%M:%S WIB") -> str:
-    """Format datetime to WIB string
+    """Format datetime to WIB string.
 
     Args:
         dt: Datetime object
@@ -96,7 +96,7 @@ def format_wib(dt: datetime | None, format: str = "%Y-%m-%d %H:%M:%S WIB") -> st
 
 
 def parse_wib(date_string: str, format: str = "%Y-%m-%d %H:%M:%S") -> datetime:
-    """Parse WIB datetime string
+    """Parse WIB datetime string.
 
     Args:
         date_string: Datetime string (e.g., '2026-01-19 15:30:00')
@@ -115,7 +115,7 @@ def parse_wib(date_string: str, format: str = "%Y-%m-%d %H:%M:%S") -> datetime:
 
 
 def get_shift(dt: datetime | None = None) -> str:
-    """Get production shift based on WIB time
+    """Get production shift based on WIB time.
 
     Shift schedule:
     - Shift 1: 07:00 - 15:00 WIB
@@ -133,10 +133,7 @@ def get_shift(dt: datetime | None = None) -> str:
         'Shift 1'
 
     """
-    if dt is None:
-        dt = now_wib()
-    else:
-        dt = to_wib(dt)
+    dt = now_wib() if dt is None else to_wib(dt)
 
     hour = dt.hour
 
@@ -149,7 +146,7 @@ def get_shift(dt: datetime | None = None) -> str:
 
 
 def get_work_week(dt: datetime | None = None) -> int:
-    """Get ISO work week number
+    """Get ISO work week number.
 
     Args:
         dt: Datetime (default: now_wib())
@@ -162,16 +159,13 @@ def get_work_week(dt: datetime | None = None) -> int:
         4
 
     """
-    if dt is None:
-        dt = now_wib()
-    else:
-        dt = to_wib(dt)
+    dt = now_wib() if dt is None else to_wib(dt)
 
     return dt.isocalendar()[1]
 
 
 def get_delivery_week(dt: datetime | None = None, weeks_ahead: int = 4) -> int:
-    """Calculate delivery week (current week + offset)
+    """Calculate delivery week (current week + offset).
 
     Args:
         dt: Datetime (default: now_wib())
@@ -185,17 +179,14 @@ def get_delivery_week(dt: datetime | None = None, weeks_ahead: int = 4) -> int:
         8
 
     """
-    if dt is None:
-        dt = now_wib()
-    else:
-        dt = to_wib(dt)
+    dt = now_wib() if dt is None else to_wib(dt)
 
     future_dt = dt + timedelta(weeks=weeks_ahead)
     return future_dt.isocalendar()[1]
 
 
 def is_working_hours(dt: datetime | None = None) -> bool:
-    """Check if datetime is within working hours (07:00 - 23:00 WIB)
+    """Check if datetime is within working hours (07:00 - 23:00 WIB).
 
     Args:
         dt: Datetime (default: now_wib())
@@ -204,17 +195,14 @@ def is_working_hours(dt: datetime | None = None) -> bool:
         bool: True if within working hours
 
     """
-    if dt is None:
-        dt = now_wib()
-    else:
-        dt = to_wib(dt)
+    dt = now_wib() if dt is None else to_wib(dt)
 
     hour = dt.hour
     return 7 <= hour < 23
 
 
 def start_of_day_wib(dt: datetime | None = None) -> datetime:
-    """Get start of day (00:00:00) in WIB
+    """Get start of day (00:00:00) in WIB.
 
     Args:
         dt: Datetime (default: now_wib())
@@ -223,16 +211,13 @@ def start_of_day_wib(dt: datetime | None = None) -> datetime:
         datetime: Start of day in WIB
 
     """
-    if dt is None:
-        dt = now_wib()
-    else:
-        dt = to_wib(dt)
+    dt = now_wib() if dt is None else to_wib(dt)
 
     return dt.replace(hour=0, minute=0, second=0, microsecond=0)
 
 
 def end_of_day_wib(dt: datetime | None = None) -> datetime:
-    """Get end of day (23:59:59) in WIB
+    """Get end of day (23:59:59) in WIB.
 
     Args:
         dt: Datetime (default: now_wib())
@@ -241,10 +226,7 @@ def end_of_day_wib(dt: datetime | None = None) -> datetime:
         datetime: End of day in WIB
 
     """
-    if dt is None:
-        dt = now_wib()
-    else:
-        dt = to_wib(dt)
+    dt = now_wib() if dt is None else to_wib(dt)
 
     return dt.replace(hour=23, minute=59, second=59, microsecond=999999)
 
@@ -252,7 +234,7 @@ def end_of_day_wib(dt: datetime | None = None) -> datetime:
 # Helper for database datetime storage
 def get_db_timestamp() -> datetime:
     """Get timestamp for database storage (UTC)
-    PostgreSQL stores timestamps in UTC by default
+    PostgreSQL stores timestamps in UTC by default.
 
     Returns:
         datetime: Current UTC datetime
@@ -262,7 +244,7 @@ def get_db_timestamp() -> datetime:
 
 
 def format_for_display(dt: datetime | None) -> str:
-    """Format datetime for UI display (WIB)
+    """Format datetime for UI display (WIB).
 
     Args:
         dt: Datetime from database (UTC)

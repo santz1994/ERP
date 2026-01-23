@@ -1,5 +1,4 @@
-"""User & Authentication Models
-"""
+"""User & Authentication Models."""
 
 import enum
 
@@ -9,7 +8,7 @@ from app.core.database import Base
 
 
 class UserRole(str, enum.Enum):
-    """User roles in the system - 22 roles total (SoD compliant)"""
+    """User roles in the system - 22 roles total (SoD compliant)."""
 
     # Level 0: System Development & Protection
     DEVELOPER = "Developer"
@@ -48,7 +47,7 @@ class UserRole(str, enum.Enum):
 
 class User(Base):
     """Users with role-based access control
-    16 roles: Admin, PPIC Manager, Supervisors (5), Operators (5), QC (2), Warehouse (2), Purchasing, Security
+    16 roles: Admin, PPIC Manager, Supervisors (5), Operators (5), QC (2), Warehouse (2), Purchasing, Security.
     """
 
     __tablename__ = "users"
@@ -80,21 +79,21 @@ class User(Base):
         return f"<User(id={self.id}, username={self.username}, role={self.role.value}, dept={self.department})>"
 
     def has_role(self, role_name: str) -> bool:
-        """Check if user has specific role"""
+        """Check if user has specific role."""
         return self.role.value == role_name
 
     def is_supervisor(self) -> bool:
-        """Check if user is supervisor"""
+        """Check if user is supervisor."""
         return "SPV" in self.role.value
 
     def is_operator(self) -> bool:
-        """Check if user is operator"""
+        """Check if user is operator."""
         return "Operator" in self.role.value
 
     def is_qc(self) -> bool:
-        """Check if user is QC"""
+        """Check if user is QC."""
         return "QC" in self.role.value
 
     def is_warehouse(self) -> bool:
-        """Check if user is warehouse staff"""
+        """Check if user is warehouse staff."""
         return "Warehouse" in self.role.value

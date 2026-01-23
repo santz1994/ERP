@@ -1,4 +1,4 @@
-"""Missing Convenience Endpoints for QA Testing
+"""Missing Convenience Endpoints for QA Testing.
 =============================================
 These endpoints provide simplified routes for common QA test scenarios.
 They wrap existing module endpoints to match test expectations.

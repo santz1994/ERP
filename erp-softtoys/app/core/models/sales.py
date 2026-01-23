@@ -1,5 +1,5 @@
 """Sales Order Models
-For tracking customer orders from IKEA
+For tracking customer orders from IKEA.
 """
 
 import enum
@@ -11,7 +11,7 @@ from app.core.database import Base
 
 
 class SOStatus(str, enum.Enum):
-    """Sales Order Status"""
+    """Sales Order Status."""
 
     DRAFT = "Draft"
     CONFIRMED = "Confirmed"
@@ -21,8 +21,7 @@ class SOStatus(str, enum.Enum):
 
 
 class SalesOrder(Base):
-    """Sales Orders - Orders from IKEA customers
-    """
+    """Sales Orders - Orders from IKEA customers."""
 
     __tablename__ = "sales_orders"
 
@@ -52,8 +51,7 @@ class SalesOrder(Base):
 
 
 class SalesOrderLine(Base):
-    """Sales Order Line Items - Individual articles in an order
-    """
+    """Sales Order Line Items - Individual articles in an order."""
 
     __tablename__ = "sales_order_lines"
 

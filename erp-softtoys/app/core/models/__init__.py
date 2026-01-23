@@ -1,5 +1,5 @@
 """Database ORM Models for Quty Karunia ERP
-All models are based on Database Scheme.csv
+All models are based on Database Scheme.csv.
 """
 
 from .audit import AuditLog, SecurityLog, UserActivityLog

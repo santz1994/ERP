@@ -1,5 +1,5 @@
 """Quality Control Module - Pydantic Schemas
-Request/Response models for QC operations
+Request/Response models for QC operations.
 """
 
 from datetime import datetime
@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 
 class TestType(str, Enum):
-    """QC Lab Test Types"""
+    """QC Lab Test Types."""
 
     DROP_TEST = "Drop Test"
     STABILITY_10 = "Stability 10"
@@ -19,14 +19,14 @@ class TestType(str, Enum):
 
 
 class TestResult(str, Enum):
-    """Test result"""
+    """Test result."""
 
     PASS = "Pass"
     FAIL = "Fail"
 
 
 class QCInspectionType(str, Enum):
-    """QC Inspection types"""
+    """QC Inspection types."""
 
     INCOMING = "Incoming"
     INLINE_SEWING = "Inline Sewing"

@@ -1,4 +1,4 @@
-"""Copyright (c) 2026 PT Quty Karunia / Daniel Rizaldy - All Rights Reserved
+"""Copyright (c) 2026 PT Quty Karunia / Daniel Rizaldy - All Rights Reserved.
 
 Embroidery API Endpoints
 Handles embroidery operations between cutting and sewing
@@ -59,7 +59,7 @@ def get_embroidery_work_orders(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.EMBROIDERY, Permission.VIEW))
 ):
-    """Get all work orders for Embroidery department
+    """Get all work orders for Embroidery department.
 
     - **status**: Filter by status (Pending, Running, Finished)
     """
@@ -74,7 +74,7 @@ def start_embroidery_work_order(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.EMBROIDERY, Permission.EXECUTE))
 ):
-    """Start embroidery work order
+    """Start embroidery work order.
 
     - Validates line clearance
     - Creates line occupancy record
@@ -95,7 +95,7 @@ def record_embroidery_output(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.EMBROIDERY, Permission.EXECUTE))
 ):
-    """Record embroidery output with design details
+    """Record embroidery output with design details.
 
     - **embroidered_qty**: Number of pieces embroidered successfully
     - **reject_qty**: Number of pieces rejected
@@ -123,7 +123,7 @@ def complete_embroidery_work_order(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.EMBROIDERY, Permission.EXECUTE))
 ):
-    """Complete embroidery work order
+    """Complete embroidery work order.
 
     - Releases line occupancy
     - Changes status to Finished
@@ -143,7 +143,7 @@ def transfer_to_sewing(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.EMBROIDERY, Permission.EXECUTE))
 ):
-    """Transfer embroidered items to Sewing (QT-09 Protocol)
+    """Transfer embroidered items to Sewing (QT-09 Protocol).
 
     - Validates line clearance at Sewing
     - Creates transfer log
@@ -166,7 +166,7 @@ def get_line_status(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.EMBROIDERY, Permission.VIEW))
 ):
-    """Get real-time status of all embroidery lines
+    """Get real-time status of all embroidery lines.
 
     Shows which lines are occupied and with which article
     """

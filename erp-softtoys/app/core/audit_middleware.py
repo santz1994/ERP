@@ -1,5 +1,5 @@
 """Audit Context Middleware
-Attaches user context to database models for automatic audit logging
+Attaches user context to database models for automatic audit logging.
 
 This middleware intercepts API requests and attaches user information
 to model instances, so SQLAlchemy event listeners can log who made changes.
@@ -15,7 +15,7 @@ audit_context = contextvars.ContextVar('audit_context', default=None)
 
 
 class AuditContextMiddleware(BaseHTTPMiddleware):
-    """Middleware to attach user context for audit trail
+    """Middleware to attach user context for audit trail.
 
     Captures user info from JWT token and stores in context variable
     accessible by SQLAlchemy event listeners.
@@ -49,13 +49,13 @@ class AuditContextMiddleware(BaseHTTPMiddleware):
 
 
 def get_audit_context():
-    """Get current audit context (user info)"""
+    """Get current audit context (user info)."""
     return audit_context.get()
 
 
 def attach_audit_context(instance):
     """Attach audit context to model instance
-    Call this before commit() to enable automatic audit logging
+    Call this before commit() to enable automatic audit logging.
 
     Usage in API endpoint:
         po = PurchaseOrder(...)

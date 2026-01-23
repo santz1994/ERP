@@ -1,6 +1,6 @@
 """Admin API Endpoints (Phase 1)
 User management - create, update, deactivate, role assignment
-Restricted to Admin role only
+Restricted to Admin role only.
 """
 
 from datetime import datetime
@@ -23,7 +23,7 @@ router = APIRouter(
 
 
 class UserUpdateRequest(BaseModel):
-    """Update user request"""
+    """Update user request."""
 
     full_name: str | None = Field(None, min_length=1, max_length=100)
     role: str | None = None
@@ -32,7 +32,7 @@ class UserUpdateRequest(BaseModel):
 
 
 class UserListResponse(BaseModel):
-    """User list response"""
+    """User list response."""
 
     id: int
     username: str
@@ -52,7 +52,7 @@ async def list_users(
     skip: int = 0,
     limit: int = 100
 ):
-    """List all users (Admin only)
+    """List all users (Admin only).
 
     **Roles Required**: Admin
 
@@ -88,7 +88,7 @@ async def get_user(
     current_user: User = Depends(require_permission("admin.manage_users")),
     db: Session = Depends(get_db)
 ):
-    """Get user details (Admin only)
+    """Get user details (Admin only).
 
     **Roles Required**: Admin
 
@@ -122,7 +122,7 @@ async def update_user(
     current_user: User = Depends(require_permission("admin.manage_users")),
     db: Session = Depends(get_db)
 ):
-    """Update user details (Admin only)
+    """Update user details (Admin only).
 
     **Roles Required**: Admin
 
@@ -184,7 +184,7 @@ async def deactivate_user(
     current_user: User = Depends(require_permission("admin.manage_users")),
     db: Session = Depends(get_db)
 ):
-    """Deactivate user account (Admin only)
+    """Deactivate user account (Admin only).
 
     **Roles Required**: Admin
 
@@ -219,7 +219,7 @@ async def reactivate_user(
     current_user: User = Depends(require_permission("admin.manage_users")),
     db: Session = Depends(get_db)
 ):
-    """Reactivate user account (Admin only)
+    """Reactivate user account (Admin only).
 
     **Roles Required**: Admin
 
@@ -250,7 +250,7 @@ async def reset_user_password(
     current_user: User = Depends(require_permission("admin.manage_users")),
     db: Session = Depends(get_db)
 ):
-    """Reset user password (Admin only)
+    """Reset user password (Admin only).
 
     **Roles Required**: Admin
 
@@ -288,7 +288,7 @@ async def list_users_by_role(
     current_user: User = Depends(require_permission("admin.manage_users")),
     db: Session = Depends(get_db)
 ):
-    """List users by role (Admin only)
+    """List users by role (Admin only).
 
     **Roles Required**: Admin
 
@@ -326,7 +326,7 @@ async def list_users_by_role(
 async def get_environment_info(
     current_user: User = Depends(require_permission("admin.view_system_info"))
 ):
-    """Get environment information and access control policies
+    """Get environment information and access control policies.
 
     **Roles Required**: Admin
 
@@ -367,7 +367,7 @@ async def get_permissions(
     current_user: User = Depends(require_permission("admin.manage_permissions")),
     db: Session = Depends(get_db)
 ):
-    """Get all system permissions
+    """Get all system permissions.
 
     Returns list of available permissions grouped by module
     """
@@ -422,7 +422,7 @@ async def get_products(
     current_user: User = Depends(require_permission("admin.manage_system")),
     db: Session = Depends(get_db)
 ):
-    """Get all products for PPIC and manufacturing
+    """Get all products for PPIC and manufacturing.
 
     Returns list of products with their specifications
     """

@@ -1,5 +1,5 @@
 """Audit Trail API
-Endpoints for viewing and querying audit logs
+Endpoints for viewing and querying audit logs.
 
 ISO 27001 A.12.4.1: Event Logging
 Only accessible by authorized roles with audit permissions
@@ -100,7 +100,7 @@ def get_audit_logs(
     end_date: datetime | None = None,
     search: str | None = None
 ):
-    """Get audit logs with filtering and pagination
+    """Get audit logs with filtering and pagination.
 
     **Required Permission**: audit.view_logs
 
@@ -163,7 +163,7 @@ def get_audit_log_detail(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("audit.view_logs"))
 ):
-    """Get detailed information about a specific audit log entry
+    """Get detailed information about a specific audit log entry.
 
     **Required Permission**: audit.view_logs
     """
@@ -179,7 +179,7 @@ def get_entity_audit_history(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("audit.view_logs"))
 ):
-    """Get complete audit history for a specific entity
+    """Get complete audit history for a specific entity.
 
     **Use Case**: Track all changes to a Purchase Order, Manufacturing Order, etc.
 
@@ -200,7 +200,7 @@ def get_audit_summary(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("audit.view_summary"))
 ):
-    """Get audit trail summary statistics
+    """Get audit trail summary statistics.
 
     **Required Permission**: audit.view_summary
 
@@ -285,7 +285,7 @@ def get_security_logs(
     event_type: str | None = None,
     start_date: datetime | None = None
 ):
-    """Get security event logs
+    """Get security event logs.
 
     **Required Permission**: audit.view_security_logs (ADMIN ONLY)
 
@@ -321,7 +321,7 @@ def get_user_activity(
     current_user: User = Depends(require_permission("audit.view_user_activity")),
     days: int = Query(7, ge=1, le=90)
 ):
-    """Get user activity history
+    """Get user activity history.
 
     **Required Permission**: audit.view_user_activity
 
@@ -357,7 +357,7 @@ def export_audit_logs_csv(
     start_date: datetime | None = None,
     end_date: datetime | None = None
 ):
-    """Export audit logs to CSV format
+    """Export audit logs to CSV format.
 
     **Required Permission**: audit.export_logs
 
@@ -426,7 +426,7 @@ async def get_audit_trail_large_dataset(
     module: str | None = Query(None, description="Filter by module"),
     action: str | None = Query(None, description="Filter by action")
 ):
-    """**GET** - Audit Trail with Large Dataset Support (UI-03 Test)
+    """**GET** - Audit Trail with Large Dataset Support (UI-03 Test).
 
     Efficiently handles large audit trail queries with:
     - Pagination support (limit up to 10,000 records)

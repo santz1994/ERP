@@ -1,5 +1,5 @@
 """Finishing Module Models & Schemas
-Handles stuffing, closing, QC (metal detector), and conversion to FG code
+Handles stuffing, closing, QC (metal detector), and conversion to FG code.
 """
 
 from datetime import datetime
@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 
 
 class FinishingStatus(str, Enum):
-    """Finishing work order status"""
+    """Finishing work order status."""
 
     PENDING = "Pending"
     LINE_CLEARANCE_CHECK = "Line Clearance Check"
@@ -24,7 +24,7 @@ class FinishingStatus(str, Enum):
 
 
 class AcceptWIPRequest(BaseModel):
-    """Request to accept WIP SEW transfer"""
+    """Request to accept WIP SEW transfer."""
 
     transfer_slip_number: str = Field(..., description="Transfer slip from Sewing")
     received_qty: Decimal = Field(..., description="Qty received")
@@ -40,7 +40,7 @@ class AcceptWIPRequest(BaseModel):
 
 
 class StuffingRequest(BaseModel):
-    """Request to perform stuffing operation"""
+    """Request to perform stuffing operation."""
 
     work_order_id: int = Field(..., description="Work order ID")
     operator_id: int = Field(..., description="Operator performing stuffing")
@@ -60,7 +60,7 @@ class StuffingRequest(BaseModel):
 
 
 class ClosingAndGroomingRequest(BaseModel):
-    """Request to perform closing and grooming"""
+    """Request to perform closing and grooming."""
 
     work_order_id: int = Field(..., description="Work order ID")
     operator_id: int = Field(..., description="Operator")
@@ -79,7 +79,7 @@ class ClosingAndGroomingRequest(BaseModel):
 
 
 class MetalDetectorTestRequest(BaseModel):
-    """Request to perform critical metal detector test"""
+    """Request to perform critical metal detector test."""
 
     work_order_id: int = Field(..., description="Work order ID")
     inspector_id: int = Field(..., description="QC inspector")
@@ -100,7 +100,7 @@ class MetalDetectorTestRequest(BaseModel):
 
 
 class ConversionRequest(BaseModel):
-    """Request to convert WIP code to FG (Finish Good) code"""
+    """Request to convert WIP code to FG (Finish Good) code."""
 
     work_order_id: int = Field(..., description="Work order ID")
     wip_code: str = Field(..., description="Current WIP code")
@@ -119,7 +119,7 @@ class ConversionRequest(BaseModel):
 
 
 class FinishingWorkOrderResponse(BaseModel):
-    """Response: Current finishing work order status"""
+    """Response: Current finishing work order status."""
 
     id: int
     mo_id: int
@@ -140,7 +140,7 @@ class FinishingWorkOrderResponse(BaseModel):
 
 
 class MetalDetectorAlertResponse(BaseModel):
-    """Alert when metal detected in product"""
+    """Alert when metal detected in product."""
 
     work_order_id: int
     unit_index: int
@@ -151,7 +151,7 @@ class MetalDetectorAlertResponse(BaseModel):
 
 
 class ConversionLogEntry(BaseModel):
-    """Log for WIP to FG conversion"""
+    """Log for WIP to FG conversion."""
 
     work_order_id: int
     wip_code: str

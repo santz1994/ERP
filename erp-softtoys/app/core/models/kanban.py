@@ -1,5 +1,5 @@
 """E-Kanban System for Accessory Requests
-Digital kanban system for managing accessory/material requests between departments
+Digital kanban system for managing accessory/material requests between departments.
 """
 import enum as py_enum
 from datetime import datetime
@@ -21,7 +21,7 @@ from app.core.database import Base
 
 
 class KanbanStatus(str, py_enum.Enum):
-    """Kanban card status"""
+    """Kanban card status."""
 
     PENDING = "Pending"
     APPROVED = "Approved"
@@ -31,7 +31,7 @@ class KanbanStatus(str, py_enum.Enum):
 
 
 class KanbanPriority(str, py_enum.Enum):
-    """Kanban priority levels"""
+    """Kanban priority levels."""
 
     LOW = "Low"
     NORMAL = "Normal"
@@ -40,7 +40,7 @@ class KanbanPriority(str, py_enum.Enum):
 
 
 class KanbanCard(Base):
-    """E-Kanban Card for Accessory/Material Requests
+    """E-Kanban Card for Accessory/Material Requests.
 
     Digital kanban system for pull-based inventory replenishment.
     When department needs materials, they create kanban card instead of
@@ -109,7 +109,7 @@ class KanbanCard(Base):
 
 
 class KanbanBoard(Base):
-    """E-Kanban Board Configuration
+    """E-Kanban Board Configuration.
 
     Defines kanban lanes, limits, and rules per department
     """
@@ -140,7 +140,7 @@ class KanbanBoard(Base):
 
 
 class KanbanRule(Base):
-    """E-Kanban Automatic Replenishment Rules
+    """E-Kanban Automatic Replenishment Rules.
 
     Defines automatic triggers for creating kanban cards
     when stock levels reach reorder points

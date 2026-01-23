@@ -1,5 +1,5 @@
 """Reports Module - API Router
-Endpoints for production, quality, and inventory reports with export capabilities
+Endpoints for production, quality, and inventory reports with export capabilities.
 """
 
 from datetime import datetime
@@ -23,7 +23,7 @@ def get_production_stats(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> dict:
-    """Get production statistics for date range
+    """Get production statistics for date range.
 
     Query Parameters:
     - start_date: YYYY-MM-DD format (default: today)
@@ -82,7 +82,7 @@ def get_qc_stats(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> dict:
-    """Get quality control statistics for date range
+    """Get quality control statistics for date range.
 
     Query Parameters:
     - start_date: YYYY-MM-DD format (default: today)
@@ -135,7 +135,7 @@ def get_inventory_summary(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> dict:
-    """Get current inventory summary
+    """Get current inventory summary.
 
     Returns:
     - total_stock_value: Total value of inventory
@@ -190,7 +190,7 @@ def export_report(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> dict:
-    """Export report in PDF or Excel format
+    """Export report in PDF or Excel format.
 
     Path Parameters:
     - report_type: "production", "qc", "inventory"

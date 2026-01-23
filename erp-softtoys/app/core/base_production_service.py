@@ -1,4 +1,4 @@
-"""Base Production Service - Abstract Class for Common Production Operations
+"""Base Production Service - Abstract Class for Common Production Operations.
 ==========================================================================
 Eliminates code duplication across Cutting, Sewing, and Finishing modules
 
@@ -20,7 +20,6 @@ Target: Eliminate 30-40% code duplication
 from abc import ABC
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, Optional
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
@@ -36,7 +35,7 @@ from app.core.models.warehouse import PurchaseOrder
 
 
 class BaseProductionService(ABC):
-    """Abstract base class for production department services
+    """Abstract base class for production department services.
 
     Provides common operations:
     - Transfer acceptance/handshake
@@ -60,9 +59,9 @@ class BaseProductionService(ABC):
         received_qty: Decimal,
         user_id: int,
         from_dept: TransferDept,
-        notes: Optional[str] = None
+        notes: str | None = None
     ) -> dict:
-        """Common transfer acceptance logic across all departments
+        """Common transfer acceptance logic across all departments.
 
         Process:
         1. Find pending transfer (LOCKED status)
@@ -147,7 +146,7 @@ class BaseProductionService(ABC):
         db: Session,
         dept: TransferDept
     ) -> None:
-        """Mark previous department line as CLEAR
+        """Mark previous department line as CLEAR.
 
         Line Clearance Protocol:
         - Status: "Clear" (ready for next batch)
@@ -285,7 +284,7 @@ class BaseProductionService(ABC):
         work_order_id: int,
         target_dept: TransferDept
     ) -> tuple[bool, str | None]:
-        """Check if target line is clear before proceeding
+        """Check if target line is clear before proceeding.
 
         Line clearance ensures:
         - No previous batch remains on the line
@@ -317,7 +316,7 @@ class BaseProductionService(ABC):
         received_qty: Decimal,
         expected_product_id: int
     ) -> dict:
-        """Validate received quantity against BOM specification
+        """Validate received quantity against BOM specification.
 
         Checks:
         1. BOM exists for product
@@ -386,9 +385,9 @@ class BaseProductionService(ABC):
         work_order_id: int,
         actual_output: Decimal,
         reject_qty: Decimal = Decimal('0'),
-        notes: Optional[str] = None
+        notes: str | None = None
     ) -> dict:
-        """Record production output and analyze variance
+        """Record production output and analyze variance.
 
         Common operation across all departments:
         1. Update work order with actual output
@@ -482,7 +481,7 @@ class BaseProductionService(ABC):
         qty_to_transfer: Decimal,
         operator_id: int
     ) -> dict:
-        """Create transfer log for handoff to next department
+        """Create transfer log for handoff to next department.
 
         QT-09 Transfer Protocol:
         1. Create transfer log (LOCKED status)
@@ -565,9 +564,9 @@ class BaseProductionService(ABC):
         db: Session,
         work_order_id: int,
         new_status: WorkOrderStatus,
-        notes: Optional[str] = None
+        notes: str | None = None
     ) -> dict:
-        """Update work order status with audit trail
+        """Update work order status with audit trail.
 
         Common status transitions:
         - PENDING → RUNNING (start operation)
@@ -609,7 +608,7 @@ class BaseProductionService(ABC):
 
     @staticmethod
     def get_user(db: Session, user_id: int) -> "User":
-        """Get user by ID (REQUIRED - raises HTTPException if not found)
+        """Get user by ID (REQUIRED - raises HTTPException if not found).
 
         Usage:
             user = BaseProductionService.get_user(db, user_id)
@@ -637,7 +636,7 @@ class BaseProductionService(ABC):
 
     @staticmethod
     def get_user_optional(db: Session, user_id: int) -> "User | None":
-        """Get user by ID (OPTIONAL - returns None if not found)
+        """Get user by ID (OPTIONAL - returns None if not found).
 
         Usage:
             user = BaseProductionService.get_user_optional(db, user_id)
@@ -656,7 +655,7 @@ class BaseProductionService(ABC):
 
     @staticmethod
     def get_product(db: Session, product_id: int) -> "Product":
-        """Get product by ID (REQUIRED - raises HTTPException if not found)
+        """Get product by ID (REQUIRED - raises HTTPException if not found).
 
         Usage:
             product = BaseProductionService.get_product(db, product_id)
@@ -684,7 +683,7 @@ class BaseProductionService(ABC):
 
     @staticmethod
     def get_product_optional(db: Session, product_id: int) -> "Product | None":
-        """Get product by ID (OPTIONAL - returns None if not found)
+        """Get product by ID (OPTIONAL - returns None if not found).
 
         Usage:
             product = BaseProductionService.get_product_optional(db, product_id)
@@ -703,7 +702,7 @@ class BaseProductionService(ABC):
 
     @staticmethod
     def get_kanban_card(db: Session, card_id: int) -> "KanbanCard":
-        """Get kanban card by ID (REQUIRED - raises HTTPException if not found)
+        """Get kanban card by ID (REQUIRED - raises HTTPException if not found).
 
         Usage:
             card = BaseProductionService.get_kanban_card(db, card_id)
@@ -731,7 +730,7 @@ class BaseProductionService(ABC):
 
     @staticmethod
     def get_kanban_card_optional(db: Session, card_id: int) -> "KanbanCard | None":
-        """Get kanban card by ID (OPTIONAL - returns None if not found)
+        """Get kanban card by ID (OPTIONAL - returns None if not found).
 
         Usage:
             card = BaseProductionService.get_kanban_card_optional(db, card_id)
@@ -750,7 +749,7 @@ class BaseProductionService(ABC):
 
     @staticmethod
     def get_audit_log(db: Session, log_id: int) -> "AuditLog":
-        """Get audit log by ID (REQUIRED - raises HTTPException if not found)
+        """Get audit log by ID (REQUIRED - raises HTTPException if not found).
 
         Usage:
             log = BaseProductionService.get_audit_log(db, log_id)
@@ -778,7 +777,7 @@ class BaseProductionService(ABC):
 
     @staticmethod
     def get_audit_log_optional(db: Session, log_id: int) -> "AuditLog | None":
-        """Get audit log by ID (OPTIONAL - returns None if not found)
+        """Get audit log by ID (OPTIONAL - returns None if not found).
 
         Usage:
             log = BaseProductionService.get_audit_log_optional(db, log_id)
@@ -797,7 +796,7 @@ class BaseProductionService(ABC):
 
     @staticmethod
     def get_manufacturing_order(db: Session, mo_id: int) -> "ManufacturingOrder":
-        """Get manufacturing order by ID (REQUIRED - raises HTTPException if not found)
+        """Get manufacturing order by ID (REQUIRED - raises HTTPException if not found).
 
         Usage:
             mo = BaseProductionService.get_manufacturing_order(db, mo_id)
@@ -825,7 +824,7 @@ class BaseProductionService(ABC):
 
     @staticmethod
     def get_manufacturing_order_optional(db: Session, mo_id: int) -> "ManufacturingOrder | None":
-        """Get manufacturing order by ID (OPTIONAL - returns None if not found)
+        """Get manufacturing order by ID (OPTIONAL - returns None if not found).
 
         Usage:
             mo = BaseProductionService.get_manufacturing_order_optional(db, mo_id)
@@ -844,7 +843,7 @@ class BaseProductionService(ABC):
 
     @staticmethod
     def get_purchase_order(db: Session, po_id: int) -> "PurchaseOrder":
-        """Get purchase order by ID (REQUIRED - raises HTTPException if not found)
+        """Get purchase order by ID (REQUIRED - raises HTTPException if not found).
 
         Usage:
             po = BaseProductionService.get_purchase_order(db, po_id)
@@ -872,7 +871,7 @@ class BaseProductionService(ABC):
 
     @staticmethod
     def get_purchase_order_optional(db: Session, po_id: int) -> "PurchaseOrder | None":
-        """Get purchase order by ID (OPTIONAL - returns None if not found)
+        """Get purchase order by ID (OPTIONAL - returns None if not found).
 
         Usage:
             po = BaseProductionService.get_purchase_order_optional(db, po_id)

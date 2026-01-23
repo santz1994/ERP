@@ -1,5 +1,4 @@
-"""Manufacturing Order & Work Order Models
-"""
+"""Manufacturing Order & Work Order Models."""
 
 import enum
 
@@ -10,7 +9,7 @@ from app.core.database import Base
 
 
 class RoutingType(str, enum.Enum):
-    """Production routing types - 3 routes"""
+    """Production routing types - 3 routes."""
 
     ROUTE1 = "Route 1"  # Full: Cutting → Embroidery → Sewing → Finishing → Packing
     ROUTE2 = "Route 2"  # Direct: Cutting → Sewing → Finishing → Packing
@@ -18,7 +17,7 @@ class RoutingType(str, enum.Enum):
 
 
 class MOState(str, enum.Enum):
-    """Manufacturing Order state"""
+    """Manufacturing Order state."""
 
     DRAFT = "Draft"
     IN_PROGRESS = "In Progress"
@@ -27,7 +26,7 @@ class MOState(str, enum.Enum):
 
 
 class Department(str, enum.Enum):
-    """Production departments"""
+    """Production departments."""
 
     CUTTING = "Cutting"
     EMBROIDERY = "Embroidery"
@@ -38,7 +37,7 @@ class Department(str, enum.Enum):
 
 
 class WorkOrderStatus(str, enum.Enum):
-    """Work Order execution status"""
+    """Work Order execution status."""
 
     PENDING = "Pending"
     RUNNING = "Running"
@@ -47,7 +46,7 @@ class WorkOrderStatus(str, enum.Enum):
 
 class ManufacturingOrder(Base):
     """Manufacturing Order (SPK Induk)
-    Master production order that spans multiple departments
+    Master production order that spans multiple departments.
     """
 
     __tablename__ = "manufacturing_orders"
@@ -83,7 +82,7 @@ class ManufacturingOrder(Base):
 
 class WorkOrder(Base):
     """Work Order (SPK per Department)
-    Individual work instructions for each department/process
+    Individual work instructions for each department/process.
     """
 
     __tablename__ = "work_orders"
@@ -125,7 +124,7 @@ class WorkOrder(Base):
 
 class MaterialConsumption(Base):
     """Material Consumption Tracking
-    Records actual material used in each work order
+    Records actual material used in each work order.
     """
 
     __tablename__ = "mo_material_consumption"

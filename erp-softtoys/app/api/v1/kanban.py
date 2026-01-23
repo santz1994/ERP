@@ -1,5 +1,5 @@
 """E-Kanban API Router
-Digital kanban system for accessory/material requests
+Digital kanban system for accessory/material requests.
 """
 from datetime import datetime, timedelta
 
@@ -22,7 +22,7 @@ router = APIRouter(prefix="/kanban", tags=["E-Kanban"])
 # ========== SCHEMAS ==========
 
 class KanbanCardCreate(BaseModel):
-    """Request schema for creating kanban card"""
+    """Request schema for creating kanban card."""
 
     product_id: int
     qty_requested: int = Field(gt=0, description="Quantity must be positive")
@@ -33,7 +33,7 @@ class KanbanCardCreate(BaseModel):
 
 
 class KanbanCardResponse(BaseModel):
-    """Response schema for kanban card"""
+    """Response schema for kanban card."""
 
     id: int
     card_number: str
@@ -54,13 +54,13 @@ class KanbanCardResponse(BaseModel):
 
 
 class KanbanApprovalRequest(BaseModel):
-    """Request schema for approving kanban"""
+    """Request schema for approving kanban."""
 
     approval_notes: str | None = None
 
 
 class KanbanFulfillmentRequest(BaseModel):
-    """Request schema for fulfilling kanban"""
+    """Request schema for fulfilling kanban."""
 
     qty_fulfilled: int = Field(gt=0)
     fulfillment_notes: str | None = None
@@ -74,7 +74,7 @@ async def create_kanban_card(
     current_user: User = Depends(require_permission(ModuleName.KANBAN, Permission.CREATE)),
     db: Session = Depends(get_db)
 ):
-    """Create new E-Kanban card for material request
+    """Create new E-Kanban card for material request.
 
     **Use Case**: Department needs materials/accessories
 
@@ -165,7 +165,7 @@ async def list_kanban_cards(
     current_user: User = Depends(require_permission(ModuleName.KANBAN, Permission.VIEW)),
     db: Session = Depends(get_db)
 ):
-    """List kanban cards with filters
+    """List kanban cards with filters.
 
     **Filters**:
     - `status`: Filter by status (Pending, Approved, In Progress, Completed, Cancelled)
@@ -223,7 +223,7 @@ async def approve_kanban_card(
     current_user: User = Depends(require_permission(ModuleName.KANBAN, Permission.APPROVE)),
     db: Session = Depends(get_db)
 ):
-    """Approve kanban card (Warehouse Admin/Supervisor only)
+    """Approve kanban card (Warehouse Admin/Supervisor only).
 
     **Authorization**: Warehouse Admin, Supervisor, Admin
     """
@@ -277,7 +277,7 @@ async def fulfill_kanban_card(
     current_user: User = Depends(require_permission(ModuleName.KANBAN, Permission.EXECUTE)),
     db: Session = Depends(get_db)
 ):
-    """Fulfill kanban card (Warehouse team)
+    """Fulfill kanban card (Warehouse team).
 
     **Process**: Mark materials as delivered to requesting department
     """
@@ -331,7 +331,7 @@ async def kanban_dashboard(
     current_user: User = Depends(require_permission(ModuleName.KANBAN, Permission.VIEW)),
     db: Session = Depends(get_db)
 ):
-    """Kanban board dashboard for department
+    """Kanban board dashboard for department.
 
     **Returns**: Count of cards by status for visual kanban board
     """

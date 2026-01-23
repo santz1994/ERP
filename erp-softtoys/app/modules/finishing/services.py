@@ -1,12 +1,11 @@
 """Finishing Module Business Logic & Services
-Handles stuffing, closing, metal detector QC, and conversion to FG
+Handles stuffing, closing, metal detector QC, and conversion to FG.
 
 Refactored: Now extends BaseProductionService to eliminate code duplication
 """
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, Optional
 
 from sqlalchemy.orm import Session
 
@@ -18,7 +17,7 @@ from app.core.models.transfer import TransferDept
 
 class FinishingService(BaseProductionService):
     """Business logic for finishing department operations
-    Extends BaseProductionService for common production patterns
+    Extends BaseProductionService for common production patterns.
     """
 
     # Department configuration
@@ -33,10 +32,10 @@ class FinishingService(BaseProductionService):
         transfer_slip_number: str,
         received_qty: Decimal,
         user_id: int,
-        notes: Optional[str] = None
+        notes: str | None = None
     ) -> dict:
         """Step 400: Accept WIP SEW from Sewing
-        Uses base class accept_transfer_from_previous_dept
+        Uses base class accept_transfer_from_previous_dept.
         """
         # Delegate to base class
         result = cls.accept_transfer_from_previous_dept(
@@ -60,7 +59,7 @@ class FinishingService(BaseProductionService):
         work_order_id: int
     ) -> tuple[bool, str | None]:
         """Step 405-406: LINE CLEARANCE CHECK (Packing Line)
-        Uses base class check_line_clearance
+        Uses base class check_line_clearance.
         """
         # Delegate to base class
         return cls.check_line_clearance(
@@ -76,13 +75,13 @@ class FinishingService(BaseProductionService):
         operator_id: int,
         stuffing_material: str,
         qty_stuffed: Decimal,
-        notes: Optional[str] = None
+        notes: str | None = None
     ) -> dict:
         """Step 410: Perform Stuffing (Isi Dacron)
         - Add filling material
-        - Record qty completed
+        - Record qty completed.
         """
-        wo = BaseProductionService.get_work_order(db, work_order_id)
+        BaseProductionService.get_work_order(db, work_order_id)
 
         return {
             "work_order_id": work_order_id,
@@ -101,13 +100,13 @@ class FinishingService(BaseProductionService):
         work_order_id: int,
         operator_id: int,
         qty_closed: Decimal,
-        quality_notes: Optional[str] = None
+        quality_notes: str | None = None
     ) -> dict:
         """Step 420: Closing & Grooming (Jahit Tutup & Rapih)
         - Close seams
-        - Groom/straighten product
+        - Groom/straighten product.
         """
-        wo = BaseProductionService.get_work_order(db, work_order_id)
+        BaseProductionService.get_work_order(db, work_order_id)
 
         return {
             "work_order_id": work_order_id,
@@ -126,11 +125,11 @@ class FinishingService(BaseProductionService):
         inspector_id: int,
         pass_qty: Decimal,
         fail_qty: Decimal,
-        notes: Optional[str] = None
+        notes: str | None = None
     ) -> dict:
         """Step 430-435: CRITICAL POINT - Metal Detector Test
         - Step 430: Run metal detector
-        - Step 435: If fail → Segregate & investigate
+        - Step 435: If fail → Segregate & investigate.
 
         This is a **CRITICAL QC POINT** - IKEA requirement for safety
         """
@@ -180,14 +179,14 @@ class FinishingService(BaseProductionService):
         inspector_id: int,
         pass_qty: Decimal,
         repair_qty: Decimal,
-        notes: Optional[str] = None
+        notes: str | None = None
     ) -> dict:
         """Step 440-445: Physical & Symmetry QC Check
         - Check physical appearance
         - Verify symmetry
-        - If fail → repair (Step 445)
+        - If fail → repair (Step 445).
         """
-        wo = BaseProductionService.get_work_order(db, work_order_id)
+        BaseProductionService.get_work_order(db, work_order_id)
 
         result = {
             "work_order_id": work_order_id,
@@ -219,7 +218,7 @@ class FinishingService(BaseProductionService):
         """Step 450: CONVERSION - Transform WIP Code to FG (Finish Good) Code
         - Change from internal WIP code (e.g., WIP-FIN-SHARK-001)
         - To external IKEA article code (e.g., BLAHAJ-100)
-        - This is the point where product becomes "Finish Good"
+        - This is the point where product becomes "Finish Good".
         """
         wo = BaseProductionService.get_work_order(db, work_order_id)
 

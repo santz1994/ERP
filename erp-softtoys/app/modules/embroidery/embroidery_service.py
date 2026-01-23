@@ -1,4 +1,4 @@
-"""Copyright (c) 2026 PT Quty Karunia / Daniel Rizaldy - All Rights Reserved
+"""Copyright (c) 2026 PT Quty Karunia / Daniel Rizaldy - All Rights Reserved.
 
 Embroidery Service - Business Logic
 Handles embroidery operations, WIP EMBO transfers, quality checks
@@ -16,20 +16,20 @@ from app.shared.audit import log_audit
 
 
 class EmbroideryService:
-    """Business logic for Embroidery operations"""
+    """Business logic for Embroidery operations."""
 
     def __init__(self, db: Session):
         self.db = db
 
     def _get_work_order(self, work_order_id: int) -> WorkOrder:
-        """Helper method - Get work order by ID with error handling"""
+        """Helper method - Get work order by ID with error handling."""
         work_order = self.db.query(WorkOrder).filter(WorkOrder.id == work_order_id).first()
         if not work_order:
             raise ValueError(f"Work order {work_order_id} not found")
         return work_order
 
     def get_work_orders(self, status: str | None = None) -> list[WorkOrder]:
-        """Get work orders for Embroidery department"""
+        """Get work orders for Embroidery department."""
         query = self.db.query(WorkOrder).filter(WorkOrder.department == "Embroidery")
 
         if status:
@@ -38,7 +38,7 @@ class EmbroideryService:
         return query.order_by(WorkOrder.created_at.desc()).all()
 
     def start_work_order(self, work_order_id: int, user_id: int) -> WorkOrder:
-        """Start embroidery work order"""
+        """Start embroidery work order."""
         work_order = self._get_work_order(work_order_id)
 
         if work_order.status != "Pending":
@@ -48,7 +48,7 @@ class EmbroideryService:
         line_status = self.db.query(LineOccupancy).filter(
             and_(
                 LineOccupancy.line_id == f"EMBO-LINE-{work_order.id % 5 + 1}",
-                LineOccupancy.is_occupied == True
+                LineOccupancy.is_occupied
             )
         ).first()
 
@@ -95,7 +95,7 @@ class EmbroideryService:
         design_type: str | None = None,
         thread_colors: list[str] | None = None
     ) -> WorkOrder:
-        """Record embroidery output with design details"""
+        """Record embroidery output with design details."""
         work_order = self._get_work_order(work_order_id)
 
         if work_order.status != "Running":
@@ -147,7 +147,7 @@ class EmbroideryService:
         return work_order
 
     def complete_embroidery(self, work_order_id: int, user_id: int) -> WorkOrder:
-        """Complete embroidery work order"""
+        """Complete embroidery work order."""
         work_order = self._get_work_order(work_order_id)
 
         if work_order.status != "Running":
@@ -164,7 +164,7 @@ class EmbroideryService:
         line_occupancy = self.db.query(LineOccupancy).filter(
             and_(
                 LineOccupancy.line_id == f"EMBO-LINE-{work_order.id % 5 + 1}",
-                LineOccupancy.is_occupied == True
+                LineOccupancy.is_occupied
             )
         ).first()
 
@@ -188,7 +188,7 @@ class EmbroideryService:
         return work_order
 
     def transfer_to_sewing(self, work_order_id: int, user_id: int) -> TransferLog:
-        """Transfer embroidered items to Sewing (QT-09 Protocol)"""
+        """Transfer embroidered items to Sewing (QT-09 Protocol)."""
         work_order = self._get_work_order(work_order_id)
 
         if work_order.status != "Finished":
@@ -198,7 +198,7 @@ class EmbroideryService:
         sewing_line = self.db.query(LineOccupancy).filter(
             and_(
                 LineOccupancy.department == "Sewing",
-                LineOccupancy.is_occupied == True,
+                LineOccupancy.is_occupied,
                 LineOccupancy.current_article != work_order.mo.product_code
             )
         ).first()
@@ -254,13 +254,13 @@ class EmbroideryService:
         return transfer
 
     def get_line_status(self) -> list[LineOccupancy]:
-        """Get all embroidery line statuses"""
+        """Get all embroidery line statuses."""
         return self.db.query(LineOccupancy).filter(
             LineOccupancy.department == "Embroidery"
         ).all()
 
     def _create_shortage_alert(self, work_order: WorkOrder, shortage_qty: int, user_id: int):
-        """Create alert for embroidery shortage"""
+        """Create alert for embroidery shortage."""
         alert = AlertLog(
             alert_type="EMBROIDERY_SHORTAGE",
             severity="HIGH",

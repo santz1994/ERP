@@ -1,5 +1,5 @@
 """Sewing Module API Endpoints
-Production workflow: Material receipt → Qty validation → 3-stage sewing → Inline QC → Transfer to Finishing
+Production workflow: Material receipt → Qty validation → 3-stage sewing → Inline QC → Transfer to Finishing.
 """
 
 from decimal import Decimal
@@ -30,7 +30,7 @@ async def accept_transfer_from_cutting(
     current_user: User = Depends(require_permission("sewing.accept_transfer")),
     db: Session = Depends(get_db)
 ) -> dict:
-    """**POST** - Step 300: Accept Transfer & Material Receipt
+    """**POST** - Step 300: Accept Transfer & Material Receipt.
 
     **Handshake Digital (QT-09):**
     1. Operator scans transfer slip barcode
@@ -62,7 +62,7 @@ async def validate_material_input(
     current_user: User = Depends(require_permission("sewing.validate_input")),
     db: Session = Depends(get_db)
 ) -> dict:
-    """**POST** - Step 310: Validate Input Qty vs BOM
+    """**POST** - Step 310: Validate Input Qty vs BOM.
 
     **Three Possible Outcomes:**
 
@@ -95,7 +95,7 @@ async def process_sewing_stage(
     current_user: User = Depends(require_permission("sewing.process_stage")),
     db: Session = Depends(get_db)
 ) -> dict:
-    """**POST** - Step 330-350: 3-Stage Sewing Process
+    """**POST** - Step 330-350: 3-Stage Sewing Process.
 
     **Three Sequential Stages:**
 
@@ -132,7 +132,7 @@ async def perform_inline_qc_inspection(
     current_user: User = Depends(require_permission("sewing.inline_qc")),
     db: Session = Depends(get_db)
 ) -> dict:
-    """**POST** - Step 360-375: INLINE QC INSPECTION & REWORK
+    """**POST** - Step 360-375: INLINE QC INSPECTION & REWORK.
 
     **QC Decision Tree:**
 
@@ -176,7 +176,7 @@ async def check_segregation(
     current_user: User = Depends(require_permission("sewing.view_status")),
     db: Session = Depends(get_db)
 ) -> SegregationValidationResponse:
-    """**GET** - Step 380: SEGREGASI CHECK (Destination Consistency)
+    """**GET** - Step 380: SEGREGASI CHECK (Destination Consistency).
 
     **QT-09 Gold Standard - Prevent Mixed Destinations:**
 
@@ -223,7 +223,7 @@ async def transfer_to_finishing_dept(
     current_user: User = Depends(require_permission("sewing.create_transfer")),
     db: Session = Depends(get_db)
 ) -> dict:
-    """**POST** - Step 381-383: TRANSFER & HANDSHAKE DIGITAL
+    """**POST** - Step 381-383: TRANSFER & HANDSHAKE DIGITAL.
 
     **QT-09 Gold Standard Implementation:**
 
@@ -265,7 +265,7 @@ async def get_sewing_work_order_status(
     current_user: User = Depends(require_permission("sewing.view_status")),
     db: Session = Depends(get_db)
 ) -> SewingWorkOrderResponse:
-    """**GET** - Retrieve Current Sewing Work Order Status
+    """**GET** - Retrieve Current Sewing Work Order Status.
 
     Real-time status including:
     - Current processing stage
@@ -299,7 +299,7 @@ async def get_pending_sewing_orders(
     current_user: User = Depends(require_permission("sewing.view_status")),
     db: Session = Depends(get_db)
 ) -> list[SewingWorkOrderResponse]:
-    """**GET** - List All Pending Sewing Work Orders
+    """**GET** - List All Pending Sewing Work Orders.
 
     Returns work orders awaiting:
     - Material transfer acceptance
@@ -347,7 +347,7 @@ async def create_internal_loop(
     current_user: User = Depends(require_permission("sewing.return_to_stage")),
     db: Session = Depends(get_db)
 ) -> dict:
-    """**POST** - Internal Loop/Return to Previous Stage
+    """**POST** - Internal Loop/Return to Previous Stage.
 
     **Note 1: Sewing Loop (Balik lagi) - Internal Line Balancing**
 

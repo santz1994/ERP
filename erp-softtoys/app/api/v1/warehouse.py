@@ -1,5 +1,5 @@
 """Warehouse Management API Endpoints
-Stock management, transfers, inventory tracking
+Stock management, transfers, inventory tracking.
 """
 
 from decimal import Decimal
@@ -8,7 +8,6 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_db, require_permission
-from app.core.schemas import StockUpdateCreate
 from app.core.models.products import Product
 from app.core.models.transfer import LineOccupancy, LineStatus, TransferLog
 from app.core.models.transfer import TransferDept as TransferDeptEnum
@@ -20,6 +19,7 @@ from app.core.schemas import (
     StockCheckResponse,
     StockTransferCreate,
     StockTransferResponse,
+    StockUpdateCreate,
     TransferDept,
     TransferStatus,
 )
@@ -40,7 +40,7 @@ async def check_stock(
     current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.VIEW)),
     db: Session = Depends(get_db)
 ):
-    """Check current stock for a product
+    """Check current stock for a product.
 
     **Required Permission**: warehouse.view_stock
 
@@ -108,7 +108,7 @@ async def create_stock_transfer(
     current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.CREATE)),
     db: Session = Depends(get_db)
 ):
-    """Create inter-departmental stock transfer (QT-09 Protocol)
+    """Create inter-departmental stock transfer (QT-09 Protocol).
 
     **Required Permission**: warehouse.create_transfer
 
@@ -269,7 +269,7 @@ async def accept_transfer(
     current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.EXECUTE)),
     db: Session = Depends(get_db)
 ):
-    """Accept transfer at receiving department (QT-09 Handshake - Step 3, ID 293 / 383)
+    """Accept transfer at receiving department (QT-09 Handshake - Step 3, ID 293 / 383).
 
     **Required Permission**: warehouse.accept_transfer
 
@@ -352,7 +352,7 @@ async def update_warehouse_stock(
     current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.EXECUTE)),
     db: Session = Depends(get_db)
 ):
-    """**POST** - Update Warehouse Stock with Race Condition Protection (STRESS-01 Test)
+    """**POST** - Update Warehouse Stock with Race Condition Protection (STRESS-01 Test).
 
     Handles concurrent stock updates with database-level locking:
     - SELECT FOR UPDATE to prevent race conditions
@@ -507,7 +507,7 @@ async def get_stock_overview(
     current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.VIEW)),
     db: Session = Depends(get_db)
 ):
-    """Get complete warehouse stock overview
+    """Get complete warehouse stock overview.
 
     Shows inventory summary across all locations
     """
@@ -551,7 +551,7 @@ async def get_low_stock_alerts(
     current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.VIEW)),
     db: Session = Depends(get_db)
 ):
-    """Get products with low stock levels
+    """Get products with low stock levels.
 
     Alerts when inventory falls below reorder point
     """
@@ -596,7 +596,7 @@ async def create_stock_transfer(
     current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.CREATE)),
     db: Session = Depends(get_db)
 ):
-    """Create stock transfer between warehouse locations
+    """Create stock transfer between warehouse locations.
 
     Transfer inventory from one location to another
     """
@@ -617,7 +617,7 @@ async def get_stock_aging(
     current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.VIEW)),
     db: Session = Depends(get_db)
 ):
-    """Get stock aging report
+    """Get stock aging report.
 
     Shows inventory by age (newly received, 30+ days old, etc)
     Helps identify slow-moving items
@@ -661,7 +661,7 @@ async def get_warehouse_efficiency(
     current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.VIEW)),
     db: Session = Depends(get_db)
 ):
-    """Get warehouse efficiency metrics
+    """Get warehouse efficiency metrics.
 
     KPIs for warehouse operations and performance
     """

@@ -1,5 +1,5 @@
 """Packing Module Models & Schemas
-Final stage: Sort by destination/week → Package into cartons → Generate shipping marks
+Final stage: Sort by destination/week → Package into cartons → Generate shipping marks.
 """
 
 from datetime import datetime
@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 
 
 class PackingStatus(str, Enum):
-    """Packing work order status"""
+    """Packing work order status."""
 
     PENDING = "Pending"
     READY_TO_PACK = "Ready to Pack"
@@ -21,7 +21,7 @@ class PackingStatus(str, Enum):
 
 
 class SortByDestinationRequest(BaseModel):
-    """Request to sort items by destination/week"""
+    """Request to sort items by destination/week."""
 
     work_order_id: int = Field(..., description="FG work order ID")
     qty_sorted: Decimal = Field(..., description="Qty sorted")
@@ -40,7 +40,7 @@ class SortByDestinationRequest(BaseModel):
 
 
 class PackageIntoCartonRequest(BaseModel):
-    """Request to package items into cartons"""
+    """Request to package items into cartons."""
 
     work_order_id: int = Field(..., description="FG work order ID")
     qty_packaged: Decimal = Field(..., description="Qty packed")
@@ -61,7 +61,7 @@ class PackageIntoCartonRequest(BaseModel):
 
 
 class GenerateShippingMarkRequest(BaseModel):
-    """Request to generate shipping mark for carton"""
+    """Request to generate shipping mark for carton."""
 
     work_order_id: int = Field(..., description="FG work order ID")
     carton_number: int = Field(..., description="Carton sequence number")
@@ -84,7 +84,7 @@ class GenerateShippingMarkRequest(BaseModel):
 
 
 class ShippingMarkResponse(BaseModel):
-    """Response: Generated shipping mark data"""
+    """Response: Generated shipping mark data."""
 
     shipping_mark_id: str  # Unique identifier
     barcode: str | None
@@ -100,7 +100,7 @@ class ShippingMarkResponse(BaseModel):
 
 
 class PackingWorkOrderResponse(BaseModel):
-    """Response: Current packing work order status"""
+    """Response: Current packing work order status."""
 
     id: int
     mo_id: int
@@ -118,7 +118,7 @@ class PackingWorkOrderResponse(BaseModel):
 
 
 class CartonManifest(BaseModel):
-    """Manifest for shipped cartons"""
+    """Manifest for shipped cartons."""
 
     work_order_id: int
     total_cartons: int

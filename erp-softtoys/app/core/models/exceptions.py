@@ -1,5 +1,5 @@
 """Exception & Alert Models
-NEW TABLES - Gap Fixes
+NEW TABLES - Gap Fixes.
 """
 
 import enum
@@ -11,7 +11,7 @@ from app.core.database import Base
 
 
 class AlertType(str, enum.Enum):
-    """Alert classification"""
+    """Alert classification."""
 
     LINE_CLEARANCE_BLOCK = "Line Clearance Block"
     SEGREGASI_ALARM = "Segregasi Alarm"
@@ -22,7 +22,7 @@ class AlertType(str, enum.Enum):
 
 
 class AlertSeverity(str, enum.Enum):
-    """Alert severity level"""
+    """Alert severity level."""
 
     INFO = "Info"
     WARNING = "Warning"
@@ -30,7 +30,7 @@ class AlertSeverity(str, enum.Enum):
 
 
 class AlertStatus(str, enum.Enum):
-    """Alert lifecycle status"""
+    """Alert lifecycle status."""
 
     PENDING = "Pending"
     ACKNOWLEDGED = "Acknowledged"
@@ -39,7 +39,7 @@ class AlertStatus(str, enum.Enum):
 
 
 class ClearanceMethod(str, enum.Enum):
-    """Methods for clearing segregasi alerts"""
+    """Methods for clearing segregasi alerts."""
 
     PHYSICAL_GAP = "Physical Gap"  # 5-meter separation
     LINE_STOP = "Line Stop"  # Stopped conveyor line
@@ -48,7 +48,7 @@ class ClearanceMethod(str, enum.Enum):
 
 class AlertLog(Base):
     """Alert Log - All alerts/blocks triggered in system
-    NEW TABLE - Gap Fix #2 for escalation tracking
+    NEW TABLE - Gap Fix #2 for escalation tracking.
     """
 
     __tablename__ = "alert_logs"
@@ -92,7 +92,7 @@ class AlertLog(Base):
 class SegregasiAcknowledgement(Base):
     """Segregasi Acknowledgement Log
     NEW TABLE - Gap Fix #2 for manual line clearance tracking
-    Records operator confirmation that segregasi has been cleared
+    Records operator confirmation that segregasi has been cleared.
     """
 
     __tablename__ = "segregasi_acknowledgement"

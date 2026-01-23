@@ -1,5 +1,4 @@
-"""Transfer & Line Occupancy Models (QT-09 Gold Standard)
-"""
+"""Transfer & Line Occupancy Models (QT-09 Gold Standard)."""
 
 import enum
 
@@ -10,7 +9,7 @@ from app.core.database import Base
 
 
 class TransferStatus(str, enum.Enum):
-    """Transfer status - Handshake Protocol"""
+    """Transfer status - Handshake Protocol."""
 
     INITIATED = "Initiated"  # Transfer created, waiting for line clearance
     BLOCKED = "Blocked"  # Line not ready
@@ -21,7 +20,7 @@ class TransferStatus(str, enum.Enum):
 
 
 class LineStatus(str, enum.Enum):
-    """Line occupancy status"""
+    """Line occupancy status."""
 
     CLEAR = "Clear"  # Line ready for new article
     OCCUPIED = "Occupied"  # Line processing article
@@ -29,7 +28,7 @@ class LineStatus(str, enum.Enum):
 
 
 class TransferDept(str, enum.Enum):
-    """Departments that can send/receive transfers (Gap Fix #3)"""
+    """Departments that can send/receive transfers (Gap Fix #3)."""
 
     CUTTING = "Cutting"
     EMBROIDERY = "Embroidery"
@@ -43,7 +42,7 @@ class TransferDept(str, enum.Enum):
 class TransferLog(Base):
     """Transfer Log - Records all inter-departmental transfers
     Implements Handshake Digital protocol (QT-09)
-    Gap Fix: Expanded from_dept & to_dept enums
+    Gap Fix: Expanded from_dept & to_dept enums.
     """
 
     __tablename__ = "transfer_logs"
@@ -92,7 +91,7 @@ class TransferLog(Base):
 class LineOccupancy(Base):
     """Line Occupancy Tracking (Real-time Status)
     NEW TABLE - Gap Fix #2
-    Tracks which article is currently on each line and when it will be clear
+    Tracks which article is currently on each line and when it will be clear.
     """
 
     __tablename__ = "line_occupancy"
