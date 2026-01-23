@@ -2,17 +2,17 @@
 Pytest configuration and shared fixtures
 """
 
-import pytest
 from datetime import datetime
+
+import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from fastapi.testclient import TestClient
 
-from app.main import app
 from app.core.database import Base, get_db
 from app.core.models.users import User, UserRole
 from app.core.security import PasswordUtils, TokenUtils
-
+from app.main import app
 
 # Use in-memory SQLite for testing
 SQLALCHEMY_TEST_DATABASE_URL = "sqlite:///:memory:"
@@ -55,9 +55,9 @@ def db():
     connection = engine.connect()
     transaction = connection.begin()
     session = TestingSessionLocal(bind=connection)
-    
+
     yield session
-    
+
     session.close()
     transaction.rollback()
     connection.close()
@@ -239,13 +239,13 @@ def warehouse_token(warehouse_user):
 @pytest.fixture
 def sample_product(db):
     """Create sample product for testing"""
-    from app.core.models.products import Product, ProductType, Category
-    
+    from app.core.models.products import Category, Product, ProductType
+
     # Create category if needed
     category = Category(name="Soft Toys", description="Stuffed animals")
     db.add(category)
     db.commit()
-    
+
     # Create product
     product = Product(
         code="BLAHAJ-BLUE",
@@ -265,7 +265,7 @@ def sample_product(db):
 def sample_manufacturing_order(db, sample_product):
     """Create sample manufacturing order"""
     from app.core.models.manufacturing import ManufacturingOrder, RoutingType
-    
+
     mo = ManufacturingOrder(
         so_line_id=1,
         product_id=sample_product.id,
@@ -283,8 +283,8 @@ def sample_manufacturing_order(db, sample_product):
 @pytest.fixture
 def sample_work_order(db, sample_manufacturing_order):
     """Create sample work order"""
-    from app.core.models.manufacturing import WorkOrder, WorkOrderStatus, Department
-    
+    from app.core.models.manufacturing import Department, WorkOrder, WorkOrderStatus
+
     wo = WorkOrder(
         mo_id=sample_manufacturing_order.id,
         department=Department.CUTTING,
@@ -301,8 +301,8 @@ def sample_work_order(db, sample_manufacturing_order):
 @pytest.fixture
 def sample_transfer_log(db, sample_work_order):
     """Create sample transfer log"""
-    from app.core.models.transfer import TransferLog, Department
-    
+    from app.core.models.transfer import Department, TransferLog
+
     transfer = TransferLog(
         work_order_id=sample_work_order.id,
         from_dept=Department.CUTTING,

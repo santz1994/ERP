@@ -1,5 +1,4 @@
-"""
-Embroidery Module - Business Logic
+"""Embroidery Module - Business Logic
 Handles embroidery operations between cutting and sewing
 """
 

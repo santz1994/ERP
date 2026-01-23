@@ -1,19 +1,18 @@
-"""
-Role Requirements for API Endpoints
+"""Role Requirements for API Endpoints
 Centralized role-based access control mapping
 ISO 27001 Compliant - Segregation of Duties (SoD)
 """
 
-from typing import List, Dict
+from typing import list
+
 from app.core.models.users import UserRole
 
 
 class EndpointRoleRequirements:
-    """
-    Centralized role requirements for all API endpoints
+    """Centralized role requirements for all API endpoints
     Based on SEGREGATION_OF_DUTIES_MATRIX.md
     """
-    
+
     # PPIC Module - Manufacturing Orders & Planning
     PPIC_CREATE = [
         UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN, UserRole.ADMIN
@@ -23,7 +22,7 @@ class EndpointRoleRequirements:
         UserRole.SPV_CUTTING, UserRole.SPV_SEWING, UserRole.SPV_FINISHING
     ]
     PPIC_APPROVE = [UserRole.PPIC_MANAGER, UserRole.ADMIN]
-    
+
     # Purchasing Module
     PURCHASING_CREATE = [
         UserRole.PURCHASING, UserRole.PURCHASING_HEAD, UserRole.ADMIN
@@ -35,7 +34,7 @@ class EndpointRoleRequirements:
         UserRole.PURCHASING, UserRole.PURCHASING_HEAD, UserRole.ADMIN,
         UserRole.WAREHOUSE_ADMIN, UserRole.FINANCE_MANAGER
     ]
-    
+
     # Warehouse Module
     WAREHOUSE_CREATE = [
         UserRole.WAREHOUSE_ADMIN, UserRole.WAREHOUSE_OP, UserRole.ADMIN
@@ -45,7 +44,7 @@ class EndpointRoleRequirements:
         UserRole.WAREHOUSE_ADMIN, UserRole.WAREHOUSE_OP, UserRole.ADMIN,
         UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN
     ]
-    
+
     # Cutting Module
     CUTTING_EXECUTE = [
         UserRole.OPERATOR_CUT, UserRole.SPV_CUTTING, UserRole.ADMIN
@@ -55,7 +54,7 @@ class EndpointRoleRequirements:
         UserRole.OPERATOR_CUT, UserRole.SPV_CUTTING, UserRole.ADMIN,
         UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN
     ]
-    
+
     # Embroidery Module
     EMBROIDERY_EXECUTE = [
         UserRole.OPERATOR_EMBRO, UserRole.SPV_CUTTING, UserRole.ADMIN
@@ -64,7 +63,7 @@ class EndpointRoleRequirements:
         UserRole.OPERATOR_EMBRO, UserRole.SPV_CUTTING, UserRole.ADMIN,
         UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN
     ]
-    
+
     # Sewing Module
     SEWING_EXECUTE = [
         UserRole.OPERATOR_SEW, UserRole.SPV_SEWING, UserRole.ADMIN
@@ -74,7 +73,7 @@ class EndpointRoleRequirements:
         UserRole.OPERATOR_SEW, UserRole.SPV_SEWING, UserRole.ADMIN,
         UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN
     ]
-    
+
     # Finishing Module
     FINISHING_EXECUTE = [
         UserRole.OPERATOR_FINISH, UserRole.SPV_FINISHING, UserRole.ADMIN
@@ -84,14 +83,14 @@ class EndpointRoleRequirements:
         UserRole.OPERATOR_FINISH, UserRole.SPV_FINISHING, UserRole.ADMIN,
         UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN
     ]
-    
+
     # Packing Module
     PACKING_EXECUTE = [UserRole.OPERATOR_PACK, UserRole.ADMIN]
     PACKING_READ = [
         UserRole.OPERATOR_PACK, UserRole.ADMIN, UserRole.WAREHOUSE_ADMIN,
         UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN
     ]
-    
+
     # Quality Control Module
     QC_INSPECT = [UserRole.QC_INSPECTOR, UserRole.QC_LAB, UserRole.ADMIN]
     QC_LAB_TEST = [UserRole.QC_LAB, UserRole.ADMIN]
@@ -100,7 +99,7 @@ class EndpointRoleRequirements:
         UserRole.QC_INSPECTOR, UserRole.QC_LAB, UserRole.ADMIN,
         UserRole.SPV_CUTTING, UserRole.SPV_SEWING, UserRole.SPV_FINISHING
     ]
-    
+
     # Finish Goods Module
     FINISHGOODS_CREATE = [
         UserRole.WAREHOUSE_ADMIN, UserRole.WAREHOUSE_OP, UserRole.ADMIN
@@ -112,7 +111,7 @@ class EndpointRoleRequirements:
     FINISHGOODS_SHIP = [
         UserRole.WAREHOUSE_ADMIN, UserRole.SECURITY, UserRole.ADMIN
     ]
-    
+
     # Kanban Module
     KANBAN_CREATE = [
         UserRole.OPERATOR_PACK, UserRole.WAREHOUSE_OP, UserRole.ADMIN
@@ -121,19 +120,19 @@ class EndpointRoleRequirements:
     KANBAN_FULFILL = [
         UserRole.WAREHOUSE_OP, UserRole.WAREHOUSE_ADMIN, UserRole.ADMIN
     ]
-    
+
     # Reports Module
     REPORTS_READ = [
         UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN, UserRole.MANAGER,
         UserRole.FINANCE_MANAGER, UserRole.ADMIN
     ]
     REPORTS_CREATE = [UserRole.PPIC_MANAGER, UserRole.ADMIN]
-    
+
     # Admin Module - User Management
     ADMIN_USER_MANAGE = [UserRole.SUPERADMIN, UserRole.ADMIN]
     ADMIN_USER_CREATE = [UserRole.SUPERADMIN, UserRole.ADMIN]
     ADMIN_USER_DELETE = [UserRole.SUPERADMIN]  # Only Superadmin can delete
-    
+
     # Admin Module - Masterdata
     ADMIN_MASTERDATA_MANAGE = [UserRole.ADMIN, UserRole.PPIC_MANAGER]
     ADMIN_MASTERDATA_READ = [
@@ -147,11 +146,11 @@ class EndpointRoleRequirements:
         UserRole.ADMIN, UserRole.PPIC_MANAGER, UserRole.WAREHOUSE_ADMIN,
         UserRole.FINANCE_MANAGER
     ]
-    
+
     # Audit Trail - Read Only for Auditors
     AUDIT_READ = [UserRole.DEVELOPER, UserRole.SUPERADMIN, UserRole.MANAGER,
                   UserRole.FINANCE_MANAGER, UserRole.ADMIN]
-    
+
     # Barcode Scanner - All Production Operators
     BARCODE_SCAN = [UserRole.WAREHOUSE_OP, UserRole.WAREHOUSE_ADMIN,
                     UserRole.OPERATOR_CUT, UserRole.OPERATOR_EMBRO,
@@ -160,7 +159,7 @@ class EndpointRoleRequirements:
 
 
 # Helper function to convert role list to role name strings
-def get_role_names(roles: List[UserRole]) -> List[str]:
+def get_role_names(roles: list[UserRole]) -> list[str]:
     """Convert UserRole enum list to role name strings"""
     return [role.value for role in roles]
 

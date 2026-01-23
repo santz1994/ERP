@@ -1,24 +1,25 @@
-"""
-Cutting Module API Endpoints
+"""Cutting Module API Endpoints
 Production workflow: SPK reception → Material allocation → Cutting execution → QC → Transfer
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from decimal import Decimal
-from typing import List
 from datetime import datetime
 
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
+from app.core.base_production_service import BaseProductionService
 from app.core.dependencies import get_db, require_permission
 from app.core.models.users import User
-from app.core.base_production_service import BaseProductionService
 from app.modules.cutting.models import (
-    MaterialIssueRequest, StartCuttingRequest, CompleteCuttingRequest,
-    ShortageHandlingRequest, LineTransferRequest, CuttingWorkOrderResponse,
-    LineClearanceCheckResponse
+    CompleteCuttingRequest,
+    CuttingWorkOrderResponse,
+    LineClearanceCheckResponse,
+    LineTransferRequest,
+    MaterialIssueRequest,
+    ShortageHandlingRequest,
+    StartCuttingRequest,
 )
 from app.modules.cutting.services import CuttingService
-
 
 router = APIRouter(prefix="/production/cutting", tags=["Cutting Module"])
 
@@ -29,9 +30,8 @@ async def receive_spk_and_allocate_material(
     current_user: User = Depends(require_permission("cutting.allocate_material")),
     db: Session = Depends(get_db)
 ) -> dict:
-    """
-    **POST** - Step 200: Receive SPK & Allocate Material
-    
+    """**POST** - Step 200: Receive SPK & Allocate Material
+
     Workflow:
     1. Validate SPK for Cutting department
     2. Check BOM material requirements
@@ -39,7 +39,7 @@ async def receive_spk_and_allocate_material(
     4. Create material issue slip
     5. Reserve stock for this work order
     6. Return material allocation list
-    
+
     Requires: SPV Cutting or Admin role
     """
     return CuttingService.receive_spk_and_allocate_material(
@@ -55,23 +55,22 @@ async def start_cutting_operation(
     current_user: User = Depends(require_permission("cutting.complete_operation")),
     db: Session = Depends(get_db)
 ) -> dict:
-    """
-    **POST** - Step 210: Begin Cutting Operation
-    
+    """**POST** - Step 210: Begin Cutting Operation
+
     Updates work order status to RUNNING with operator assignment.
     Marks start time for production tracking.
-    
+
     Response includes current line status and material allocation confirmation.
     """
-    from app.core.models.manufacturing import WorkOrder, WorkOrderStatus
-    
+    from app.core.models.manufacturing import WorkOrderStatus
+
     wo = BaseProductionService.get_work_order(db, request.work_order_id)
-    
+
     wo.status = WorkOrderStatus.RUNNING
     wo.start_time = datetime.utcnow()
     wo.worker_id = request.operator_id
     db.commit()
-    
+
     return {
         "message": "Cutting operation started",
         "work_order_id": request.work_order_id,
@@ -87,24 +86,23 @@ async def complete_cutting_operation(
     current_user: User = Depends(require_permission("cutting.complete_operation")),
     db: Session = Depends(get_db)
 ) -> dict:
-    """
-    **POST** - Step 220: Record Output & Detect Shortage/Surplus
-    
+    """**POST** - Step 220: Record Output & Detect Shortage/Surplus
+
     Records actual cutting output and initiates variance handling:
-    
+
     - **SHORTAGE** (output < target):
       - Generate Waste Report (Step 230)
       - Request SPV approval for additional material (Step 240)
       - Automatic requisition to warehouse (Step 250)
-    
+
     - **SURPLUS** (output > target):
       - System logs surplus quantity (Step 270)
       - **Auto-triggers SPK Sewing revision** (Step 280)
       - Updates downstream BOM quantities
-    
+
     - **EXACT** (output = target):
       - Ready for transfer to next department
-    
+
     Requires: QC Inspector, SPV Cutting, or Admin
     """
     return CuttingService.complete_cutting_operation(
@@ -122,18 +120,17 @@ async def handle_material_shortage(
     current_user: User = Depends(require_permission("cutting.handle_variance")),
     db: Session = Depends(get_db)
 ) -> dict:
-    """
-    **POST** - Step 230-250: SHORTAGE LOGIC Handling
-    
+    """**POST** - Step 230-250: SHORTAGE LOGIC Handling
+
     When actual output < target, this endpoint:
     1. Creates Waste Report with shortage details
     2. Generates Unplanned Material Requisition (Step 240)
     3. Sends to SPV for approval (decision logic: Step 240)
     4. If approved: Warehouse auto-issues additional material (Step 250)
     5. Resumes cutting operation
-    
+
     This implements the shortage escalation workflow.
-    
+
     Requires: SPV Cutting (approval authority)
     """
     return CuttingService.handle_shortage(
@@ -151,22 +148,21 @@ async def check_line_clearance(
     current_user: User = Depends(require_permission("cutting.line_clearance")),
     db: Session = Depends(get_db)
 ) -> LineClearanceCheckResponse:
-    """
-    **GET** - Step 290: LINE CLEARANCE CHECK (QT-09 Requirement)
-    
+    """**GET** - Step 290: LINE CLEARANCE CHECK (QT-09 Requirement)
+
     Before Cutting can transfer output to Sewing/Embroidery:
-    
+
     **Mandatory QT-09 Cek 1-2 Validation:**
     - ✅ Destination line must be CLEAR (no previous batch)
     - ✅ If destination line OCCUPIED → BLOCK transfer (prevents article mixing)
     - ⚠️ Alert SPV if line not clear (manual segregation delay required)
-    
+
     Response indicates:
     - `can_transfer`: True if line clear, False if blocked
     - `blocking_reason`: Why transfer blocked (if applicable)
-    
+
     **Gold Standard (QT-09-TCK03):** Prevents batch contamination
-    
+
     Requires: SPV Cutting
     """
     is_clear, blocking_reason, info = CuttingService.check_line_clearance(
@@ -174,7 +170,7 @@ async def check_line_clearance(
         work_order_id=work_order_id,
         destination_dept=destination_dept
     )
-    
+
     return LineClearanceCheckResponse(
         work_order_id=info["work_order_id"],
         destination_dept=info["destination_dept"],
@@ -191,32 +187,31 @@ async def transfer_to_next_department(
     current_user: User = Depends(require_permission("cutting.create_transfer")),
     db: Session = Depends(get_db)
 ) -> dict:
-    """
-    **POST** - Step 291-293: TRANSFER & HANDSHAKE DIGITAL
-    
+    """**POST** - Step 291-293: TRANSFER & HANDSHAKE DIGITAL
+
     **QT-09 Gold Standard Implementation:**
-    
+
     **Step 291:** Print Surat Jalan Transfer
     - Verified line clearance (CUT-SEW or CUT-EMBO)
     - Generate transfer slip with QT-09 reference
-    
+
     **Step 293:** HANDSHAKE DIGITAL - Lock Stock
     - Stock WIP CUT is LOCKED in database (status = LOCKED)
     - Qty held in reserve pending receiving dept ACCEPT
     - **Prevents double-counting or lost stock**
-    
+
     **Handshake Flow:**
     1. ✅ Cutting prints transfer → Stock LOCKED
     2. Sewing scans transfer (ACCEPT) → Stock ACCEPTED
     3. Stock released to Sewing → Transfer COMPLETED
-    
+
     Response includes:
     - Transfer slip number (barcode scannable)
     - QT-09 handshake protocol reference
     - Lock status and lock reason
-    
+
     **Next Step:** Operator in receiving department scans transfer slip to ACCEPT
-    
+
     Requires: SPV Cutting
     """
     return CuttingService.create_transfer_to_next_dept(
@@ -234,21 +229,18 @@ async def get_cutting_work_order_status(
     current_user: User = Depends(require_permission("cutting.view_status")),
     db: Session = Depends(get_db)
 ) -> CuttingWorkOrderResponse:
-    """
-    **GET** - Retrieve Current Cutting Work Order Status
-    
+    """**GET** - Retrieve Current Cutting Work Order Status
+
     Real-time status of cutting operation:
     - Current processing stage
     - Input/Output/Reject quantities
     - Start/completion times
     - Material allocation status
-    
+
     Accessible to: Operators, SPV, QC, Admin
     """
-    from app.core.models.manufacturing import WorkOrder
-    
     wo = BaseProductionService.get_work_order(db, work_order_id)
-    
+
     return CuttingWorkOrderResponse(
         id=wo.id,
         mo_id=wo.mo_id,
@@ -262,27 +254,26 @@ async def get_cutting_work_order_status(
     )
 
 
-@router.get("/pending", response_model=List[CuttingWorkOrderResponse])
+@router.get("/pending", response_model=list[CuttingWorkOrderResponse])
 async def get_pending_cutting_orders(
     current_user: User = Depends(require_permission("cutting.view_status")),
     db: Session = Depends(get_db)
-) -> List[CuttingWorkOrderResponse]:
-    """
-    **GET** - List All Pending Cutting Work Orders
-    
+) -> list[CuttingWorkOrderResponse]:
+    """**GET** - List All Pending Cutting Work Orders
+
     Returns work orders awaiting execution:
     - Status = Pending (not started)
     - Status = Running (in progress)
-    
+
     For Cutting Line Management & Operator Assignment
     """
-    from app.core.models.manufacturing import WorkOrder, Department, WorkOrderStatus
-    
+    from app.core.models.manufacturing import Department, WorkOrder, WorkOrderStatus
+
     orders = db.query(WorkOrder).filter(
         WorkOrder.department == Department.CUTTING,
         WorkOrder.status.in_([WorkOrderStatus.PENDING, WorkOrderStatus.RUNNING])
     ).all()
-    
+
     return [
         CuttingWorkOrderResponse(
             id=o.id,
@@ -308,62 +299,62 @@ async def create_cutting_operation(
     current_user: User = Depends(require_permission("cutting.complete_operation")),
     db: Session = Depends(get_db)
 ):
-    """
-    **POST** - Create Cutting Operation with Quantity Validation (PRD-02 Test)
-    
+    """**POST** - Create Cutting Operation with Quantity Validation (PRD-02 Test)
+
     Validates cutting quantity against business rules:
     - Quantity must be positive (> 0)
     - Quantity cannot exceed MAX_QUANTITY (10000 pieces)
     - Validates work order exists and is in valid state
-    
+
     **Test Scenario PRD-02:**
     - Input: {"work_order_id": 1, "quantity": 15000}
     - Expected: 422 Unprocessable Entity (exceeds max)
-    
+
     **Validation Rules:**
     - MIN: 1 piece
     - MAX: 10,000 pieces per operation
     - Must have valid work order ID
-    
+
     Returns:
         - operation_id: Created operation ID
         - validated_qty: Validated quantity
         - status: Operation status
-    
+
     Raises:
         - 400: Invalid input (negative, zero)
         - 404: Work order not found
         - 422: Quantity exceeds business limit
+
     """
     from app.core.models.manufacturing import WorkOrder
-    
+
     MAX_QUANTITY = 10000  # Business rule: Max cutting quantity per operation
-    
+
     # Extract and validate input
     work_order_id = data.get("work_order_id")
     quantity = data.get("quantity", 0)
-    
+
     # Validation 1: Required fields
     if not work_order_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="work_order_id is required"
         )
-    
+
     # Validation 2: Quantity must be positive
     if quantity <= 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Quantity must be greater than 0"
         )
-    
+
     # Validation 3: Quantity exceeds maximum (PRD-02 specific test)
     if quantity > MAX_QUANTITY:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"Quantity {quantity} exceeds maximum allowed {MAX_QUANTITY}"
         )
-    
+
     # Validation 4: Work order must exist
     wo = db.query(WorkOrder).filter(WorkOrder.id == work_order_id).first()
     if not wo:
@@ -371,7 +362,7 @@ async def create_cutting_operation(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Work order {work_order_id} not found"
         )
-    
+
     # Validation 5: Work order must be for Cutting department
     from app.core.models.manufacturing import Department
     if wo.department != Department.CUTTING:
@@ -379,7 +370,7 @@ async def create_cutting_operation(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Work order {work_order_id} is not for Cutting department"
         )
-    
+
     # Create operation record (simplified - extend as needed)
     operation_data = {
         "work_order_id": work_order_id,
@@ -387,7 +378,7 @@ async def create_cutting_operation(
         "operator_id": current_user.id,
         "created_at": datetime.utcnow()
     }
-    
+
     return {
         "message": "Cutting operation created successfully",
         "operation_id": work_order_id,  # Simplified: use WO ID
@@ -403,8 +394,7 @@ async def get_line_status(
     current_user: User = Depends(require_permission("cutting.read")),
     db: Session = Depends(get_db)
 ):
-    """
-    Get real-time status of all cutting lines
+    """Get real-time status of all cutting lines
     Shows which lines are occupied and with which article
     """
     return [

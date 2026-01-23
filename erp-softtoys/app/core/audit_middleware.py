@@ -1,27 +1,26 @@
-"""
-Audit Context Middleware
+"""Audit Context Middleware
 Attaches user context to database models for automatic audit logging
 
 This middleware intercepts API requests and attaches user information
 to model instances, so SQLAlchemy event listeners can log who made changes.
 """
+import contextvars
+from collections.abc import Callable
+
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
-from typing import Callable
-import contextvars
 
 # Context variable to store current user info
 audit_context = contextvars.ContextVar('audit_context', default=None)
 
 
 class AuditContextMiddleware(BaseHTTPMiddleware):
-    """
-    Middleware to attach user context for audit trail
-    
+    """Middleware to attach user context for audit trail
+
     Captures user info from JWT token and stores in context variable
     accessible by SQLAlchemy event listeners.
     """
-    
+
     async def dispatch(self, request: Request, call_next: Callable):
         # Extract user info from request state (set by JWT dependency)
         user_info = {
@@ -32,20 +31,20 @@ class AuditContextMiddleware(BaseHTTPMiddleware):
             'request_method': request.method,
             'request_path': request.url.path
         }
-        
+
         # If user is authenticated, request.state.user will be set by get_current_user
         if hasattr(request.state, 'user'):
             user = request.state.user
             user_info['user_id'] = user.id
             user_info['username'] = user.username
             user_info['user_role'] = user.role.value if hasattr(user.role, 'value') else str(user.role)
-        
+
         # Store in context variable
         audit_context.set(user_info)
-        
+
         # Process request
         response = await call_next(request)
-        
+
         return response
 
 
@@ -55,10 +54,9 @@ def get_audit_context():
 
 
 def attach_audit_context(instance):
-    """
-    Attach audit context to model instance
+    """Attach audit context to model instance
     Call this before commit() to enable automatic audit logging
-    
+
     Usage in API endpoint:
         po = PurchaseOrder(...)
         attach_audit_context(po)

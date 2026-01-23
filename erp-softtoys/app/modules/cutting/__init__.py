@@ -1,5 +1,4 @@
-"""
-Cutting Module Package
+"""Cutting Module Package
 Production department for material cutting from rolls to pieces
 Implements QT-09 line clearance protocol for transfer to Sewing/Embroidery
 """

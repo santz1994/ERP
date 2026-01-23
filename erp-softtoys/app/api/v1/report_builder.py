@@ -1,18 +1,18 @@
-"""
-Dynamic Report Builder API
+"""Dynamic Report Builder API
 Allows users to create, modify, and manage custom reports
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from sqlalchemy import text
-from typing import List, Dict, Any, Optional
-from pydantic import BaseModel, Field
 from datetime import datetime
+from typing import Any
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, Field
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
 from app.core.database import get_db
-from app.core.dependencies import get_current_user
 from app.core.models.users import User
-from app.core.permissions import require_permission, ModuleName, Permission
+from app.core.permissions import ModuleName, Permission, require_permission
 
 router = APIRouter(
     prefix="/report-builder",
@@ -23,15 +23,17 @@ router = APIRouter(
 # Pydantic Models
 class ReportColumn(BaseModel):
     """Report column definition"""
+
     name: str = Field(..., description="Column name from database")
     label: str = Field(..., description="Display label for column")
     type: str = Field(default="string", description="Data type: string, number, date, boolean")
-    format: Optional[str] = Field(None, description="Display format (e.g., 'YYYY-MM-DD' for dates)")
-    aggregate: Optional[str] = Field(None, description="Aggregation function: sum, avg, count, min, max")
+    format: str | None = Field(None, description="Display format (e.g., 'YYYY-MM-DD' for dates)")
+    aggregate: str | None = Field(None, description="Aggregation function: sum, avg, count, min, max")
 
 
 class ReportFilter(BaseModel):
     """Report filter definition"""
+
     column: str = Field(..., description="Column name to filter")
     operator: str = Field(..., description="Operator: =, !=, >, <, >=, <=, LIKE, IN, BETWEEN")
     value: Any = Field(..., description="Filter value(s)")
@@ -39,68 +41,74 @@ class ReportFilter(BaseModel):
 
 class ReportSort(BaseModel):
     """Report sort definition"""
+
     column: str
     direction: str = Field(default="ASC", description="ASC or DESC")
 
 
 class CreateReportRequest(BaseModel):
     """Request to create a new report template"""
+
     name: str = Field(..., description="Report name")
-    description: Optional[str] = Field(None, description="Report description")
+    description: str | None = Field(None, description="Report description")
     category: str = Field(..., description="Report category: Production, QC, Inventory, etc.")
     data_source: str = Field(..., description="Data source: work_orders, qc_inspections, products, etc.")
-    columns: List[ReportColumn] = Field(..., description="Columns to include in report")
-    filters: Optional[List[ReportFilter]] = Field(default=[], description="Filters to apply")
-    sorts: Optional[List[ReportSort]] = Field(default=[], description="Sort order")
-    group_by: Optional[List[str]] = Field(default=[], description="Columns to group by")
+    columns: list[ReportColumn] = Field(..., description="Columns to include in report")
+    filters: list[ReportFilter] | None = Field(default=[], description="Filters to apply")
+    sorts: list[ReportSort] | None = Field(default=[], description="Sort order")
+    group_by: list[str] | None = Field(default=[], description="Columns to group by")
     is_public: bool = Field(default=False, description="Allow other users to use this report")
 
 
 class UpdateReportRequest(BaseModel):
     """Request to update an existing report template"""
-    name: Optional[str] = None
-    description: Optional[str] = None
-    columns: Optional[List[ReportColumn]] = None
-    filters: Optional[List[ReportFilter]] = None
-    sorts: Optional[List[ReportSort]] = None
-    group_by: Optional[List[str]] = None
-    is_public: Optional[bool] = None
+
+    name: str | None = None
+    description: str | None = None
+    columns: list[ReportColumn] | None = None
+    filters: list[ReportFilter] | None = None
+    sorts: list[ReportSort] | None = None
+    group_by: list[str] | None = None
+    is_public: bool | None = None
 
 
 class ReportTemplate(BaseModel):
     """Report template response"""
+
     id: int
     name: str
-    description: Optional[str]
+    description: str | None
     category: str
     data_source: str
-    columns: List[ReportColumn]
-    filters: List[ReportFilter]
-    sorts: List[ReportSort]
-    group_by: List[str]
+    columns: list[ReportColumn]
+    filters: list[ReportFilter]
+    sorts: list[ReportSort]
+    group_by: list[str]
     is_public: bool
     created_by: int
-    created_by_name: Optional[str]
+    created_by_name: str | None
     created_at: datetime
-    updated_at: Optional[datetime]
+    updated_at: datetime | None
     usage_count: int = 0
 
 
 class ExecuteReportRequest(BaseModel):
     """Request to execute a report"""
+
     template_id: int
-    override_filters: Optional[List[ReportFilter]] = Field(default=[], description="Override/add filters")
-    limit: Optional[int] = Field(default=1000, description="Max rows to return")
-    offset: Optional[int] = Field(default=0, description="Offset for pagination")
-    export_format: Optional[str] = Field(default="json", description="Format: json, csv, xlsx, pdf")
+    override_filters: list[ReportFilter] | None = Field(default=[], description="Override/add filters")
+    limit: int | None = Field(default=1000, description="Max rows to return")
+    offset: int | None = Field(default=0, description="Offset for pagination")
+    export_format: str | None = Field(default="json", description="Format: json, csv, xlsx, pdf")
 
 
 class ReportResult(BaseModel):
     """Report execution result"""
+
     template_id: int
     template_name: str
-    columns: List[Dict[str, str]]  # [{name, label, type}]
-    data: List[Dict[str, Any]]
+    columns: list[dict[str, str]]  # [{name, label, type}]
+    data: list[dict[str, Any]]
     total_rows: int
     execution_time: float
     executed_at: datetime
@@ -189,9 +197,8 @@ async def list_report_templates(
     current_user: User = Depends(require_permission(ModuleName.REPORTS, Permission.VIEW)),
     db: Session = Depends(get_db)
 ):
-    """
-    List all available report templates
-    
+    """List all available report templates
+
     - Returns user's own templates and public templates
     - Can filter by category
     """
@@ -240,10 +247,10 @@ async def list_report_templates(
             "usage_count": 32
         }
     ]
-    
+
     if category:
         mock_templates = [t for t in mock_templates if t["category"] == category]
-    
+
     return mock_templates
 
 
@@ -253,9 +260,8 @@ async def create_report_template(
     current_user: User = Depends(require_permission(ModuleName.REPORTS, Permission.CREATE)),
     db: Session = Depends(get_db)
 ):
-    """
-    Create a new report template
-    
+    """Create a new report template
+
     - Define columns, filters, sorting, and grouping
     - Templates can be made public for other users
     """
@@ -265,7 +271,7 @@ async def create_report_template(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid data source. Available: {', '.join(DATA_SOURCES.keys())}"
         )
-    
+
     # Validate columns
     available_columns = DATA_SOURCES[request.data_source]["columns"]
     for col in request.columns:
@@ -274,7 +280,7 @@ async def create_report_template(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Column '{col.name}' not available in data source '{request.data_source}'"
             )
-    
+
     # TODO: Save to database
     # For now, return mock response
     return {
@@ -302,9 +308,8 @@ async def execute_report(
     current_user: User = Depends(require_permission(ModuleName.REPORTS, Permission.VIEW)),
     db: Session = Depends(get_db)
 ):
-    """
-    Execute a report template and return results
-    
+    """Execute a report template and return results
+
     - Apply filters and sorting
     - Support pagination
     - Export to various formats
@@ -323,24 +328,24 @@ async def execute_report(
         "sorts": [{"column": "department", "direction": "ASC"}],
         "group_by": ["department"]
     }
-    
+
     # Build SQL query
     source_config = DATA_SOURCES[template["data_source"]]
     select_parts = []
-    
+
     for col in template["columns"]:
         col_def = source_config["columns"][col["name"]]
         if col.get("aggregate"):
             select_parts.append(f"{col['aggregate']}({col_def}) as {col['name']}")
         else:
             select_parts.append(f"{col_def} as {col['name']}")
-    
+
     query = f"SELECT {', '.join(select_parts)} FROM {source_config['table']}"
-    
+
     # Add joins
     for join in source_config["joins"]:
         query += f" {join}"
-    
+
     # Add WHERE clauses
     where_clauses = []
     for filter in template["filters"] + request.override_filters:
@@ -353,15 +358,15 @@ async def execute_report(
                 where_clauses.append(f"{col_def} IN ({values})")
             else:
                 where_clauses.append(f"{col_def} {filter.operator} '{filter.value}'")
-    
+
     if where_clauses:
         query += f" WHERE {' AND '.join(where_clauses)}"
-    
+
     # Add GROUP BY
     if template["group_by"]:
         group_cols = [source_config["columns"][col] for col in template["group_by"]]
         query += f" GROUP BY {', '.join(group_cols)}"
-    
+
     # Add ORDER BY
     if template["sorts"]:
         sort_parts = []
@@ -369,10 +374,10 @@ async def execute_report(
             col_def = source_config["columns"][sort["column"]]
             sort_parts.append(f"{col_def} {sort['direction']}")
         query += f" ORDER BY {', '.join(sort_parts)}"
-    
+
     # Add LIMIT and OFFSET
     query += f" LIMIT {request.limit} OFFSET {request.offset}"
-    
+
     # Execute query
     start_time = datetime.now()
     try:
@@ -385,9 +390,9 @@ async def execute_report(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Query execution failed: {str(e)}"
         )
-    
+
     execution_time = (datetime.now() - start_time).total_seconds()
-    
+
     return {
         "template_id": request.template_id,
         "template_name": template["name"],
@@ -403,9 +408,8 @@ async def execute_report(
 async def get_available_data_sources(
     current_user: User = Depends(require_permission(ModuleName.REPORTS, Permission.VIEW))
 ):
-    """
-    Get list of available data sources and their columns
-    
+    """Get list of available data sources and their columns
+
     - Useful for building report templates
     - Returns available columns and their types
     """
@@ -427,9 +431,8 @@ async def delete_report_template(
     current_user: User = Depends(require_permission(ModuleName.REPORTS, Permission.DELETE)),
     db: Session = Depends(get_db)
 ):
-    """
-    Delete a report template
-    
+    """Delete a report template
+
     - Only creator or admin can delete
     """
     # TODO: Implement database deletion

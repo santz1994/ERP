@@ -1,24 +1,27 @@
-"""
-Warehouse Management API Endpoints
+"""Warehouse Management API Endpoints
 Stock management, transfers, inventory tracking
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
-from typing import List
 from decimal import Decimal
-from app.core.database import SessionLocal
-from app.core.schemas import (
-    StockTransferCreate, StockTransferResponse, StockCheckResponse,
-    TransferDept, TransferStatus
-)
-from app.core.dependencies import get_db, require_permission
-from app.core.permissions import ModuleName, Permission
-from app.core.models.users import User
-from app.core.models.warehouse import StockMove, StockQuant, Location
-from app.core.models.transfer import TransferLog, TransferDept as TransferDeptEnum, TransferStatus as TransferStatusEnum, LineOccupancy, LineStatus
-from app.core.models.products import Product
 
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.orm import Session
+
+from app.core.dependencies import get_db, require_permission
+from app.core.models.products import Product
+from app.core.models.transfer import LineOccupancy, LineStatus, TransferLog
+from app.core.models.transfer import TransferDept as TransferDeptEnum
+from app.core.models.transfer import TransferStatus as TransferStatusEnum
+from app.core.models.users import User
+from app.core.models.warehouse import Location, StockMove, StockQuant
+from app.core.permissions import ModuleName, Permission
+from app.core.schemas import (
+    StockCheckResponse,
+    StockTransferCreate,
+    StockTransferResponse,
+    TransferDept,
+    TransferStatus,
+)
 
 router = APIRouter(
     prefix="/warehouse",
@@ -36,22 +39,21 @@ async def check_stock(
     current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.VIEW)),
     db: Session = Depends(get_db)
 ):
-    """
-    Check current stock for a product
-    
+    """Check current stock for a product
+
     **Required Permission**: warehouse.view_stock
-    
+
     **Path Parameters**:
     - `product_id`: Product ID to check
-    
+
     **Query Parameters**:
     - `location_id`: Optional - specific location (warehouse zone, line, etc)
-    
+
     **Responses**:
     - `200`: Current stock status
     - `403`: Insufficient permissions
     - `404`: Product not found
-    
+
     **Response Fields**:
     - `qty_on_hand`: Physical stock currently available
     - `qty_reserved`: Qty already allocated to SPK but not yet taken
@@ -64,25 +66,25 @@ async def check_stock(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Product not found"
         )
-    
+
     # Get stock quant (sum across all locations if not specified)
     query = db.query(StockQuant).filter(StockQuant.product_id == product_id)
-    
+
     if location_id:
         query = query.filter(StockQuant.location_id == location_id)
-    
+
     stock_quants = query.all()
-    
+
     total_on_hand = sum(sq.qty_on_hand for sq in stock_quants)
     total_reserved = sum(sq.qty_reserved for sq in stock_quants)
-    
+
     # Get location name
     if location_id:
         location = db.query(Location).filter(Location.id == location_id).first()
         location_name = location.name if location else "Unknown"
     else:
         location_name = "All Locations"
-    
+
     return StockCheckResponse(
         product_id=product_id,
         location=location_name,
@@ -105,11 +107,10 @@ async def create_stock_transfer(
     current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.CREATE)),
     db: Session = Depends(get_db)
 ):
-    """
-    Create inter-departmental stock transfer (QT-09 Protocol)
-    
+    """Create inter-departmental stock transfer (QT-09 Protocol)
+
     **Required Permission**: warehouse.create_transfer
-    
+
     **Request Body**:
     - `from_dept`: Source department (Cutting, Embroidery, Sewing, etc)
     - `to_dept`: Destination department
@@ -118,31 +119,31 @@ async def create_stock_transfer(
     - `batch_number`: Batch identifier for traceability
     - `reference_doc`: Reference document (SPK, PO number)
     - `lot_id`: Optional - lot/roll number for FIFO tracking
-    
+
     **Responses**:
     - `201`: Transfer created in INITIATED state
     - `400`: Insufficient stock, invalid product, or line clearance blocked
     - `403`: Insufficient permissions
     - `422`: Validation error
-    
+
     **Business Logic**:
     1. **Line Clearance Check (ID 290, 380)**:
        - Query LineOccupancy table for to_dept line status
        - If OCCUPIED by different article → Status = BLOCKED, return error
        - If CLEAR → Continue
-    
+
     2. **Stock Validation**:
        - Check qty_available >= qty (on_hand - reserved)
        - Decrement qty_available, increment qty_reserved
-    
+
     3. **Create Transfer Log**:
        - Status = INITIATED (waiting for ACCEPT at receiving dept)
        - Set timestamp_start
        - Set is_line_clear flag
-    
+
     4. **Lock Stock in Database**:
        - Mark stock as locked until handshake complete (ID 293, 383)
-    
+
     **Handshake Protocol (QT-09)**:
     - Transfer starts in INITIATED state
     - Receiving dept scans ACCEPT → Status = ACCEPTED
@@ -156,31 +157,31 @@ async def create_stock_transfer(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Product not found"
         )
-    
+
     # Check stock availability
     stock_query = db.query(StockQuant).filter(
         StockQuant.product_id == transfer_data.product_id
     )
-    
+
     if transfer_data.lot_id:
         stock_query = stock_query.filter(StockQuant.lot_id == transfer_data.lot_id)
-    
+
     stock_quants = stock_query.all()
     total_available = sum((sq.qty_on_hand - sq.qty_reserved) for sq in stock_quants)
-    
+
     if total_available < transfer_data.qty:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Insufficient stock. Available: {total_available}, Requested: {transfer_data.qty}"
         )
-    
+
     # **QT-09 PROTOCOL: LINE CLEARANCE CHECK (Step 1 - ID 290, 380)**
     line_occupancy = db.query(LineOccupancy).filter(
         LineOccupancy.dept_name == transfer_data.to_dept.value
     ).first()
-    
+
     is_line_clear = False
-    
+
     if line_occupancy:
         # Line exists - check if it's occupied by different article
         if line_occupancy.occupancy_status == LineStatus.OCCUPIED:
@@ -199,12 +200,12 @@ async def create_stock_transfer(
         # No line occupancy record - assume CLEAR
         is_line_clear = True
         transfer_status = TransferStatusEnum.INITIATED
-    
+
     # Create transfer log
     from datetime import datetime
     from_dept_enum = TransferDeptEnum(transfer_data.from_dept.value)
     to_dept_enum = TransferDeptEnum(transfer_data.to_dept.value)
-    
+
     new_transfer = TransferLog(
         from_dept=from_dept_enum,
         to_dept=to_dept_enum,
@@ -218,30 +219,30 @@ async def create_stock_transfer(
         batch_number=transfer_data.batch_number,
         initiated_by_id=current_user.id
     )
-    
+
     # If blocked - return early with error
     if transfer_status == TransferStatusEnum.BLOCKED:
         db.add(new_transfer)
         db.commit()
         db.refresh(new_transfer)
-        
+
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Transfer blocked: Line {transfer_data.to_dept.value} is occupied by different article",
             headers={"X-Transfer-ID": str(new_transfer.id), "X-Transfer-Status": "BLOCKED"}
         )
-    
+
     # Reserve stock
     for stock_quant in stock_quants:
         if transfer_data.qty > 0:
             amount_to_reserve = min(transfer_data.qty, stock_quant.qty_on_hand - stock_quant.qty_reserved)
             stock_quant.qty_reserved += amount_to_reserve
             transfer_data.qty -= amount_to_reserve
-    
+
     db.add(new_transfer)
     db.commit()
     db.refresh(new_transfer)
-    
+
     return StockTransferResponse(
         id=new_transfer.id,
         from_dept=transfer_data.from_dept,
@@ -267,23 +268,22 @@ async def accept_transfer(
     current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.EXECUTE)),
     db: Session = Depends(get_db)
 ):
-    """
-    Accept transfer at receiving department (QT-09 Handshake - Step 3, ID 293 / 383)
-    
+    """Accept transfer at receiving department (QT-09 Handshake - Step 3, ID 293 / 383)
+
     **Required Permission**: warehouse.accept_transfer
-    
+
     **Path Parameters**:
     - `transfer_id`: Transfer log ID
-    
+
     **Query Parameters**:
     - `qty_received`: Actual quantity received (if different from sent)
-    
+
     **Responses**:
     - `200`: Transfer accepted, status changed to ACCEPTED
     - `400`: Transfer not in INITIATED state, qty mismatch > 10%
     - `403`: Insufficient permissions
     - `404`: Transfer not found
-    
+
     **Business Logic (Handshake Digital - ID 293)**:
     1. Update transfer status to ACCEPTED
     2. Record timestamp_accept and accepted_by user
@@ -297,35 +297,35 @@ async def accept_transfer(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Transfer not found"
         )
-    
+
     if transfer.status != TransferStatusEnum.INITIATED:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Can only accept INITIATED transfers. Current status: {transfer.status}"
         )
-    
+
     # Use qty_sent if qty_received not provided
     received = qty_received if qty_received else transfer.qty_sent
-    
+
     # Check for significant qty mismatch
     qty_diff_percent = abs(received - transfer.qty_sent) / transfer.qty_sent * 100 if transfer.qty_sent > 0 else 0
-    
+
     if qty_diff_percent > 10:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Quantity mismatch: Expected {transfer.qty_sent}, Received {received} ({qty_diff_percent:.1f}% difference). Max allowed: 10%"
         )
-    
+
     # Accept transfer
     from datetime import datetime
     transfer.status = TransferStatusEnum.ACCEPTED
     transfer.qty_received = received
     transfer.timestamp_accept = datetime.utcnow()
     transfer.accepted_by_id = current_user.id
-    
+
     db.commit()
     db.refresh(transfer)
-    
+
     return StockTransferResponse(
         id=transfer.id,
         from_dept=TransferDept(transfer.from_dept),
@@ -351,25 +351,24 @@ async def update_warehouse_stock(
     current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.EXECUTE)),
     db: Session = Depends(get_db)
 ):
-    """
-    **POST** - Update Warehouse Stock with Race Condition Protection (STRESS-01 Test)
-    
+    """**POST** - Update Warehouse Stock with Race Condition Protection (STRESS-01 Test)
+
     Handles concurrent stock updates with database-level locking:
     - SELECT FOR UPDATE to prevent race conditions
     - Atomic transaction handling
     - Validation of stock availability
     - Audit trail logging
-    
+
     **Test Scenario STRESS-01:**
     - 50 concurrent requests updating same stock
     - Expected: All succeed with correct final balance
     - No lost updates or phantom reads
-    
+
     **Concurrency Protection:**
     - Database row-level locking (FOR UPDATE)
     - Transaction isolation (READ COMMITTED)
     - Retry logic for deadlock handling
-    
+
     **Request Body:**
     ```json
     {
@@ -380,47 +379,47 @@ async def update_warehouse_stock(
         "reason": "Production consumption"
     }
     ```
-    
+
     Returns:
         - old_qty: Previous quantity
         - new_qty: Updated quantity
         - operation: Applied operation
         - timestamp: Update timestamp
-    
+
     Raises:
         - 400: Invalid operation or insufficient stock
         - 404: Item or location not found
         - 409: Concurrent update conflict (retry)
+
     """
-    from sqlalchemy import select
     from sqlalchemy.exc import OperationalError
-    
+
     # Extract parameters
     item_id = data.get("item_id")
     quantity = data.get("quantity", 0)
     operation = data.get("operation", "add")  # add or subtract
     location_id = data.get("location_id", 1)  # Default warehouse location
     reason = data.get("reason", "Stock adjustment")
-    
+
     # Validation
     if not item_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="item_id is required"
         )
-    
+
     if quantity <= 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Quantity must be positive"
         )
-    
+
     if operation not in ["add", "subtract"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Operation must be 'add' or 'subtract'"
         )
-    
+
     # Verify product exists
     product = db.query(Product).filter(Product.id == item_id).first()
     if not product:
@@ -428,7 +427,7 @@ async def update_warehouse_stock(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Product {item_id} not found"
         )
-    
+
     try:
         # BEGIN TRANSACTION with row-level locking
         # This prevents race conditions by locking the specific stock record
@@ -436,7 +435,7 @@ async def update_warehouse_stock(
             StockQuant.product_id == item_id,
             StockQuant.location_id == location_id
         ).with_for_update().first()
-        
+
         if not stock_quant:
             # Create new stock quant if doesn't exist
             stock_quant = StockQuant(
@@ -447,10 +446,10 @@ async def update_warehouse_stock(
             )
             db.add(stock_quant)
             db.flush()  # Get ID without committing
-        
+
         # Store old quantity
         old_qty = float(stock_quant.qty_on_hand)
-        
+
         # Apply operation
         if operation == "add":
             stock_quant.qty_on_hand += Decimal(quantity)
@@ -462,11 +461,11 @@ async def update_warehouse_stock(
                     detail=f"Insufficient stock. Available: {stock_quant.qty_on_hand}, Requested: {quantity}"
                 )
             stock_quant.qty_on_hand -= Decimal(quantity)
-        
+
         # Update timestamp
         from datetime import datetime
         stock_quant.updated_at = datetime.utcnow()
-        
+
         # Create stock move record for audit trail
         stock_move = StockMove(
             product_id=item_id,
@@ -478,11 +477,11 @@ async def update_warehouse_stock(
             created_at=datetime.utcnow()
         )
         db.add(stock_move)
-        
+
         # Commit transaction
         db.commit()
         db.refresh(stock_quant)
-        
+
         return {
             "success": True,
             "item_id": item_id,
@@ -496,7 +495,7 @@ async def update_warehouse_stock(
             "timestamp": stock_quant.updated_at.isoformat(),
             "concurrency_protection": "Row-level locking (FOR UPDATE) applied"
         }
-    
+
     except OperationalError as e:
         # Handle deadlock - suggest retry
         db.rollback()
@@ -518,9 +517,8 @@ async def get_stock_overview(
     current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.VIEW)),
     db: Session = Depends(get_db)
 ):
-    """
-    Get complete warehouse stock overview
-    
+    """Get complete warehouse stock overview
+
     Shows inventory summary across all locations
     """
     return {
@@ -563,9 +561,8 @@ async def get_low_stock_alerts(
     current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.VIEW)),
     db: Session = Depends(get_db)
 ):
-    """
-    Get products with low stock levels
-    
+    """Get products with low stock levels
+
     Alerts when inventory falls below reorder point
     """
     return {
@@ -609,9 +606,8 @@ async def create_stock_transfer(
     current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.CREATE)),
     db: Session = Depends(get_db)
 ):
-    """
-    Create stock transfer between warehouse locations
-    
+    """Create stock transfer between warehouse locations
+
     Transfer inventory from one location to another
     """
     return {
@@ -631,9 +627,8 @@ async def get_stock_aging(
     current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.VIEW)),
     db: Session = Depends(get_db)
 ):
-    """
-    Get stock aging report
-    
+    """Get stock aging report
+
     Shows inventory by age (newly received, 30+ days old, etc)
     Helps identify slow-moving items
     """
@@ -676,9 +671,8 @@ async def get_warehouse_efficiency(
     current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.VIEW)),
     db: Session = Depends(get_db)
 ):
-    """
-    Get warehouse efficiency metrics
-    
+    """Get warehouse efficiency metrics
+
     KPIs for warehouse operations and performance
     """
     return {

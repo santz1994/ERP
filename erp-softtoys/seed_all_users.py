@@ -1,12 +1,9 @@
-"""
-Comprehensive User Seeder - Creates demo users for all 22 roles
+"""Comprehensive User Seeder - Creates demo users for all 22 roles
 Usage: python seed_all_users.py
 """
-from sqlalchemy.orm import Session
 from app.core.database import SessionLocal
-from app.core.security import PasswordUtils
 from app.core.models.users import User, UserRole
-
+from app.core.security import PasswordUtils
 
 # Default password for all users (TESTING ONLY)
 DEFAULT_PASSWORD = "password123"
@@ -15,17 +12,17 @@ DEFAULT_PASSWORD = "password123"
 USERS_DATA = [
     # Level 0: System Development
     {"username": "developer", "email": "developer@qutykarunia.com", "full_name": "System Developer", "role": UserRole.DEVELOPER},
-    
+
     # Level 1: System Administration
     {"username": "superadmin", "email": "superadmin@qutykarunia.com", "full_name": "Super Administrator", "role": UserRole.SUPERADMIN},
-    
+
     # Level 2: Top Management
     {"username": "manager", "email": "manager@qutykarunia.com", "full_name": "General Manager", "role": UserRole.MANAGER},
     {"username": "finance_mgr", "email": "finance.manager@qutykarunia.com", "full_name": "Finance Manager", "role": UserRole.FINANCE_MANAGER},
-    
+
     # Level 3: System Admin
     {"username": "admin", "email": "admin@qutykarunia.com", "full_name": "System Administrator", "role": UserRole.ADMIN},
-    
+
     # Level 4: Department Management
     {"username": "ppic_mgr", "email": "ppic.manager@qutykarunia.com", "full_name": "PPIC Manager", "role": UserRole.PPIC_MANAGER},
     {"username": "ppic_admin", "email": "ppic.admin@qutykarunia.com", "full_name": "PPIC Admin", "role": UserRole.PPIC_ADMIN},
@@ -36,7 +33,7 @@ USERS_DATA = [
     {"username": "qc_lab", "email": "qc.lab@qutykarunia.com", "full_name": "QC Laboratory", "role": UserRole.QC_LAB},
     {"username": "purchasing_head", "email": "purchasing.head@qutykarunia.com", "full_name": "Purchasing Head", "role": UserRole.PURCHASING_HEAD},
     {"username": "purchasing", "email": "purchasing@qutykarunia.com", "full_name": "Purchasing Officer", "role": UserRole.PURCHASING},
-    
+
     # Level 5: Operations
     {"username": "operator_cut", "email": "operator.cutting@qutykarunia.com", "full_name": "Operator Cutting", "role": UserRole.OPERATOR_CUT},
     {"username": "operator_embro", "email": "operator.embroidery@qutykarunia.com", "full_name": "Operator Embroidery", "role": UserRole.OPERATOR_EMBRO},
@@ -54,23 +51,23 @@ def seed_all_users():
     db = SessionLocal()
     created_count = 0
     existing_count = 0
-    
+
     try:
         print("\n" + "="*70)
         print("SEEDING ALL USERS (22 ROLES)")
         print("="*70 + "\n")
-        
+
         for user_data in USERS_DATA:
             # Check if user exists
             existing_user = db.query(User).filter(
                 User.username == user_data["username"]
             ).first()
-            
+
             if existing_user:
                 print(f"⏭️  {user_data['username']:20} - Already exists (skipped)")
                 existing_count += 1
                 continue
-            
+
             # Create new user
             hashed_password = PasswordUtils.hash_password(DEFAULT_PASSWORD)
             new_user = User(
@@ -82,21 +79,21 @@ def seed_all_users():
                 is_active=True,
                 is_verified=True
             )
-            
+
             db.add(new_user)
             db.commit()
             db.refresh(new_user)
-            
+
             print(f"✅ {user_data['username']:20} - Created ({user_data['role'].value})")
             created_count += 1
-        
+
         print("\n" + "="*70)
-        print(f"SUMMARY:")
+        print("SUMMARY:")
         print(f"  ✅ Created: {created_count} users")
         print(f"  ⏭️  Skipped: {existing_count} users (already exist)")
         print(f"  📊 Total:   {created_count + existing_count} users")
         print("="*70 + "\n")
-        
+
         if created_count > 0:
             print("🔐 DEFAULT CREDENTIALS (ALL USERS):")
             print("-" * 70)
@@ -116,7 +113,7 @@ def seed_all_users():
             print(f"   Default password '{DEFAULT_PASSWORD}' for ALL users!")
             print("   Change these passwords in production!")
             print("   These are DEMO credentials for testing only.\n")
-        
+
     except Exception as e:
         db.rollback()
         print(f"\n❌ ERROR: {e}")

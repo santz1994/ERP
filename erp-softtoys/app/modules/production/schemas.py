@@ -1,6 +1,8 @@
+
 from pydantic import BaseModel
-from typing import Optional
+
 from .models import RoutingType
+
 
 class MOCreate(BaseModel):
     po_number: str
@@ -10,6 +12,6 @@ class MOCreate(BaseModel):
 
 class MOResponse(MOCreate):
     id: int
-    
+
     class Config:
         from_attributes = True

@@ -3,15 +3,8 @@ Cutting Module Test Suite
 Tests for Steps 200-293 of cutting process workflow
 """
 
-import pytest
 from fastapi import status
 from sqlalchemy.orm import Session
-from datetime import datetime
-
-from app.core.models.manufacturing import ManufacturingOrder, WorkOrder, WorkOrderStatus
-from app.core.models.products import Product, ProductType
-from app.core.models.transfer import TransferLog, LineOccupancy, LineStatus
-from app.core.models.warehouse import StockMove
 
 
 class TestCuttingReceiveSPK:

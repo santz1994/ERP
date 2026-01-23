@@ -1,18 +1,18 @@
-"""
-Authentication API Endpoints (Phase 1)
+"""Authentication API Endpoints (Phase 1)
 User registration, login, token management, profile
 """
 
 from datetime import datetime, timedelta
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
-from app.core.database import SessionLocal
-from app.core.security import PasswordUtils, TokenUtils, has_role
-from app.core.schemas import UserCreate, UserLogin, TokenResponse, UserResponse, AuthResponse
-from app.core.dependencies import get_db, get_current_user
-from app.core.models.users import User, UserRole as UserRoleModel
 
+from app.core.dependencies import get_current_user, get_db
+from app.core.models.users import User
+from app.core.models.users import UserRole as UserRoleModel
+from app.core.schemas import AuthResponse, TokenResponse, UserCreate, UserLogin, UserResponse
+from app.core.security import PasswordUtils, TokenUtils
 
 router = APIRouter(
     prefix="/auth",
@@ -23,23 +23,22 @@ router = APIRouter(
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register(user_data: UserCreate, db: Session = Depends(get_db)):
-    """
-    Register new user
-    
+    """Register new user
+
     **Roles Required**: None (public endpoint)
-    
+
     **Request Body**:
     - `username`: Unique username (3-50 chars)
     - `email`: Valid email address
     - `password`: Password (min 8 chars)
     - `full_name`: User full name
     - `roles`: List of roles (default: operator_cutting)
-    
+
     **Responses**:
     - `201`: User created successfully
     - `400`: Username or email already exists
     - `422`: Validation error
-    
+
     **Default Roles**:
     - operator_cutting, operator_sewing, operator_finishing, qc_inspector, etc.
     """
@@ -50,7 +49,7 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Username already registered"
         )
-    
+
     # Check if email exists
     existing_email = db.query(User).filter(User.email == user_data.email).first()
     if existing_email:
@@ -58,13 +57,13 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered"
         )
-    
+
     # Create new user with hashed password
     hashed_password = PasswordUtils.hash_password(user_data.password)
-    
+
     # Use first role from list or default (already a UserRole enum)
     user_role = user_data.roles[0] if user_data.roles else UserRoleModel.OPERATOR_CUT
-    
+
     new_user = User(
         username=user_data.username,
         email=user_data.email,
@@ -74,11 +73,11 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
         is_active=True,
         is_verified=False
     )
-    
+
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    
+
     return UserResponse(
         id=new_user.id,
         username=new_user.username,
@@ -92,22 +91,21 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=AuthResponse)
 async def login(credentials: UserLogin, db: Session = Depends(get_db)):
-    """
-    User login endpoint
-    
+    """User login endpoint
+
     **Roles Required**: None (public endpoint)
-    
+
     **Request Body**:
     - `username`: Username or email
     - `password`: User password
-    
+
     **Responses**:
     - `200`: Login successful, returns access token and refresh token
     - `401`: Invalid credentials
     - `403`: Account inactive or locked
     - `429`: Too many login attempts (account locked 15 minutes)
     - `422`: Validation error
-    
+
     **Token Format**:
     - Use `access_token` for API requests (Authorization: Bearer <token>)
     - Use `refresh_token` to get new access token when expired (24 hours validity)
@@ -116,13 +114,13 @@ async def login(credentials: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(
         (User.username == credentials.username) | (User.email == credentials.username)
     ).first()
-    
+
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password"
         )
-    
+
     # Check if account is locked (use timezone-naive datetime consistently)
     now = datetime.utcnow()
     if user.locked_until:
@@ -133,18 +131,18 @@ async def login(credentials: UserLogin, db: Session = Depends(get_db)):
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail=f"Account locked. Try again after {locked_until}"
             )
-    
+
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User account is inactive. Contact administrator."
         )
-    
+
     # Verify password
     if not PasswordUtils.verify_password(credentials.password, user.hashed_password):
         # Increment failed attempts
         user.login_attempts += 1
-        
+
         # Lock account after 5 failed attempts for 15 minutes
         if user.login_attempts >= 5:
             user.locked_until = datetime.utcnow() + timedelta(minutes=15)
@@ -153,35 +151,35 @@ async def login(credentials: UserLogin, db: Session = Depends(get_db)):
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail="Too many failed login attempts. Account locked for 15 minutes."
             )
-        
+
         db.commit()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password"
         )
-    
+
     # Reset failed attempts on successful login
     user.login_attempts = 0
     user.locked_until = None
     user.last_login = datetime.utcnow()
-    
+
     # Generate tokens with single role (not list)
     role_name = user.role.value  # Get the actual role value
-    
+
     access_token = TokenUtils.create_access_token(
         user_id=user.id,
         username=user.username,
         email=user.email,
         roles=[role_name]
     )
-    
+
     refresh_token = TokenUtils.create_refresh_token(
         user_id=user.id,
         username=user.username
     )
-    
+
     db.commit()
-    
+
     # Return tokens with user data
     return AuthResponse(
         access_token=access_token,
@@ -205,14 +203,13 @@ async def refresh_token(
     refresh_token_str: str,
     db: Session = Depends(get_db)
 ):
-    """
-    Refresh access token using refresh token
-    
+    """Refresh access token using refresh token
+
     **Roles Required**: None
-    
+
     **Query Parameters**:
     - `refresh_token_str`: Refresh token from login response
-    
+
     **Responses**:
     - `200`: New access token returned
     - `401`: Invalid or expired refresh token
@@ -223,7 +220,7 @@ async def refresh_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired refresh token"
         )
-    
+
     # Get user
     user = db.query(User).filter(User.id == token_data.user_id).first()
     if not user:
@@ -231,23 +228,23 @@ async def refresh_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found"
         )
-    
+
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User account is inactive"
         )
-    
+
     # Generate new access token
     role_name = user.role.value
-    
+
     access_token = TokenUtils.create_access_token(
         user_id=user.id,
         username=user.username,
         email=user.email,
         roles=[role_name]
     )
-    
+
     return TokenResponse(
         access_token=access_token,
         refresh_token=refresh_token_str,
@@ -258,20 +255,19 @@ async def refresh_token(
 
 @router.get("/me", response_model=UserResponse)
 async def get_current_user_info(current_user: User = Depends(get_current_user)):
-    """
-    Get current authenticated user information (OPTIMIZED for API-02 Test)
-    
+    """Get current authenticated user information (OPTIMIZED for API-02 Test)
+
     **Performance Optimization:**
     - Direct object access (no additional DB query)
     - Current user already loaded from token verification
     - Response time target: < 100ms
-    
+
     **Roles Required**: Any authenticated user
-    
+
     **Responses**:
     - `200`: Current user information
     - `401`: Unauthorized
-    
+
     **Test Scenario API-02:**
     - Expected response time: < 100ms (was 2.054s before optimization)
     - Optimization: Removed redundant queries, use cached user object
@@ -291,6 +287,7 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
 
 class PasswordChangeRequest(BaseModel):
     """Password change request"""
+
     old_password: str = Field(..., min_length=1)
     new_password: str = Field(..., min_length=8)
 
@@ -301,15 +298,14 @@ async def change_password(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """
-    Change user password
-    
+    """Change user password
+
     **Roles Required**: Any authenticated user
-    
+
     **Request Body**:
     - `old_password`: Current password
     - `new_password`: New password (min 8 chars)
-    
+
     **Responses**:
     - `200`: Password changed successfully
     - `401`: Old password incorrect
@@ -321,30 +317,29 @@ async def change_password(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Old password is incorrect"
         )
-    
+
     # Hash new password
     new_hashed = PasswordUtils.hash_password(request.new_password)
-    
+
     # Update user
     current_user.hashed_password = new_hashed
     current_user.last_password_change = datetime.utcnow()
-    
+
     db.commit()
-    
+
     return {"message": "Password changed successfully"}
 
 
 @router.post("/logout")
 async def logout(current_user: User = Depends(get_current_user)):
-    """
-    Logout endpoint
-    
+    """Logout endpoint
+
     **Roles Required**: Any authenticated user
-    
+
     **Responses**:
     - `200`: Logged out successfully
     - `401`: Unauthorized
-    
+
     **Note**: Client should discard the access token after calling this endpoint
     """
     return {
@@ -358,15 +353,14 @@ async def get_user_permissions(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """
-    Get current user's permissions summary (PBAC - Permission-Based Access Control)
-    
+    """Get current user's permissions summary (PBAC - Permission-Based Access Control)
+
     **Roles Required**: Any authenticated user
-    
+
     **Responses**:
     - `200`: Returns user's module access and permissions
     - `401`: Unauthorized
-    
+
     **Response Format**:
     ```json
     {
@@ -380,7 +374,7 @@ async def get_user_permissions(
         }
     }
     ```
-    
+
     **Performance**:
     - Redis cached (5-minute TTL)
     - Cold cache: <10ms

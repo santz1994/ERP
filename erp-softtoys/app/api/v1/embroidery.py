@@ -1,19 +1,17 @@
-"""
-Copyright (c) 2026 PT Quty Karunia / Daniel Rizaldy - All Rights Reserved
+"""Copyright (c) 2026 PT Quty Karunia / Daniel Rizaldy - All Rights Reserved
 
 Embroidery API Endpoints
 Handles embroidery operations between cutting and sewing
 """
 
-from typing import List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.dependencies import get_current_user
-from app.core.permissions import require_permission, ModuleName, Permission
 from app.core.models.users import User
+from app.core.permissions import ModuleName, Permission, require_permission
 from app.modules.embroidery import EmbroideryService
 
 router = APIRouter(prefix="/embroidery", tags=["Embroidery"])
@@ -23,8 +21,8 @@ router = APIRouter(prefix="/embroidery", tags=["Embroidery"])
 class EmbroideryOutputRequest(BaseModel):
     embroidered_qty: int = Field(..., gt=0, description="Quantity embroidered")
     reject_qty: int = Field(0, ge=0, description="Rejected quantity")
-    design_type: Optional[str] = Field(None, description="Embroidery design type")
-    thread_colors: Optional[List[str]] = Field(None, description="Thread colors used")
+    design_type: str | None = Field(None, description="Embroidery design type")
+    thread_colors: list[str] | None = Field(None, description="Thread colors used")
 
 
 class WorkOrderResponse(BaseModel):
@@ -35,9 +33,9 @@ class WorkOrderResponse(BaseModel):
     input_qty: int
     output_qty: int
     reject_qty: int
-    start_time: Optional[str]
-    end_time: Optional[str]
-    metadata: Optional[dict]
+    start_time: str | None
+    end_time: str | None
+    metadata: dict | None
 
     class Config:
         from_attributes = True
@@ -45,25 +43,24 @@ class WorkOrderResponse(BaseModel):
 
 class LineStatusResponse(BaseModel):
     line_id: str
-    current_article: Optional[str]
+    current_article: str | None
     is_occupied: bool
     department: str
-    destination: Optional[str]
+    destination: str | None
 
     class Config:
         from_attributes = True
 
 
 # Endpoints
-@router.get("/work-orders", response_model=List[WorkOrderResponse])
+@router.get("/work-orders", response_model=list[WorkOrderResponse])
 def get_embroidery_work_orders(
-    status: Optional[str] = None,
+    status: str | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.EMBROIDERY, Permission.VIEW))
 ):
-    """
-    Get all work orders for Embroidery department
-    
+    """Get all work orders for Embroidery department
+
     - **status**: Filter by status (Pending, Running, Finished)
     """
     service = EmbroideryService(db)
@@ -77,9 +74,8 @@ def start_embroidery_work_order(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.EMBROIDERY, Permission.EXECUTE))
 ):
-    """
-    Start embroidery work order
-    
+    """Start embroidery work order
+
     - Validates line clearance
     - Creates line occupancy record
     - Changes status to Running
@@ -99,9 +95,8 @@ def record_embroidery_output(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.EMBROIDERY, Permission.EXECUTE))
 ):
-    """
-    Record embroidery output with design details
-    
+    """Record embroidery output with design details
+
     - **embroidered_qty**: Number of pieces embroidered successfully
     - **reject_qty**: Number of pieces rejected
     - **design_type**: Type of embroidery design (e.g., "Logo", "Name Tag")
@@ -128,9 +123,8 @@ def complete_embroidery_work_order(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.EMBROIDERY, Permission.EXECUTE))
 ):
-    """
-    Complete embroidery work order
-    
+    """Complete embroidery work order
+
     - Releases line occupancy
     - Changes status to Finished
     - Ready for transfer to Sewing
@@ -149,9 +143,8 @@ def transfer_to_sewing(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.EMBROIDERY, Permission.EXECUTE))
 ):
-    """
-    Transfer embroidered items to Sewing (QT-09 Protocol)
-    
+    """Transfer embroidered items to Sewing (QT-09 Protocol)
+
     - Validates line clearance at Sewing
     - Creates transfer log
     - Creates new work order for Sewing department
@@ -168,14 +161,13 @@ def transfer_to_sewing(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.get("/line-status", response_model=List[LineStatusResponse])
+@router.get("/line-status", response_model=list[LineStatusResponse])
 def get_line_status(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.EMBROIDERY, Permission.VIEW))
 ):
-    """
-    Get real-time status of all embroidery lines
-    
+    """Get real-time status of all embroidery lines
+
     Shows which lines are occupied and with which article
     """
     service = EmbroideryService(db)

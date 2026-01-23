@@ -1,24 +1,20 @@
-"""
-Reporting Module - Generate PDF and Excel Reports
+"""Reporting Module - Generate PDF and Excel Reports
 Production reports, QC reports, inventory reports
 """
-from fastapi import APIRouter, Depends, HTTPException, Response
-from sqlalchemy.orm import Session
-from sqlalchemy import and_, func, case
-from datetime import datetime
-from typing import Optional, List, Dict, Any
 import io
-from app.core.database import get_db
-from app.core.permissions import (
-    require_permission,
-    ModuleName,
-    Permission
-)
-from app.core.models.users import User
-from app.core.models.manufacturing import WorkOrder
-from app.core.models.quality import QCInspection
-from app.core.models.products import Product
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
+from sqlalchemy import and_, case, func
+from sqlalchemy.orm import Session
+
+from app.core.database import get_db
+from app.core.models.manufacturing import WorkOrder
+from app.core.models.products import Product
+from app.core.models.quality import QCInspection
+from app.core.models.users import User
+from app.core.permissions import ModuleName, Permission, require_permission
 
 router = APIRouter(prefix="/reports", tags=["Reporting"])
 
@@ -27,6 +23,7 @@ router = APIRouter(prefix="/reports", tags=["Reporting"])
 
 class ProductionReportRequest(BaseModel):
     """Request for production report"""
+
     start_date: datetime
     end_date: datetime
     department: Optional[str] = None
@@ -35,6 +32,7 @@ class ProductionReportRequest(BaseModel):
 
 class QCReportRequest(BaseModel):
     """Request for QC report"""
+
     start_date: datetime
     end_date: datetime
     test_type: Optional[str] = None
@@ -44,37 +42,37 @@ class QCReportRequest(BaseModel):
 # ========== HELPER FUNCTIONS ==========
 
 def generate_excel_report(data: dict, title: str) -> bytes:
-    """
-    Generate Excel report using openpyxl
-    
+    """Generate Excel report using openpyxl
+
     Args:
         data: Report data dict with headers, rows, etc.
         title: Report title
-    
+
     Returns:
         Excel file as bytes
+
     """
     try:
         from openpyxl import Workbook
-        from openpyxl.styles import Font, Alignment, PatternFill
-        
+        from openpyxl.styles import Alignment, Font, PatternFill
+
         wb = Workbook()
         ws = wb.active
         ws.title = title
-        
+
         # Title
         ws['A1'] = title
         ws['A1'].font = Font(size=16, bold=True)
         ws['A1'].alignment = Alignment(horizontal='center')
         ws.merge_cells('A1:F1')
-        
+
         # Report metadata
         timestamp_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         ws['A2'] = f"Generated: {timestamp_str}"
         start_date = data.get('start_date', '')
         end_date = data.get('end_date', '')
         ws['A3'] = f"Period: {start_date} to {end_date}"
-        
+
         # Headers (row 5)
         headers = data.get('headers', [])
         for idx, header in enumerate(headers, start=1):
@@ -85,13 +83,13 @@ def generate_excel_report(data: dict, title: str) -> bytes:
                 end_color="CCCCCC",
                 fill_type="solid"
             )
-        
+
         # Data rows
         rows = data.get('rows', [])
         for row_idx, row_data in enumerate(rows, start=6):
             for col_idx, value in enumerate(row_data, start=1):
                 ws.cell(row=row_idx, column=col_idx, value=value)
-        
+
         # Auto-adjust column widths
         for column in ws.columns:
             max_length = 0
@@ -106,13 +104,13 @@ def generate_excel_report(data: dict, title: str) -> bytes:
             if column_cells:
                 col_letter = column_cells[0].column_letter
                 ws.column_dimensions[col_letter].width = adjusted_width
-        
+
         # Save to bytes
         output = io.BytesIO()
         wb.save(output)
         output.seek(0)
         return output.getvalue()
-    
+
     except ImportError as exc:
         raise HTTPException(
             status_code=500,
@@ -124,30 +122,26 @@ def generate_excel_report(data: dict, title: str) -> bytes:
 
 
 def generate_pdf_report(data: dict, title: str) -> bytes:
-    """
-    Generate PDF report using ReportLab
-    
+    """Generate PDF report using ReportLab
+
     Returns: PDF file as bytes
     """
     try:
-        from reportlab.lib.pagesizes import A4, landscape
         from reportlab.lib import colors
+        from reportlab.lib.pagesizes import A4, landscape
         from reportlab.lib.styles import getSampleStyleSheet
-        from reportlab.platypus import (
-            SimpleDocTemplate, Table, TableStyle,
-            Paragraph, Spacer
-        )
-        
+        from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
         output = io.BytesIO()
         doc = SimpleDocTemplate(output, pagesize=landscape(A4))
         elements = []
         styles = getSampleStyleSheet()
-        
+
         # Title
         title_para = Paragraph(title, styles['Title'])
         elements.append(title_para)
         elements.append(Spacer(1, 20))
-        
+
         # Metadata
         timestamp_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         meta_text = f"Generated: {timestamp_str}<br/>"
@@ -157,12 +151,12 @@ def generate_pdf_report(data: dict, title: str) -> bytes:
         meta_para = Paragraph(meta_text, styles['Normal'])
         elements.append(meta_para)
         elements.append(Spacer(1, 20))
-        
+
         # Table
         headers = data.get('headers', [])
         rows = data.get('rows', [])
         table_data = [headers] + rows
-        
+
         table = Table(table_data)
         table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
@@ -175,11 +169,11 @@ def generate_pdf_report(data: dict, title: str) -> bytes:
             ('GRID', (0, 0), (-1, -1), 1, colors.black)
         ]))
         elements.append(table)
-        
+
         doc.build(elements)
         output.seek(0)
         return output.getvalue()
-    
+
     except ImportError as exc:
         raise HTTPException(
             status_code=500,
@@ -200,15 +194,14 @@ async def generate_production_report(
     ),
     db: Session = Depends(get_db)
 ):
-    """
-    Generate Production Report
-    
+    """Generate Production Report
+
     **Report Contents**:
     - Manufacturing Orders summary
     - Work Orders by department
     - Completion rates
     - Output quantities
-    
+
     **Formats**: excel, pdf
     """
     # Query work orders in date range
@@ -223,12 +216,12 @@ async def generate_production_report(
             WorkOrder.start_time <= request.end_date
         )
     )
-    
+
     if request.department:
         query = query.filter(WorkOrder.department == request.department)
-    
+
     results = query.group_by(WorkOrder.department).all()
-    
+
     # Prepare data
     report_data = {
         'title': 'Production Report',
@@ -240,7 +233,7 @@ async def generate_production_report(
         ],
         'rows': []
     }
-    
+
     for row in results:
         pass_rate = 0
         if row.total_output and row.total_output > 0:
@@ -248,7 +241,7 @@ async def generate_production_report(
             pass_rate = (
                 (row.total_output - total_reject) / row.total_output
             ) * 100
-        
+
         report_data['rows'].append([
             row.department,
             row.total_orders,
@@ -256,7 +249,7 @@ async def generate_production_report(
             row.total_reject or 0,
             f"{pass_rate:.2f}%"
         ])
-    
+
     # Generate report
     if request.format == 'excel':
         file_bytes = generate_excel_report(report_data, 'Production Report')
@@ -271,7 +264,7 @@ async def generate_production_report(
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f"production_report_{timestamp}.pdf"
         media_type = "application/pdf"
-    
+
     return Response(
         content=file_bytes,
         media_type=media_type,
@@ -289,15 +282,14 @@ async def generate_qc_report(
     ),
     db: Session = Depends(get_db)
 ):
-    """
-    Generate Quality Control Report
-    
+    """Generate Quality Control Report
+
     **Report Contents**:
     - QC inspections summary
     - Pass/Fail rates
     - Defect analysis
     - Lab test results
-    
+
     **Formats**: excel, pdf
     """
     # Query QC inspections
@@ -318,12 +310,12 @@ async def generate_qc_report(
             QCInspection.inspected_at <= request.end_date
         )
     )
-    
+
     if request.test_type:
         query = query.filter(QCInspection.type == request.test_type)
-    
+
     results = query.group_by(QCInspection.type).all()
-    
+
     # Prepare data
     report_data = {
         'title': 'Quality Control Report',
@@ -335,13 +327,13 @@ async def generate_qc_report(
         ],
         'rows': []
     }
-    
+
     for row in results:
         if row.total_inspections > 0:
             pass_rate = (row.passed / row.total_inspections) * 100
         else:
             pass_rate = 0
-        
+
         report_data['rows'].append([
             row.type,
             row.total_inspections,
@@ -349,7 +341,7 @@ async def generate_qc_report(
             row.failed,
             f"{pass_rate:.2f}%"
         ])
-    
+
     # Generate report
     if request.format == 'excel':
         file_bytes = generate_excel_report(report_data, 'QC Report')
@@ -364,7 +356,7 @@ async def generate_qc_report(
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f"qc_report_{timestamp}.pdf"
         media_type = "application/pdf"
-    
+
     return Response(
         content=file_bytes,
         media_type=media_type,
@@ -382,16 +374,15 @@ async def generate_inventory_report(
     ),
     db: Session = Depends(get_db)
 ):
-    """
-    Generate Inventory Report
-    
+    """Generate Inventory Report
+
     **Report Contents**:
     - Current stock levels
     - Low stock alerts
     - Stock movements summary
     """
     from app.core.models.warehouse import StockQuant
-    
+
     # Query stock quants
     stocks = db.query(
         Product.code,
@@ -404,7 +395,7 @@ async def generate_inventory_report(
     ).group_by(
         Product.id, Product.code, Product.name, Product.uom
     ).all()
-    
+
     # Prepare data
     report_data = {
         'title': 'Inventory Report',
@@ -413,7 +404,7 @@ async def generate_inventory_report(
         'headers': ['Product Code', 'Product Name', 'UOM', 'On Hand', 'Reserved', 'Available'],
         'rows': []
     }
-    
+
     for stock in stocks:
         available = stock.total_on_hand - stock.total_reserved
         report_data['rows'].append([
@@ -424,7 +415,7 @@ async def generate_inventory_report(
             stock.total_reserved,
             available
         ])
-    
+
     # Generate report
     if report_format == 'excel':
         file_bytes = generate_excel_report(
@@ -441,7 +432,7 @@ async def generate_inventory_report(
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f"inventory_report_{timestamp}.pdf"
         media_type = "application/pdf"
-    
+
     return Response(
         content=file_bytes,
         media_type=media_type,
@@ -462,7 +453,7 @@ def get_production_stats(
             start_date = datetime.now().strftime("%Y-%m-%d")
         if not end_date:
             end_date = datetime.now().strftime("%Y-%m-%d")
-        
+
         return {
             "status": "success",
             "data": {
@@ -489,7 +480,7 @@ def get_qc_stats(
             start_date = datetime.now().strftime("%Y-%m-%d")
         if not end_date:
             end_date = datetime.now().strftime("%Y-%m-%d")
-        
+
         return {
             "status": "success",
             "data": {
@@ -531,7 +522,7 @@ def get_production_stats(
             start_date = datetime.now().strftime("%Y-%m-%d")
         if not end_date:
             end_date = datetime.now().strftime("%Y-%m-%d")
-        
+
         return {
             "status": "success",
             "data": {
@@ -558,7 +549,7 @@ def get_qc_stats(
             start_date = datetime.now().strftime("%Y-%m-%d")
         if not end_date:
             end_date = datetime.now().strftime("%Y-%m-%d")
-        
+
         return {
             "status": "success",
             "data": {

@@ -1,16 +1,16 @@
-"""
-Quality Control Module - Pydantic Schemas
+"""Quality Control Module - Pydantic Schemas
 Request/Response models for QC operations
 """
 
-from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional, List
 from enum import Enum
+
+from pydantic import BaseModel
 
 
 class TestType(str, Enum):
     """QC Lab Test Types"""
+
     DROP_TEST = "Drop Test"
     STABILITY_10 = "Stability 10"
     STABILITY_27 = "Stability 27"
@@ -20,12 +20,14 @@ class TestType(str, Enum):
 
 class TestResult(str, Enum):
     """Test result"""
+
     PASS = "Pass"
     FAIL = "Fail"
 
 
 class QCInspectionType(str, Enum):
     """QC Inspection types"""
+
     INCOMING = "Incoming"
     INLINE_SEWING = "Inline Sewing"
     FINAL_METAL_DETECTOR = "Final Metal Detector"
@@ -35,11 +37,11 @@ class QCInspectionType(str, Enum):
 class QCLabTestBase(BaseModel):
     test_type: TestType
     test_result: TestResult
-    measured_value: Optional[float] = None
-    measured_unit: Optional[str] = None
-    iso_standard: Optional[str] = None
-    test_location: Optional[str] = None
-    evidence_photo_url: Optional[str] = None
+    measured_value: float | None = None
+    measured_unit: str | None = None
+    iso_standard: str | None = None
+    test_location: str | None = None
+    evidence_photo_url: str | None = None
 
 
 class QCLabTestCreate(QCLabTestBase):
@@ -62,8 +64,8 @@ class QCLabTestResponse(QCLabTestBase):
 class QCInspectionBase(BaseModel):
     type: QCInspectionType
     status: str  # Pass or Fail
-    defect_reason: Optional[str] = None
-    defect_location: Optional[str] = None
+    defect_reason: str | None = None
+    defect_location: str | None = None
     defect_qty: int = 1
 
 
@@ -88,11 +90,11 @@ class PerformLabTestRequest(BaseModel):
     batch_number: str
     test_type: TestType
     test_result: TestResult
-    measured_value: Optional[float] = None
-    measured_unit: Optional[str] = None
-    iso_standard: Optional[str] = None
-    test_location: Optional[str] = None
-    evidence_photo_url: Optional[str] = None
+    measured_value: float | None = None
+    measured_unit: str | None = None
+    iso_standard: str | None = None
+    test_location: str | None = None
+    evidence_photo_url: str | None = None
 
 
 # Inline QC Request
@@ -100,8 +102,8 @@ class PerformInlineQCRequest(BaseModel):
     work_order_id: int
     type: QCInspectionType
     status: str  # Pass or Fail
-    defect_reason: Optional[str] = None
-    defect_location: Optional[str] = None
+    defect_reason: str | None = None
+    defect_location: str | None = None
     defect_qty: int = 1
 
 
@@ -112,7 +114,7 @@ class LabTestSummaryResponse(BaseModel):
     passed_tests: int
     failed_tests: int
     pass_rate: float
-    critical_failures: List[dict]
+    critical_failures: list[dict]
     last_test_at: datetime
 
     class Config:

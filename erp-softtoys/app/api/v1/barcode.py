@@ -1,21 +1,19 @@
-"""
-Barcode Scanner Module for Warehouse and Finishgoods
+"""Barcode Scanner Module for Warehouse and Finishgoods
 Handles barcode scanning for receiving and picking operations
 Future: RFID integration planned
 """
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, func
 from datetime import datetime
-from typing import List, Optional
+
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
+from sqlalchemy import and_, func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.dependencies import require_permission
-from app.core.permissions import ModuleName
-from app.core.models.users import User
-from app.core.models.warehouse import StockMove, StockQuant, StockLot
 from app.core.models.products import Product
+from app.core.models.users import User
+from app.core.models.warehouse import StockLot, StockMove, StockQuant
 from app.shared.audit import AuditLogger
 
 router = APIRouter(prefix="/barcode", tags=["Barcode Scanner"])
@@ -31,12 +29,12 @@ class BarcodeValidationRequest(BaseModel):
 
 class BarcodeValidationResponse(BaseModel):
     valid: bool
-    product_id: Optional[int] = None
-    product_code: Optional[str] = None
-    product_name: Optional[str] = None
-    current_qty: Optional[float] = None
-    location: Optional[str] = None
-    lot_number: Optional[str] = None
+    product_id: int | None = None
+    product_code: str | None = None
+    product_name: str | None = None
+    current_qty: float | None = None
+    location: str | None = None
+    lot_number: str | None = None
     message: str
 
 
@@ -44,18 +42,18 @@ class ReceiveGoodsRequest(BaseModel):
     barcode: str
     qty: float = Field(..., gt=0)
     location: str = Field(..., description="warehouse or finishgoods")
-    lot_number: Optional[str] = None
-    po_reference: Optional[str] = None
-    notes: Optional[str] = None
+    lot_number: str | None = None
+    po_reference: str | None = None
+    notes: str | None = None
 
 
 class PickGoodsRequest(BaseModel):
     barcode: str
     qty: float = Field(..., gt=0)
     location: str = Field(..., description="warehouse or finishgoods")
-    work_order_id: Optional[int] = None
-    destination: Optional[str] = None
-    notes: Optional[str] = None
+    work_order_id: int | None = None
+    destination: str | None = None
+    notes: str | None = None
 
 
 class BarcodeHistoryResponse(BaseModel):
@@ -77,23 +75,21 @@ async def validate_barcode(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_permission("barcode.validate_product"))
 ):
-    """
-    Validate a barcode and return product information
+    """Validate a barcode and return product information
     Used before receive/pick operations
     """
-    
     # Find product by barcode (assuming barcode = product code)
     result = await db.execute(
         select(Product).where(Product.code == request.barcode)
     )
     product = result.scalar_one_or_none()
-    
+
     if not product:
         return BarcodeValidationResponse(
             valid=False,
             message=f"Product not found for barcode: {request.barcode}"
         )
-    
+
     # Get current stock quantity
     stock_result = await db.execute(
         select(func.sum(StockQuant.quantity))
@@ -105,7 +101,7 @@ async def validate_barcode(
         )
     )
     current_qty = stock_result.scalar() or 0.0
-    
+
     # Get latest lot number
     lot_result = await db.execute(
         select(StockLot.lot_number)
@@ -114,7 +110,7 @@ async def validate_barcode(
         .limit(1)
     )
     lot_number = lot_result.scalar_one_or_none()
-    
+
     # Validation based on operation
     if request.operation == "pick" and current_qty <= 0:
         return BarcodeValidationResponse(
@@ -125,7 +121,7 @@ async def validate_barcode(
             current_qty=current_qty,
             message=f"Insufficient stock for picking. Current qty: {current_qty}"
         )
-    
+
     return BarcodeValidationResponse(
         valid=True,
         product_id=product.id,
@@ -144,23 +140,21 @@ async def receive_goods(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_permission("barcode.receive_inventory"))
 ):
-    """
-    Receive goods using barcode scanner
+    """Receive goods using barcode scanner
     Creates stock move and updates inventory
     """
-    
     # Validate barcode first
     result = await db.execute(
         select(Product).where(Product.code == request.barcode)
     )
     product = result.scalar_one_or_none()
-    
+
     if not product:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Product not found for barcode: {request.barcode}"
         )
-    
+
     # Generate lot number if not provided
     lot_number = request.lot_number
     if not lot_number:
@@ -177,7 +171,7 @@ async def receive_goods(
         )
         count = count_result.scalar() + 1
         lot_number = f"{product.code}-{today}-{count:03d}"
-    
+
     # Create stock lot
     stock_lot = StockLot(
         product_id=product.id,
@@ -187,7 +181,7 @@ async def receive_goods(
         created_at=datetime.now()
     )
     db.add(stock_lot)
-    
+
     # Create stock move (receiving)
     stock_move = StockMove(
         product_id=product.id,
@@ -202,7 +196,7 @@ async def receive_goods(
         created_at=datetime.now()
     )
     db.add(stock_move)
-    
+
     # Update or create stock quant
     quant_result = await db.execute(
         select(StockQuant).where(
@@ -214,7 +208,7 @@ async def receive_goods(
         )
     )
     stock_quant = quant_result.scalar_one_or_none()
-    
+
     if stock_quant:
         stock_quant.quantity += request.qty
     else:
@@ -226,9 +220,9 @@ async def receive_goods(
             reserved_quantity=0.0
         )
         db.add(stock_quant)
-    
+
     await db.commit()
-    
+
     # Audit log
     AuditLogger.log_action(
         db, current_user, "RECEIVE", "WAREHOUSE",
@@ -236,7 +230,7 @@ async def receive_goods(
         entity_type="StockQuant",
         new_values={"barcode": request.barcode, "qty": request.qty, "location": request.location, "lot": lot_number}
     )
-    
+
     return {
         "success": True,
         "message": f"Received {request.qty} {product.uom} of {product.name}",
@@ -257,23 +251,21 @@ async def pick_goods(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_permission("barcode.pick_inventory"))
 ):
-    """
-    Pick goods using barcode scanner (FIFO logic)
+    """Pick goods using barcode scanner (FIFO logic)
     Creates stock move and updates inventory
     """
-    
     # Validate barcode
     result = await db.execute(
         select(Product).where(Product.code == request.barcode)
     )
     product = result.scalar_one_or_none()
-    
+
     if not product:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Product not found for barcode: {request.barcode}"
         )
-    
+
     # Check available stock (FIFO - oldest lot first)
     quants_result = await db.execute(
         select(StockQuant)
@@ -288,37 +280,37 @@ async def pick_goods(
         .order_by(StockLot.created_at.asc())
     )
     available_quants = quants_result.scalars().all()
-    
+
     if not available_quants:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"No available stock for {product.name} in {request.location}"
         )
-    
+
     # Calculate total available
     total_available = sum(q.quantity - q.reserved_quantity for q in available_quants)
-    
+
     if total_available < request.qty:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Insufficient stock. Requested: {request.qty}, Available: {total_available}"
         )
-    
+
     # Pick from quants (FIFO)
     remaining_qty = request.qty
     picked_lots = []
-    
+
     for quant in available_quants:
         if remaining_qty <= 0:
             break
-        
+
         available = quant.quantity - quant.reserved_quantity
         pick_qty = min(remaining_qty, available)
-        
+
         # Update quant
         quant.quantity -= pick_qty
         remaining_qty -= pick_qty
-        
+
         # Get lot info
         lot_result = await db.execute(
             select(StockLot).where(StockLot.id == quant.lot_id)
@@ -328,7 +320,7 @@ async def pick_goods(
             "lot_number": lot.lot_number,
             "qty": pick_qty
         })
-    
+
     # Create stock move (picking)
     stock_move = StockMove(
         product_id=product.id,
@@ -343,9 +335,9 @@ async def pick_goods(
         created_at=datetime.now()
     )
     db.add(stock_move)
-    
+
     await db.commit()
-    
+
     # Audit log
     AuditLogger.log_action(
         db, current_user, "TRANSFER", "WAREHOUSE",
@@ -353,7 +345,7 @@ async def pick_goods(
         entity_type="StockMove",
         new_values={"barcode": request.barcode, "qty": request.qty, "location": request.location, "lots": picked_lots}
     )
-    
+
     return {
         "success": True,
         "message": f"Picked {request.qty} {product.uom} of {product.name}",
@@ -368,19 +360,20 @@ async def pick_goods(
     }
 
 
-@router.get("/history", response_model=List[BarcodeHistoryResponse])
+@router.get("/history", response_model=list[BarcodeHistoryResponse])
 def get_barcode_history(
-    location: Optional[str] = None,
+    location: str | None = None,
     limit: int = 50,
     db = Depends(get_db),
     current_user: User = Depends(require_permission("barcode.view_history"))
 ):
-    """
-    Get barcode scanning history for warehouse or finishgoods
-    
-    Parameters:
+    """Get barcode scanning history for warehouse or finishgoods
+
+    Parameters
+    ----------
     - location: Filter by location (warehouse, finishgoods)
     - limit: Number of records to return (default 50)
+
     """
     try:
         # Mock data for now - return sample barcode history
@@ -407,7 +400,7 @@ def get_barcode_history(
             )
         ]
         return history_data
-    except Exception as e:
+    except Exception:
         return []
 
 
@@ -416,12 +409,10 @@ async def get_barcode_stats(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_permission("barcode.view_statistics"))
 ):
+    """Get barcode scanning statistics
     """
-    Get barcode scanning statistics
-    """
-    
     today = datetime.now().date()
-    
+
     # Today's receives
     receive_result = await db.execute(
         select(func.count(StockMove.id), func.sum(StockMove.quantity))
@@ -433,7 +424,7 @@ async def get_barcode_stats(
         )
     )
     receive_count, receive_qty = receive_result.first()
-    
+
     # Today's picks
     pick_result = await db.execute(
         select(func.count(StockMove.id), func.sum(StockMove.quantity))
@@ -445,14 +436,14 @@ async def get_barcode_stats(
         )
     )
     pick_count, pick_qty = pick_result.first()
-    
+
     # Total products scanned today
     products_result = await db.execute(
         select(func.count(func.distinct(StockMove.product_id)))
         .where(func.date(StockMove.created_at) == today)
     )
     products_count = products_result.scalar()
-    
+
     return {
         "today": {
             "date": today.isoformat(),

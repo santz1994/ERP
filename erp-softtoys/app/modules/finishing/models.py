@@ -1,17 +1,17 @@
-"""
-Finishing Module Models & Schemas
+"""Finishing Module Models & Schemas
 Handles stuffing, closing, QC (metal detector), and conversion to FG code
 """
 
-from pydantic import BaseModel, Field
-from decimal import Decimal
-from typing import Optional, List
 from datetime import datetime
+from decimal import Decimal
 from enum import Enum
+
+from pydantic import BaseModel, Field
 
 
 class FinishingStatus(str, Enum):
     """Finishing work order status"""
+
     PENDING = "Pending"
     LINE_CLEARANCE_CHECK = "Line Clearance Check"
     STUFFING = "Stuffing"
@@ -25,10 +25,11 @@ class FinishingStatus(str, Enum):
 
 class AcceptWIPRequest(BaseModel):
     """Request to accept WIP SEW transfer"""
+
     transfer_slip_number: str = Field(..., description="Transfer slip from Sewing")
     received_qty: Decimal = Field(..., description="Qty received")
-    notes: Optional[str] = None
-    
+    notes: str | None = None
+
     class Config:
         schema_extra = {
             "example": {
@@ -40,12 +41,13 @@ class AcceptWIPRequest(BaseModel):
 
 class StuffingRequest(BaseModel):
     """Request to perform stuffing operation"""
+
     work_order_id: int = Field(..., description="Work order ID")
     operator_id: int = Field(..., description="Operator performing stuffing")
     stuffing_material: str = Field(default="Dacron", description="Filling material type")
     qty_stuffed: Decimal = Field(..., description="Qty completed")
-    notes: Optional[str] = None
-    
+    notes: str | None = None
+
     class Config:
         schema_extra = {
             "example": {
@@ -59,11 +61,12 @@ class StuffingRequest(BaseModel):
 
 class ClosingAndGroomingRequest(BaseModel):
     """Request to perform closing and grooming"""
+
     work_order_id: int = Field(..., description="Work order ID")
     operator_id: int = Field(..., description="Operator")
     qty_closed: Decimal = Field(..., description="Qty with closing completed")
-    quality_notes: Optional[str] = None
-    
+    quality_notes: str | None = None
+
     class Config:
         schema_extra = {
             "example": {
@@ -77,12 +80,13 @@ class ClosingAndGroomingRequest(BaseModel):
 
 class MetalDetectorTestRequest(BaseModel):
     """Request to perform critical metal detector test"""
+
     work_order_id: int = Field(..., description="Work order ID")
     inspector_id: int = Field(..., description="QC inspector")
     pass_qty: Decimal = Field(..., description="Qty passing metal test")
     fail_qty: Decimal = Field(default=0, description="Qty with metal detected")
-    notes: Optional[str] = None
-    
+    notes: str | None = None
+
     class Config:
         schema_extra = {
             "example": {
@@ -97,11 +101,12 @@ class MetalDetectorTestRequest(BaseModel):
 
 class ConversionRequest(BaseModel):
     """Request to convert WIP code to FG (Finish Good) code"""
+
     work_order_id: int = Field(..., description="Work order ID")
     wip_code: str = Field(..., description="Current WIP code")
     fg_code: str = Field(..., description="Target FG code (IKEA article)")
     qty_converted: Decimal = Field(..., description="Qty converted")
-    
+
     class Config:
         schema_extra = {
             "example": {
@@ -115,26 +120,28 @@ class ConversionRequest(BaseModel):
 
 class FinishingWorkOrderResponse(BaseModel):
     """Response: Current finishing work order status"""
+
     id: int
     mo_id: int
     wip_product_id: int
-    fg_product_id: Optional[int]
+    fg_product_id: int | None
     status: FinishingStatus
     input_qty: Decimal
-    stuffed_qty: Optional[Decimal]
-    closed_qty: Optional[Decimal]
-    metal_test_pass: Optional[Decimal]
-    metal_test_fail: Optional[Decimal]
-    converted_qty: Optional[Decimal]
-    started_at: Optional[datetime]
-    completed_at: Optional[datetime]
-    
+    stuffed_qty: Decimal | None
+    closed_qty: Decimal | None
+    metal_test_pass: Decimal | None
+    metal_test_fail: Decimal | None
+    converted_qty: Decimal | None
+    started_at: datetime | None
+    completed_at: datetime | None
+
     class Config:
         from_attributes = True
 
 
 class MetalDetectorAlertResponse(BaseModel):
     """Alert when metal detected in product"""
+
     work_order_id: int
     unit_index: int
     metal_location: str
@@ -145,6 +152,7 @@ class MetalDetectorAlertResponse(BaseModel):
 
 class ConversionLogEntry(BaseModel):
     """Log for WIP to FG conversion"""
+
     work_order_id: int
     wip_code: str
     fg_code: str

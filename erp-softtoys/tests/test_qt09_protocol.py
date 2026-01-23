@@ -3,7 +3,6 @@ QT-09 Transfer Protocol Integration Tests
 Tests for handshake protocol, line clearance, segregation checks
 """
 
-import pytest
 from fastapi import status
 
 
@@ -24,7 +23,7 @@ class TestQT09HandshakeProtocol:
         )
         assert response.status_code == status.HTTP_201_CREATED
         data = response.json()
-        
+
         # Verify handshake is LOCKED
         assert data["handshake_status"] == "LOCKED"
         assert data["stock_status"] == "LOCKED"
@@ -57,7 +56,7 @@ class TestQT09HandshakeProtocol:
             }
         )
         assert accept_response.status_code == status.HTTP_200_OK
-        
+
         # Verify handshake is UNLOCKED
         assert accept_response.json()["handshake_status"] == "UNLOCKED"
         assert accept_response.json()["stock_status"] == "AVAILABLE"
@@ -172,7 +171,7 @@ class TestQT09ProtocolCompleteWorkflow:
 
     def test_qt09_cutting_to_sewing_complete(self, client, operator_token, admin_token):
         """Test complete QT-09 handshake from Cutting to Sewing"""
-        
+
         # Step 1: Cutting completes and checks line clearance
         clearance_response = client.get(
             "/api/v1/production/cutting/line-clear/1",
@@ -211,7 +210,7 @@ class TestQT09ProtocolCompleteWorkflow:
 
     def test_qt09_sewing_to_finishing_complete(self, client, operator_token, admin_token):
         """Test complete QT-09 handshake from Sewing to Finishing"""
-        
+
         # Step 1: Sewing checks segregation
         seg_response = client.get(
             "/api/v1/production/sewing/segregation-check/1",
@@ -250,7 +249,7 @@ class TestQT09ProtocolCompleteWorkflow:
 
     def test_qt09_full_production_flow(self, client, operator_token, admin_token, qc_token):
         """Test complete QT-09 protocol through entire production flow"""
-        
+
         # CUTTING PHASE
         print("\n=== CUTTING PHASE ===")
         cutting_response = client.post(
@@ -260,7 +259,7 @@ class TestQT09ProtocolCompleteWorkflow:
         )
         assert cutting_response.status_code == status.HTTP_200_OK
         wo_id = cutting_response.json()["work_order_id"]
-        
+
         # SEWING PHASE
         print("\n=== SEWING PHASE ===")
         sewing_response = client.post(
@@ -269,7 +268,7 @@ class TestQT09ProtocolCompleteWorkflow:
             json={"transfer_id": 1, "received_qty": 100}
         )
         assert sewing_response.status_code == status.HTTP_200_OK
-        
+
         # FINISHING PHASE
         print("\n=== FINISHING PHASE ===")
         finish_response = client.post(
@@ -278,7 +277,7 @@ class TestQT09ProtocolCompleteWorkflow:
             json={"transfer_id": 2, "received_qty": 100}
         )
         assert finish_response.status_code == status.HTTP_200_OK
-        
+
         # Metal Detector (CRITICAL)
         metal_response = client.post(
             "/api/v1/production/finishing/metal-detector-test",
@@ -311,7 +310,7 @@ class TestQT09AuditTrail:
         )
         assert response.status_code == status.HTTP_201_CREATED
         data = response.json()
-        
+
         # Verify audit fields
         assert "created_by" in data or "transferred_by" in data
         assert "transfer_timestamp" in data or "created_at" in data
@@ -338,7 +337,7 @@ class TestQT09AuditTrail:
             headers={"Authorization": f"Bearer {admin_token}"},
             json={"transfer_id": transfer_id, "received_qty": 100}
         )
-        
+
         # Should have status history
         data = accept_response.json()
         assert "handshake_status" in data

@@ -1,67 +1,65 @@
-"""
-Environment-Aware Permission Enforcement
+"""Environment-Aware Permission Enforcement
 Restricts DEVELOPER role to read-only in production
 
 ISO 27001 A.12.1.2: Segregation of Duties
 SOX 404: Production Access Control
 """
-from functools import wraps
 from fastapi import HTTPException, status
-from app.core.config import settings, Environment
+
+from app.core.config import Environment, settings
 from app.core.models.users import User, UserRole
 from app.core.permissions import Permission
 
 
 class EnvironmentAccessControl:
-    """
-    Environment-aware access control
-    
+    """Environment-aware access control
+
     Rules:
     1. DEVELOPER role is READ-ONLY in PRODUCTION environment
     2. DEVELOPER can CREATE/UPDATE/DELETE in DEVELOPMENT and TESTING
     3. Other roles are not affected by environment
     """
-    
+
     # Permissions allowed for DEVELOPER in PRODUCTION
     DEVELOPER_PRODUCTION_PERMISSIONS = {
         Permission.VIEW,
         # DEVELOPER cannot CREATE, UPDATE, DELETE, APPROVE, EXECUTE in production
     }
-    
+
     @staticmethod
     def is_developer_in_production(user: User) -> bool:
         """Check if user is DEVELOPER role in PRODUCTION environment"""
         return (
-            user.role == UserRole.DEVELOPER and 
+            user.role == UserRole.DEVELOPER and
             settings.ENVIRONMENT == Environment.PRODUCTION
         )
-    
+
     @staticmethod
     def is_permission_allowed(user: User, permission: Permission) -> bool:
-        """
-        Check if permission is allowed based on environment
-        
+        """Check if permission is allowed based on environment
+
         Returns:
             True if permission allowed, False otherwise
+
         """
         # Non-DEVELOPER roles are not restricted by environment
         if user.role != UserRole.DEVELOPER:
             return True
-        
+
         # DEVELOPER in non-production environments has full access
         if settings.ENVIRONMENT != Environment.PRODUCTION:
             return True
-        
+
         # DEVELOPER in production is restricted to VIEW only
         return permission in EnvironmentAccessControl.DEVELOPER_PRODUCTION_PERMISSIONS
-    
+
     @staticmethod
     def enforce_environment_restriction(user: User, permission: Permission):
-        """
-        Raise exception if permission not allowed
-        
+        """Raise exception if permission not allowed
+
         Raises:
             HTTPException: 403 Forbidden if DEVELOPER tries write operation in production
+
         """
         if not EnvironmentAccessControl.is_permission_allowed(user, permission):
             raise HTTPException(
@@ -79,9 +77,8 @@ class EnvironmentAccessControl:
 
 
 def enforce_environment_policy(user: User, permission: Permission):
-    """
-    Wrapper function for environment policy enforcement
-    
+    """Wrapper function for environment policy enforcement
+
     Usage in API endpoints:
         @router.post("/resource")
         def create_resource(user: User = Depends(get_current_user)):
@@ -92,11 +89,11 @@ def enforce_environment_policy(user: User, permission: Permission):
 
 
 def get_environment_info():
-    """
-    Get current environment information
-    
+    """Get current environment information
+
     Returns:
         dict: Environment details including restrictions
+
     """
     return {
         "environment": settings.ENVIRONMENT.value,

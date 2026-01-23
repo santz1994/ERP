@@ -1,5 +1,4 @@
-"""
-Test User Seeding Script
+"""Test User Seeding Script
 Phase 16 Week 4 - Day 4
 Purpose: Create test users with various roles for PBAC testing
 
@@ -19,18 +18,19 @@ Creates 9 test users:
 """
 
 import asyncio
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
-from passlib.context import CryptContext
-from datetime import datetime
-import sys
 import os
+import sys
+from datetime import datetime
+
+from passlib.context import CryptContext
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker
 
 # Add parent directory to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from app.models import User, Role
 from app.config import settings
+from app.models import User
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -123,25 +123,24 @@ TEST_USERS = [
 
 async def seed_test_users():
     """Create test users for PBAC testing"""
-    
     # Create async engine
     engine = create_async_engine(
         settings.DATABASE_URL.replace('postgresql://', 'postgresql+asyncpg://'),
         echo=False
     )
-    
+
     # Create async session
     async_session = sessionmaker(
         engine, class_=AsyncSession, expire_on_commit=False
     )
-    
+
     async with async_session() as session:
         print("🧪 Creating test users for PBAC testing...")
         print("=" * 70)
-        
+
         created_count = 0
         skipped_count = 0
-        
+
         for user_data in TEST_USERS:
             # Check if user exists
             from sqlalchemy import select
@@ -149,15 +148,15 @@ async def seed_test_users():
                 select(User).where(User.username == user_data["username"])
             )
             existing_user = result.scalar_one_or_none()
-            
+
             if existing_user:
                 print(f"⏭️  SKIP: {user_data['username']} (already exists)")
                 skipped_count += 1
                 continue
-            
+
             # Create new user
             hashed_password = pwd_context.hash(user_data["password"])
-            
+
             new_user = User(
                 username=user_data["username"],
                 email=user_data["email"],
@@ -168,10 +167,10 @@ async def seed_test_users():
                 is_active=True,
                 created_at=datetime.utcnow()
             )
-            
+
             session.add(new_user)
             created_count += 1
-            
+
             print(f"✅ CREATE: {user_data['username']}")
             print(f"   Email: {user_data['email']}")
             print(f"   Password: {user_data['password']}")
@@ -179,17 +178,17 @@ async def seed_test_users():
             print(f"   Department: {user_data['department']}")
             print(f"   Purpose: {user_data['description']}")
             print()
-        
+
         # Commit all users
         await session.commit()
-        
+
         print("=" * 70)
-        print(f"📊 Summary:")
+        print("📊 Summary:")
         print(f"   Created: {created_count} users")
         print(f"   Skipped: {skipped_count} users (already exist)")
         print(f"   Total: {created_count + skipped_count} users")
         print()
-        
+
         # Print login credentials
         if created_count > 0:
             print("🔑 Test User Credentials:")
@@ -197,67 +196,66 @@ async def seed_test_users():
             for user_data in TEST_USERS:
                 print(f"Username: {user_data['username']:<20} Password: {user_data['password']}")
             print()
-            
+
             print("📝 Quick Test Commands:")
             print("-" * 70)
             print("# Login as admin")
-            print(f"POST /auth/login")
-            print(f'  {{"username": "admin_test", "password": "Admin123!"}}')
+            print("POST /auth/login")
+            print('  {"username": "admin_test", "password": "Admin123!"}')
             print()
             print("# Login as operator")
-            print(f"POST /auth/login")
-            print(f'  {{"username": "cutting_op_test", "password": "Cutting123!"}}')
+            print("POST /auth/login")
+            print('  {"username": "cutting_op_test", "password": "Cutting123!"}')
             print()
-            
+
             print("✅ Test users ready for PBAC testing!")
         else:
             print("ℹ️  All test users already exist. No new users created.")
-    
+
     await engine.dispose()
 
 
 async def delete_test_users():
     """Delete all test users (cleanup)"""
-    
     engine = create_async_engine(
         settings.DATABASE_URL.replace('postgresql://', 'postgresql+asyncpg://'),
         echo=False
     )
-    
+
     async_session = sessionmaker(
         engine, class_=AsyncSession, expire_on_commit=False
     )
-    
+
     async with async_session() as session:
         print("🗑️  Deleting test users...")
-        
+
         deleted_count = 0
-        
+
         for user_data in TEST_USERS:
-            from sqlalchemy import select, delete
-            
+            from sqlalchemy import select
+
             # Find user
             result = await session.execute(
                 select(User).where(User.username == user_data["username"])
             )
             user = result.scalar_one_or_none()
-            
+
             if user:
                 await session.delete(user)
                 deleted_count += 1
                 print(f"❌ DELETE: {user_data['username']}")
-        
+
         await session.commit()
-        
+
         print(f"📊 Deleted {deleted_count} test users")
-    
+
     await engine.dispose()
 
 
 async def main():
     """Main entry point"""
     import sys
-    
+
     if len(sys.argv) > 1 and sys.argv[1] == "--delete":
         print("⚠️  DELETING ALL TEST USERS")
         confirm = input("Are you sure? (yes/no): ")

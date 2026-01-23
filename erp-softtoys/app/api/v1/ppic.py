@@ -1,5 +1,4 @@
-"""
-PPIC (Production Planning & Inventory Control) API Endpoints
+"""PPIC (Production Planning & Inventory Control) API Endpoints
 ADMIN-ONLY module for Manufacturing Order management
 
 NOTE: PPIC at Quty Karunia is ADMINISTRATIVE ONLY.
@@ -9,19 +8,20 @@ NOTE: PPIC at Quty Karunia is ADMINISTRATIVE ONLY.
 - PPIC only approves MOs and tracks compliance with manager directives
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
-from typing import List
-from app.core.database import SessionLocal
-from app.core.schemas import (
-    ManufacturingOrderCreate, ManufacturingOrderResponse,
-    RoutingType, MOStatus
-)
-from app.core.dependencies import get_db, require_permission
-from app.core.models.users import User
-from app.core.models.manufacturing import ManufacturingOrder, WorkOrder, Department, WorkOrderStatus
-from app.core.models.products import Product
 
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.orm import Session
+
+from app.core.dependencies import get_db, require_permission
+from app.core.models.manufacturing import Department, ManufacturingOrder, WorkOrder, WorkOrderStatus
+from app.core.models.products import Product
+from app.core.models.users import User
+from app.core.schemas import (
+    ManufacturingOrderCreate,
+    ManufacturingOrderResponse,
+    MOStatus,
+    RoutingType,
+)
 
 router = APIRouter(
     prefix="/ppic",
@@ -40,24 +40,23 @@ async def create_manufacturing_order(
     current_user: User = Depends(require_permission("ppic.create_mo")),
     db: Session = Depends(get_db)
 ):
-    """
-    Create new Manufacturing Order (SPK Induk)
-    
+    """Create new Manufacturing Order (SPK Induk)
+
     **Roles Required**: ppic_manager
-    
+
     **Request Body**:
     - `so_line_id`: Sales order line ID
     - `product_id`: WIP/FG product to manufacture
     - `qty_planned`: Planned quantity to produce
     - `routing_type`: Route 1 (Full), Route 2 (Direct), Route 3 (Subcon)
     - `batch_number`: Batch identifier for traceability
-    
+
     **Responses**:
     - `201`: Manufacturing order created
     - `400`: Invalid product or sales order
     - `403`: Insufficient permissions
     - `422`: Validation error
-    
+
     **Business Logic**:
     1. Validate product exists and is WIP or Finish Good type
     2. Validate routing type matches product requirements
@@ -71,7 +70,7 @@ async def create_manufacturing_order(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Product not found"
         )
-    
+
     # Validate product type for manufacturing
     from app.core.models.products import ProductType
     if product.type not in [ProductType.WIP, ProductType.FINISH_GOOD]:
@@ -79,7 +78,7 @@ async def create_manufacturing_order(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Cannot manufacture {product.type}. Only WIP or Finish Good allowed."
         )
-    
+
     # Check if batch_number already exists
     existing_batch = db.query(ManufacturingOrder).filter(
         ManufacturingOrder.batch_number == mo_data.batch_number
@@ -89,7 +88,7 @@ async def create_manufacturing_order(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Batch number already exists"
         )
-    
+
     # Create manufacturing order
     from app.core.models.manufacturing import MOState
     new_mo = ManufacturingOrder(
@@ -102,11 +101,11 @@ async def create_manufacturing_order(
         state=MOState.DRAFT,
         created_by_id=current_user.id
     )
-    
+
     db.add(new_mo)
     db.commit()
     db.refresh(new_mo)
-    
+
     return ManufacturingOrderResponse(
         id=new_mo.id,
         so_line_id=new_mo.so_line_id,
@@ -130,14 +129,13 @@ async def get_manufacturing_order(
     current_user: User = Depends(require_permission("ppic.view_mo")),
     db: Session = Depends(get_db)
 ):
-    """
-    Get Manufacturing Order details
-    
+    """Get Manufacturing Order details
+
     **Roles Required**: ppic_manager
-    
+
     **Path Parameters**:
     - `mo_id`: Manufacturing Order ID
-    
+
     **Responses**:
     - `200`: Manufacturing order details
     - `403`: Insufficient permissions
@@ -149,7 +147,7 @@ async def get_manufacturing_order(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Manufacturing order not found"
         )
-    
+
     return ManufacturingOrderResponse(
         id=mo.id,
         so_line_id=mo.so_line_id,
@@ -171,23 +169,22 @@ async def get_bom_for_product(
     current_user: User = Depends(require_permission("ppic.read")),
     db: Session = Depends(get_db)
 ):
-    """
-    Get Bill of Materials (BOM) for a specific product
-    
+    """Get Bill of Materials (BOM) for a specific product
+
     **Roles Required**: ppic_manager, ppic_admin
-    
+
     **Returns**:
     - BOM header with all components/materials needed
     - Component details with quantities and units
     """
     from app.core.models.bom import BOMHeader
-    
+
     # Get active BOM for product
     bom_header = db.query(BOMHeader).filter(
         BOMHeader.product_id == product_id,
         BOMHeader.is_active == True
     ).first()
-    
+
     if not bom_header:
         return {
             "status": "coming_soon",
@@ -195,7 +192,7 @@ async def get_bom_for_product(
             "product_id": product_id,
             "note": "Manage Bill of Materials for products"
         }
-    
+
     return {
         "id": bom_header.id,
         "product_id": bom_header.product_id,
@@ -210,11 +207,10 @@ async def list_all_boms(
     current_user: User = Depends(require_permission("ppic.read")),
     db: Session = Depends(get_db)
 ):
-    """
-    List all Bill of Materials
-    
+    """List all Bill of Materials
+
     **Roles Required**: ppic_manager, ppic_admin
-    
+
     **Returns**:
     - Array of BOM headers with summary information
     """
@@ -238,15 +234,14 @@ async def create_bom(
     current_user: User = Depends(require_permission("ppic.create_mo")),
     db: Session = Depends(get_db)
 ):
-    """
-    Create new Bill of Materials
-    
+    """Create new Bill of Materials
+
     **Roles Required**: ppic_manager
-    
+
     **Parameters**:
     - `product_id`: Product to create BOM for
     - `bom_type`: Manufacturing or Kit/Phantom
-    
+
     **Returns**:
     - New BOM header with empty details (ready for component definition)
     """
@@ -265,9 +260,8 @@ async def get_production_planning_dashboard(
     current_user: User = Depends(require_permission("ppic.read")),
     db: Session = Depends(get_db)
 ):
-    """
-    Get Production Planning dashboard
-    
+    """Get Production Planning dashboard
+
     Shows:
     - Manufacturing orders by status
     - Department capacity overview
@@ -329,9 +323,8 @@ async def get_manager_directives(
     current_user: User = Depends(require_permission("ppic.read")),
     db: Session = Depends(get_db)
 ):
-    """
-    Get manager directives for production planning
-    
+    """Get manager directives for production planning
+
     PPIC role: Track compliance with these directives
     Department role: Plan production based on machine capacity and directives
     """
@@ -377,9 +370,8 @@ async def get_compliance_report(
     current_user: User = Depends(require_permission("ppic.read")),
     db: Session = Depends(get_db)
 ):
-    """
-    PPIC Compliance Report
-    
+    """PPIC Compliance Report
+
     Tracks production compliance against:
     - Manager directives
     - Department schedules
@@ -437,7 +429,7 @@ async def get_compliance_report(
 
 @router.get(
     "/manufacturing-orders",
-    response_model=List[ManufacturingOrderResponse],
+    response_model=list[ManufacturingOrderResponse],
     dependencies=[Depends(require_permission("ppic.schedule_production"))]
 )
 async def list_manufacturing_orders(
@@ -447,28 +439,27 @@ async def list_manufacturing_orders(
     current_user: User = Depends(require_permission("ppic.schedule_production")),
     db: Session = Depends(get_db)
 ):
-    """
-    List Manufacturing Orders with pagination
-    
+    """List Manufacturing Orders with pagination
+
     **Roles Required**: ppic_manager
-    
+
     **Query Parameters**:
     - `skip`: Number of records to skip (default: 0)
     - `limit`: Number of records to return (default: 100, max: 1000)
     - `status`: Filter by status (DRAFT, IN_PROGRESS, DONE, CANCELLED)
-    
+
     **Responses**:
     - `200`: List of manufacturing orders
     - `403`: Insufficient permissions
     """
     query = db.query(ManufacturingOrder)
-    
+
     # Apply status filter
     if status:
         query = query.filter(ManufacturingOrder.state == status)
-    
+
     mos = query.offset(skip).limit(limit).all()
-    
+
     return [
         ManufacturingOrderResponse(
             id=mo.id,
@@ -495,20 +486,19 @@ async def approve_manufacturing_order(
     current_user: User = Depends(require_permission("ppic.approve_mo")),
     db: Session = Depends(get_db)
 ):
-    """
-    Approve Manufacturing Order to move to IN_PROGRESS
-    
+    """Approve Manufacturing Order to move to IN_PROGRESS
+
     **Roles Required**: ppic_manager
-    
+
     **Path Parameters**:
     - `mo_id`: Manufacturing Order ID
-    
+
     **Responses**:
     - `200`: MO approved and state updated to IN_PROGRESS
     - `400`: MO not in DRAFT state
     - `403`: Insufficient permissions
     - `404`: MO not found
-    
+
     **Business Logic**:
     1. Validate MO is in DRAFT state
     2. Change state to IN_PROGRESS
@@ -521,31 +511,30 @@ async def approve_manufacturing_order(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Manufacturing order not found"
         )
-    
+
     from app.core.models.manufacturing import MOState
     if mo.state != MOState.DRAFT:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Cannot approve MO in {mo.state} state. Only DRAFT MO can be approved."
         )
-    
+
     # Approve MO
     mo.state = MOState.IN_PROGRESS
     mo.approved_by_id = current_user.id
-    
+
     # Create initial work order for Cutting (first step in all routes)
-    from app.core.models.manufacturing import Department, WorkOrderStatus
     initial_wo = WorkOrder(
         mo_id=mo.id,
         department=Department.CUTTING,
         status=WorkOrderStatus.PENDING,
         input_qty=mo.qty_planned
     )
-    
+
     db.add(initial_wo)
     db.commit()
     db.refresh(mo)
-    
+
     return ManufacturingOrderResponse(
         id=mo.id,
         so_line_id=mo.so_line_id,

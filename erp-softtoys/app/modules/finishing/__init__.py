@@ -1,5 +1,4 @@
-"""
-Finishing Module Package
+"""Finishing Module Package
 Production department for product completion: stuffing, closing, QC, and conversion to Finish Good
 """
 

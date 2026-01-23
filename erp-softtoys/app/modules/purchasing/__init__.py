@@ -1,5 +1,4 @@
-"""
-Purchasing Module - Raw Material Procurement
+"""Purchasing Module - Raw Material Procurement
 Handles purchase orders, supplier management, material receiving
 """
 

@@ -1,5 +1,4 @@
-"""
-Finishgoods Module - Final Product Warehouse Management
+"""Finishgoods Module - Final Product Warehouse Management
 Handles finished goods storage, stock monitoring, and shipping preparation
 """
 

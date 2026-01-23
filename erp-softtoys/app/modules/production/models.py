@@ -1,7 +1,10 @@
-from sqlalchemy import Column, Integer, String, Enum, DateTime, ForeignKey
-from app.core.database import Base
 import enum
 from datetime import datetime
+
+from sqlalchemy import Column, DateTime, Enum, Integer, String
+
+from app.core.database import Base
+
 
 class RoutingType(str, enum.Enum):
     ROUTE1 = "Route 1 (Full)"
@@ -17,5 +20,5 @@ class ManufacturingOrder(Base):
     qty_planned = Column(Integer)
     routing_type = Column(Enum(RoutingType))
     created_at = Column(DateTime, default=datetime.utcnow)
-    
+
     # Nanti disini bisa tambah relasi ke WorkOrders, MaterialRequirements, dll. sesuai kebutuhan

@@ -1,19 +1,18 @@
-"""
-Database ORM Models for Quty Karunia ERP
+"""Database ORM Models for Quty Karunia ERP
 All models are based on Database Scheme.csv
 """
 
-from .products import Product, Category, Partner
-from .bom import BOMHeader, BOMDetail
-from .manufacturing import ManufacturingOrder, WorkOrder, MaterialConsumption
-from .transfer import TransferLog, LineOccupancy
-from .warehouse import Location, StockMove, StockQuant, PurchaseOrder
-from .quality import QCLabTest, QCInspection
+from .audit import AuditLog, SecurityLog, UserActivityLog
+from .bom import BOMDetail, BOMHeader
 from .exceptions import AlertLog, SegregasiAcknowledgement
-from .users import User
+from .kanban import KanbanBoard, KanbanCard, KanbanRule
+from .manufacturing import ManufacturingOrder, MaterialConsumption, WorkOrder
+from .products import Category, Partner, Product
+from .quality import QCInspection, QCLabTest
 from .sales import SalesOrder, SalesOrderLine
-from .kanban import KanbanCard, KanbanBoard, KanbanRule
-from .audit import AuditLog, UserActivityLog, SecurityLog
+from .transfer import LineOccupancy, TransferLog
+from .users import User
+from .warehouse import Location, PurchaseOrder, StockMove, StockQuant
 
 __all__ = [
     "Product",

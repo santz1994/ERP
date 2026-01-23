@@ -1,36 +1,36 @@
-"""
-Audit Trail Utilities
+"""Audit Trail Utilities
 Helper functions for logging audit events
 """
-from sqlalchemy.orm import Session
 from datetime import datetime
-from typing import Optional, Dict, Any
-from app.core.models.audit import AuditLog, AuditAction, AuditModule, UserActivityLog, SecurityLog
+from typing import Any
+
+from sqlalchemy.orm import Session
+
+from app.core.models.audit import AuditAction, AuditLog, AuditModule, SecurityLog, UserActivityLog
 from app.core.models.users import User
 
 
 class AuditLogger:
     """Centralized audit logging utility"""
-    
+
     @staticmethod
     def log_action(
         db: Session,
-        user: Optional[User],
+        user: User | None,
         action: AuditAction,
         module: AuditModule,
         description: str,
-        entity_type: Optional[str] = None,
-        entity_id: Optional[int] = None,
-        old_values: Optional[Dict[str, Any]] = None,
-        new_values: Optional[Dict[str, Any]] = None,
-        ip_address: Optional[str] = None,
-        request_method: Optional[str] = None,
-        request_path: Optional[str] = None,
-        response_status: Optional[int] = None
+        entity_type: str | None = None,
+        entity_id: int | None = None,
+        old_values: dict[str, Any] | None = None,
+        new_values: dict[str, Any] | None = None,
+        ip_address: str | None = None,
+        request_method: str | None = None,
+        request_path: str | None = None,
+        response_status: int | None = None
     ):
-        """
-        Log an audit event
-        
+        """Log an audit event
+
         Args:
             db: Database session
             user: User performing the action (None for system actions)
@@ -45,6 +45,7 @@ class AuditLogger:
             request_method: HTTP method
             request_path: Request URL path
             response_status: HTTP response status code
+
         """
         log = AuditLog(
             user_id=user.id if user else None,
@@ -62,12 +63,12 @@ class AuditLogger:
             request_path=request_path,
             response_status=response_status
         )
-        
+
         db.add(log)
         db.commit()
-        
+
         return log
-    
+
     @staticmethod
     def log_create(
         db: Session,
@@ -75,13 +76,13 @@ class AuditLogger:
         module: AuditModule,
         entity_type: str,
         entity_id: int,
-        values: Dict[str, Any],
-        description: Optional[str] = None
+        values: dict[str, Any],
+        description: str | None = None
     ):
         """Log creation of new record"""
         if not description:
             description = f"Created {entity_type} #{entity_id}"
-        
+
         return AuditLogger.log_action(
             db=db,
             user=user,
@@ -92,7 +93,7 @@ class AuditLogger:
             entity_id=entity_id,
             new_values=values
         )
-    
+
     @staticmethod
     def log_update(
         db: Session,
@@ -100,15 +101,15 @@ class AuditLogger:
         module: AuditModule,
         entity_type: str,
         entity_id: int,
-        old_values: Dict[str, Any],
-        new_values: Dict[str, Any],
-        description: Optional[str] = None
+        old_values: dict[str, Any],
+        new_values: dict[str, Any],
+        description: str | None = None
     ):
         """Log update of existing record"""
         if not description:
             changed_fields = list(new_values.keys())
             description = f"Updated {entity_type} #{entity_id}: {', '.join(changed_fields)}"
-        
+
         return AuditLogger.log_action(
             db=db,
             user=user,
@@ -120,7 +121,7 @@ class AuditLogger:
             old_values=old_values,
             new_values=new_values
         )
-    
+
     @staticmethod
     def log_delete(
         db: Session,
@@ -128,13 +129,13 @@ class AuditLogger:
         module: AuditModule,
         entity_type: str,
         entity_id: int,
-        values: Dict[str, Any],
-        description: Optional[str] = None
+        values: dict[str, Any],
+        description: str | None = None
     ):
         """Log deletion of record"""
         if not description:
             description = f"Deleted {entity_type} #{entity_id}"
-        
+
         return AuditLogger.log_action(
             db=db,
             user=user,
@@ -145,7 +146,7 @@ class AuditLogger:
             entity_id=entity_id,
             old_values=values
         )
-    
+
     @staticmethod
     def log_transfer(
         db: Session,
@@ -159,7 +160,7 @@ class AuditLogger:
     ):
         """Log department transfer"""
         description = f"Transfer {qty} units of {article_code} from {from_dept} to {to_dept}"
-        
+
         return AuditLogger.log_action(
             db=db,
             user=user,
@@ -175,7 +176,7 @@ class AuditLogger:
                 "qty": qty
             }
         )
-    
+
     @staticmethod
     def log_approval(
         db: Session,
@@ -195,7 +196,7 @@ class AuditLogger:
             entity_type=entity_type,
             entity_id=entity_id
         )
-    
+
     @staticmethod
     def log_login(
         db: Session,
@@ -210,14 +211,14 @@ class AuditLogger:
         else:
             description = f"Failed login attempt for user {user.username}"
             action = AuditAction.LOGIN
-            
+
             # Also log to security log
             SecurityLogger.log_failed_login(
                 db=db,
                 username=user.username,
                 ip_address=ip_address
             )
-        
+
         return AuditLogger.log_action(
             db=db,
             user=user if success else None,
@@ -226,18 +227,18 @@ class AuditLogger:
             description=description,
             ip_address=ip_address
         )
-    
+
     @staticmethod
     def log_export(
         db: Session,
         user: User,
         module: AuditModule,
         export_type: str,
-        filters: Dict[str, Any]
+        filters: dict[str, Any]
     ):
         """Log data export"""
         description = f"Exported {export_type} data"
-        
+
         return AuditLogger.log_action(
             db=db,
             user=user,
@@ -251,13 +252,13 @@ class AuditLogger:
 
 class SecurityLogger:
     """Security event logging"""
-    
+
     @staticmethod
     def log_failed_login(
         db: Session,
         username: str,
         ip_address: str,
-        user_id: Optional[int] = None
+        user_id: int | None = None
     ):
         """Log failed login attempt"""
         log = SecurityLog(
@@ -268,10 +269,10 @@ class SecurityLogger:
             username_attempted=username,
             description=f"Failed login attempt for username: {username}"
         )
-        
+
         db.add(log)
         db.commit()
-        
+
         # Check if account should be locked
         from datetime import timedelta
         recent_failures = db.query(SecurityLog).filter(
@@ -279,13 +280,13 @@ class SecurityLogger:
             SecurityLog.event_type == "failed_login",
             SecurityLog.timestamp >= datetime.now() - timedelta(minutes=15)
         ).count()
-        
+
         if recent_failures >= 5:
             log.action_taken = "account_locked"
             db.commit()
-        
+
         return log
-    
+
     @staticmethod
     def log_unauthorized_access(
         db: Session,
@@ -304,24 +305,24 @@ class SecurityLogger:
             description=f"User {user.username} attempted unauthorized action: {attempted_action} on {resource}",
             action_taken="access_denied"
         )
-        
+
         db.add(log)
         db.commit()
-        
+
         return log
 
 
 class ActivityLogger:
     """User activity tracking"""
-    
+
     @staticmethod
     def log_activity(
         db: Session,
         user: User,
         activity_type: str,
-        details: Optional[str] = None,
-        session_id: Optional[str] = None,
-        ip_address: Optional[str] = None
+        details: str | None = None,
+        session_id: str | None = None,
+        ip_address: str | None = None
     ):
         """Log user activity"""
         log = UserActivityLog(
@@ -331,10 +332,10 @@ class ActivityLogger:
             session_id=session_id,
             ip_address=ip_address
         )
-        
+
         db.add(log)
         db.commit()
-        
+
         return log
 
 

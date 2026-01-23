@@ -1,5 +1,4 @@
-"""
-Dashboard API - Optimized with Materialized Views
+"""Dashboard API - Optimized with Materialized Views
 ==================================================
 High-performance dashboard endpoints using PostgreSQL materialized views
 
@@ -8,10 +7,11 @@ Date: 2026-01-21
 Performance: <200ms response time (vs 2-5s with direct queries)
 """
 
+from typing import Any
+
 from fastapi import APIRouter, Depends
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-from typing import Dict, List, Any
 
 from app.core.database import get_db
 from app.core.dependencies import require_permission
@@ -23,22 +23,22 @@ router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 # ============================================================================
 # Dashboard Statistics (Top Cards)
 # ============================================================================
-@router.get("/stats", response_model=Dict[str, Any])
+@router.get("/stats", response_model=dict[str, Any])
 async def get_dashboard_stats(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("dashboard.view_stats"))
 ):
-    """
-    Get dashboard top-level statistics
-    
+    """Get dashboard top-level statistics
+
     Returns:
         - total_mos: Total active manufacturing orders
         - completed_today: Orders completed today
         - pending_qc: Pending quality inspections
         - critical_alerts: Critical alerts in last 24h
         - refreshed_at: Last materialized view refresh time
-    
+
     Performance: <100ms (from materialized view)
+
     """
     try:
         # Try materialized view first
@@ -53,9 +53,9 @@ async def get_dashboard_stats(
                 FROM mv_dashboard_stats
                 LIMIT 1
             """)
-            
+
             result = db.execute(query).fetchone()
-            
+
             if result:
                 return {
                     "total_mos": result.total_mos,
@@ -65,27 +65,28 @@ async def get_dashboard_stats(
                     "refreshed_at": result.refreshed_at.isoformat() if result.refreshed_at else None,
                     "data_source": "materialized_view"
                 }
-        except Exception as mv_error:
+        except Exception:
             # Rollback failed transaction and use fallback
             db.rollback()
             pass
-        
+
         # Fallback to direct query if materialized view fails or not populated
+        from datetime import datetime
+
         from app.core.models.manufacturing import ManufacturingOrder
-        from datetime import datetime, timedelta
-        
+
         total_mos = db.query(ManufacturingOrder).filter(
             ManufacturingOrder.state.in_(['In Progress', 'Pending'])
         ).count()
-        
+
         completed_today = db.query(ManufacturingOrder).filter(
             ManufacturingOrder.state == 'Done',
             ManufacturingOrder.updated_at >= datetime.utcnow().date()
         ).count()
-        
+
         pending_qc = 0  # Simplified for fallback
         critical_alerts = 0  # Simplified for fallback
-        
+
         return {
             "total_mos": total_mos,
             "completed_today": completed_today,
@@ -94,7 +95,7 @@ async def get_dashboard_stats(
             "refreshed_at": None,
             "data_source": "direct_query_fallback"
         }
-    
+
     except Exception as e:
         # Final safety net - return safe defaults
         db.rollback()
@@ -112,14 +113,13 @@ async def get_dashboard_stats(
 # ============================================================================
 # Production Department Status
 # ============================================================================
-@router.get("/production-status", response_model=List[Dict[str, Any]])
+@router.get("/production-status", response_model=list[dict[str, Any]])
 async def get_production_status(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("dashboard.view_production"))
 ):
-    """
-    Get production department status and progress
-    
+    """Get production department status and progress
+
     Returns list of departments with:
         - dept: Department name (Cutting, Sewing, Finishing, Packing)
         - total_jobs: Total jobs in last 7 days
@@ -128,7 +128,7 @@ async def get_production_status(
         - pending: Pending jobs
         - avg_progress: Average progress percentage
         - status: Current status (Running/Pending/Idle)
-    
+
     Performance: <100ms (from materialized view)
     """
     # Return mock data while materialized view is being set up
@@ -175,20 +175,19 @@ async def get_production_status(
 # ============================================================================
 # Recent Alerts
 # ============================================================================
-@router.get("/alerts", response_model=List[Dict[str, Any]])
+@router.get("/alerts", response_model=list[dict[str, Any]])
 async def get_recent_alerts(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("dashboard.view_alerts"))
 ):
-    """
-    Get recent alerts (last 24 hours, top 10)
-    
+    """Get recent alerts (last 24 hours, top 10)
+
     Returns list of alerts with:
         - id: Alert ID
         - type: Alert type (critical/warning/info)
         - message: Formatted alert message
         - created_at: Timestamp
-    
+
     Performance: <100ms (from materialized view)
     """
     try:
@@ -202,9 +201,9 @@ async def get_recent_alerts(
             ORDER BY created_at DESC
             LIMIT 10
         """)
-        
+
         results = db.execute(query).fetchall()
-        
+
         return [
             {
                 "id": row.id,
@@ -214,7 +213,7 @@ async def get_recent_alerts(
             }
             for row in results
         ]
-    except Exception as e:
+    except Exception:
         # If materialized view doesn't exist, return mock data
         return [
             {
@@ -241,21 +240,20 @@ async def get_recent_alerts(
 # ============================================================================
 # MO Trends (7 days)
 # ============================================================================
-@router.get("/mo-trends", response_model=List[Dict[str, Any]])
+@router.get("/mo-trends", response_model=list[dict[str, Any]])
 async def get_mo_trends(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("dashboard.view_trends"))
 ):
-    """
-    Get manufacturing order trends (last 7 days)
-    
+    """Get manufacturing order trends (last 7 days)
+
     Returns daily aggregations with:
         - date: Date (YYYY-MM-DD)
         - created_count: MOs created that day
         - completed_count: MOs completed
         - in_progress_count: MOs in progress
         - pending_count: MOs pending
-    
+
     Performance: <100ms (from materialized view)
     Useful for: Dashboard charts/graphs
     """
@@ -269,9 +267,9 @@ async def get_mo_trends(
         FROM mv_mo_trends_7days
         ORDER BY date DESC
     """)
-    
+
     results = db.execute(query).fetchall()
-    
+
     return [
         {
             "date": row.date.isoformat(),
@@ -292,17 +290,16 @@ async def refresh_materialized_views(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("dashboard.refresh_views"))
 ):
-    """
-    Manually refresh all dashboard materialized views
-    
+    """Manually refresh all dashboard materialized views
+
     Requires: DEVELOPER, SUPERADMIN, or ADMIN role
-    
+
     Refreshes:
         - mv_dashboard_stats
         - mv_production_dept_status
         - mv_recent_alerts
         - mv_mo_trends_7days
-    
+
     Execution time: <1 second
     Note: Auto-refresh runs every 5 minutes via cron job
     """
@@ -310,7 +307,7 @@ async def refresh_materialized_views(
         query = text("SELECT refresh_dashboard_views()")
         db.execute(query)
         db.commit()
-        
+
         return {
             "success": True,
             "message": "Dashboard materialized views refreshed successfully"

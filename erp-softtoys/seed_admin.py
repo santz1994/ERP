@@ -1,10 +1,8 @@
+"""Simple script to create admin user
 """
-Simple script to create admin user
-"""
-from sqlalchemy.orm import Session
 from app.core.database import SessionLocal
-from app.core.security import PasswordUtils
 from app.core.models.users import User, UserRole
+from app.core.security import PasswordUtils
 
 
 def create_admin_user():
@@ -16,7 +14,7 @@ def create_admin_user():
         if existing_admin:
             print("✅ Admin user already exists")
             return
-        
+
         # Create admin user
         hashed_password = PasswordUtils.hash_password("Admin@123456")
         admin_user = User(
@@ -28,16 +26,16 @@ def create_admin_user():
             is_active=True,
             is_verified=True
         )
-        
+
         db.add(admin_user)
         db.commit()
         db.refresh(admin_user)
-        
+
         print("✅ Admin user created successfully!")
-        print(f"   Username: admin")
-        print(f"   Password: Admin@123456")
-        print(f"   Email: admin@qutykarunia.com")
-        
+        print("   Username: admin")
+        print("   Password: Admin@123456")
+        print("   Email: admin@qutykarunia.com")
+
     except Exception as e:
         db.rollback()
         print(f"❌ Error creating admin user: {e}")

@@ -1,5 +1,4 @@
-"""
-Missing Convenience Endpoints for QA Testing
+"""Missing Convenience Endpoints for QA Testing
 =============================================
 These endpoints provide simplified routes for common QA test scenarios.
 They wrap existing module endpoints to match test expectations.
@@ -8,14 +7,15 @@ Author: IT QA Team
 Date: 2026-01-22
 """
 
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
-from typing import Optional, List, Dict, Any
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, require_permission
-from app.core.permissions import ModuleName, Permission
 from app.core.models.users import User
+from app.core.permissions import ModuleName, Permission
 
 router = APIRouter(
     prefix="",
@@ -32,23 +32,23 @@ async def get_audit_trail_simple(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
     limit: int = Query(50, ge=1, le=500)
-) -> List[Dict[str, Any]]:
-    """
-    Simple audit trail endpoint for QA testing.
+) -> list[dict[str, Any]]:
+    """Simple audit trail endpoint for QA testing.
     Returns list of recent audit events.
-    
+
     **Permissions**: audit.view_logs
     **Returns**: List of audit log entries
     """
     try:
-        from app.core.models.audit import AuditLog
         from sqlalchemy import desc
-        
+
+        from app.core.models.audit import AuditLog
+
         logs = db.query(AuditLog)\
             .order_by(desc(AuditLog.timestamp))\
             .limit(limit)\
             .all()
-        
+
         return [
             {
                 "id": log.id,
@@ -78,23 +78,22 @@ async def get_audit_trail_simple(
 async def list_warehouse_stock(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.VIEW))
-) -> Dict[str, Any]:
-    """
-    List all warehouse stock summary.
+) -> dict[str, Any]:
+    """List all warehouse stock summary.
     Returns aggregate stock information for all products.
-    
+
     **Permissions**: warehouse.view_stock
     **Returns**: Stock summary dictionary
     """
     try:
         from app.core.models.warehouse import StockQuant
-        
+
         # Get total stock count
         total_products = db.query(StockQuant).count()
         total_quantity = db.query(
             db.func.sum(StockQuant.quantity)
         ).scalar() or 0
-        
+
         return {
             "status": "success",
             "total_products": total_products,
@@ -116,20 +115,20 @@ async def list_warehouse_stock(
 async def get_kanban_board(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.KANBAN, Permission.VIEW))
-) -> Dict[str, Any]:
-    """
-    Get simplified kanban board view.
+) -> dict[str, Any]:
+    """Get simplified kanban board view.
     Returns kanban card counts by status for current user's department.
-    
+
     **Permissions**: kanban.view
     **Returns**: Kanban board status summary
     """
     try:
-        from app.core.models.kanban import KanbanCard, KanbanStatus
         from sqlalchemy import func
-        
+
+        from app.core.models.kanban import KanbanCard
+
         department = getattr(current_user, 'department', 'UNKNOWN')
-        
+
         # Count by status
         status_counts = db.query(
             KanbanCard.status,
@@ -139,12 +138,12 @@ async def get_kanban_board(
         ).group_by(
             KanbanCard.status
         ).all()
-        
+
         board_data = {
             status.value if hasattr(status, 'value') else str(status): count
             for status, count in status_counts
         }
-        
+
         return {
             "status": "success",
             "department": department,
@@ -168,29 +167,28 @@ async def get_kanban_board(
 async def list_qc_tests(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.QUALITY, Permission.VIEW))
-) -> Dict[str, Any]:
-    """
-    List QC inspection tests/records.
+) -> dict[str, Any]:
+    """List QC inspection tests/records.
     Returns summary of QC inspections.
-    
+
     **Permissions**: quality.view
     **Returns**: QC inspection summary
     """
     try:
+
         from app.core.models.quality import QCInspection
-        from sqlalchemy import func
-        
+
         # Get recent QC tests
         recent_tests = db.query(QCInspection)\
             .order_by(QCInspection.created_at.desc())\
             .limit(10)\
             .all()
-        
+
         total_count = db.query(QCInspection).count()
         passed_count = db.query(QCInspection).filter(
             QCInspection.status == 'PASSED'
         ).count()
-        
+
         return {
             "status": "success",
             "total_inspections": total_count,
@@ -222,11 +220,10 @@ async def list_qc_tests(
 async def list_reports(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.REPORTS, Permission.VIEW))
-) -> Dict[str, Any]:
-    """
-    List available reports and summaries.
+) -> dict[str, Any]:
+    """List available reports and summaries.
     Returns production, QC, and inventory report summaries.
-    
+
     **Permissions**: reports.view
     **Returns**: Reports summary dictionary
     """
@@ -255,11 +252,10 @@ async def list_reports(
 async def get_dashboard(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
-) -> Dict[str, Any]:
-    """
-    Get dashboard summary with key metrics.
+) -> dict[str, Any]:
+    """Get dashboard summary with key metrics.
     Aggregates data from multiple modules.
-    
+
     **Returns**: Dashboard metrics dictionary
     """
     try:
@@ -276,7 +272,7 @@ async def get_dashboard(
                 "overview": "System dashboard loaded successfully"
             }
         }
-        
+
         return dashboard_data
     except Exception as e:
         raise HTTPException(
@@ -290,11 +286,10 @@ async def get_dashboard(
 # ============================================================================
 
 @router.get("/health")
-async def health_check() -> Dict[str, Any]:
-    """
-    Health check endpoint for monitoring.
+async def health_check() -> dict[str, Any]:
+    """Health check endpoint for monitoring.
     Returns system status.
-    
+
     **Returns**: Health status dictionary
     """
     return {

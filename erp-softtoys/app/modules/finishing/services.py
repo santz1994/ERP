@@ -1,37 +1,31 @@
-"""
-Finishing Module Business Logic & Services
+"""Finishing Module Business Logic & Services
 Handles stuffing, closing, metal detector QC, and conversion to FG
 
 Refactored: Now extends BaseProductionService to eliminate code duplication
 """
 
-from sqlalchemy.orm import Session
-from app.core.models.manufacturing import (
-    WorkOrder, ManufacturingOrder, Department, WorkOrderStatus
-)
-from app.core.models.transfer import (
-    TransferLog, TransferStatus, LineOccupancy, TransferDept
-)
-from app.core.models.quality import QCInspection
-from app.core.models.products import Product
-from app.core.base_production_service import BaseProductionService
-from decimal import Decimal
 from datetime import datetime
-from typing import Optional, Tuple
-from fastapi import HTTPException
+from decimal import Decimal
+from typing import tuple
+
+from sqlalchemy.orm import Session
+
+from app.core.base_production_service import BaseProductionService
+from app.core.models.manufacturing import Department
+from app.core.models.quality import QCInspection
+from app.core.models.transfer import TransferDept
 
 
 class FinishingService(BaseProductionService):
-    """
-    Business logic for finishing department operations
+    """Business logic for finishing department operations
     Extends BaseProductionService for common production patterns
     """
-    
+
     # Department configuration
     DEPARTMENT = Department.FINISHING
     DEPARTMENT_NAME = "Finishing"
     TRANSFER_DEPT = TransferDept.FINISHING
-    
+
     @classmethod
     def accept_wip_transfer(
         cls,
@@ -41,8 +35,7 @@ class FinishingService(BaseProductionService):
         user_id: int,
         notes: Optional[str] = None
     ) -> dict:
-        """
-        Step 400: Accept WIP SEW from Sewing
+        """Step 400: Accept WIP SEW from Sewing
         Uses base class accept_transfer_from_previous_dept
         """
         # Delegate to base class
@@ -54,20 +47,19 @@ class FinishingService(BaseProductionService):
             from_dept=TransferDept.SEWING,
             notes=notes
         )
-        
+
         # Add finishing-specific next step
         result["next_step"] = "Line Clearance Check (Step 405-406)"
-        
+
         return result
-    
+
     @classmethod
     def check_line_clearance_packing(
         cls,
         db: Session,
         work_order_id: int
-    ) -> Tuple[bool, Optional[str]]:
-        """
-        Step 405-406: LINE CLEARANCE CHECK (Packing Line)
+    ) -> tuple[bool, str | None]:
+        """Step 405-406: LINE CLEARANCE CHECK (Packing Line)
         Uses base class check_line_clearance
         """
         # Delegate to base class
@@ -76,7 +68,7 @@ class FinishingService(BaseProductionService):
             work_order_id=work_order_id,
             target_dept=TransferDept.PACKING
         )
-    
+
     @staticmethod
     def perform_stuffing(
         db: Session,
@@ -86,14 +78,12 @@ class FinishingService(BaseProductionService):
         qty_stuffed: Decimal,
         notes: Optional[str] = None
     ) -> dict:
-        """
-        Step 410: Perform Stuffing (Isi Dacron)
+        """Step 410: Perform Stuffing (Isi Dacron)
         - Add filling material
         - Record qty completed
         """
-        
         wo = BaseProductionService.get_work_order(db, work_order_id)
-        
+
         return {
             "work_order_id": work_order_id,
             "operation": "Stuffing - Isi Dacron",
@@ -104,7 +94,7 @@ class FinishingService(BaseProductionService):
             "notes": notes,
             "next_step": "Step 420: Closing & Grooming"
         }
-    
+
     @staticmethod
     def perform_closing_and_grooming(
         db: Session,
@@ -113,14 +103,12 @@ class FinishingService(BaseProductionService):
         qty_closed: Decimal,
         quality_notes: Optional[str] = None
     ) -> dict:
-        """
-        Step 420: Closing & Grooming (Jahit Tutup & Rapih)
+        """Step 420: Closing & Grooming (Jahit Tutup & Rapih)
         - Close seams
         - Groom/straighten product
         """
-        
         wo = BaseProductionService.get_work_order(db, work_order_id)
-        
+
         return {
             "work_order_id": work_order_id,
             "operation": "Closing & Grooming",
@@ -130,7 +118,7 @@ class FinishingService(BaseProductionService):
             "timestamp": datetime.utcnow().isoformat(),
             "next_step": "Step 430: CRITICAL - Metal Detector Test"
         }
-    
+
     @staticmethod
     def metal_detector_test(
         db: Session,
@@ -140,16 +128,14 @@ class FinishingService(BaseProductionService):
         fail_qty: Decimal,
         notes: Optional[str] = None
     ) -> dict:
-        """
-        Step 430-435: CRITICAL POINT - Metal Detector Test
+        """Step 430-435: CRITICAL POINT - Metal Detector Test
         - Step 430: Run metal detector
         - Step 435: If fail → Segregate & investigate
-        
+
         This is a **CRITICAL QC POINT** - IKEA requirement for safety
         """
-        
         wo = BaseProductionService.get_work_order(db, work_order_id)
-        
+
         # Create QC record
         qc = QCInspection(
             work_order_id=work_order_id,
@@ -160,7 +146,7 @@ class FinishingService(BaseProductionService):
         )
         db.add(qc)
         db.commit()
-        
+
         result = {
             "work_order_id": work_order_id,
             "qc_inspection_id": qc.id,
@@ -171,7 +157,7 @@ class FinishingService(BaseProductionService):
             "timestamp": datetime.utcnow().isoformat(),
             "notes": notes
         }
-        
+
         if fail_qty > 0:
             result["status"] = "BLOCKED"
             result["action"] = f"Step 435: Segregate & Investigate {fail_qty} units"
@@ -182,11 +168,11 @@ class FinishingService(BaseProductionService):
         else:
             result["status"] = "PASSED"
             result["next_step"] = "Step 440: Physical & Symmetry Check"
-        
+
         db.commit()
-        
+
         return result
-    
+
     @staticmethod
     def physical_qc_check(
         db: Session,
@@ -196,15 +182,13 @@ class FinishingService(BaseProductionService):
         repair_qty: Decimal,
         notes: Optional[str] = None
     ) -> dict:
-        """
-        Step 440-445: Physical & Symmetry QC Check
+        """Step 440-445: Physical & Symmetry QC Check
         - Check physical appearance
         - Verify symmetry
         - If fail → repair (Step 445)
         """
-        
         wo = BaseProductionService.get_work_order(db, work_order_id)
-        
+
         result = {
             "work_order_id": work_order_id,
             "operation": "Physical & Symmetry Check",
@@ -214,15 +198,15 @@ class FinishingService(BaseProductionService):
             "notes": notes,
             "timestamp": datetime.utcnow().isoformat()
         }
-        
+
         if repair_qty > 0:
             result["action"] = f"Step 445: Repair/Cleaning {repair_qty} units"
             result["next_step"] = "Return to Physical Check"
         else:
             result["next_step"] = "Step 450: Conversion to FG Code"
-        
+
         return result
-    
+
     @staticmethod
     def convert_wip_to_fg(
         db: Session,
@@ -232,27 +216,25 @@ class FinishingService(BaseProductionService):
         qty_converted: Decimal,
         user_id: int
     ) -> dict:
-        """
-        Step 450: CONVERSION - Transform WIP Code to FG (Finish Good) Code
+        """Step 450: CONVERSION - Transform WIP Code to FG (Finish Good) Code
         - Change from internal WIP code (e.g., WIP-FIN-SHARK-001)
         - To external IKEA article code (e.g., BLAHAJ-100)
         - This is the point where product becomes "Finish Good"
         """
-        
         wo = BaseProductionService.get_work_order(db, work_order_id)
-        
+
         mo = BaseProductionService.get_manufacturing_order(db, wo.mo_id)
-        
+
         # Get product codes using centralized helper methods
         wip_product = BaseProductionService.get_product(db, wip_product_id)
         fg_product = BaseProductionService.get_product(db, fg_product_id)
-        
+
         # Record conversion
         wo.output_qty = qty_converted
         mo.qty_produced = (mo.qty_produced or 0) + qty_converted
-        
+
         db.commit()
-        
+
         return {
             "work_order_id": work_order_id,
             "operation": "CONVERSION to Finish Good",

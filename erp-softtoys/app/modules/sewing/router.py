@@ -1,23 +1,25 @@
-"""
-Sewing Module API Endpoints
+"""Sewing Module API Endpoints
 Production workflow: Material receipt → Qty validation → 3-stage sewing → Inline QC → Transfer to Finishing
 """
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 from decimal import Decimal
-from typing import List
 
-from app.core.dependencies import get_db, require_permission
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
 from app.core.base_production_service import BaseProductionService
+from app.core.dependencies import get_db, require_permission
 from app.core.models.users import User
 from app.modules.sewing.models import (
-    AcceptTransferRequest, ValidateInputRequest, ProcessSewingStepRequest,
-    InlineQCRequest, SegregationCheckRequest, TransferToFinishingRequest,
-    SewingWorkOrderResponse, SegregationValidationResponse
+    AcceptTransferRequest,
+    InlineQCRequest,
+    ProcessSewingStepRequest,
+    SegregationValidationResponse,
+    SewingWorkOrderResponse,
+    TransferToFinishingRequest,
+    ValidateInputRequest,
 )
 from app.modules.sewing.services import SewingService
-
 
 router = APIRouter(prefix="/production/sewing", tags=["Sewing Module"])
 
@@ -28,22 +30,21 @@ async def accept_transfer_from_cutting(
     current_user: User = Depends(require_permission("sewing.accept_transfer")),
     db: Session = Depends(get_db)
 ) -> dict:
-    """
-    **POST** - Step 300: Accept Transfer & Material Receipt
-    
+    """**POST** - Step 300: Accept Transfer & Material Receipt
+
     **Handshake Digital (QT-09):**
     1. Operator scans transfer slip barcode
     2. System verifies transfer is in LOCKED state (from Cutting)
     3. Records actual received quantity
     4. **Unlocks stock** (status: LOCKED → ACCEPTED)
     5. Updates line occupancy (Cutting line → Clear)
-    
+
     **Critical:** Must match qty from Cutting transfer ±2%
-    
+
     Response confirms:
     - Handshake status (ACCEPTED)
     - Next step (Material validation vs BOM)
-    
+
     Requires: SPV Sewing or Operator_Sewing
     """
     return SewingService.accept_transfer_and_validate(
@@ -61,23 +62,22 @@ async def validate_material_input(
     current_user: User = Depends(require_permission("sewing.validate_input")),
     db: Session = Depends(get_db)
 ) -> dict:
-    """
-    **POST** - Step 310: Validate Input Qty vs BOM
-    
+    """**POST** - Step 310: Validate Input Qty vs BOM
+
     **Three Possible Outcomes:**
-    
+
     1. **OK** - Qty matches BOM target → Proceed to Assembly
     2. **SHORTAGE** - Qty < target → Auto-request supplementary materials (benang, label)
        - Step 320: System auto-generates material requisition
        - Warehouse approves and issues materials
        - Sewing resumes with full complement
     3. **SURPLUS** - Qty > target → Process with full qty
-    
+
     Response includes:
     - Variance analysis
     - Auto-actions triggered (if any)
     - Approval status for shortages
-    
+
     Requires: SPV Sewing or QC Inspector
     """
     return SewingService.validate_input_vs_bom(
@@ -95,27 +95,26 @@ async def process_sewing_stage(
     current_user: User = Depends(require_permission("sewing.process_stage")),
     db: Session = Depends(get_db)
 ) -> dict:
-    """
-    **POST** - Step 330-350: 3-Stage Sewing Process
-    
+    """**POST** - Step 330-350: 3-Stage Sewing Process
+
     **Three Sequential Stages:**
-    
+
     **Stage 1 (Step 330): Proses Jahit 1 - Assembly (Rakit Body)**
     - Assemble body pieces
     - Attach main components
-    
+
     **Stage 2 (Step 340): Proses Jahit 2 - Labeling (Attach Label)**
     - Verify label matches destination country
     - Attach IKEA label with care instructions
     - Verify week code
-    
+
     **Stage 3 (Step 350): Proses Jahit 3 - Stik Balik (Loop Stitching)**
     - Add special stitches (fingers, tails, etc.)
     - Final reinforcement stitches
     - → Then proceed to QC inspection
-    
+
     Response includes next stage or QC entry point.
-    
+
     Requires: Operator_Sewing
     """
     return SewingService.process_sewing_step(
@@ -133,32 +132,31 @@ async def perform_inline_qc_inspection(
     current_user: User = Depends(require_permission("sewing.inline_qc")),
     db: Session = Depends(get_db)
 ) -> dict:
-    """
-    **POST** - Step 360-375: INLINE QC INSPECTION & REWORK
-    
+    """**POST** - Step 360-375: INLINE QC INSPECTION & REWORK
+
     **QC Decision Tree:**
-    
+
     **✅ PASS** (pass_qty):
     - Jahitan bagus, tension OK, tidak ada cacat
     - → Proceed to Segregation Check (Step 380)
-    
+
     **🔄 REWORK** (rework_qty):
     - Jahitan perlu diperbaiki (benang longgar, lubang, dll)
     - Step 370: Return units to Stik Balik stage
     - Operator dapat memperbaiki dengan operator yang sama atau lain
     - After rework: Return to QC for re-inspection
-    
+
     **❌ SCRAP** (scrap_qty):
     - Jahitan tidak bisa diperbaiki
     - Step 375: Reject - create defect report
     - Document scrap reason and quantity
     - Remove from batch, adjust MO qty_produced
-    
+
     Response includes:
     - Pass rate percentage
     - Rework routing (if any)
     - Scrap documentation (if any)
-    
+
     Requires: QC Inspector
     """
     return SewingService.perform_inline_qc(
@@ -178,37 +176,36 @@ async def check_segregation(
     current_user: User = Depends(require_permission("sewing.view_status")),
     db: Session = Depends(get_db)
 ) -> SegregationValidationResponse:
-    """
-    **GET** - Step 380: SEGREGASI CHECK (Destination Consistency)
-    
+    """**GET** - Step 380: SEGREGASI CHECK (Destination Consistency)
+
     **QT-09 Gold Standard - Prevent Mixed Destinations:**
-    
+
     **The Problem:**
     - Sewing line processes batches for different countries
     - If destination differs from current line → product mixing risk
     - Example: Line finishing USA batch, Sewing sends EUROPE batch
-    
+
     **The Solution (QT-09):**
     - Check: Does batch destination = current Finishing line destination?
     - If YES ✅: Can transfer directly (no delay)
     - If NO ❌: **ALARM** - Must implement 5-meter product segregation
       - Either: Wait for line to clear (manual line clearance)
       - Or: Hold batch in segregation zone for 5 minutes
-    
+
     Response indicates:
     - `destinations_match`: True if same destination
     - `segregation_status`: "CLEAR" or "BLOCKED - Destination Mismatch"
     - `requires_jeda`: Whether 5-meter segregation zone required
-    
+
     **Purpose:** Maintain 100% destination accuracy for IKEA shipments
-    
+
     Requires: SPV Sewing
     """
     destinations_match, blocking_reason, info = SewingService.check_segregation(
         db=db,
         work_order_id=work_order_id
     )
-    
+
     return SegregationValidationResponse(
         work_order_id=info["work_order_id"],
         current_destination=info["current_line_destination"],
@@ -226,33 +223,32 @@ async def transfer_to_finishing_dept(
     current_user: User = Depends(require_permission("sewing.create_transfer")),
     db: Session = Depends(get_db)
 ) -> dict:
-    """
-    **POST** - Step 381-383: TRANSFER & HANDSHAKE DIGITAL
-    
+    """**POST** - Step 381-383: TRANSFER & HANDSHAKE DIGITAL
+
     **QT-09 Gold Standard Implementation:**
-    
+
     **Step 381:** Print Surat Jalan Transfer to Finishing
     - Verified segregation (destination match)
     - Generate transfer slip with QT-09 reference
     - Record all batch details
-    
+
     **Step 383:** HANDSHAKE DIGITAL - Lock Stock
     - Stock WIP SEW is LOCKED in database (status = LOCKED)
     - Qty held in reserve pending Finishing dept ACCEPT
     - **Prevents stock loss between departments**
-    
+
     **Handshake Flow:**
     1. ✅ Sewing prints transfer → Stock LOCKED
     2. Finishing scans transfer (ACCEPT) → Stock ACCEPTED
     3. Stock released to Finishing → Transfer COMPLETED
-    
+
     Response includes:
     - Transfer slip barcode number
     - QT-09 handshake protocol reference
     - Lock status and lock reason
-    
+
     **Next Step:** Operator in Finishing scans transfer slip to ACCEPT
-    
+
     Requires: SPV Sewing
     """
     return SewingService.transfer_to_finishing(
@@ -269,21 +265,18 @@ async def get_sewing_work_order_status(
     current_user: User = Depends(require_permission("sewing.view_status")),
     db: Session = Depends(get_db)
 ) -> SewingWorkOrderResponse:
-    """
-    **GET** - Retrieve Current Sewing Work Order Status
-    
+    """**GET** - Retrieve Current Sewing Work Order Status
+
     Real-time status including:
     - Current processing stage
     - Qty through each stage (Assembly → Labeling → Stik)
     - QC results (pass/rework/scrap)
     - Start/completion times
-    
+
     Accessible to: Operators, SPV, QC, Admin
     """
-    from app.core.models.manufacturing import WorkOrder
-    
     wo = BaseProductionService.get_work_order(db, work_order_id)
-    
+
     return SewingWorkOrderResponse(
         id=wo.id,
         mo_id=wo.mo_id,
@@ -301,29 +294,28 @@ async def get_sewing_work_order_status(
     )
 
 
-@router.get("/pending", response_model=List[SewingWorkOrderResponse])
+@router.get("/pending", response_model=list[SewingWorkOrderResponse])
 async def get_pending_sewing_orders(
     current_user: User = Depends(require_permission("sewing.view_status")),
     db: Session = Depends(get_db)
-) -> List[SewingWorkOrderResponse]:
-    """
-    **GET** - List All Pending Sewing Work Orders
-    
+) -> list[SewingWorkOrderResponse]:
+    """**GET** - List All Pending Sewing Work Orders
+
     Returns work orders awaiting:
     - Material transfer acceptance
     - Processing through 3 stages
     - QC inspection
     - Transfer to Finishing
-    
+
     Useful for line management and operator assignment.
     """
-    from app.core.models.manufacturing import WorkOrder, Department, WorkOrderStatus
-    
+    from app.core.models.manufacturing import Department, WorkOrder, WorkOrderStatus
+
     orders = db.query(WorkOrder).filter(
         WorkOrder.department == Department.SEWING,
         WorkOrder.status.in_([WorkOrderStatus.PENDING, WorkOrderStatus.RUNNING])
     ).all()
-    
+
     return [
         SewingWorkOrderResponse(
             id=o.id,
@@ -355,36 +347,35 @@ async def create_internal_loop(
     current_user: User = Depends(require_permission("sewing.return_to_stage")),
     db: Session = Depends(get_db)
 ) -> dict:
-    """
-    **POST** - Internal Loop/Return to Previous Stage
-    
+    """**POST** - Internal Loop/Return to Previous Stage
+
     **Note 1: Sewing Loop (Balik lagi) - Internal Line Balancing**
-    
+
     For products requiring multiple passes through sewing stages WITHOUT
     leaving the Sewing department. This is NOT a rework due to defects,
     but part of normal production flow for certain product types.
-    
+
     **Common Use Cases:**
     - After Stik (Stage 3) → Return to Assembly (Stage 1) for final components
     - Finger stitching on soft toys requiring additional stik work
     - Complex patterns needing multiple assembly passes
     - Special embellishments added after main body completion
-    
+
     **Internal Control:**
     - No external transfer slip (Surat Jalan) required
     - Uses internal work card (Kartu Kendali Meja)
     - Stays within Sewing department
     - Tracked via Work Order metadata
-    
+
     **Stages:**
     - 1: Assembly (Pos 1: Rakit)
     - 2: Labeling (Pos 2: Label)
     - 3: Stik (Pos 3: Stik Balik)
-    
+
     **Validation:**
     - from_stage > to_stage (must return to PREVIOUS stage)
     - Only SPV Sewing can authorize internal loops
-    
+
     **Example:**
     ```json
     {
@@ -396,7 +387,7 @@ async def create_internal_loop(
         "notes": "Add final components (eyes, nose) after body stitching"
     }
     ```
-    
+
     Reference: Flow Production.md - Note 1
     Requires: SPV Sewing
     """

@@ -1,13 +1,13 @@
-"""
-Reports Module - API Router
+"""Reports Module - API Router
 Endpoints for production, quality, and inventory reports with export capabilities
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from datetime import datetime, date
-from typing import Optional
-from app.core.dependencies import get_db, get_current_user
+
+from app.core.dependencies import get_current_user, get_db
 
 router = APIRouter(
     prefix="/reports",
@@ -18,24 +18,24 @@ router = APIRouter(
 
 @router.get("/production-stats")
 def get_production_stats(
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> dict:
-    """
-    Get production statistics for date range
-    
+    """Get production statistics for date range
+
     Query Parameters:
     - start_date: YYYY-MM-DD format (default: today)
     - end_date: YYYY-MM-DD format (default: today)
-    
+
     Returns:
     - units_produced: Total units produced
     - production_rate: Units per hour
     - efficiency: Percentage of target met
     - department_breakdown: Production by department
     - daily_trend: Production trend data
+
     """
     try:
         # Parse dates
@@ -43,7 +43,7 @@ def get_production_stats(
             start_date = datetime.now().strftime("%Y-%m-%d")
         if not end_date:
             end_date = datetime.now().strftime("%Y-%m-%d")
-        
+
         return {
             "status": "success",
             "data": {
@@ -77,24 +77,24 @@ def get_production_stats(
 
 @router.get("/qc-stats")
 def get_qc_stats(
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> dict:
-    """
-    Get quality control statistics for date range
-    
+    """Get quality control statistics for date range
+
     Query Parameters:
     - start_date: YYYY-MM-DD format (default: today)
     - end_date: YYYY-MM-DD format (default: today)
-    
+
     Returns:
     - total_inspections: Total QC inspections performed
     - pass_rate: Percentage of passed inspections
     - failed_count: Number of failed inspections
     - critical_issues: Number of critical quality issues
     - defect_types: Breakdown of defect types
+
     """
     try:
         # Parse dates
@@ -102,7 +102,7 @@ def get_qc_stats(
             start_date = datetime.now().strftime("%Y-%m-%d")
         if not end_date:
             end_date = datetime.now().strftime("%Y-%m-%d")
-        
+
         return {
             "status": "success",
             "data": {
@@ -135,15 +135,15 @@ def get_inventory_summary(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> dict:
-    """
-    Get current inventory summary
-    
+    """Get current inventory summary
+
     Returns:
     - total_stock_value: Total value of inventory
     - total_units: Total number of units
     - low_stock_items: Items below minimum threshold
     - storage_utilization: Warehouse usage percentage
     - items_by_category: Inventory breakdown by category
+
     """
     try:
         return {
@@ -184,25 +184,25 @@ def get_inventory_summary(
 @router.get("/{report_type}/export")
 def export_report(
     report_type: str,
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
     format: str = "pdf",
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> dict:
-    """
-    Export report in PDF or Excel format
-    
+    """Export report in PDF or Excel format
+
     Path Parameters:
     - report_type: "production", "qc", "inventory"
-    
+
     Query Parameters:
     - start_date: YYYY-MM-DD (for date range reports)
     - end_date: YYYY-MM-DD (for date range reports)
     - format: "pdf" or "excel" (default: pdf)
-    
+
     Returns:
     - file download via response
+
     """
     try:
         valid_types = ["production", "qc", "inventory"]
@@ -211,14 +211,14 @@ def export_report(
                 status_code=400,
                 detail=f"Invalid report type. Must be one of: {valid_types}"
             )
-        
+
         valid_formats = ["pdf", "excel"]
         if format not in valid_formats:
             raise HTTPException(
                 status_code=400,
                 detail=f"Invalid format. Must be one of: {valid_formats}"
             )
-        
+
         return {
             "status": "success",
             "message": f"{report_type} report export queued",

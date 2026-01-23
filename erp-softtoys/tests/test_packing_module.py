@@ -3,7 +3,6 @@ Packing Module Test Suite
 Tests for Steps 470-490 of packing process workflow
 """
 
-import pytest
 from fastapi import status
 
 

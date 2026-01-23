@@ -1,5 +1,4 @@
-"""
-Reports Module
+"""Reports Module
 Provides analytics and reporting endpoints for production, quality, and inventory
 """
 

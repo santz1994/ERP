@@ -1,20 +1,18 @@
-"""
-Copyright (c) 2026 PT Quty Karunia / Daniel Rizaldy - All Rights Reserved
+"""Copyright (c) 2026 PT Quty Karunia / Daniel Rizaldy - All Rights Reserved
 
 Purchasing API Endpoints
 Handles purchase orders, supplier management, material receiving
 """
 
-from typing import List, Optional
 from datetime import date
+
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.dependencies import get_current_user
-from app.core.permissions import require_permission, ModuleName, Permission
 from app.core.models.users import User
+from app.core.permissions import ModuleName, Permission, require_permission
 from app.modules.purchasing import PurchasingService
 
 router = APIRouter(prefix="/purchasing", tags=["Purchasing"])
@@ -32,17 +30,17 @@ class CreatePORequest(BaseModel):
     supplier_id: int = Field(..., description="Supplier ID")
     order_date: date = Field(..., description="Order date")
     expected_date: date = Field(..., description="Expected delivery date")
-    items: List[POItemRequest] = Field(..., description="PO items")
+    items: list[POItemRequest] = Field(..., description="PO items")
 
 
 class ReceiveItemRequest(BaseModel):
     product_id: int = Field(..., description="Product ID")
     quantity: int = Field(..., gt=0, description="Received quantity")
-    lot_number: Optional[str] = Field(None, description="Lot/Batch number")
+    lot_number: str | None = Field(None, description="Lot/Batch number")
 
 
 class ReceivePORequest(BaseModel):
-    received_items: List[ReceiveItemRequest] = Field(..., description="Received items")
+    received_items: list[ReceiveItemRequest] = Field(..., description="Received items")
     location_id: int = Field(1, description="Warehouse location ID")
 
 
@@ -59,11 +57,11 @@ class PurchaseOrderResponse(BaseModel):
     status: str
     total_amount: float
     currency: str
-    approved_by: Optional[int]
-    approved_at: Optional[str]
-    received_by: Optional[int]
-    received_at: Optional[str]
-    metadata: Optional[dict]
+    approved_by: int | None
+    approved_at: str | None
+    received_by: int | None
+    received_at: str | None
+    metadata: dict | None
 
     class Config:
         from_attributes = True
@@ -79,16 +77,15 @@ class SupplierPerformanceResponse(BaseModel):
 
 
 # Endpoints
-@router.get("/purchase-orders", response_model=List[PurchaseOrderResponse])
+@router.get("/purchase-orders", response_model=list[PurchaseOrderResponse])
 def get_purchase_orders(
-    status: Optional[str] = None,
-    supplier_id: Optional[int] = None,
+    status: str | None = None,
+    supplier_id: int | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.PURCHASING, Permission.VIEW))
 ):
-    """
-    Get all purchase orders with optional filters
-    
+    """Get all purchase orders with optional filters
+
     - **status**: Filter by status (Draft, Sent, Received, Done, Cancelled)
     - **supplier_id**: Filter by supplier
     """
@@ -103,9 +100,8 @@ def create_purchase_order(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.PURCHASING, Permission.CREATE))
 ):
-    """
-    Create new purchase order for raw materials
-    
+    """Create new purchase order for raw materials
+
     - **po_number**: Unique PO number
     - **supplier_id**: Supplier/vendor ID
     - **order_date**: Date when PO is created
@@ -133,9 +129,8 @@ def approve_purchase_order(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.PURCHASING, Permission.APPROVE))
 ):
-    """
-    Approve purchase order (Manager only)
-    
+    """Approve purchase order (Manager only)
+
     Changes status from Draft to Sent
     """
     try:
@@ -153,9 +148,8 @@ def receive_purchase_order(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.PURCHASING, Permission.EXECUTE))
 ):
-    """
-    Receive materials from purchase order
-    
+    """Receive materials from purchase order
+
     - Creates stock lots for traceability
     - Updates inventory quantities (FIFO)
     - Records stock movements
@@ -181,9 +175,8 @@ def cancel_purchase_order(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.PURCHASING, Permission.DELETE))
 ):
-    """
-    Cancel purchase order
-    
+    """Cancel purchase order
+
     Can only cancel Draft or Sent POs, not Received/Done
     """
     try:
@@ -200,9 +193,8 @@ def get_supplier_performance(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.PURCHASING, Permission.VIEW))
 ):
-    """
-    Get supplier performance metrics
-    
+    """Get supplier performance metrics
+
     - Total purchase orders
     - Completion rate
     - On-time delivery rate

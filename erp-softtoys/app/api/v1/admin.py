@@ -1,20 +1,19 @@
-"""
-Admin API Endpoints (Phase 1)
+"""Admin API Endpoints (Phase 1)
 User management - create, update, deactivate, role assignment
 Restricted to Admin role only
 """
 
 from datetime import datetime
-from typing import List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
-from app.core.database import get_db
-from app.core.models.users import User, UserRole
-from app.core.dependencies import require_permission
-from app.core.security import PasswordUtils
-from app.core.base_production_service import BaseProductionService
 
+from app.core.base_production_service import BaseProductionService
+from app.core.database import get_db
+from app.core.dependencies import require_permission
+from app.core.models.users import User, UserRole
+from app.core.security import PasswordUtils
 
 router = APIRouter(
     prefix="/admin",
@@ -25,47 +24,48 @@ router = APIRouter(
 
 class UserUpdateRequest(BaseModel):
     """Update user request"""
-    full_name: Optional[str] = Field(None, min_length=1, max_length=100)
-    role: Optional[str] = None
-    department: Optional[str] = Field(None, max_length=50)
-    is_active: Optional[bool] = None
+
+    full_name: str | None = Field(None, min_length=1, max_length=100)
+    role: str | None = None
+    department: str | None = Field(None, max_length=50)
+    is_active: bool | None = None
 
 
 class UserListResponse(BaseModel):
     """User list response"""
+
     id: int
     username: str
     email: str
     full_name: str
     role: str
-    department: Optional[str]
+    department: str | None
     is_active: bool
-    last_login: Optional[datetime]
+    last_login: datetime | None
     created_at: datetime
 
 
-@router.get("/users", response_model=List[UserListResponse])
+@router.get("/users", response_model=list[UserListResponse])
 async def list_users(
     current_user: User = Depends(require_permission("admin.manage_users")),
     db: Session = Depends(get_db),
     skip: int = 0,
     limit: int = 100
 ):
-    """
-    List all users (Admin only)
-    
+    """List all users (Admin only)
+
     **Roles Required**: Admin
-    
+
     **Query Parameters**:
     - `skip`: Number of users to skip (default: 0)
     - `limit`: Maximum users to return (default: 100, max: 1000)
-    
+
     **Responses**:
     - `200`: List of users
     - `403`: Forbidden (Admin only)
     """
     users = db.query(User).offset(skip).limit(min(limit, 1000)).all()
-    
+
     return [
         UserListResponse(
             id=u.id,
@@ -88,21 +88,20 @@ async def get_user(
     current_user: User = Depends(require_permission("admin.manage_users")),
     db: Session = Depends(get_db)
 ):
-    """
-    Get user details (Admin only)
-    
+    """Get user details (Admin only)
+
     **Roles Required**: Admin
-    
+
     **Path Parameters**:
     - `user_id`: User ID
-    
+
     **Responses**:
     - `200`: User details
     - `403`: Forbidden
     - `404`: User not found
     """
     user = BaseProductionService.get_user(db, user_id)
-    
+
     return UserListResponse(
         id=user.id,
         username=user.username,
@@ -123,20 +122,19 @@ async def update_user(
     current_user: User = Depends(require_permission("admin.manage_users")),
     db: Session = Depends(get_db)
 ):
-    """
-    Update user details (Admin only)
-    
+    """Update user details (Admin only)
+
     **Roles Required**: Admin
-    
+
     **Path Parameters**:
     - `user_id`: User ID
-    
+
     **Request Body**:
     - `full_name`: New full name
     - `role`: New role (must be valid UserRole)
     - `department`: Department assignment
     - `is_active`: Active status
-    
+
     **Responses**:
     - `200`: User updated
     - `403`: Forbidden
@@ -144,10 +142,10 @@ async def update_user(
     - `400`: Invalid role
     """
     user = BaseProductionService.get_user(db, user_id)
-    
+
     if update_data.full_name:
         user.full_name = update_data.full_name
-    
+
     if update_data.role:
         # Validate role
         try:
@@ -157,16 +155,16 @@ async def update_user(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Invalid role: {update_data.role}"
             )
-    
+
     if update_data.department is not None:
         user.department = update_data.department
-    
+
     if update_data.is_active is not None:
         user.is_active = update_data.is_active
-    
+
     db.commit()
     db.refresh(user)
-    
+
     return UserListResponse(
         id=user.id,
         username=user.username,
@@ -186,30 +184,29 @@ async def deactivate_user(
     current_user: User = Depends(require_permission("admin.manage_users")),
     db: Session = Depends(get_db)
 ):
-    """
-    Deactivate user account (Admin only)
-    
+    """Deactivate user account (Admin only)
+
     **Roles Required**: Admin
-    
+
     **Path Parameters**:
     - `user_id`: User ID to deactivate
-    
+
     **Responses**:
     - `200`: User deactivated
     - `403`: Forbidden
     - `404`: User not found
     """
     user = BaseProductionService.get_user(db, user_id)
-    
+
     if user.id == current_user.id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Cannot deactivate yourself"
         )
-    
+
     user.is_active = False
     db.commit()
-    
+
     return {
         "message": f"User {user.username} deactivated",
         "user_id": user.id
@@ -222,26 +219,25 @@ async def reactivate_user(
     current_user: User = Depends(require_permission("admin.manage_users")),
     db: Session = Depends(get_db)
 ):
-    """
-    Reactivate user account (Admin only)
-    
+    """Reactivate user account (Admin only)
+
     **Roles Required**: Admin
-    
+
     **Path Parameters**:
     - `user_id`: User ID to reactivate
-    
+
     **Responses**:
     - `200`: User reactivated
     - `403`: Forbidden
     - `404`: User not found
     """
     user = BaseProductionService.get_user(db, user_id)
-    
+
     user.is_active = True
     user.login_attempts = 0  # Reset login attempts
     user.locked_until = None
     db.commit()
-    
+
     return {
         "message": f"User {user.username} reactivated",
         "user_id": user.id
@@ -254,31 +250,30 @@ async def reset_user_password(
     current_user: User = Depends(require_permission("admin.manage_users")),
     db: Session = Depends(get_db)
 ):
-    """
-    Reset user password (Admin only)
-    
+    """Reset user password (Admin only)
+
     **Roles Required**: Admin
-    
+
     **Path Parameters**:
     - `user_id`: User ID
-    
+
     **Responses**:
     - `200`: Password reset, temporary password returned
     - `403`: Forbidden
     - `404`: User not found
-    
+
     **Note**: Generates temporary password, user must change on first login
     """
     user = BaseProductionService.get_user(db, user_id)
-    
+
     # Generate temporary password (12 chars random)
     import secrets
     temp_password = secrets.token_urlsafe(9)[:12]
-    
+
     user.hashed_password = PasswordUtils.hash_password(temp_password)
     user.is_verified = False  # Force re-verification
     db.commit()
-    
+
     return {
         "message": f"Password reset for {user.username}",
         "temporary_password": temp_password,
@@ -293,14 +288,13 @@ async def list_users_by_role(
     current_user: User = Depends(require_permission("admin.manage_users")),
     db: Session = Depends(get_db)
 ):
-    """
-    List users by role (Admin only)
-    
+    """List users by role (Admin only)
+
     **Roles Required**: Admin
-    
+
     **Path Parameters**:
     - `role_name`: Role to filter by
-    
+
     **Responses**:
     - `200`: List of users with given role
     - `403`: Forbidden
@@ -308,10 +302,10 @@ async def list_users_by_role(
     """
     # Find users with this role
     users = db.query(User).filter(User.role.astext.ilike(f"%{role_name}%")).all()
-    
+
     if not users:
         return []
-    
+
     return [
         UserListResponse(
             id=u.id,
@@ -332,24 +326,23 @@ async def list_users_by_role(
 async def get_environment_info(
     current_user: User = Depends(require_permission("admin.view_system_info"))
 ):
-    """
-    Get environment information and access control policies
-    
+    """Get environment information and access control policies
+
     **Roles Required**: Admin
-    
+
     **Use Case**: Debugging, security audit, compliance verification
-    
+
     **Returns**:
     - Current environment (development/testing/production)
     - DEVELOPER role restrictions status
     - Allowed/blocked permissions for DEVELOPER
     - User's current role and restrictions
     """
-    from app.core.environment_policy import get_environment_info, EnvironmentAccessControl
     from app.core.config import settings
-    
+    from app.core.environment_policy import EnvironmentAccessControl, get_environment_info
+
     env_info = get_environment_info()
-    
+
     # Add user-specific info
     env_info["current_user"] = {
         "id": current_user.id,
@@ -359,13 +352,13 @@ async def get_environment_info(
         "is_restricted": EnvironmentAccessControl.is_developer_in_production(current_user),
         "can_write": not EnvironmentAccessControl.is_developer_in_production(current_user)
     }
-    
+
     env_info["security_settings"] = {
         "debug_mode": settings.DEBUG,
         "environment": settings.ENVIRONMENT.value,
         "jwt_expiration_hours": settings.JWT_EXPIRATION_HOURS
     }
-    
+
     return env_info
 
 
@@ -374,9 +367,8 @@ async def get_permissions(
     current_user: User = Depends(require_permission("admin.manage_permissions")),
     db: Session = Depends(get_db)
 ):
-    """
-    Get all system permissions
-    
+    """Get all system permissions
+
     Returns list of available permissions grouped by module
     """
     return {
@@ -430,9 +422,8 @@ async def get_products(
     current_user: User = Depends(require_permission("admin.manage_system")),
     db: Session = Depends(get_db)
 ):
-    """
-    Get all products for PPIC and manufacturing
-    
+    """Get all products for PPIC and manufacturing
+
     Returns list of products with their specifications
     """
     return {

@@ -3,7 +3,6 @@ Finishing Module Test Suite
 Tests for Steps 400-450 of finishing process workflow
 """
 
-import pytest
 from fastapi import status
 
 

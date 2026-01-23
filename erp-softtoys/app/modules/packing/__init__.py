@@ -1,5 +1,4 @@
-"""
-Packing Module Package
+"""Packing Module Package
 Final production stage for sorting, packaging, and shipping mark generation
 """
 

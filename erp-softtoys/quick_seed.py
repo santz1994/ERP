@@ -1,7 +1,9 @@
 """Quick seeder with simple passwords for testing"""
+import bcrypt
+
 from app.core.database import SessionLocal
 from app.core.models.users import User, UserRole
-import bcrypt
+
 
 def hash_simple(password: str) -> str:
     """Simple bcrypt hash"""

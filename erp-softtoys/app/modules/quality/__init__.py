@@ -1,5 +1,4 @@
-"""
-Quality Control Module
+"""Quality Control Module
 Handles QC Lab Testing, Inline Inspections, Metal Detector checks
 """
 

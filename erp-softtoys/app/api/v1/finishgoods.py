@@ -1,19 +1,17 @@
-"""
-Copyright (c) 2026 PT Quty Karunia / Daniel Rizaldy - All Rights Reserved
+"""Copyright (c) 2026 PT Quty Karunia / Daniel Rizaldy - All Rights Reserved
 
 Finishgoods API Endpoints
 Handles finished goods warehouse management and shipping
 """
 
-from typing import List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.dependencies import get_current_user
-from app.core.permissions import require_permission, ModuleName, Permission
 from app.core.models.users import User
+from app.core.permissions import ModuleName, Permission, require_permission
 from app.modules.finishgoods import FinishgoodsService
 
 router = APIRouter(prefix="/finishgoods", tags=["Finishgoods"])
@@ -29,7 +27,7 @@ class PrepareShipmentRequest(BaseModel):
     product_id: int = Field(..., description="Product ID")
     quantity: int = Field(..., gt=0, description="Quantity to ship")
     destination: str = Field(..., description="Destination country/location")
-    shipping_marks: List[str] = Field(..., description="Shipping marks/labels")
+    shipping_marks: list[str] = Field(..., description="Shipping marks/labels")
 
 
 class ShipFinishgoodsRequest(BaseModel):
@@ -65,16 +63,15 @@ class StockAgingResponse(BaseModel):
 
 
 # Endpoints
-@router.get("/inventory", response_model=List[InventoryItemResponse])
+@router.get("/inventory", response_model=list[InventoryItemResponse])
 def get_finishgoods_inventory(
-    product_code: Optional[str] = None,
+    product_code: str | None = None,
     low_stock_only: bool = False,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.FINISHGOODS, Permission.VIEW))
 ):
-    """
-    Get finished goods inventory with stock levels
-    
+    """Get finished goods inventory with stock levels
+
     - **product_code**: Filter by product code (partial match)
     - **low_stock_only**: Show only products below minimum stock
     """
@@ -85,13 +82,12 @@ def get_finishgoods_inventory(
     )
     return inventory
 
-@router.get("/stock-aging", response_model=List[dict])
+@router.get("/stock-aging", response_model=list[dict])
 def get_stock_aging(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.FINISHGOODS, Permission.VIEW))
 ):
-    """
-    Get stock aging analysis for finished goods
+    """Get stock aging analysis for finished goods
     Shows how long products have been in warehouse
     """
     return [
@@ -117,9 +113,8 @@ def receive_from_packing(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.FINISHGOODS, Permission.EXECUTE))
 ):
-    """
-    Receive finished goods from Packing department
-    
+    """Receive finished goods from Packing department
+
     - Validates transfer from Packing
     - Creates stock movement
     - Updates FG inventory
@@ -148,9 +143,8 @@ def prepare_shipment(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.FINISHGOODS, Permission.CREATE))
 ):
-    """
-    Prepare finished goods for shipment
-    
+    """Prepare finished goods for shipment
+
     - Validates stock availability
     - Reserves stock for shipment
     - Creates shipping preparation record
@@ -175,9 +169,8 @@ def ship_finishgoods(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.FINISHGOODS, Permission.EXECUTE))
 ):
-    """
-    Ship finished goods (reduce FG inventory)
-    
+    """Ship finished goods (reduce FG inventory)
+
     - Creates outbound stock movement
     - Updates FG inventory
     - Releases reserved stock
@@ -194,14 +187,13 @@ def ship_finishgoods(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.get("/ready-for-shipment", response_model=List[ShipmentReadyResponse])
+@router.get("/ready-for-shipment", response_model=list[ShipmentReadyResponse])
 def get_shipment_ready_products(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.FINISHGOODS, Permission.VIEW))
 ):
-    """
-    Get list of products ready for shipment
-    
+    """Get list of products ready for shipment
+
     Shows completed manufacturing orders with available stock
     """
     service = FinishgoodsService(db)
@@ -209,14 +201,13 @@ def get_shipment_ready_products(
     return ready_products
 
 
-@router.get("/stock-aging", response_model=List[StockAgingResponse])
+@router.get("/stock-aging", response_model=list[StockAgingResponse])
 def get_stock_aging(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.FINISHGOODS, Permission.VIEW))
 ):
-    """
-    Get finished goods stock aging analysis
-    
+    """Get finished goods stock aging analysis
+
     Categories:
     - Fresh: < 7 days
     - Normal: 7-14 days

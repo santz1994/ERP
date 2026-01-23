@@ -1,8 +1,10 @@
-from sqlalchemy import create_engine, event
+import os
+
+from dotenv import load_dotenv
+from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-import os
-from dotenv import load_dotenv
+
 from .config import settings
 
 load_dotenv()
@@ -32,8 +34,7 @@ Base = declarative_base()
 
 # Dependency injection for database sessions
 def get_db():
-    """
-    Database session dependency
+    """Database session dependency
     Usage: def my_endpoint(db: Session = Depends(get_db))
     """
     db = SessionLocal()

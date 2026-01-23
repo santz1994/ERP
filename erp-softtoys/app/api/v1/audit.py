@@ -1,24 +1,21 @@
-"""
-Audit Trail API
+"""Audit Trail API
 Endpoints for viewing and querying audit logs
 
 ISO 27001 A.12.4.1: Event Logging
 Only accessible by authorized roles with audit permissions
 """
-from fastapi import APIRouter, Depends, Query, HTTPException
-from sqlalchemy.orm import Session
-from sqlalchemy import desc, and_, or_
-from typing import Optional, List
 from datetime import datetime, timedelta
 
+from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel
+from sqlalchemy import desc, or_
+from sqlalchemy.orm import Session
+
+from app.core.base_production_service import BaseProductionService
 from app.core.database import get_db
 from app.core.dependencies import require_permission
-from app.core.permissions import ModuleName, Permission
-from app.core.models.audit import AuditLog, AuditAction, AuditModule, UserActivityLog, SecurityLog
+from app.core.models.audit import AuditAction, AuditLog, AuditModule, SecurityLog, UserActivityLog
 from app.core.models.users import User
-from app.core.base_production_service import BaseProductionService
-from pydantic import BaseModel
-
 
 router = APIRouter(prefix="/audit", tags=["Audit Trail"])
 
@@ -30,20 +27,20 @@ router = APIRouter(prefix="/audit", tags=["Audit Trail"])
 class AuditLogResponse(BaseModel):
     id: int
     timestamp: datetime
-    user_id: Optional[int]
+    user_id: int | None
     username: str
-    user_role: Optional[str]
-    ip_address: Optional[str]
+    user_role: str | None
+    ip_address: str | None
     action: str
     module: str
-    entity_type: Optional[str]
-    entity_id: Optional[int]
+    entity_type: str | None
+    entity_id: int | None
     description: str
-    old_values: Optional[dict]
-    new_values: Optional[dict]
-    request_method: Optional[str]
-    request_path: Optional[str]
-    
+    old_values: dict | None
+    new_values: dict | None
+    request_method: str | None
+    request_path: str | None
+
     class Config:
         from_attributes = True
 
@@ -53,10 +50,10 @@ class UserActivityResponse(BaseModel):
     user_id: int
     username: str
     activity_type: str
-    activity_details: Optional[str]
+    activity_details: str | None
     timestamp: datetime
-    ip_address: Optional[str]
-    
+    ip_address: str | None
+
     class Config:
         from_attributes = True
 
@@ -67,10 +64,10 @@ class SecurityLogResponse(BaseModel):
     ip_address: str
     event_type: str
     severity: str
-    username_attempted: Optional[str]
+    username_attempted: str | None
     description: str
-    action_taken: Optional[str]
-    
+    action_taken: str | None
+
     class Config:
         from_attributes = True
 
@@ -79,9 +76,9 @@ class AuditSummaryResponse(BaseModel):
     total_events: int
     events_last_24h: int
     events_last_7d: int
-    top_users: List[dict]
-    top_modules: List[dict]
-    recent_critical_events: List[dict]
+    top_users: list[dict]
+    top_modules: list[dict]
+    recent_critical_events: list[dict]
 
 
 # ============================================================================
@@ -94,20 +91,19 @@ def get_audit_logs(
     current_user: User = Depends(require_permission("audit.view_logs")),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
-    user_id: Optional[int] = None,
-    username: Optional[str] = None,
-    action: Optional[AuditAction] = None,
-    module: Optional[AuditModule] = None,
-    entity_type: Optional[str] = None,
-    start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None,
-    search: Optional[str] = None
+    user_id: int | None = None,
+    username: str | None = None,
+    action: AuditAction | None = None,
+    module: AuditModule | None = None,
+    entity_type: str | None = None,
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
+    search: str | None = None
 ):
-    """
-    Get audit logs with filtering and pagination
-    
+    """Get audit logs with filtering and pagination
+
     **Required Permission**: audit.view_logs
-    
+
     **Filters**:
     - user_id: Filter by specific user
     - username: Filter by username (partial match)
@@ -119,39 +115,39 @@ def get_audit_logs(
     - search: Search in description field
     """
     query = db.query(AuditLog)
-    
+
     # Apply filters
     if user_id:
         query = query.filter(AuditLog.user_id == user_id)
-    
+
     if username:
         query = query.filter(AuditLog.username.ilike(f"%{username}%"))
-    
+
     if action:
         query = query.filter(AuditLog.action == action)
-    
+
     if module:
         query = query.filter(AuditLog.module == module)
-    
+
     if entity_type:
         query = query.filter(AuditLog.entity_type == entity_type)
-    
+
     if start_date:
         query = query.filter(AuditLog.timestamp >= start_date)
-    
+
     if end_date:
         query = query.filter(AuditLog.timestamp <= end_date)
-    
+
     if search:
         query = query.filter(AuditLog.description.ilike(f"%{search}%"))
-    
+
     # Get total count
     total = query.count()
-    
+
     # Apply pagination
     offset = (page - 1) * page_size
     logs = query.order_by(desc(AuditLog.timestamp)).offset(offset).limit(page_size).all()
-    
+
     return {
         "total": total,
         "page": page,
@@ -167,37 +163,35 @@ def get_audit_log_detail(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("audit.view_logs"))
 ):
-    """
-    Get detailed information about a specific audit log entry
-    
+    """Get detailed information about a specific audit log entry
+
     **Required Permission**: audit.view_logs
     """
     log = BaseProductionService.get_audit_log(db, log_id)
-    
+
     return AuditLogResponse.from_orm(log)
 
 
-@router.get("/entity/{entity_type}/{entity_id}", response_model=List[AuditLogResponse])
+@router.get("/entity/{entity_type}/{entity_id}", response_model=list[AuditLogResponse])
 def get_entity_audit_history(
     entity_type: str,
     entity_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("audit.view_logs"))
 ):
-    """
-    Get complete audit history for a specific entity
-    
+    """Get complete audit history for a specific entity
+
     **Use Case**: Track all changes to a Purchase Order, Manufacturing Order, etc.
-    
+
     **Required Permission**: audit.view_logs
-    
+
     **Example**: GET /api/audit/entity/PurchaseOrder/123
     """
     logs = db.query(AuditLog).filter(
         AuditLog.entity_type == entity_type,
         AuditLog.entity_id == entity_id
     ).order_by(desc(AuditLog.timestamp)).all()
-    
+
     return [AuditLogResponse.from_orm(log) for log in logs]
 
 
@@ -206,11 +200,10 @@ def get_audit_summary(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("audit.view_summary"))
 ):
-    """
-    Get audit trail summary statistics
-    
+    """Get audit trail summary statistics
+
     **Required Permission**: audit.view_summary
-    
+
     **Returns**:
     - Total events count
     - Events in last 24 hours
@@ -220,20 +213,20 @@ def get_audit_summary(
     - Recent critical security events
     """
     now = datetime.now()
-    
+
     # Total events
     total_events = db.query(AuditLog).count()
-    
+
     # Events last 24h
     events_24h = db.query(AuditLog).filter(
         AuditLog.timestamp >= now - timedelta(hours=24)
     ).count()
-    
+
     # Events last 7d
     events_7d = db.query(AuditLog).filter(
         AuditLog.timestamp >= now - timedelta(days=7)
     ).count()
-    
+
     # Top users (last 30 days)
     from sqlalchemy import func
     top_users = db.query(
@@ -242,7 +235,7 @@ def get_audit_summary(
     ).filter(
         AuditLog.timestamp >= now - timedelta(days=30)
     ).group_by(AuditLog.username).order_by(desc('event_count')).limit(10).all()
-    
+
     # Top modules (last 30 days)
     top_modules = db.query(
         AuditLog.module,
@@ -250,7 +243,7 @@ def get_audit_summary(
     ).filter(
         AuditLog.timestamp >= now - timedelta(days=30)
     ).group_by(AuditLog.module).order_by(desc('event_count')).limit(10).all()
-    
+
     # Recent critical events (last 7 days)
     critical_events = db.query(AuditLog).filter(
         AuditLog.timestamp >= now - timedelta(days=7),
@@ -259,7 +252,7 @@ def get_audit_summary(
             AuditLog.action == AuditAction.APPROVE
         )
     ).order_by(desc(AuditLog.timestamp)).limit(10).all()
-    
+
     return AuditSummaryResponse(
         total_events=total_events,
         events_last_24h=events_24h,
@@ -288,32 +281,31 @@ def get_security_logs(
     current_user: User = Depends(require_permission("audit.view_security_logs")),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
-    severity: Optional[str] = Query(None, regex="^(info|warning|critical)$"),
-    event_type: Optional[str] = None,
-    start_date: Optional[datetime] = None
+    severity: str | None = Query(None, regex="^(info|warning|critical)$"),
+    event_type: str | None = None,
+    start_date: datetime | None = None
 ):
-    """
-    Get security event logs
-    
+    """Get security event logs
+
     **Required Permission**: audit.view_security_logs (ADMIN ONLY)
-    
+
     **Tracks**: Failed logins, unauthorized access attempts, blocked IPs, etc.
     """
     query = db.query(SecurityLog)
-    
+
     if severity:
         query = query.filter(SecurityLog.severity == severity)
-    
+
     if event_type:
         query = query.filter(SecurityLog.event_type == event_type)
-    
+
     if start_date:
         query = query.filter(SecurityLog.timestamp >= start_date)
-    
+
     total = query.count()
     offset = (page - 1) * page_size
     logs = query.order_by(desc(SecurityLog.timestamp)).offset(offset).limit(page_size).all()
-    
+
     return {
         "total": total,
         "page": page,
@@ -322,27 +314,26 @@ def get_security_logs(
     }
 
 
-@router.get("/user-activity/{user_id}", response_model=List[UserActivityResponse])
+@router.get("/user-activity/{user_id}", response_model=list[UserActivityResponse])
 def get_user_activity(
     user_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("audit.view_user_activity")),
     days: int = Query(7, ge=1, le=90)
 ):
-    """
-    Get user activity history
-    
+    """Get user activity history
+
     **Required Permission**: audit.view_user_activity
-    
+
     **Tracks**: Page views, API calls, session duration
     """
     cutoff_date = datetime.now() - timedelta(days=days)
-    
+
     activities = db.query(UserActivityLog).filter(
         UserActivityLog.user_id == user_id,
         UserActivityLog.timestamp >= cutoff_date
     ).order_by(desc(UserActivityLog.timestamp)).all()
-    
+
     # Join with User to get username
     result = []
     for activity in activities:
@@ -351,7 +342,7 @@ def get_user_activity(
             **UserActivityResponse.from_orm(activity).dict(),
             "username": user.username if user else "Unknown"
         })
-    
+
     return result
 
 
@@ -363,39 +354,39 @@ def get_user_activity(
 def export_audit_logs_csv(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("audit.export_logs")),
-    start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None
+    start_date: datetime | None = None,
+    end_date: datetime | None = None
 ):
-    """
-    Export audit logs to CSV format
-    
+    """Export audit logs to CSV format
+
     **Required Permission**: audit.export_logs
-    
+
     **Use Case**: Compliance reporting, external audits
     """
-    from fastapi.responses import StreamingResponse
     import csv
     import io
-    
+
+    from fastapi.responses import StreamingResponse
+
     query = db.query(AuditLog)
-    
+
     if start_date:
         query = query.filter(AuditLog.timestamp >= start_date)
     if end_date:
         query = query.filter(AuditLog.timestamp <= end_date)
-    
+
     logs = query.order_by(desc(AuditLog.timestamp)).all()
-    
+
     # Create CSV
     output = io.StringIO()
     writer = csv.writer(output)
-    
+
     # Header
     writer.writerow([
-        'ID', 'Timestamp', 'Username', 'Role', 'IP Address', 
+        'ID', 'Timestamp', 'Username', 'Role', 'IP Address',
         'Action', 'Module', 'Entity Type', 'Entity ID', 'Description'
     ])
-    
+
     # Data
     for log in logs:
         writer.writerow([
@@ -410,9 +401,9 @@ def export_audit_logs_csv(
             log.entity_id,
             log.description
         ])
-    
+
     output.seek(0)
-    
+
     return StreamingResponse(
         iter([output.getvalue()]),
         media_type="text/csv",
@@ -432,44 +423,44 @@ async def get_audit_trail_large_dataset(
     current_user: User = Depends(require_permission("audit.view_logs")),
     limit: int = Query(100, ge=1, le=10000, description="Number of records to fetch"),
     offset: int = Query(0, ge=0, description="Offset for pagination"),
-    module: Optional[str] = Query(None, description="Filter by module"),
-    action: Optional[str] = Query(None, description="Filter by action")
+    module: str | None = Query(None, description="Filter by module"),
+    action: str | None = Query(None, description="Filter by action")
 ):
-    """
-    **GET** - Audit Trail with Large Dataset Support (UI-03 Test)
-    
+    """**GET** - Audit Trail with Large Dataset Support (UI-03 Test)
+
     Efficiently handles large audit trail queries with:
     - Pagination support (limit up to 10,000 records)
     - Filtering by module and action
     - Optimized database queries
     - Response time < 2 seconds for 1000 records
-    
+
     **Test Scenario UI-03:**
     - Input: limit=1000
     - Expected: 200 OK with paginated results
     - Performance: < 2s response time
-    
+
     **Query Parameters:**
     - `limit`: Number of records (1-10000, default: 100)
     - `offset`: Pagination offset (default: 0)
     - `module`: Filter by module name (optional)
     - `action`: Filter by action type (optional)
-    
+
     **Performance Optimization:**
     - Indexed queries on timestamp
     - Limit result set to prevent memory issues
     - Pagination for large datasets
-    
+
     Returns:
         - total: Total matching records
         - limit: Applied limit
         - offset: Applied offset
         - count: Records in current page
         - data: Array of audit log entries
+
     """
     # Build query
     query = db.query(AuditLog)
-    
+
     # Apply filters
     if module:
         try:
@@ -477,20 +468,20 @@ async def get_audit_trail_large_dataset(
             query = query.filter(AuditLog.module == module_enum)
         except ValueError:
             pass  # Invalid module, ignore filter
-    
+
     if action:
         try:
             action_enum = AuditAction(action)
             query = query.filter(AuditLog.action == action_enum)
         except ValueError:
             pass  # Invalid action, ignore filter
-    
+
     # Get total count (for pagination info)
     total = query.count()
-    
+
     # Apply pagination and ordering
     logs = query.order_by(desc(AuditLog.timestamp)).offset(offset).limit(limit).all()
-    
+
     # Format response
     data = []
     for log in logs:
@@ -511,7 +502,7 @@ async def get_audit_trail_large_dataset(
             "request_method": log.request_method,
             "request_path": log.request_path
         })
-    
+
     return {
         "success": True,
         "total": total,

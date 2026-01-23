@@ -1,16 +1,17 @@
-"""
-User Access Control (UAC) and Module Permissions System
+"""User Access Control (UAC) and Module Permissions System
 Role-Based Access Control (RBAC) for ERP modules
 """
 
 from enum import Enum
-from typing import List, Set
+
 from fastapi import HTTPException, status
+
 from app.core.models.users import User, UserRole
 
 
 class ModuleName(str, Enum):
     """ERP Modules"""
+
     DASHBOARD = "dashboard"
     PPIC = "ppic"
     PURCHASING = "purchasing"
@@ -33,6 +34,7 @@ class ModuleName(str, Enum):
 
 class Permission(str, Enum):
     """Access permissions"""
+
     VIEW = "view"
     CREATE = "create"
     UPDATE = "update"
@@ -65,7 +67,7 @@ ROLE_PERMISSIONS = {
         ModuleName.AUDIT: [Permission.VIEW, Permission.CREATE],
         ModuleName.BARCODE: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
     },
-    
+
     UserRole.PPIC_MANAGER: {
         ModuleName.DASHBOARD: [Permission.VIEW],
         ModuleName.PPIC: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.APPROVE],
@@ -83,7 +85,7 @@ ROLE_PERMISSIONS = {
         ModuleName.AUDIT: [Permission.VIEW],
         ModuleName.BARCODE: [Permission.VIEW],
     },
-    
+
     UserRole.PPIC_ADMIN: {
         ModuleName.DASHBOARD: [Permission.VIEW],
         ModuleName.PPIC: [Permission.VIEW, Permission.CREATE, Permission.UPDATE],
@@ -91,7 +93,7 @@ ROLE_PERMISSIONS = {
         ModuleName.REPORTS: [Permission.VIEW, Permission.CREATE],
         ModuleName.MASTERDATA: [Permission.VIEW],
     },
-    
+
     UserRole.PURCHASING: {
         ModuleName.DASHBOARD: [Permission.VIEW],
         ModuleName.PURCHASING: [Permission.VIEW, Permission.CREATE, Permission.UPDATE],
@@ -99,7 +101,7 @@ ROLE_PERMISSIONS = {
         ModuleName.MASTERDATA: [Permission.VIEW],
         ModuleName.REPORTS: [Permission.VIEW],
     },
-    
+
     UserRole.SPV_CUTTING: {
         ModuleName.DASHBOARD: [Permission.VIEW],
         ModuleName.CUTTING: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE, Permission.APPROVE],
@@ -107,7 +109,7 @@ ROLE_PERMISSIONS = {
         ModuleName.QC: [Permission.VIEW],
         ModuleName.REPORTS: [Permission.VIEW],
     },
-    
+
     UserRole.SPV_SEWING: {
         ModuleName.DASHBOARD: [Permission.VIEW],
         ModuleName.SEWING: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE, Permission.APPROVE],
@@ -115,7 +117,7 @@ ROLE_PERMISSIONS = {
         ModuleName.QC: [Permission.VIEW],
         ModuleName.REPORTS: [Permission.VIEW],
     },
-    
+
     UserRole.SPV_FINISHING: {
         ModuleName.DASHBOARD: [Permission.VIEW],
         ModuleName.FINISHING: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE, Permission.APPROVE],
@@ -123,33 +125,33 @@ ROLE_PERMISSIONS = {
         ModuleName.QC: [Permission.VIEW],
         ModuleName.REPORTS: [Permission.VIEW],
     },
-    
+
     UserRole.OPERATOR_CUT: {
         ModuleName.DASHBOARD: [Permission.VIEW],
         ModuleName.CUTTING: [Permission.VIEW, Permission.EXECUTE],
     },
-    
+
     UserRole.OPERATOR_EMBRO: {
         ModuleName.DASHBOARD: [Permission.VIEW],
         ModuleName.EMBROIDERY: [Permission.VIEW, Permission.EXECUTE],
     },
-    
+
     UserRole.OPERATOR_SEW: {
         ModuleName.DASHBOARD: [Permission.VIEW],
         ModuleName.SEWING: [Permission.VIEW, Permission.EXECUTE],
     },
-    
+
     UserRole.OPERATOR_FINISH: {
         ModuleName.DASHBOARD: [Permission.VIEW],
         ModuleName.FINISHING: [Permission.VIEW, Permission.EXECUTE],
     },
-    
+
     UserRole.OPERATOR_PACK: {
         ModuleName.DASHBOARD: [Permission.VIEW],
         ModuleName.PACKING: [Permission.VIEW, Permission.EXECUTE],
         ModuleName.KANBAN: [Permission.VIEW, Permission.CREATE],
     },
-    
+
     UserRole.QC_INSPECTOR: {
         ModuleName.DASHBOARD: [Permission.VIEW],
         ModuleName.QC: [Permission.VIEW, Permission.CREATE, Permission.UPDATE],
@@ -159,13 +161,13 @@ ROLE_PERMISSIONS = {
         ModuleName.PACKING: [Permission.VIEW],
         ModuleName.REPORTS: [Permission.VIEW],
     },
-    
+
     UserRole.QC_LAB: {
         ModuleName.DASHBOARD: [Permission.VIEW],
         ModuleName.QC: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.APPROVE],
         ModuleName.REPORTS: [Permission.VIEW, Permission.CREATE],
     },
-    
+
     UserRole.WAREHOUSE_ADMIN: {
         ModuleName.DASHBOARD: [Permission.VIEW],
         ModuleName.WAREHOUSE: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE, Permission.APPROVE],
@@ -176,14 +178,14 @@ ROLE_PERMISSIONS = {
         ModuleName.IMPORT_EXPORT: [Permission.VIEW, Permission.CREATE],
         ModuleName.BARCODE: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
     },
-    
+
     UserRole.WAREHOUSE_OP: {
         ModuleName.DASHBOARD: [Permission.VIEW],
         ModuleName.WAREHOUSE: [Permission.VIEW, Permission.EXECUTE],
         ModuleName.FINISHGOODS: [Permission.VIEW],
         ModuleName.BARCODE: [Permission.VIEW, Permission.EXECUTE],
     },
-    
+
     UserRole.SECURITY: {
         ModuleName.DASHBOARD: [Permission.VIEW],
         ModuleName.FINISHGOODS: [Permission.VIEW],
@@ -194,48 +196,48 @@ ROLE_PERMISSIONS = {
 
 class AccessControl:
     """Access control utility functions"""
-    
+
     @staticmethod
     def has_module_access(user: User, module: ModuleName) -> bool:
         """Check if user has access to a module"""
         # SUPERADMIN, DEVELOPER, ADMIN have full access
         if user.role in [UserRole.SUPERADMIN, UserRole.DEVELOPER, UserRole.ADMIN]:
             return True
-        
+
         role_permissions = ROLE_PERMISSIONS.get(user.role, {})
         return module in role_permissions
-    
+
     @staticmethod
     def has_permission(user: User, module: ModuleName, permission: Permission) -> bool:
         """Check if user has specific permission for a module"""
         # SUPERADMIN, DEVELOPER, ADMIN have full permissions
         if user.role in [UserRole.SUPERADMIN, UserRole.DEVELOPER, UserRole.ADMIN]:
             return True
-        
+
         role_permissions = ROLE_PERMISSIONS.get(user.role, {})
         module_permissions = role_permissions.get(module, [])
         return permission in module_permissions
-    
+
     @staticmethod
-    def get_user_modules(user: User) -> List[ModuleName]:
+    def get_user_modules(user: User) -> list[ModuleName]:
         """Get list of modules accessible by user"""
         # SUPERADMIN, DEVELOPER, ADMIN have access to all modules
         if user.role in [UserRole.SUPERADMIN, UserRole.DEVELOPER, UserRole.ADMIN]:
             return list(ModuleName)
-        
+
         role_permissions = ROLE_PERMISSIONS.get(user.role, {})
         return list(role_permissions.keys())
-    
+
     @staticmethod
-    def get_module_permissions(user: User, module: ModuleName) -> List[Permission]:
+    def get_module_permissions(user: User, module: ModuleName) -> list[Permission]:
         """Get user's permissions for a specific module"""
         # SUPERADMIN, DEVELOPER, ADMIN have all permissions
         if user.role in [UserRole.SUPERADMIN, UserRole.DEVELOPER, UserRole.ADMIN]:
             return [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.DELETE, Permission.APPROVE, Permission.EXECUTE]
-        
+
         role_permissions = ROLE_PERMISSIONS.get(user.role, {})
         return role_permissions.get(module, [])
-    
+
     @staticmethod
     def check_module_access(user: User, module: ModuleName) -> None:
         """Check module access and raise exception if denied"""
@@ -244,7 +246,7 @@ class AccessControl:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"Access denied to {module.value} module. Your role: {user.role.value}"
             )
-    
+
     @staticmethod
     def check_permission(user: User, module: ModuleName, permission: Permission) -> None:
         """Check permission and raise exception if denied"""
@@ -253,7 +255,7 @@ class AccessControl:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"Permission denied: {permission.value} on {module.value} module. Your role: {user.role.value}"
             )
-    
+
     @staticmethod
     def get_user_permissions_summary(user: User) -> dict:
         """Get complete permissions summary for user"""
@@ -265,18 +267,17 @@ class AccessControl:
             "department": user.department,
             "modules": {}
         }
-        
+
         for module in modules:
             permissions = AccessControl.get_module_permissions(user, module)
             summary["modules"][module.value] = [p.value for p in permissions]
-        
+
         return summary
 
 
 def require_module_access(module: ModuleName):
-    """
-    Dependency to require module access
-    
+    """Dependency to require module access
+
     Usage:
     ```python
     @router.get("/cutting/status")
@@ -285,21 +286,21 @@ def require_module_access(module: ModuleName):
     ```
     """
     from fastapi import Depends
+
     from app.core.dependencies import get_current_user
-    
+
     async def check_access(user: User = Depends(get_current_user)) -> User:
         AccessControl.check_module_access(user, module)
         return user
-    
+
     return check_access
 
 
 def require_permission(module: ModuleName, permission: Permission):
-    """
-    Dependency to require specific permission on module
-    
+    """Dependency to require specific permission on module
+
     Enforces both RBAC and environment-based restrictions (DEVELOPER read-only in production)
-    
+
     Usage:
     ```python
     @router.post("/cutting/complete")
@@ -310,16 +311,17 @@ def require_permission(module: ModuleName, permission: Permission):
     ```
     """
     from fastapi import Depends
+
     from app.core.dependencies import get_current_user
     from app.core.environment_policy import EnvironmentAccessControl
-    
+
     async def check_perm(user: User = Depends(get_current_user)) -> User:
         # First check RBAC permissions
         AccessControl.check_permission(user, module, permission)
-        
+
         # Then check environment-based restrictions
         EnvironmentAccessControl.enforce_environment_restriction(user, permission)
-        
+
         return user
-    
+
     return check_perm

@@ -1,22 +1,23 @@
-"""
-Test Data Seeding Script
+"""Test Data Seeding Script
 Populate database with sample data for development and testing
 """
 
-from sqlalchemy.orm import Session
-from app.core.database import SessionLocal
-from app.core.security import PasswordUtils
-from app.core.models.users import User, UserRole
-from app.core.models.products import Product, Category, ProductType, UOM
-from app.core.models.warehouse import Location, StockQuant, StockLot
-from decimal import Decimal
 from datetime import datetime
+from decimal import Decimal
+
+from sqlalchemy.orm import Session
+
+from app.core.database import SessionLocal
+from app.core.models.products import UOM, Category, Product, ProductType
+from app.core.models.users import User, UserRole
+from app.core.models.warehouse import Location, StockLot, StockQuant
+from app.core.security import PasswordUtils
 
 
 def create_test_users(db: Session):
     """Create test users with different roles"""
     print("Creating test users...")
-    
+
     # Get or create roles
     roles_data = [
         ("admin", "System Administrator"),
@@ -30,7 +31,7 @@ def create_test_users(db: Session):
         ("qc_inspector", "QC Inspector"),
         ("warehouse_admin", "Warehouse Administrator"),
     ]
-    
+
     roles = {}
     for role_name, role_desc in roles_data:
         role = db.query(UserRole).filter(UserRole.name == role_name).first()
@@ -39,7 +40,7 @@ def create_test_users(db: Session):
             db.add(role)
         roles[role_name] = role
     db.commit()
-    
+
     # Create test users
     test_users = [
         {
@@ -78,7 +79,7 @@ def create_test_users(db: Session):
             "roles": ["warehouse_admin"]
         },
     ]
-    
+
     for user_data in test_users:
         existing = db.query(User).filter(User.username == user_data["username"]).first()
         if not existing:
@@ -99,7 +100,7 @@ def create_test_users(db: Session):
 def create_test_categories(db: Session):
     """Create product categories"""
     print("Creating product categories...")
-    
+
     categories_data = [
         ("Fabric", "Raw materials - Fabrics"),
         ("Accessory", "Raw materials - Accessories (buttons, eyes, etc)"),
@@ -108,7 +109,7 @@ def create_test_categories(db: Session):
         ("WIP Sew", "Work in progress - Sewing department"),
         ("Finish Good", "Finished products ready for shipment"),
     ]
-    
+
     for name, description in categories_data:
         existing = db.query(Category).filter(Category.name == name).first()
         if not existing:
@@ -121,14 +122,14 @@ def create_test_categories(db: Session):
 def create_test_products(db: Session):
     """Create test products (parent and child articles)"""
     print("Creating test products...")
-    
+
     # Get categories
     fabric_cat = db.query(Category).filter(Category.name == "Fabric").first()
     wip_cut_cat = db.query(Category).filter(Category.name == "WIP Cut").first()
     wip_embo_cat = db.query(Category).filter(Category.name == "WIP Embo").first()
     wip_sew_cat = db.query(Category).filter(Category.name == "WIP Sew").first()
     fg_cat = db.query(Category).filter(Category.name == "Finish Good").first()
-    
+
     # Create parent article (IKEA product)
     parent_product = db.query(Product).filter(Product.code == "BLAHAJ-100").first()
     if not parent_product:
@@ -143,7 +144,7 @@ def create_test_products(db: Session):
         db.add(parent_product)
         db.commit()
         db.refresh(parent_product)
-    
+
     # Create child articles (internal articles for each department)
     child_articles = [
         {
@@ -179,13 +180,13 @@ def create_test_products(db: Session):
             "min_stock": Decimal("50")
         },
     ]
-    
+
     for article_data in child_articles:
         existing = db.query(Product).filter(Product.code == article_data["code"]).first()
         if not existing:
             product = Product(**article_data, uom=UOM.PCS)
             db.add(product)
-    
+
     # Create raw materials
     raw_materials = [
         {
@@ -213,13 +214,13 @@ def create_test_products(db: Session):
             "uom": UOM.ROLL
         },
     ]
-    
+
     for material_data in raw_materials:
         existing = db.query(Product).filter(Product.code == material_data["code"]).first()
         if not existing:
             product = Product(**material_data)
             db.add(product)
-    
+
     db.commit()
     print("✓ Test products created")
 
@@ -227,7 +228,7 @@ def create_test_products(db: Session):
 def create_test_locations(db: Session):
     """Create warehouse locations"""
     print("Creating warehouse locations...")
-    
+
     locations_data = [
         ("Gudang Bahan Baku", "Raw Material Warehouse"),
         ("Line Cutting", "Cutting Department Line"),
@@ -237,7 +238,7 @@ def create_test_locations(db: Session):
         ("Line Packing", "Packing Department Line"),
         ("Finished Good Storage", "Finished Good Warehouse"),
     ]
-    
+
     for name, description in locations_data:
         existing = db.query(Location).filter(Location.name == name).first()
         if not existing:
@@ -254,11 +255,11 @@ def create_test_locations(db: Session):
 def create_test_stock(db: Session):
     """Create test stock data"""
     print("Creating test stock data...")
-    
+
     # Get products and locations
     raw_material = db.query(Product).filter(Product.code == "FAB-BLU-SHARK").first()
     warehouse = db.query(Location).filter(Location.name == "Gudang Bahan Baku").first()
-    
+
     if raw_material and warehouse:
         # Create stock lot
         existing_lot = db.query(StockLot).filter(StockLot.lot_number == "LOT-2026-001").first()
@@ -275,7 +276,7 @@ def create_test_stock(db: Session):
             db.refresh(stock_lot)
         else:
             stock_lot = existing_lot
-        
+
         # Create stock quant
         existing_quant = db.query(StockQuant).filter(
             (StockQuant.product_id == raw_material.id) &
@@ -291,7 +292,7 @@ def create_test_stock(db: Session):
             )
             db.add(stock_quant)
             db.commit()
-    
+
     print("✓ Test stock created")
 
 
@@ -302,13 +303,13 @@ def seed_database():
         print("\n" + "="*50)
         print("SEEDING TEST DATA")
         print("="*50 + "\n")
-        
+
         create_test_users(db)
         create_test_categories(db)
         create_test_products(db)
         create_test_locations(db)
         create_test_stock(db)
-        
+
         print("\n" + "="*50)
         print("SEEDING COMPLETED SUCCESSFULLY ✓")
         print("="*50)
@@ -319,7 +320,7 @@ def seed_database():
         print("  - op_cutting / OpCut123456")
         print("  - warehouse / Warehouse123456")
         print("\n")
-        
+
     except Exception as e:
         print(f"\n❌ Error seeding database: {e}")
         db.rollback()

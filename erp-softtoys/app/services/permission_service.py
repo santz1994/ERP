@@ -1,55 +1,52 @@
-"""
-Permission Service for PBAC (Permission-Based Access Control)
+"""Permission Service for PBAC (Permission-Based Access Control)
 Provides efficient permission checking with Redis caching and role hierarchy support
 
 Session 13.1 - Week 3: PBAC Implementation
 """
 
-from typing import List, Optional, Set
-from sqlalchemy.orm import Session
-from sqlalchemy import text
-from app.core.models.users import User, UserRole
-from fastapi import HTTPException
-import redis
 import json
-from datetime import datetime, timedelta
 import logging
+
+import redis
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
+from app.core.models.users import User, UserRole
 
 logger = logging.getLogger(__name__)
 
 
 class PermissionService:
-    """
-    Centralized permission checking service with caching
+    """Centralized permission checking service with caching
     Supports PBAC with role hierarchy and custom permissions
     """
-    
-    def __init__(self, redis_client: Optional[redis.Redis] = None):
-        """
-        Initialize PermissionService with optional Redis caching
-        
+
+    def __init__(self, redis_client: redis.Redis | None = None):
+        """Initialize PermissionService with optional Redis caching
+
         Args:
             redis_client: Redis connection for caching (optional)
+
         """
         self.redis_client = redis_client
         self.cache_ttl = 300  # 5 minutes cache TTL
-        
+
         # Role hierarchy: higher roles inherit permissions from lower roles
         # 22 roles total (Session 13.1 - PBAC Implementation)
         self.role_hierarchy = {
             # Level 0: System Development (bypass all checks in has_permission)
             UserRole.DEVELOPER: [UserRole.DEVELOPER],
-            
+
             # Level 1: System Administration (bypass all checks in has_permission)
             UserRole.SUPERADMIN: [UserRole.SUPERADMIN],
-            
+
             # Level 2: Top Management (Approvers - inherit all operational permissions)
             UserRole.MANAGER: [UserRole.MANAGER],
             UserRole.FINANCE_MANAGER: [UserRole.FINANCE_MANAGER],
-            
+
             # Level 3: System Admin (inherits all operational permissions)
             UserRole.ADMIN: [UserRole.ADMIN],
-            
+
             # Level 4: Department Management
             UserRole.PPIC_MANAGER: [UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN],
             UserRole.PPIC_ADMIN: [UserRole.PPIC_ADMIN],
@@ -60,7 +57,7 @@ class PermissionService:
             UserRole.QC_LAB: [UserRole.QC_LAB, UserRole.QC_INSPECTOR],
             UserRole.PURCHASING_HEAD: [UserRole.PURCHASING_HEAD, UserRole.PURCHASING],
             UserRole.PURCHASING: [UserRole.PURCHASING],
-            
+
             # Level 5: Operations (no inheritance)
             UserRole.OPERATOR_CUT: [UserRole.OPERATOR_CUT],
             UserRole.OPERATOR_EMBRO: [UserRole.OPERATOR_EMBRO],
@@ -71,39 +68,39 @@ class PermissionService:
             UserRole.WAREHOUSE_OP: [UserRole.WAREHOUSE_OP],
             UserRole.SECURITY: [UserRole.SECURITY]
         }
-    
+
     def _get_cache_key(self, user_id: int, permission_code: str) -> str:
         """Generate Redis cache key for permission check"""
         return f"pbac:user:{user_id}:perm:{permission_code}"
-    
+
     def _get_user_permissions_cache_key(self, user_id: int) -> str:
         """Generate Redis cache key for user's all permissions"""
         return f"pbac:user:{user_id}:all_perms"
-    
-    def _check_cache(self, cache_key: str) -> Optional[bool]:
-        """
-        Check Redis cache for permission result
-        
+
+    def _check_cache(self, cache_key: str) -> bool | None:
+        """Check Redis cache for permission result
+
         Returns:
             True if allowed, False if denied, None if not cached
+
         """
         if not self.redis_client:
             return None
-        
+
         try:
             cached_value = self.redis_client.get(cache_key)
             if cached_value:
                 return cached_value.decode() == "1"
         except Exception as e:
             logger.warning(f"Redis cache read failed: {e}")
-        
+
         return None
-    
+
     def _set_cache(self, cache_key: str, value: bool):
         """Store permission check result in Redis cache"""
         if not self.redis_client:
             return
-        
+
         try:
             self.redis_client.setex(
                 cache_key,
@@ -112,26 +109,25 @@ class PermissionService:
             )
         except Exception as e:
             logger.warning(f"Redis cache write failed: {e}")
-    
-    def get_effective_roles(self, user_role: UserRole) -> List[UserRole]:
-        """
-        Get all roles that this user effectively has (including inherited)
-        
+
+    def get_effective_roles(self, user_role: UserRole) -> list[UserRole]:
+        """Get all roles that this user effectively has (including inherited)
+
         Example: SPV_CUTTING can also perform OPERATOR_CUTTING actions
         """
         return self.role_hierarchy.get(user_role, [user_role])
-    
+
     def get_user_permissions_from_db(
         self,
         db: Session,
         user_id: int
-    ) -> Set[str]:
-        """
-        Fetch all permissions for a user from database
+    ) -> set[str]:
+        """Fetch all permissions for a user from database
         Combines role-based + custom user permissions
-        
+
         Returns:
             Set of permission codes (e.g., {"cutting.create_wo", "admin.view_users"})
+
         """
         # Query permissions from PBAC tables
         query = text("""
@@ -147,12 +143,12 @@ class PermissionService:
                   OR (ucp.is_granted = TRUE AND (ucp.expires_at IS NULL OR ucp.expires_at > NOW()))
               )
         """)
-        
+
         result = db.execute(query, {"user_id": user_id})
         permissions = {row[0] for row in result.fetchall()}
-        
+
         return permissions
-    
+
     def has_permission(
         self,
         db: Session,
@@ -160,17 +156,17 @@ class PermissionService:
         permission_code: str,
         use_cache: bool = True
     ) -> bool:
-        """
-        Check if user has a specific permission
-        
+        """Check if user has a specific permission
+
         Args:
             db: Database session
             user: User object
             permission_code: Permission code (e.g., "cutting.create_wo")
             use_cache: Whether to use Redis cache (default: True)
-        
+
         Returns:
             True if user has permission, False otherwise
+
         """
         # Check cache first
         if use_cache:
@@ -179,109 +175,108 @@ class PermissionService:
             if cached_result is not None:
                 logger.debug(f"Cache HIT: user={user.id}, perm={permission_code}")
                 return cached_result
-        
+
         # SUPERADMIN, DEVELOPER, and Admin have all permissions (temporary until permissions table is created)
         if user.role in [UserRole.SUPERADMIN, UserRole.DEVELOPER, UserRole.ADMIN]:
             if use_cache:
                 self._set_cache(cache_key, True)
             return True
-        
+
         # Check if user's role has this permission
         user_permissions = self.get_user_permissions_from_db(db, user.id)
         has_perm = permission_code in user_permissions
-        
+
         # Cache the result
         if use_cache:
             self._set_cache(cache_key, has_perm)
-        
+
         logger.debug(
             f"Permission check: user={user.username} ({user.role.value}), "
             f"perm={permission_code}, result={has_perm}"
         )
-        
+
         return has_perm
-    
+
     def has_any_permission(
         self,
         db: Session,
         user: User,
-        permission_codes: List[str],
+        permission_codes: list[str],
         use_cache: bool = True
     ) -> bool:
-        """
-        Check if user has ANY of the specified permissions (OR logic)
-        
+        """Check if user has ANY of the specified permissions (OR logic)
+
         Args:
             db: Database session
             user: User object
             permission_codes: List of permission codes
             use_cache: Whether to use Redis cache
-        
+
         Returns:
             True if user has at least one permission
+
         """
         for perm_code in permission_codes:
             if self.has_permission(db, user, perm_code, use_cache):
                 return True
         return False
-    
+
     def has_all_permissions(
         self,
         db: Session,
         user: User,
-        permission_codes: List[str],
+        permission_codes: list[str],
         use_cache: bool = True
     ) -> bool:
-        """
-        Check if user has ALL specified permissions (AND logic)
-        
+        """Check if user has ALL specified permissions (AND logic)
+
         Args:
             db: Database session
             user: User object
             permission_codes: List of permission codes
             use_cache: Whether to use Redis cache
-        
+
         Returns:
             True if user has all permissions
+
         """
         for perm_code in permission_codes:
             if not self.has_permission(db, user, perm_code, use_cache):
                 return False
         return True
-    
+
     def check_role_access(
         self,
         user: User,
-        required_roles: List[UserRole]
+        required_roles: list[UserRole]
     ) -> bool:
-        """
-        Legacy role-based access check with hierarchy support
+        """Legacy role-based access check with hierarchy support
         Used during migration period for backward compatibility
-        
+
         Args:
             user: User object
             required_roles: List of allowed roles
-        
+
         Returns:
             True if user's role (or inherited roles) matches any required role
+
         """
         if not user.is_active:
             return False
-        
+
         # Get effective roles (including inherited)
         effective_roles = self.get_effective_roles(user.role)
-        
+
         # Check if any effective role matches required roles
         return any(role in required_roles for role in effective_roles)
-    
+
     def invalidate_user_cache(self, user_id: int):
-        """
-        Invalidate all cached permissions for a user
+        """Invalidate all cached permissions for a user
         Call this when user permissions change
         """
         if not self.redis_client:
             return
-        
+
         try:
             # Delete all permission cache keys for this user
             pattern = f"pbac:user:{user_id}:*"
@@ -291,18 +286,18 @@ class PermissionService:
                 logger.info(f"Invalidated {len(keys)} cache entries for user {user_id}")
         except Exception as e:
             logger.warning(f"Cache invalidation failed: {e}")
-    
+
     def get_user_all_permissions(
         self,
         db: Session,
         user_id: int,
         use_cache: bool = True
-    ) -> List[dict]:
-        """
-        Get all permissions for a user (for admin UI)
-        
+    ) -> list[dict]:
+        """Get all permissions for a user (for admin UI)
+
         Returns:
             List of permission dicts with code, name, module, source
+
         """
         # Check cache
         if use_cache and self.redis_client:
@@ -313,7 +308,7 @@ class PermissionService:
                     return json.loads(cached.decode())
             except Exception as e:
                 logger.warning(f"Cache read failed: {e}")
-        
+
         # Query from database
         query = text("""
             SELECT DISTINCT
@@ -339,7 +334,7 @@ class PermissionService:
               )
             ORDER BY p.module, p.code
         """)
-        
+
         result = db.execute(query, {"user_id": user_id})
         permissions = []
         for row in result.fetchall():
@@ -351,7 +346,7 @@ class PermissionService:
                 "source": row[4],
                 "expires_at": row[5].isoformat() if row[5] else None
             })
-        
+
         # Cache the result
         if use_cache and self.redis_client:
             try:
@@ -362,12 +357,12 @@ class PermissionService:
                 )
             except Exception as e:
                 logger.warning(f"Cache write failed: {e}")
-        
+
         return permissions
 
 
 # Singleton instance (initialized in dependencies.py)
-_permission_service: Optional[PermissionService] = None
+_permission_service: PermissionService | None = None
 
 
 def get_permission_service() -> PermissionService:
@@ -379,9 +374,8 @@ def get_permission_service() -> PermissionService:
     return _permission_service
 
 
-def init_permission_service(redis_client: Optional[redis.Redis] = None):
-    """
-    Initialize PermissionService with Redis client
+def init_permission_service(redis_client: redis.Redis | None = None):
+    """Initialize PermissionService with Redis client
     Call this during app startup
     """
     global _permission_service

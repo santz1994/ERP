@@ -1,5 +1,4 @@
-"""
-Database Utility Scripts for ERP System
+"""Database Utility Scripts for ERP System
 ========================================
 Useful database inspection and maintenance utilities.
 
@@ -13,12 +12,14 @@ Usage:
     python scripts/database_utils.py --refresh-mvs
 """
 
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from sqlalchemy import inspect, text
+
 from app.core.database import SessionLocal
-from sqlalchemy import text, inspect
 
 
 def check_tables():
@@ -27,13 +28,13 @@ def check_tables():
     try:
         inspector = inspect(db.bind)
         tables = inspector.get_table_names()
-        
+
         print("\n=== Database Tables ===")
         print(f"Total tables: {len(tables)}\n")
-        
+
         for table in sorted(tables):
             print(f"  - {table}")
-            
+
         return tables
     finally:
         db.close()
@@ -49,7 +50,7 @@ def check_enums():
             'qc_inspections.status': "SELECT DISTINCT status FROM qc_inspections ORDER BY status",
             'products.type': "SELECT DISTINCT type FROM products ORDER BY type"
         }
-        
+
         print("\n=== Enum Values ===")
         for name, query in queries.items():
             try:
@@ -60,7 +61,7 @@ def check_enums():
                     print(f"  - '{val}'")
             except Exception as e:
                 print(f"\n{name}: Error - {str(e)[:100]}")
-                
+
     finally:
         db.close()
 
@@ -77,10 +78,10 @@ def verify_materialized_views():
             ORDER BY matviewname
         """))
         views = [row[0] for row in result.fetchall()]
-        
+
         print("\n=== Materialized Views ===")
         print(f"Total views: {len(views)}\n")
-        
+
         for view in views:
             # Check row count
             try:
@@ -89,7 +90,7 @@ def verify_materialized_views():
                 print(f"OK {view}: {count} rows")
             except Exception as e:
                 print(f"ERROR {view}: {str(e)[:100]}")
-                
+
         return views
     finally:
         db.close()
@@ -105,7 +106,7 @@ def refresh_materialized_views():
             'mv_qc_pass_rate',
             'mv_inventory_status'
         ]
-        
+
         print("\n=== Refreshing Materialized Views ===")
         for view in views:
             try:
@@ -116,7 +117,7 @@ def refresh_materialized_views():
             except Exception as e:
                 print(f"  ERROR {view}: {str(e)[:100]}")
                 db.rollback()
-                
+
         print("\nRefresh complete!")
     finally:
         db.close()
@@ -124,27 +125,27 @@ def refresh_materialized_views():
 
 if __name__ == "__main__":
     import argparse
-    
+
     parser = argparse.ArgumentParser(description='Database utility scripts')
     parser.add_argument('--check-tables', action='store_true', help='List all tables')
     parser.add_argument('--check-enums', action='store_true', help='Check enum values')
     parser.add_argument('--verify-mvs', action='store_true', help='Verify materialized views')
     parser.add_argument('--refresh-mvs', action='store_true', help='Refresh materialized views')
     parser.add_argument('--all', action='store_true', help='Run all checks')
-    
+
     args = parser.parse_args()
-    
+
     if args.all or args.check_tables:
         check_tables()
-    
+
     if args.all or args.check_enums:
         check_enums()
-    
+
     if args.all or args.verify_mvs:
         verify_materialized_views()
-    
+
     if args.refresh_mvs:
         refresh_materialized_views()
-    
+
     if not any(vars(args).values()):
         parser.print_help()

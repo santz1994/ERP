@@ -1,9 +1,9 @@
-"""
-Initialize Database - Create all tables
+"""Initialize Database - Create all tables
 Usage: python init_db.py
 """
-from app.core.database import engine, Base
+from app.core.database import Base, engine
 from app.core.models import *  # Import all models
+
 
 def init_database():
     """Create all database tables"""
@@ -11,13 +11,13 @@ def init_database():
         print("\n" + "="*70)
         print("INITIALIZING DATABASE")
         print("="*70 + "\n")
-        
+
         print("Creating all tables...")
         Base.metadata.create_all(bind=engine)
-        
+
         print("\n✅ Database initialized successfully!")
         print("="*70 + "\n")
-        
+
     except Exception as e:
         print(f"\n❌ ERROR: {e}")
         import traceback

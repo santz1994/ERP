@@ -1,17 +1,17 @@
-"""
-Cutting Module Models & Schemas
+"""Cutting Module Models & Schemas
 Handles SPK execution, material allocation, and output tracking
 """
 
-from pydantic import BaseModel, Field
-from decimal import Decimal
-from typing import Optional, List
 from datetime import datetime
+from decimal import Decimal
 from enum import Enum
+
+from pydantic import BaseModel, Field
 
 
 class CuttingStatus(str, Enum):
     """Cutting work order status"""
+
     PENDING = "Pending"
     SPREADING = "Spreading"
     CUTTING = "Cutting"
@@ -24,10 +24,11 @@ class CuttingStatus(str, Enum):
 
 class MaterialIssueRequest(BaseModel):
     """Request to issue material from warehouse to cutting line"""
+
     work_order_id: int = Field(..., description="Work order ID")
     product_id: int = Field(..., description="Material product ID")
     qty_requested: Decimal = Field(..., description="Quantity to withdraw")
-    
+
     class Config:
         schema_extra = {
             "example": {
@@ -40,9 +41,10 @@ class MaterialIssueRequest(BaseModel):
 
 class StartCuttingRequest(BaseModel):
     """Request to start cutting operation"""
+
     work_order_id: int = Field(..., description="Work order ID")
     operator_id: int = Field(..., description="Operator performing cut")
-    
+
     class Config:
         schema_extra = {
             "example": {
@@ -54,11 +56,12 @@ class StartCuttingRequest(BaseModel):
 
 class CompleteCuttingRequest(BaseModel):
     """Request to complete cutting and record output"""
+
     work_order_id: int = Field(..., description="Work order ID")
     actual_output: Decimal = Field(..., description="Actual pieces cut")
     reject_qty: Decimal = Field(default=0, description="Defective pieces")
-    notes: Optional[str] = Field(None, description="Additional notes")
-    
+    notes: str | None = Field(None, description="Additional notes")
+
     class Config:
         schema_extra = {
             "example": {
@@ -72,10 +75,11 @@ class CompleteCuttingRequest(BaseModel):
 
 class ShortageHandlingRequest(BaseModel):
     """Request additional material due to shortage"""
+
     work_order_id: int = Field(..., description="Work order ID")
     shortage_qty: Decimal = Field(..., description="Additional qty needed")
     reason: str = Field(..., description="Reason for shortage")
-    
+
     class Config:
         schema_extra = {
             "example": {
@@ -88,10 +92,11 @@ class ShortageHandlingRequest(BaseModel):
 
 class LineTransferRequest(BaseModel):
     """Request to transfer cutting output to sewing/embroidery"""
+
     work_order_id: int = Field(..., description="Work order ID")
     destination_dept: str = Field(..., description="Destination: Sewing or Embroidery")
     transfer_qty: Decimal = Field(..., description="Quantity to transfer")
-    
+
     class Config:
         schema_extra = {
             "example": {
@@ -104,16 +109,17 @@ class LineTransferRequest(BaseModel):
 
 class CuttingWorkOrderResponse(BaseModel):
     """Response: Current cutting work order status"""
+
     id: int
     mo_id: int
     product_id: int
     status: CuttingStatus
     input_qty: Decimal
-    output_qty: Optional[Decimal]
+    output_qty: Decimal | None
     reject_qty: Decimal
-    started_at: Optional[datetime]
-    completed_at: Optional[datetime]
-    
+    started_at: datetime | None
+    completed_at: datetime | None
+
     class Config:
         from_attributes = True
         schema_extra = {
@@ -133,6 +139,7 @@ class CuttingWorkOrderResponse(BaseModel):
 
 class MaterialShortageAlert(BaseModel):
     """Alert when material shortage detected"""
+
     work_order_id: int
     product_id: int
     target_qty: Decimal
@@ -143,22 +150,24 @@ class MaterialShortageAlert(BaseModel):
 
 class SurplusHandlingLog(BaseModel):
     """Log for surplus material handling"""
+
     work_order_id: int
     surplus_qty: Decimal
     action: str  # "Auto-revise SPK" or "Hold for next batch"
-    affected_orders: List[int]  # SPK orders affected by revision
+    affected_orders: list[int]  # SPK orders affected by revision
     timestamp: datetime
 
 
 class LineClearanceCheckResponse(BaseModel):
     """Response: Line clearance status check"""
+
     work_order_id: int
     destination_dept: str
     current_line_status: str  # "Clear", "Occupied", "Paused"
-    last_article: Optional[str]
+    last_article: str | None
     can_transfer: bool
-    blocking_reason: Optional[str]
-    
+    blocking_reason: str | None
+
     class Config:
         schema_extra = {
             "example": {

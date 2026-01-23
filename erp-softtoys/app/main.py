@@ -1,27 +1,39 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.core.database import engine, Base
-from app.core.config import settings
-from app.core.audit_middleware import AuditContextMiddleware
+
+from app.api.v1 import (
+    admin,
+    audit,
+    auth,
+    barcode,
+    dashboard,
+    embroidery,
+    finishgoods,
+    import_export,
+    kanban,
+    ppic,
+    purchasing,
+    qa_convenience_endpoints,
+    report_builder,
+    reports,
+    warehouse,
+    websocket,
+)
 
 # Import all models to register them with Base before creating tables
 # This must be done before Base.metadata.create_all()
 from app.core import models  # noqa: F401
 
-from app.api.v1 import (
-    auth, ppic, warehouse, admin, websocket, 
-    kanban, reports, import_export, embroidery,
-    purchasing, finishgoods, report_builder, barcode, audit, dashboard,
-    qa_convenience_endpoints
-)
+# Initialize Audit Trail Event Listeners
+from app.core.audit_listeners import setup_audit_listeners
+from app.core.audit_middleware import AuditContextMiddleware
+from app.core.config import settings
+from app.core.database import Base, engine
 from app.modules.cutting import cutting_router
-from app.modules.sewing import sewing_router
 from app.modules.finishing import finishing_router
 from app.modules.packing import packing_router
 from app.modules.quality import quality_router
-
-# Initialize Audit Trail Event Listeners
-from app.core.audit_listeners import setup_audit_listeners
+from app.modules.sewing import sewing_router
 
 # Create Tables (Otomatis buat tabel saat start - untuk dev mode)
 # Skip database creation if connection fails (useful for dev without DB)
@@ -30,9 +42,9 @@ try:
     # Initialize audit listeners after tables are created
     setup_audit_listeners()
 except Exception as e:
-    print(f"⚠️  Warning: Could not create tables. Make sure PostgreSQL is running.")
+    print("⚠️  Warning: Could not create tables. Make sure PostgreSQL is running.")
     print(f"   Error: {str(e)[:100]}")
-    print(f"   API will still start, but database operations will fail until DB is available.")
+    print("   API will still start, but database operations will fail until DB is available.")
 
 app = FastAPI(
     title=settings.API_TITLE,

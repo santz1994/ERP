@@ -3,9 +3,7 @@ Sewing Module Test Suite
 Tests for Steps 300-383 of sewing process workflow
 """
 
-import pytest
 from fastapi import status
-from sqlalchemy.orm import Session
 
 
 class TestSewingAcceptTransfer:
