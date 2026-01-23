@@ -77,7 +77,7 @@ class Settings(BaseSettings):
     CORS_ALLOW_HEADERS: list = Field(default=["*"])
 
     @validator("CORS_ORIGINS", pre=True)
-    def parse_cors_origins(self, v):
+    def parse_cors_origins(cls, v):  # noqa: N805 - Pydantic v2 validator requires cls, not self
         """Parse CORS_ORIGINS from string or list."""
         if isinstance(v, str):
             # Try to parse as JSON first

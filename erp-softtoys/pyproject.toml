@@ -135,10 +135,15 @@ ignore = [
     "A003",  # Builtin shadowing
     "A002",  # Builtin shadowing in argument
     "A001",  # Builtin shadowing in variable
+    "ARG001", # Unused function argument (FastAPI dependencies are intentional)
+    "ARG002", # Unused method argument (sometimes intentional in inheritance)
+    "ARG003", # Unused classmethod argument (sometimes intentional in inheritance)
     "C901",  # Function too complex
     "E402",  # Module level import not at top of file
     "F811",  # Redefined while unused
-    "N806"   # Variable name too capitalized
+    "N806",  # Variable name too capitalized
+    "SIM102", # Nested if can be combined (sometimes nested for readability)
+    "SIM105"  # Use contextlib.suppress (sometimes try-except for clarity)
 ]
 exclude = [
     ".git",
