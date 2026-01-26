@@ -7,43 +7,59 @@ import React, { useState, useEffect } from 'react'
 import { Palette, Save } from 'lucide-react'
 import { useUIStore } from '@/store'
 
-interface DisplaySettings {
-  theme: 'light' | 'dark' | 'auto'
-  compactMode: boolean
-  sidebarPosition: 'left' | 'right'
-  fontSize: 'small' | 'normal' | 'large'
-  colorScheme: 'blue' | 'green' | 'purple' | 'orange'
-}
-
 export const DisplayPreferencesSettings: React.FC = () => {
-  const { addNotification } = useUIStore()
+  const { 
+    theme, 
+    language, 
+    compactMode, 
+    sidebarPosition, 
+    fontSize, 
+    colorScheme,
+    setTheme,
+    setLanguage,
+    setCompactMode,
+    setSidebarPosition,
+    setFontSize,
+    setColorScheme,
+    updateSettings,
+    loadSettings
+  } = useUIStore()
+  
   const [loading, setLoading] = useState(false)
-  const [settings, setSettings] = useState<DisplaySettings>({
-    theme: 'light',
-    compactMode: false,
-    sidebarPosition: 'left',
-    fontSize: 'normal',
-    colorScheme: 'blue',
-  })
+  const [saved, setSaved] = useState(false)
 
   useEffect(() => {
-    const saved = localStorage.getItem('displaySettings')
-    if (saved) setSettings(JSON.parse(saved))
-  }, [])
+    // Load settings on component mount
+    loadSettings()
+  }, [loadSettings])
 
   const handleSave = async () => {
     try {
       setLoading(true)
-      const settingsToSave = {
-        ...settings,
-        savedAt: new Date().toISOString()
-      }
-      localStorage.setItem('displaySettings', JSON.stringify(settingsToSave))
+      // Apply each setting to DOM immediately
+      setTheme(theme)
+      setLanguage(language)
+      setCompactMode(compactMode)
+      setSidebarPosition(sidebarPosition)
+      setFontSize(fontSize)
+      setColorScheme(colorScheme)
       
-      await new Promise(resolve => setTimeout(resolve, 500))
-      addNotification('success', '✓ Display preferences saved successfully!')
+      // Also batch update for consistency
+      updateSettings({
+        theme,
+        language,
+        compactMode,
+        sidebarPosition,
+        fontSize,
+        colorScheme
+      })
+      
+      // Show success indicator
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+      console.log('[DisplayPreferences] Settings saved:', { theme, language, fontSize })
     } catch (error) {
-      addNotification('error', 'Failed to save settings')
+      console.error('Failed to save settings:', error)
     } finally {
       setLoading(false)
     }
@@ -67,8 +83,8 @@ export const DisplayPreferencesSettings: React.FC = () => {
             {['light', 'dark', 'auto'].map(t => (
               <button 
                 key={t} 
-                onClick={() => setSettings(prev => ({ ...prev, theme: t as any }))} 
-                className={`p-3 rounded border-2 capitalize font-medium transition ${settings.theme === t ? 'border-blue-500 bg-blue-50 text-blue-900' : 'border-gray-300 hover:border-gray-400'}`}
+                onClick={() => setTheme(t as any)} 
+                className={`p-3 rounded border-2 capitalize font-medium transition ${theme === t ? 'border-blue-500 bg-blue-50 text-blue-900' : 'border-gray-300 hover:border-gray-400'}`}
               >
                 {t}
               </button>
@@ -76,12 +92,29 @@ export const DisplayPreferencesSettings: React.FC = () => {
           </div>
         </div>
 
+        {/* Language Selection */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-3">Language</label>
+          <select 
+            value={language}
+            onChange={(e) => setLanguage(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="en">English</option>
+            <option value="id">Bahasa Indonesia</option>
+            <option value="es">Español</option>
+            <option value="fr">Français</option>
+            <option value="de">Deutsch</option>
+            <option value="zh">中文</option>
+          </select>
+        </div>
+
         {/* Compact Mode */}
         <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
           <input 
             type="checkbox" 
-            checked={settings.compactMode} 
-            onChange={() => setSettings(prev => ({ ...prev, compactMode: !prev.compactMode }))} 
+            checked={compactMode} 
+            onChange={() => setCompactMode(!compactMode)} 
             className="w-4 h-4"
           />
           <div>
@@ -97,10 +130,26 @@ export const DisplayPreferencesSettings: React.FC = () => {
             {['small', 'normal', 'large'].map(s => (
               <button 
                 key={s} 
-                onClick={() => setSettings(prev => ({ ...prev, fontSize: s as any }))} 
-                className={`p-3 rounded border-2 capitalize font-medium transition ${settings.fontSize === s ? 'border-blue-500 bg-blue-50 text-blue-900' : 'border-gray-300 hover:border-gray-400'}`}
+                onClick={() => setFontSize(s as any)} 
+                className={`p-3 rounded border-2 capitalize font-medium transition ${fontSize === s ? 'border-blue-500 bg-blue-50 text-blue-900' : 'border-gray-300 hover:border-gray-400'}`}
               >
                 {s}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Sidebar Position */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-3">Sidebar Position</label>
+          <div className="grid grid-cols-2 gap-2">
+            {['left', 'right'].map(pos => (
+              <button 
+                key={pos} 
+                onClick={() => setSidebarPosition(pos as any)} 
+                className={`p-3 rounded border-2 capitalize font-medium transition ${sidebarPosition === pos ? 'border-blue-500 bg-blue-50 text-blue-900' : 'border-gray-300 hover:border-gray-400'}`}
+              >
+                {pos}
               </button>
             ))}
           </div>
@@ -113,8 +162,8 @@ export const DisplayPreferencesSettings: React.FC = () => {
             {['blue', 'green', 'purple', 'orange'].map(c => (
               <button 
                 key={c} 
-                onClick={() => setSettings(prev => ({ ...prev, colorScheme: c as any }))} 
-                className={`p-3 rounded border-2 capitalize font-medium transition ${settings.colorScheme === c ? 'border-gray-800 bg-gray-100' : 'border-gray-300 hover:border-gray-400'}`}
+                onClick={() => setColorScheme(c as any)} 
+                className={`p-3 rounded border-2 capitalize font-medium transition ${colorScheme === c ? 'border-gray-800 bg-gray-100' : 'border-gray-300 hover:border-gray-400'}`}
               >
                 <div className={`w-4 h-4 rounded-full mx-auto mb-1 bg-${c}-500`}></div>
                 {c}
@@ -123,12 +172,18 @@ export const DisplayPreferencesSettings: React.FC = () => {
           </div>
         </div>
 
+        {saved && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <p className="text-green-800 font-medium">✓ Settings saved and applied successfully!</p>
+          </div>
+        )}
+
         <button 
           onClick={handleSave} 
           disabled={loading} 
           className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition"
         >
-          <Save size={18} /> {loading ? 'Saving...' : 'Save Preferences'}
+          <Save size={18} /> {loading ? 'Saving...' : 'Save & Apply Preferences'}
         </button>
       </div>
     </div>

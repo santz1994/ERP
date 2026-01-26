@@ -41,7 +41,11 @@ const AdminUserPage: React.FC = () => {
   })
 
   const roles = [
+    'Developer',
+    'Superadmin',
     'Admin',
+    'Manager',
+    'Finance Manager',
     'PPIC Manager',
     'PPIC Admin',
     'SPV Cutting',
@@ -57,6 +61,7 @@ const AdminUserPage: React.FC = () => {
     'Warehouse Admin',
     'Warehouse Operator',
     'Purchasing',
+    'Purchasing Head',
     'Security'
   ]
 

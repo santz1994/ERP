@@ -28,7 +28,19 @@ export const DocumentTemplatesSettings: React.FC = () => {
 
   useEffect(() => {
     const saved = localStorage.getItem('documentTemplates')
-    if (saved) setTemplates(JSON.parse(saved))
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        // Handle both old format (array) and new format (object with templates property)
+        if (Array.isArray(parsed)) {
+          setTemplates(parsed)
+        } else if (parsed.templates && Array.isArray(parsed.templates)) {
+          setTemplates(parsed.templates)
+        }
+      } catch (e) {
+        console.error('Failed to parse templates:', e)
+      }
+    }
   }, [])
 
   const handleSave = async () => {

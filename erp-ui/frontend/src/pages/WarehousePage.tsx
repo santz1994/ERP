@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/api/client';
 import BarcodeScanner from '../components/BarcodeScanner';
+import MaterialRequestModal, { MaterialRequestFormData } from '../components/warehouse/MaterialRequestModal';
+import MaterialRequestsList from '../components/warehouse/MaterialRequestsList';
+import { useUIStore } from '@/store';
 
 // Types
 interface StockItem {
@@ -29,9 +32,32 @@ interface StockMovement {
 }
 
 const WarehousePage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'inventory' | 'movements' | 'barcode' | 'transfers'>('inventory');
+  const { addNotification } = useUIStore();
+  const [activeTab, setActiveTab] = useState<'inventory' | 'movements' | 'barcode' | 'transfers' | 'material-requests'>('inventory');
   const [searchTerm, setSearchTerm] = useState('');
   const [showLowStockOnly, setShowLowStockOnly] = useState(false);
+  
+  // Modal states for Stock Adjustment and Internal Transfer
+  const [showStockAdjustmentModal, setShowStockAdjustmentModal] = useState(false);
+  const [showInternalTransferModal, setShowInternalTransferModal] = useState(false);
+  const [showMaterialRequestModal, setShowMaterialRequestModal] = useState(false);
+  const [materialRequestLoading, setMaterialRequestLoading] = useState(false);
+  const [materialRequestError, setMaterialRequestError] = useState<string | null>(null);
+  const [adjustmentData, setAdjustmentData] = useState({
+    product_id: '',
+    adjustment_qty: 0,
+    reason: '',
+    notes: ''
+  });
+  const [transferData, setTransferData] = useState({
+    product_id: '',
+    from_location: '',
+    to_location: '',
+    qty: 0,
+    reference: ''
+  });
+  const [adjustmentLoading, setAdjustmentLoading] = useState(false);
+  const [transferLoading, setTransferLoading] = useState(false);
   
   // Barcode scanning states
   const [barcodeOperation, setBarcodeOperation] = useState<'receive' | 'pick'>('receive');
@@ -177,6 +203,87 @@ const WarehousePage: React.FC = () => {
     }
   ];
 
+  // Handle Stock Adjustment
+  const handleStockAdjustmentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adjustmentData.product_id || adjustmentData.adjustment_qty === 0) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    setAdjustmentLoading(true);
+    try {
+      await apiClient.post('/warehouse/stock-adjustment', {
+        product_id: parseInt(adjustmentData.product_id),
+        qty_adjustment: adjustmentData.adjustment_qty,
+        reason: adjustmentData.reason,
+        notes: adjustmentData.notes
+      });
+      alert('Stock adjustment recorded successfully');
+      setShowStockAdjustmentModal(false);
+      setAdjustmentData({ product_id: '', adjustment_qty: 0, reason: '', notes: '' });
+    } catch (error: any) {
+      alert(error.response?.data?.detail || 'Stock adjustment failed');
+    } finally {
+      setAdjustmentLoading(false);
+    }
+  };
+
+  // Handle Internal Transfer
+  const handleInternalTransferSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!transferData.product_id || !transferData.from_location || !transferData.to_location || transferData.qty === 0) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    setTransferLoading(true);
+    try {
+      await apiClient.post('/warehouse/internal-transfer', {
+        product_id: parseInt(transferData.product_id),
+        from_location: transferData.from_location,
+        to_location: transferData.to_location,
+        qty: transferData.qty,
+        reference: transferData.reference
+      });
+      alert('Internal transfer completed successfully');
+      setShowInternalTransferModal(false);
+      setTransferData({ product_id: '', from_location: '', to_location: '', qty: 0, reference: '' });
+    } catch (error: any) {
+      alert(error.response?.data?.detail || 'Internal transfer failed');
+    } finally {
+      setTransferLoading(false);
+    }
+  };
+
+  // Handle Material Request
+  const handleMaterialRequestSubmit = async (data: MaterialRequestFormData) => {
+    setMaterialRequestLoading(true);
+    setMaterialRequestError(null);
+    try {
+      const response = await apiClient.post('/warehouse/material-requests', {
+        product_id: data.product_id,
+        location_id: data.location_id,
+        qty_requested: data.qty_requested,
+        uom: data.uom,
+        purpose: data.purpose
+      });
+      
+      addNotification('success', 'Material request submitted for approval');
+      setShowMaterialRequestModal(false);
+      
+      // Refetch material requests if there's a list component
+      return response.data;
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.detail || 'Failed to submit material request';
+      setMaterialRequestError(errorMsg);
+      addNotification('error', errorMsg);
+      throw error;
+    } finally {
+      setMaterialRequestLoading(false);
+    }
+  };
+
   // Filter inventory
   const filteredInventory = mockInventory.filter(item => {
     const matchesSearch = item.product_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -192,6 +299,7 @@ const WarehousePage: React.FC = () => {
   const totalReserved = mockInventory.reduce((sum, item) => sum + item.qty_reserved, 0);
 
   return (
+    <>
     <div className="p-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
@@ -200,10 +308,14 @@ const WarehousePage: React.FC = () => {
           <p className="text-gray-600 mt-1">Stock inventory, movements, and transfers</p>
         </div>
         <div className="flex gap-3">
-          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+          <button 
+            onClick={() => setShowStockAdjustmentModal(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
             📦 Stock Adjustment
           </button>
-          <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+          <button 
+            onClick={() => setShowInternalTransferModal(true)}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
             🔄 Internal Transfer
           </button>
         </div>
@@ -237,10 +349,10 @@ const WarehousePage: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-6 border-b">
+      <div className="flex gap-2 mb-6 border-b overflow-x-auto">
         <button
           onClick={() => setActiveTab('inventory')}
-          className={`px-6 py-3 font-medium transition-colors ${
+          className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
             activeTab === 'inventory'
               ? 'text-blue-600 border-b-2 border-blue-600'
               : 'text-gray-600 hover:text-gray-800'
@@ -250,7 +362,7 @@ const WarehousePage: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('movements')}
-          className={`px-6 py-3 font-medium transition-colors ${
+          className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
             activeTab === 'movements'
               ? 'text-blue-600 border-b-2 border-blue-600'
               : 'text-gray-600 hover:text-gray-800'
@@ -260,13 +372,23 @@ const WarehousePage: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('barcode')}
-          className={`px-6 py-3 font-medium transition-colors ${
+          className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
             activeTab === 'barcode'
               ? 'text-blue-600 border-b-2 border-blue-600'
               : 'text-gray-600 hover:text-gray-800'
           }`}
         >
           📷 Barcode Scanner
+        </button>
+        <button
+          onClick={() => setActiveTab('material-requests')}
+          className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
+            activeTab === 'material-requests'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-600 hover:text-gray-800'
+          }`}
+        >
+          📋 Material Requests
         </button>
       </div>
 
@@ -551,7 +673,203 @@ const WarehousePage: React.FC = () => {
           ℹ️ <strong>Note:</strong> Currently displaying mock data. Full warehouse integration coming soon with inventory endpoints.
         </p>
       </div>
+
+      {/* Stock Adjustment Modal */}
+      {showStockAdjustmentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-xl font-bold mb-4">📦 Stock Adjustment</h3>
+            <form onSubmit={handleStockAdjustmentSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Product *</label>
+                <select
+                  value={adjustmentData.product_id}
+                  onChange={(e) => setAdjustmentData({...adjustmentData, product_id: e.target.value})}
+                  className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-blue-500"
+                  required
+                >
+                  <option value="">Select Product</option>
+                  {mockInventory.map(item => (
+                    <option key={item.product_id} value={item.product_id}>{item.product_code} - {item.product_name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Adjustment Quantity *</label>
+                <input
+                  type="number"
+                  value={adjustmentData.adjustment_qty}
+                  onChange={(e) => setAdjustmentData({...adjustmentData, adjustment_qty: parseInt(e.target.value) || 0})}
+                  className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-blue-500"
+                  placeholder="Enter quantity (positive/negative)"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Reason *</label>
+                <select
+                  value={adjustmentData.reason}
+                  onChange={(e) => setAdjustmentData({...adjustmentData, reason: e.target.value})}
+                  className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-blue-500"
+                  required
+                >
+                  <option value="">Select Reason</option>
+                  <option value="stock_take">Physical Stock Take</option>
+                  <option value="inventory_discrepancy">Inventory Discrepancy</option>
+                  <option value="damage">Damage/Loss</option>
+                  <option value="correction">Data Correction</option>
+                  <option value="sample">Sample/Testing</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Notes</label>
+                <textarea
+                  value={adjustmentData.notes}
+                  onChange={(e) => setAdjustmentData({...adjustmentData, notes: e.target.value})}
+                  className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-blue-500"
+                  placeholder="Additional notes"
+                  rows={3}
+                />
+              </div>
+              <div className="flex gap-2 pt-4">
+                <button
+                  type="submit"
+                  disabled={adjustmentLoading}
+                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
+                >
+                  {adjustmentLoading ? 'Processing...' : 'Submit Adjustment'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowStockAdjustmentModal(false)}
+                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Internal Transfer Modal */}
+      {showInternalTransferModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-xl font-bold mb-4">🔄 Internal Transfer</h3>
+            <form onSubmit={handleInternalTransferSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Product *</label>
+                <select
+                  value={transferData.product_id}
+                  onChange={(e) => setTransferData({...transferData, product_id: e.target.value})}
+                  className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-green-500"
+                  required
+                >
+                  <option value="">Select Product</option>
+                  {mockInventory.map(item => (
+                    <option key={item.product_id} value={item.product_id}>{item.product_code} - {item.product_name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">From Location *</label>
+                <input
+                  type="text"
+                  value={transferData.from_location}
+                  onChange={(e) => setTransferData({...transferData, from_location: e.target.value})}
+                  className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-green-500"
+                  placeholder="e.g., WH-RAW-A1"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">To Location *</label>
+                <input
+                  type="text"
+                  value={transferData.to_location}
+                  onChange={(e) => setTransferData({...transferData, to_location: e.target.value})}
+                  className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-green-500"
+                  placeholder="e.g., CUTTING-LINE1"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Quantity *</label>
+                <input
+                  type="number"
+                  value={transferData.qty}
+                  onChange={(e) => setTransferData({...transferData, qty: parseInt(e.target.value) || 0})}
+                  className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-green-500"
+                  placeholder="Enter quantity"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Reference (SPK/MO)</label>
+                <input
+                  type="text"
+                  value={transferData.reference}
+                  onChange={(e) => setTransferData({...transferData, reference: e.target.value})}
+                  className="mt-1 block w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-green-500"
+                  placeholder="Related SPK or MO number"
+                />
+              </div>
+              <div className="flex gap-2 pt-4">
+                <button
+                  type="submit"
+                  disabled={transferLoading}
+                  className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 disabled:bg-gray-400"
+                >
+                  {transferLoading ? 'Processing...' : 'Submit Transfer'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowInternalTransferModal(false)}
+                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Material Requests Tab */}
+      {activeTab === 'material-requests' && (
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold text-gray-900">Material Requests</h2>
+            <button
+              onClick={() => setShowMaterialRequestModal(true)}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+            >
+              + Request Material
+            </button>
+          </div>
+          <MaterialRequestsList 
+            statusFilter="ALL"
+            onApprovalChange={() => {
+              // Refetch material requests
+            }}
+          />
+        </div>
+      )}
     </div>
+
+    {/* Material Request Modal */}
+    <MaterialRequestModal
+      isOpen={showMaterialRequestModal}
+      onClose={() => {
+        setShowMaterialRequestModal(false);
+        setMaterialRequestError(null);
+      }}
+      onSubmit={handleMaterialRequestSubmit}
+      loading={materialRequestLoading}
+      error={materialRequestError}
+    />
+    </>
   );
 };
 

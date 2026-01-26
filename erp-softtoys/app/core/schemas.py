@@ -324,3 +324,153 @@ class StockUpdateCreate(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class MaterialRequestCreate(BaseModel):
+    """Create material request - for manual material addition with approval."""
+
+    product_id: int = Field(..., gt=0, description="Product ID")
+    location_id: int = Field(..., gt=0, description="Warehouse location ID")
+    qty_requested: Decimal = Field(..., gt=0, description="Quantity requested")
+    uom: str = Field(..., max_length=10, description="Unit of measure (Pcs, Meter, Kg, Roll)")
+    purpose: str = Field(..., max_length=500, description="Purpose/reason for material request")
+
+    class Config:
+        from_attributes = True
+
+
+class MaterialRequestResponse(BaseModel):
+    """Material request response."""
+
+    id: int
+    product_id: int
+    location_id: int
+    qty_requested: Decimal
+    uom: str
+    purpose: str
+    status: str
+    requested_by_id: int
+    requested_at: datetime
+    approved_by_id: int | None
+    approved_at: datetime | None
+    received_by_id: int | None
+    received_at: datetime | None
+
+    class Config:
+        from_attributes = True
+
+
+class MaterialRequestApprovalCreate(BaseModel):
+    """Approve or reject material request."""
+
+    approved: bool = Field(..., description="True to approve, False to reject")
+    rejection_reason: str | None = Field(None, max_length=500, description="Reason if rejecting")
+
+    class Config:
+        from_attributes = True
+
+
+# ==================== BOM SCHEMAS - Session 24 ====================
+
+class BOMVariantCreate(BaseModel):
+    """Create BOM variant (alternative material)."""
+    
+    material_id: int = Field(..., description="Alternative material product ID")
+    variant_type: str = Field(default="Alternative", description="Primary, Alternative, Optional")
+    sequence: int = Field(default=1, description="Order of preference")
+    qty_variance: Decimal | None = Field(None, description="Override quantity if specified")
+    qty_variance_percent: Decimal | None = Field(None, description="Or use as percentage modifier")
+    weight: Decimal = Field(default=1.0, description="Weight for selection probability")
+    preferred_vendor_id: int | None = None
+    vendor_lead_time_days: int = Field(default=0)
+    cost_variance: Decimal = Field(default=0, description="Cost difference vs primary")
+    notes: str | None = Field(None, max_length=500)
+
+
+class BOMVariantResponse(BaseModel):
+    """BOM variant response."""
+    
+    id: int
+    bom_detail_id: int
+    material_id: int
+    variant_type: str
+    sequence: int
+    qty_variance: Decimal | None
+    qty_variance_percent: Decimal | None
+    weight: Decimal
+    selection_probability: Decimal
+    preferred_vendor_id: int | None
+    vendor_lead_time_days: int
+    cost_variance: Decimal
+    is_active: bool
+    approval_status: str
+    notes: str | None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class BOMDetailCreate(BaseModel):
+    """Create BOM detail line."""
+    
+    component_id: int = Field(..., description="Primary material product ID")
+    qty_needed: Decimal = Field(..., description="Quantity per 1 unit output")
+    wastage_percent: Decimal = Field(default=0, description="Estimated waste percentage")
+    has_variants: bool = Field(default=False, description="Support alternative materials")
+    variant_selection_mode: str = Field(default="primary", description="primary, any, weighted")
+
+
+class BOMDetailResponse(BaseModel):
+    """BOM detail response."""
+    
+    id: int
+    bom_header_id: int
+    component_id: int
+    qty_needed: Decimal
+    wastage_percent: Decimal
+    has_variants: bool
+    variant_selection_mode: str
+    variants: list[BOMVariantResponse] = []
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class BOMHeaderCreate(BaseModel):
+    """Create BOM header."""
+    
+    product_id: int = Field(..., description="Product that this BOM is for")
+    bom_type: str = Field(..., description="Manufacturing or Kit/Phantom")
+    qty_output: Decimal = Field(default=1.0, description="Output quantity (usually 1)")
+    supports_multi_material: bool = Field(default=False, description="Enable multi-material support")
+    revision: str = Field(default="Rev 1.0")
+
+
+class BOMHeaderResponse(BaseModel):
+    """BOM header response."""
+    
+    id: int
+    product_id: int
+    bom_type: str
+    qty_output: Decimal
+    is_active: bool
+    revision: str
+    supports_multi_material: bool
+    default_variant_selection: str
+    details: list[BOMDetailResponse] = []
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class BOMUpdateMultiMaterial(BaseModel):
+    """Update BOM to enable/disable multi-material support."""
+    
+    supports_multi_material: bool = Field(..., description="Enable or disable variant support")
+    default_variant_selection: str = Field(default="primary", description="How to select variant")
+    revision_reason: str | None = Field(None, max_length=500, description="Reason for change")

@@ -74,14 +74,24 @@ const QCPage: React.FC = () => {
       if (activeTab === 'inspections') {
         // Fetch inspections
         const inspRes = await apiClient.get('/quality/inspections')
-        setInspections(inspRes.data)
+        // Ensure data is an array, handle paginated response
+        const inspData = Array.isArray(inspRes.data) ? inspRes.data : (inspRes.data?.data || [])
+        setInspections(inspData)
       } else {
         // Fetch lab tests
         const labRes = await apiClient.get('/quality/lab-tests')
-        setLabTests(labRes.data)
+        // Ensure data is an array, handle paginated response
+        const labData = Array.isArray(labRes.data) ? labRes.data : (labRes.data?.data || [])
+        setLabTests(labData)
       }
     } catch (error) {
       console.error('Failed to fetch QC data:', error)
+      // Set empty arrays on error to prevent .map errors
+      if (activeTab === 'inspections') {
+        setInspections([])
+      } else {
+        setLabTests([])
+      }
     } finally {
       setLoading(false)
     }

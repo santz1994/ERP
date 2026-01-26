@@ -543,6 +543,24 @@ const PPICPage: React.FC = () => {
                   <li>4. Download file</li>
                 </ol>
               </div>
+
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                <div className="text-lg font-semibold text-purple-900 mb-2">✏️ Manual BOM Entry</div>
+                <ol className="text-sm text-purple-700 space-y-1">
+                  <li>1. Click "Add BOM Manually" button</li>
+                  <li>2. Fill in product and material details</li>
+                  <li>3. Enter quantity, unit, and price</li>
+                  <li>4. Click "Save BOM"</li>
+                </ol>
+              </div>
+            </div>
+
+            {/* BOM Info Card */}
+            <div className="bg-white rounded-lg shadow p-6 border-l-4 border-orange-500">
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">📝 BOM Management Info</h3>
+              <ul className="text-gray-700 space-y-2 text-sm">
+                <li>✅ <strong>Current Status:</strong> All BOM operations available via Import/Export & Manual Entry</li>
+                <li>✅ <strong>Supported Formats:</strong> CSV, Excel (.xlsx), and Manual Entry Form</li>
                 <li>✅ <strong>BOM Features:</strong> Create, Edit, Delete, Import, Export</li>
                 <li>✅ <strong>Integration:</strong> BOMs linked to Products automatically</li>
                 <li>✅ <strong>Usage:</strong> Used in all production modules (Cutting, Sewing, Finishing, etc.)</li>

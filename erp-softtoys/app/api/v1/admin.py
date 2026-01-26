@@ -460,3 +460,197 @@ async def get_products(
             }
         ]
     }
+
+
+@router.get("/users/{user_id}/permissions")
+async def get_user_permissions(
+    user_id: int,
+    current_user: User = Depends(require_permission("admin.manage_users")),
+    db: Session = Depends(get_db)
+):
+    """Get user permissions (role-based and custom).
+
+    **Roles Required**: Admin
+
+    **Path Parameters**:
+    - `user_id`: User ID
+
+    **Responses**:
+    - `200`: User permissions
+    - `403`: Forbidden
+    - `404`: User not found
+    """
+    user = BaseProductionService.get_user(db, user_id)
+    
+    # Get base role permissions based on UserRole enum
+    role_permissions_map = {
+        "Developer": ["admin.view_system_info", "dashboard.view_stats"],
+        "Superadmin": ["*"],
+        "Manager": ["dashboard.*", "ppic.*", "warehouse.*", "reports.view"],
+        "Finance Manager": ["reports.view", "dashboard.view_stats"],
+        "Admin": ["admin.*", "dashboard.view_stats", "audit.view_logs"],
+        "PPIC Manager": ["ppic.*", "warehouse.view"],
+        "PPIC Admin": ["ppic.*", "warehouse.*"],
+        "SPV Cutting": ["cutting.*"],
+        "SPV Sewing": ["sewing.*"],
+        "SPV Finishing": ["finishing.*"],
+        "Warehouse Admin": ["warehouse.*"],
+        "QC Lab": ["qc.*"],
+        "Purchasing Head": ["purchasing.*", "warehouse.view"],
+        "Purchasing": ["purchasing.view", "warehouse.view"],
+        "Operator Cutting": ["cutting.read"],
+        "Operator Embroidery": ["embroidery.read"],
+        "Operator Sewing": ["sewing.read"],
+        "Operator Finishing": ["finishing.read"],
+        "Operator Packing": ["packing.read"],
+        "QC Inspector": ["qc.*"],
+        "Warehouse Operator": ["warehouse.read"],
+        "Security": ["audit.view_logs"],
+    }
+    
+    role_permissions = role_permissions_map.get(user.role.value, [])
+
+    return {
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "role": user.role.value
+        },
+        "role_permissions": role_permissions,
+        "custom_permissions": [],
+        "effective_permissions": [
+            {
+                "permission_code": p,
+                "source": "role",
+                "granted_by": user.role.value,
+                "expires_at": None
+            }
+            for p in role_permissions
+        ]
+    }
+
+
+# ====================== PERMISSION MANAGEMENT ENDPOINTS ======================
+
+@router.post("/users/{user_id}/permissions")
+async def grant_permission_to_user(
+    user_id: int,
+    permission_data: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission("admin.manage_permissions"))
+):
+    """Grant custom permission to a user.
+    
+    Parameters:
+    - permission_code: Permission to grant (e.g., "ppic.approve_mo")
+    - expires_at: Optional expiration date (ISO format)
+    """
+    from app.core.models.users import UserCustomPermission
+    from datetime import datetime
+    
+    # Get user
+    target_user = db.query(User).filter(User.id == user_id).first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    permission_code = permission_data.get("permission_code")
+    expires_at = permission_data.get("expires_at")
+    
+    if not permission_code:
+        raise HTTPException(status_code=400, detail="permission_code is required")
+    
+    # Check if permission already exists
+    existing = db.query(UserCustomPermission).filter(
+        UserCustomPermission.user_id == user_id,
+        UserCustomPermission.permission_code == permission_code
+    ).first()
+    
+    if existing:
+        raise HTTPException(status_code=400, detail="Permission already granted to this user")
+    
+    # Grant permission
+    try:
+        custom_perm = UserCustomPermission(
+            user_id=user_id,
+            permission_code=permission_code,
+            is_granted=True,
+            granted_by_id=current_user.id,
+            granted_at=datetime.utcnow(),
+            expires_at=datetime.fromisoformat(expires_at) if expires_at else None
+        )
+        db.add(custom_perm)
+        db.commit()
+        
+        # Log audit
+        AuditLogger(db).log_create(
+            user_id=current_user.id,
+            module="Permissions",
+            action="GRANT_PERMISSION",
+            entity_type="UserCustomPermission",
+            entity_id=custom_perm.id,
+            changes=f"Granted permission {permission_code} to user {target_user.username}"
+        )
+        
+        return {
+            "status": "success",
+            "message": f"Permission {permission_code} granted to {target_user.username}",
+            "permission_id": custom_perm.id
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error granting permission: {str(e)}")
+
+
+@router.delete("/users/{user_id}/permissions/{permission_code}")
+async def revoke_permission_from_user(
+    user_id: int,
+    permission_code: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission("admin.manage_permissions"))
+):
+    """Revoke custom permission from a user.
+    
+    Parameters:
+    - user_id: Target user ID
+    - permission_code: Permission to revoke
+    """
+    from app.core.models.users import UserCustomPermission
+    
+    # Get user
+    target_user = db.query(User).filter(User.id == user_id).first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Find and revoke permission
+    try:
+        custom_perm = db.query(UserCustomPermission).filter(
+            UserCustomPermission.user_id == user_id,
+            UserCustomPermission.permission_code == permission_code
+        ).first()
+        
+        if not custom_perm:
+            raise HTTPException(status_code=404, detail=f"Permission {permission_code} not found for this user")
+        
+        db.delete(custom_perm)
+        db.commit()
+        
+        # Log audit
+        AuditLogger(db).log_delete(
+            user_id=current_user.id,
+            module="Permissions",
+            action="REVOKE_PERMISSION",
+            entity_type="UserCustomPermission",
+            entity_id=custom_perm.id,
+            changes=f"Revoked permission {permission_code} from user {target_user.username}"
+        )
+        
+        return {
+            "status": "success",
+            "message": f"Permission {permission_code} revoked from {target_user.username}"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error revoking permission: {str(e)}")

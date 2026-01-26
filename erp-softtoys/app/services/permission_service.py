@@ -149,6 +149,75 @@ class PermissionService:
 
         return permissions
 
+    def _map_permission_code_to_role_permissions(
+        self, permission_code: str
+    ) -> tuple[str | None, str | None]:
+        """Convert permission code to (module, permission) for ROLE_PERMISSIONS lookup.
+        
+        Args:
+            permission_code: Permission code in format "module.action"
+        
+        Returns:
+            Tuple of (ModuleName enum name, Permission enum name) or (None, None)
+        """
+        # Parse permission code: "admin.manage_users" -> ("admin", "manage_users")
+        if '.' not in permission_code:
+            return permission_code, None
+        
+        module_str, action_str = permission_code.split('.', 1)
+        
+        # Map module string to ModuleName enum
+        module_mapping = {
+            'dashboard': 'DASHBOARD',
+            'ppic': 'PPIC',
+            'purchasing': 'PURCHASING',
+            'warehouse': 'WAREHOUSE',
+            'cutting': 'CUTTING',
+            'embroidery': 'EMBROIDERY',
+            'sewing': 'SEWING',
+            'finishing': 'FINISHING',
+            'packing': 'PACKING',
+            'finishgoods': 'FINISHGOODS',
+            'qc': 'QC',
+            'kanban': 'KANBAN',
+            'reports': 'REPORTS',
+            'admin': 'ADMIN',
+            'import_export': 'IMPORT_EXPORT',
+            'masterdata': 'MASTERDATA',
+            'audit': 'AUDIT',
+            'barcode': 'BARCODE'
+        }
+        
+        # Map action to Permission enum
+        action_mapping = {
+            'view': 'VIEW',
+            'view_logs': 'VIEW',
+            'view_summary': 'VIEW',
+            'view_security_logs': 'VIEW',
+            'view_user_activity': 'VIEW',
+            'create': 'CREATE',
+            'create_wo': 'CREATE',
+            'create_mo': 'CREATE',
+            'manage_users': 'UPDATE',
+            'manage_permissions': 'UPDATE',
+            'manage_system': 'UPDATE',
+            'update': 'UPDATE',
+            'delete': 'DELETE',
+            'approve': 'APPROVE',
+            'approve_mo': 'APPROVE',
+            'execute': 'EXECUTE',
+            'refresh_views': 'CREATE',
+            'export_logs': 'CREATE',
+            'schedule_production': 'VIEW',
+            'request_material': 'CREATE',
+            'approve_material': 'APPROVE'
+        }
+        
+        module_enum_name = module_mapping.get(module_str.lower())
+        perm_enum_name = action_mapping.get(action_str.lower(), 'VIEW')
+        
+        return module_enum_name, perm_enum_name
+
     def has_permission(
         self,
         db: Session,
@@ -169,31 +238,52 @@ class PermissionService:
 
         """
         # Check cache first
+        cache_key = None
         if use_cache:
-            cache_key = self._get_cache_key(user.id, permission_code)
+            cache_key = self._get_cache_key(int(user.id), permission_code)
             cached_result = self._check_cache(cache_key)
             if cached_result is not None:
-                logger.debug(f"Cache HIT: user={user.id}, perm={permission_code}")
                 return cached_result
 
-        # SUPERADMIN, DEVELOPER, and Admin have all permissions (temporary until permissions table is created)
-        if user.role in [UserRole.SUPERADMIN, UserRole.DEVELOPER, UserRole.ADMIN]:
-            if use_cache:
+        # SUPERADMIN, DEVELOPER, MANAGER and Admin have all permissions
+        user_role = user.role
+        if user_role in [UserRole.SUPERADMIN, UserRole.DEVELOPER, 
+                         UserRole.ADMIN, UserRole.MANAGER]:
+            if use_cache and cache_key:
                 self._set_cache(cache_key, True)
             return True
 
-        # Check if user's role has this permission
-        user_permissions = self.get_user_permissions_from_db(db, user.id)
-        has_perm = permission_code in user_permissions
+        # Import ROLE_PERMISSIONS from permissions module
+        from app.core.permissions import ROLE_PERMISSIONS, ModuleName, Permission
+        
+        # Map permission code to (module, permission) enums
+        module_enum_name, perm_enum_name = self._map_permission_code_to_role_permissions(
+            permission_code)
+        
+        if not module_enum_name or not perm_enum_name:
+            if use_cache and cache_key:
+                self._set_cache(cache_key, False)
+            return False
+        
+        # Get ModuleName and Permission enums
+        try:
+            module_enum = ModuleName[module_enum_name]
+            perm_enum = Permission[perm_enum_name]
+        except (KeyError, ValueError):
+            if use_cache and cache_key:
+                self._set_cache(cache_key, False)
+            return False
+        
+        # Check if user's role has this permission in ROLE_PERMISSIONS dict
+        has_perm = False
+        if user_role in ROLE_PERMISSIONS:
+            role_perms = ROLE_PERMISSIONS[user_role]
+            if module_enum in role_perms:
+                has_perm = perm_enum in role_perms[module_enum]
 
         # Cache the result
-        if use_cache:
+        if use_cache and cache_key:
             self._set_cache(cache_key, has_perm)
-
-        logger.debug(
-            f"Permission check: user={user.username} ({user.role.value}), "
-            f"perm={permission_code}, result={has_perm}"
-        )
 
         return has_perm
 

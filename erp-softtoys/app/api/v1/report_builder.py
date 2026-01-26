@@ -12,7 +12,8 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.models.users import User
-from app.core.permissions import ModuleName, Permission, require_permission
+from app.core.dependencies import require_permission
+from app.core.permissions import ModuleName, Permission
 
 router = APIRouter(
     prefix="/report-builder",

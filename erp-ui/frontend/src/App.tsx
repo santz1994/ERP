@@ -2,6 +2,7 @@ import React, { useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useAuthStore } from '@/store'
+import { useUIStore } from '@/store'
 import { Navbar } from '@/components/Navbar'
 import { Sidebar } from '@/components/Sidebar'
 import { NotificationCenter } from '@/components/NotificationCenter'
@@ -118,6 +119,13 @@ const RootRedirect: React.FC = () => {
 }
 
 function App() {
+  // Load UI settings on app startup (theme, language, etc)
+  const { loadSettings } = useUIStore()
+  
+  useEffect(() => {
+    loadSettings()
+  }, [loadSettings])
+  
   // Note: Auth initialization happens automatically in store via initializeAuth()
   // No need to call loadUserFromStorage() here as it causes race condition
   

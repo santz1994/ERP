@@ -4,11 +4,15 @@ Laporan dari setiap sesi development yang dilakukan.
 
 ## 📄 Dokumen dalam Folder Ini
 
-- **SESSION_SUMMARY.md** - Overall session summary
-- **SESSION_2_HANDOFF.md** - Session 2 handoff (Auth implementation)
-- **SESSION_3_SUMMARY.md** - Session 3 summary (Production modules)
-- **SESSION_4_COMPLETION.md** - Session 4 completion (Quality module + Docker)
-- **SESSION_5_COMPLETION.md** - Session 5 completion (Additional features: WebSocket, E-Kanban, Reporting, Audit Trail)
+**Latest Session**:
+- **SESSION_24_COMPREHENSIVE_FIXES.md** - Session 24: Bug fixes, API audit, permissions (LATEST!)
+
+**Previous Sessions**:
+- SESSION_22_JAN_2026_TESTING_CLEANUP.md - Session 22 testing cleanup
+- SESSION_17_WEEK4_PHASE1_BIGBUTTONMODE_COMPLETE.md - Session 17 big button mode
+- SESSION_13.6_DAY4_TESTING_INFRASTRUCTURE.md - Session 13.6 testing
+- SESSION_16_REFACTORING_COMPLETE.md - Session 16 refactoring
+- SESSION_5_COMPLETION.md - Session 5 features (WebSocket, E-Kanban, Reporting)
 
 ## 🎯 Progress Timeline
 
@@ -17,11 +21,19 @@ Laporan dari setiap sesi development yang dilakukan.
 - **Session 3**: Production modules (Phase 2)
 - **Session 4**: Quality module + Docker infrastructure (Phase 4 & 6)
 - **Session 5**: Additional features - WebSocket, E-Kanban, Reporting, Audit Trail (Phase 8)
+- **Sessions 6-22**: Features, optimization, testing, deployment
+- **Session 24**: 🔥 LATEST - Critical bug fixes (Settings, Permissions, Warehouse, API audit)
 
-## 📊 Latest Updates
+## 📊 Latest Updates (Session 24)
 
-Lihat **SESSION_5_COMPLETION.md** untuk update terbaru:
-- ✅ Real-time notifications (WebSocket)
-- ✅ E-Kanban system
-- ✅ PDF/Excel reporting
-- ✅ Audit trail logging
+Lihat **SESSION_24_COMPREHENSIVE_FIXES.md** untuk lengkapnya:
+- ✅ Fixed Settings theme/language not applying to DOM
+- ✅ Fixed API permission mapping for user/dashboard endpoints
+- ✅ Added warehouse manual material request feature (4 new endpoints)
+- ✅ Created complete 101-endpoint API inventory with permission mapping
+- ✅ Added MANAGER role with full audit access
+- ⏳ TODO: Warehouse material request UI modal
+- ⏳ TODO: BOM multi-material support
+
+**Status**: 7 bugs fixed, 4 new endpoints added, 101 endpoints audited
+**Next**: Frontend warehouse modal + BOM multi-material feature

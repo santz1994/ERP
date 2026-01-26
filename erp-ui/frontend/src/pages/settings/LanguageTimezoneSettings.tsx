@@ -44,7 +44,7 @@ const timeFormats = [
 
 export const LanguageTimezoneSettings: React.FC = () => {
   const { user } = useAuthStore()
-  const { addNotification } = useUIStore()
+  const { addNotification, setLanguage } = useUIStore()
   const [loading, setLoading] = useState(false)
   const [settings, setSettings] = useState<LanguageSettings>({
     language: 'en',
@@ -82,10 +82,18 @@ export const LanguageTimezoneSettings: React.FC = () => {
       }
       localStorage.setItem('languageSettings', JSON.stringify(settingsToSave))
       
+      // Apply language to UI store and DOM immediately
+      setLanguage(settings.language)
+      document.documentElement.lang = settings.language
+      
+      // Store timezone in localStorage as well
+      localStorage.setItem('timezone', settings.timezone)
+      
       // Add small delay to show button state
       await new Promise(resolve => setTimeout(resolve, 500))
       
       addNotification('success', '✓ Language and timezone settings saved successfully!')
+      console.log('[LanguageTimezone] Settings saved:', { language: settings.language, timezone: settings.timezone })
     } catch (error) {
       addNotification('error', 'Failed to save settings: ' + (error instanceof Error ? error.message : 'Unknown error'))
     } finally {

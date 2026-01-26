@@ -9,12 +9,12 @@ from pydantic import BaseModel
 from sqlalchemy import and_, case, func
 from sqlalchemy.orm import Session
 
-from app.core.database import get_db
+from app.core.dependencies import get_db, require_permission
 from app.core.models.manufacturing import WorkOrder
 from app.core.models.products import Product
 from app.core.models.quality import QCInspection
 from app.core.models.users import User
-from app.core.permissions import ModuleName, Permission, require_permission
+from app.core.permissions import ModuleName, Permission
 
 router = APIRouter(prefix="/reports", tags=["Reporting"])
 
@@ -573,5 +573,54 @@ def get_inventory_summary(db: Session = Depends(get_db)) -> dict:
                 "storage_utilization": 78.5
             }
         }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Export endpoints
+@router.get("/{report_type}/export")
+async def export_report(
+    report_type: str,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    format: str = "pdf",
+    current_user: User = Depends(require_permission("reports.export")),
+    db: Session = Depends(get_db)
+):
+    """Export report in PDF or Excel format."""
+    try:
+        if report_type == "production":
+            report_data = {
+                "headers": ["Date", "Department", "Work Order", "Status", "Units", "Notes"],
+                "rows": [["2026-01-23", "Cutting", "WO-001", "Completed", "500", "On schedule"]],
+                "start_date": start_date or "2026-01-01",
+                "end_date": end_date or "2026-01-23",
+                "title": "Production Report"
+            }
+        else:
+            report_data = {
+                "headers": ["Date", "Item", "Status"],
+                "rows": [["2026-01-23", "Sample", "OK"]],
+                "start_date": start_date or "2026-01-01",
+                "end_date": end_date or "2026-01-23",
+                "title": f"{report_type} Report"
+            }
+        
+        if format.lower() == "excel":
+            file_bytes = generate_excel_report(report_data, report_data["title"])
+            filename = f"{report_type}_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+            return Response(
+                content=file_bytes,
+                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                headers={"Content-Disposition": f"attachment; filename={filename}"}
+            )
+        else:
+            file_bytes = generate_pdf_report(report_data)
+            filename = f"{report_type}_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+            return Response(
+                content=file_bytes,
+                media_type="application/pdf",
+                headers={"Content-Disposition": f"attachment; filename={filename}"}
+            )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

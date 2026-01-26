@@ -13,7 +13,8 @@ from app.core.database import get_db
 from app.core.models.kanban import KanbanCard, KanbanPriority, KanbanStatus
 from app.core.models.products import Product
 from app.core.models.users import User
-from app.core.permissions import ModuleName, Permission, require_permission
+from app.core.dependencies import require_permission
+from app.core.permissions import ModuleName, Permission
 from app.core.websocket import ws_manager
 
 router = APIRouter(prefix="/kanban", tags=["E-Kanban"])

@@ -46,6 +46,72 @@ class Permission(str, Enum):
 # Module Access Control Matrix
 # Format: {Role: {Module: [Permissions]}}
 ROLE_PERMISSIONS = {
+    UserRole.SUPERADMIN: {
+        # Superadmin has full access to all modules (includes AUDIT)
+        ModuleName.DASHBOARD: [Permission.VIEW],
+        ModuleName.PPIC: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.DELETE, Permission.APPROVE],
+        ModuleName.PURCHASING: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.DELETE, Permission.APPROVE],
+        ModuleName.WAREHOUSE: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.DELETE, Permission.EXECUTE],
+        ModuleName.CUTTING: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
+        ModuleName.EMBROIDERY: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
+        ModuleName.SEWING: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
+        ModuleName.FINISHING: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
+        ModuleName.PACKING: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
+        ModuleName.FINISHGOODS: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
+        ModuleName.QC: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.APPROVE],
+        ModuleName.KANBAN: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.APPROVE],
+        ModuleName.REPORTS: [Permission.VIEW, Permission.CREATE],
+        ModuleName.ADMIN: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.DELETE],
+        ModuleName.IMPORT_EXPORT: [Permission.VIEW, Permission.CREATE, Permission.UPDATE],
+        ModuleName.MASTERDATA: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.DELETE],
+        ModuleName.AUDIT: [Permission.VIEW, Permission.CREATE],
+        ModuleName.BARCODE: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
+    },
+
+    UserRole.DEVELOPER: {
+        # Developer has full access to all modules (includes AUDIT)
+        ModuleName.DASHBOARD: [Permission.VIEW],
+        ModuleName.PPIC: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.DELETE, Permission.APPROVE],
+        ModuleName.PURCHASING: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.DELETE, Permission.APPROVE],
+        ModuleName.WAREHOUSE: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.DELETE, Permission.EXECUTE],
+        ModuleName.CUTTING: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
+        ModuleName.EMBROIDERY: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
+        ModuleName.SEWING: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
+        ModuleName.FINISHING: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
+        ModuleName.PACKING: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
+        ModuleName.FINISHGOODS: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
+        ModuleName.QC: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.APPROVE],
+        ModuleName.KANBAN: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.APPROVE],
+        ModuleName.REPORTS: [Permission.VIEW, Permission.CREATE],
+        ModuleName.ADMIN: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.DELETE],
+        ModuleName.IMPORT_EXPORT: [Permission.VIEW, Permission.CREATE, Permission.UPDATE],
+        ModuleName.MASTERDATA: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.DELETE],
+        ModuleName.AUDIT: [Permission.VIEW, Permission.CREATE],
+        ModuleName.BARCODE: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
+    },
+
+    UserRole.MANAGER: {
+        # Manager has broad access (like ADMIN but without full delete/approve on all)
+        ModuleName.DASHBOARD: [Permission.VIEW],
+        ModuleName.PPIC: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.APPROVE],
+        ModuleName.PURCHASING: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.APPROVE],
+        ModuleName.WAREHOUSE: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE, Permission.APPROVE],
+        ModuleName.CUTTING: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
+        ModuleName.EMBROIDERY: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
+        ModuleName.SEWING: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
+        ModuleName.FINISHING: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
+        ModuleName.PACKING: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
+        ModuleName.FINISHGOODS: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
+        ModuleName.QC: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.APPROVE],
+        ModuleName.KANBAN: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.APPROVE],
+        ModuleName.REPORTS: [Permission.VIEW, Permission.CREATE],
+        ModuleName.ADMIN: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.DELETE],
+        ModuleName.IMPORT_EXPORT: [Permission.VIEW, Permission.CREATE, Permission.UPDATE],
+        ModuleName.MASTERDATA: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.DELETE],
+        ModuleName.AUDIT: [Permission.VIEW, Permission.CREATE],
+        ModuleName.BARCODE: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
+    },
+
     UserRole.ADMIN: {
         # Admin has full access to all modules
         ModuleName.DASHBOARD: [Permission.VIEW],
@@ -191,6 +257,27 @@ ROLE_PERMISSIONS = {
         ModuleName.FINISHGOODS: [Permission.VIEW],
         ModuleName.REPORTS: [Permission.VIEW],
     },
+
+    UserRole.FINANCE_MANAGER: {
+        # Finance Manager has access to financial and reporting modules
+        ModuleName.DASHBOARD: [Permission.VIEW],
+        ModuleName.PURCHASING: [Permission.VIEW, Permission.APPROVE],
+        ModuleName.PPIC: [Permission.VIEW],
+        ModuleName.WAREHOUSE: [Permission.VIEW],
+        ModuleName.FINISHGOODS: [Permission.VIEW],
+        ModuleName.REPORTS: [Permission.VIEW, Permission.CREATE],
+        ModuleName.MASTERDATA: [Permission.VIEW],
+    },
+
+    UserRole.PURCHASING_HEAD: {
+        # Purchasing Head manages all purchasing operations
+        ModuleName.DASHBOARD: [Permission.VIEW],
+        ModuleName.PURCHASING: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.DELETE, Permission.APPROVE],
+        ModuleName.WAREHOUSE: [Permission.VIEW],
+        ModuleName.PPIC: [Permission.VIEW],
+        ModuleName.MASTERDATA: [Permission.VIEW, Permission.CREATE, Permission.UPDATE],
+        ModuleName.REPORTS: [Permission.VIEW, Permission.CREATE],
+    },
 }
 
 
@@ -200,8 +287,8 @@ class AccessControl:
     @staticmethod
     def has_module_access(user: User, module: ModuleName) -> bool:
         """Check if user has access to a module."""
-        # SUPERADMIN, DEVELOPER, ADMIN have full access
-        if user.role in [UserRole.SUPERADMIN, UserRole.DEVELOPER, UserRole.ADMIN]:
+        # SUPERADMIN, DEVELOPER, ADMIN, MANAGER have full access
+        if user.role in [UserRole.SUPERADMIN, UserRole.DEVELOPER, UserRole.ADMIN, UserRole.MANAGER]:
             return True
 
         role_permissions = ROLE_PERMISSIONS.get(user.role, {})
@@ -210,8 +297,8 @@ class AccessControl:
     @staticmethod
     def has_permission(user: User, module: ModuleName, permission: Permission) -> bool:
         """Check if user has specific permission for a module."""
-        # SUPERADMIN, DEVELOPER, ADMIN have full permissions
-        if user.role in [UserRole.SUPERADMIN, UserRole.DEVELOPER, UserRole.ADMIN]:
+        # SUPERADMIN, DEVELOPER, ADMIN, MANAGER have full permissions
+        if user.role in [UserRole.SUPERADMIN, UserRole.DEVELOPER, UserRole.ADMIN, UserRole.MANAGER]:
             return True
 
         role_permissions = ROLE_PERMISSIONS.get(user.role, {})
@@ -221,8 +308,8 @@ class AccessControl:
     @staticmethod
     def get_user_modules(user: User) -> list[ModuleName]:
         """Get list of modules accessible by user."""
-        # SUPERADMIN, DEVELOPER, ADMIN have access to all modules
-        if user.role in [UserRole.SUPERADMIN, UserRole.DEVELOPER, UserRole.ADMIN]:
+        # SUPERADMIN, DEVELOPER, ADMIN, MANAGER have access to all modules
+        if user.role in [UserRole.SUPERADMIN, UserRole.DEVELOPER, UserRole.ADMIN, UserRole.MANAGER]:
             return list(ModuleName)
 
         role_permissions = ROLE_PERMISSIONS.get(user.role, {})
@@ -231,8 +318,8 @@ class AccessControl:
     @staticmethod
     def get_module_permissions(user: User, module: ModuleName) -> list[Permission]:
         """Get user's permissions for a specific module."""
-        # SUPERADMIN, DEVELOPER, ADMIN have all permissions
-        if user.role in [UserRole.SUPERADMIN, UserRole.DEVELOPER, UserRole.ADMIN]:
+        # SUPERADMIN, DEVELOPER, ADMIN, MANAGER have all permissions
+        if user.role in [UserRole.SUPERADMIN, UserRole.DEVELOPER, UserRole.ADMIN, UserRole.MANAGER]:
             return [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.DELETE, Permission.APPROVE, Permission.EXECUTE]
 
         role_permissions = ROLE_PERMISSIONS.get(user.role, {})

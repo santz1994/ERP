@@ -2,6 +2,7 @@
 Stock management, transfers, inventory tracking.
 """
 
+from datetime import datetime
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -13,13 +14,19 @@ from app.core.models.transfer import LineOccupancy, LineStatus, TransferLog
 from app.core.models.transfer import TransferDept as TransferDeptEnum
 from app.core.models.transfer import TransferStatus as TransferStatusEnum
 from app.core.models.users import User
-from app.core.models.warehouse import Location, StockMove, StockQuant
+from app.core.models.warehouse import (
+    Location, StockMove, StockQuant, 
+    MaterialRequest, MaterialRequestStatus
+)
 from app.core.permissions import ModuleName, Permission
 from app.core.schemas import (
     StockCheckResponse,
     StockTransferCreate,
     StockTransferResponse,
     StockUpdateCreate,
+    MaterialRequestCreate,
+    MaterialRequestResponse,
+    MaterialRequestApprovalCreate,
     TransferDept,
     TransferStatus,
 )
@@ -587,31 +594,6 @@ async def get_low_stock_alerts(
     }
 
 
-@router.post("/stock-transfer")
-async def create_stock_transfer(
-    source_location: str,
-    target_location: str,
-    product_id: int,
-    quantity: float,
-    current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.CREATE)),
-    db: Session = Depends(get_db)
-):
-    """Create stock transfer between warehouse locations.
-
-    Transfer inventory from one location to another
-    """
-    return {
-        "status": "success",
-        "transfer_id": 1001,
-        "source": source_location,
-        "target": target_location,
-        "product_id": product_id,
-        "quantity": quantity,
-        "timestamp": "2026-01-22T14:30:00",
-        "created_by": current_user.username
-    }
-
-
 @router.get("/stock-aging")
 async def get_stock_aging(
     current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.VIEW)),
@@ -654,6 +636,191 @@ async def get_stock_aging(
         ],
         "slow_moving_action": "Review for obsolescence or promotional clearance"
     }
+
+
+@router.post(
+    "/material-request",
+    response_model=MaterialRequestResponse,
+    status_code=status.HTTP_201_CREATED
+)
+async def create_material_request(
+    request_data: MaterialRequestCreate,
+    current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.CREATE)),
+    db: Session = Depends(get_db)
+):
+    """Create a manual material request (with approval workflow).
+
+    **Required Permission**: warehouse.request_material
+
+    Allows warehouse operators to request additional materials that need approval from SPV or Manager.
+
+    **Request Body**:
+    - `product_id`: Product/Material ID
+    - `location_id`: Warehouse location where material is needed
+    - `qty_requested`: Quantity needed
+    - `uom`: Unit of measure (Pcs, Meter, Kg, Roll)
+    - `purpose`: Reason/purpose for material request
+
+    **Response**: Created request in PENDING approval state
+
+    **Workflow**:
+    1. Operator creates request → Status: PENDING
+    2. SPV/Manager reviews → Status: APPROVED or REJECTED
+    3. If approved, warehouse can fulfill the request → Status: COMPLETED
+    """
+    # Validate product exists
+    product = db.query(Product).filter(Product.id == request_data.product_id).first()
+    if not product:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product not found"
+        )
+
+    # Validate location exists
+    location = db.query(Location).filter(Location.id == request_data.location_id).first()
+    if not location:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Location not found"
+        )
+
+    # Create material request
+    material_request = MaterialRequest(
+        product_id=request_data.product_id,
+        location_id=request_data.location_id,
+        qty_requested=request_data.qty_requested,
+        uom=request_data.uom,
+        purpose=request_data.purpose,
+        requested_by_id=current_user.id,
+        status=MaterialRequestStatus.PENDING
+    )
+
+    db.add(material_request)
+    db.commit()
+    db.refresh(material_request)
+
+    return material_request
+
+
+@router.get("/material-requests", response_model=list[MaterialRequestResponse])
+async def list_material_requests(
+    current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.VIEW)),
+    status_filter: str | None = None,
+    db: Session = Depends(get_db)
+):
+    """List all material requests (pending approval and historical).
+
+    **Required Permission**: warehouse.view
+
+    **Query Parameters**:
+    - `status_filter`: Filter by status (Pending, Approved, Rejected, Completed)
+
+    **Response**: List of material requests
+    """
+    query = db.query(MaterialRequest)
+
+    if status_filter:
+        query = query.filter(MaterialRequest.status == status_filter)
+
+    requests = query.order_by(MaterialRequest.requested_at.desc()).all()
+    return requests
+
+
+@router.post(
+    "/material-requests/{request_id}/approve",
+    response_model=MaterialRequestResponse
+)
+async def approve_material_request(
+    request_id: int,
+    approval_data: MaterialRequestApprovalCreate,
+    current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.APPROVE)),
+    db: Session = Depends(get_db)
+):
+    """Approve or reject a material request (SPV/Manager only).
+
+    **Required Permission**: warehouse.approve_material
+
+    **Path Parameters**:
+    - `request_id`: Material request ID
+
+    **Request Body**:
+    - `approved`: Boolean - True to approve, False to reject
+    - `rejection_reason`: Required if rejecting - reason for rejection
+
+    **Response**: Updated request with approval status
+    """
+    # Find request
+    material_request = db.query(MaterialRequest).filter(MaterialRequest.id == request_id).first()
+    if not material_request:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Material request not found"
+        )
+
+    if material_request.status != MaterialRequestStatus.PENDING:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot approve request with status: {material_request.status.value}"
+        )
+
+    if approval_data.approved:
+        material_request.status = MaterialRequestStatus.APPROVED
+        material_request.approved_by_id = current_user.id
+        material_request.approved_at = datetime.utcnow()
+    else:
+        if not approval_data.rejection_reason:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Rejection reason is required when rejecting"
+            )
+        material_request.status = MaterialRequestStatus.REJECTED
+        material_request.rejection_reason = approval_data.rejection_reason
+        material_request.approved_by_id = current_user.id
+        material_request.approved_at = datetime.utcnow()
+
+    db.commit()
+    db.refresh(material_request)
+
+    return material_request
+
+
+@router.post("/material-requests/{request_id}/complete", response_model=MaterialRequestResponse)
+async def complete_material_request(
+    request_id: int,
+    current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.EXECUTE)),
+    db: Session = Depends(get_db)
+):
+    """Mark material request as complete (after material received).
+
+    **Required Permission**: warehouse.execute
+
+    **Path Parameters**:
+    - `request_id`: Material request ID
+
+    **Response**: Updated request with COMPLETED status
+    """
+    # Find request
+    material_request = db.query(MaterialRequest).filter(MaterialRequest.id == request_id).first()
+    if not material_request:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Material request not found"
+        )
+
+    if material_request.status != MaterialRequestStatus.APPROVED:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only approved requests can be completed"
+        )
+
+    material_request.status = MaterialRequestStatus.COMPLETED
+    material_request.received_by_id = current_user.id
+    material_request.received_at = datetime.utcnow()
+
+    db.commit()
+    db.refresh(material_request)
+
+    return material_request
 
 
 @router.get("/warehouse-efficiency")

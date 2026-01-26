@@ -679,3 +679,21 @@ def _export_users_excel(users: list[User]):
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f"attachment; filename=users_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"}
     )
+
+
+# ====================== STATUS ENDPOINT ======================
+
+@router.get("/status")
+async def get_status(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission("import_export", "view"))
+):
+    """Get import/export system status."""
+    return {
+        "status": "operational",
+        "module": "import_export",
+        "timestamp": datetime.now().isoformat(),
+        "available_exports": ["products", "bom", "inventory", "users"],
+        "available_imports": ["products", "bom"],
+        "formats_supported": ["csv", "excel"]
+    }

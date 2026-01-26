@@ -3,6 +3,217 @@ import { User } from '@/types'
 import { apiClient } from '@/api/client'
 import { usePermissionStore } from './permissionStore'
 
+/**
+ * UI Store Type Definition v2.0.1
+ * Manages theme, language, layout, notifications, and visual preferences
+ */
+export interface UIStore {
+  // Display Preference State
+  readonly theme: 'light' | 'dark' | 'auto'
+  readonly language: string
+  readonly compactMode: boolean
+  readonly sidebarPosition: 'left' | 'right'
+  readonly fontSize: 'small' | 'normal' | 'large'
+  readonly colorScheme: 'blue' | 'green' | 'purple' | 'orange'
+  
+  // Notification State
+  readonly sidebarOpen: boolean
+  readonly notifications: ReadonlyArray<{
+    readonly id: string
+    readonly type: 'success' | 'error' | 'warning' | 'info'
+    readonly message: string
+  }>
+  
+  // Display Preference Setters
+  readonly setTheme: (theme: 'light' | 'dark' | 'auto') => void
+  readonly setLanguage: (lang: string) => void
+  readonly setCompactMode: (compact: boolean) => void
+  readonly setSidebarPosition: (pos: 'left' | 'right') => void
+  readonly setFontSize: (size: 'small' | 'normal' | 'large') => void
+  readonly setColorScheme: (scheme: 'blue' | 'green' | 'purple' | 'orange') => void
+  
+  // Notification Setters
+  readonly toggleSidebar: () => void
+  readonly addNotification: (type: string, message: string) => void
+  readonly removeNotification: (id: string) => void
+  
+  // Batch operations
+  readonly updateSettings: (settings: {
+    theme?: 'light' | 'dark' | 'auto'
+    language?: string
+    compactMode?: boolean
+    sidebarPosition?: 'left' | 'right'
+    fontSize?: 'small' | 'normal' | 'large'
+    colorScheme?: 'blue' | 'green' | 'purple' | 'orange'
+  }) => void
+  readonly loadSettings: () => void
+}
+
+// Backward compatibility aliases
+export type UIDisplayPreferences = UIStore
+export type UIState = UIStore
+
+export const useUIStore = create<UIStore>((set) => ({
+  // Initial state - Display Preferences
+  theme: 'light',
+  language: 'en',
+  compactMode: false,
+  sidebarPosition: 'left',
+  fontSize: 'normal',
+  colorScheme: 'blue',
+  
+  // Initial state - Notifications/UI
+  sidebarOpen: true,
+  notifications: [],
+  
+  // Display Preference Setters
+  setTheme: (theme) => {
+    set({ theme })
+    applyTheme(theme)
+    saveUISettings()
+  },
+  setLanguage: (language) => {
+    set({ language })
+    applyLanguage(language)
+    saveUISettings()
+  },
+  setCompactMode: (compactMode) => {
+    set({ compactMode })
+    applyCompactMode(compactMode)
+    saveUISettings()
+  },
+  setSidebarPosition: (sidebarPosition) => {
+    set({ sidebarPosition })
+    saveUISettings()
+  },
+  setFontSize: (fontSize) => {
+    set({ fontSize })
+    applyFontSize(fontSize)
+    saveUISettings()
+  },
+  setColorScheme: (colorScheme) => {
+    set({ colorScheme })
+    saveUISettings()
+  },
+  
+  // Notification Setters
+  toggleSidebar: () =>
+    set((state) => ({ sidebarOpen: !state.sidebarOpen })),
+
+  addNotification: (type: string, message: string) =>
+    set((state) => ({
+      notifications: [
+        ...state.notifications,
+        { id: Date.now().toString(), type: type as any, message },
+      ],
+    })),
+
+  removeNotification: (id: string) =>
+    set((state) => ({
+      notifications: state.notifications.filter((n) => n.id !== id),
+    })),
+  
+  // Batch update
+  updateSettings: (settings) => {
+    set((state) => ({
+      theme: settings.theme ?? state.theme,
+      language: settings.language ?? state.language,
+      compactMode: settings.compactMode ?? state.compactMode,
+      sidebarPosition: settings.sidebarPosition ?? state.sidebarPosition,
+      fontSize: settings.fontSize ?? state.fontSize,
+      colorScheme: settings.colorScheme ?? state.colorScheme,
+    }))
+    
+    const state = useUIStore.getState()
+    applyTheme(state.theme)
+    applyLanguage(state.language)
+    applyCompactMode(state.compactMode)
+    applyFontSize(state.fontSize)
+    saveUISettings()
+  },
+  
+  // Load from localStorage
+  loadSettings: () => {
+    try {
+      const saved = localStorage.getItem('uiSettings')
+      if (saved) {
+        const settings = JSON.parse(saved)
+        set((state) => ({
+          theme: settings.theme ?? state.theme,
+          language: settings.language ?? state.language,
+          compactMode: settings.compactMode ?? state.compactMode,
+          sidebarPosition: settings.sidebarPosition ?? state.sidebarPosition,
+          fontSize: settings.fontSize ?? state.fontSize,
+          colorScheme: settings.colorScheme ?? state.colorScheme,
+        }))
+        
+        const newState = useUIStore.getState()
+        applyTheme(newState.theme)
+        applyLanguage(newState.language)
+        applyCompactMode(newState.compactMode)
+        applyFontSize(newState.fontSize)
+      }
+    } catch (e) {
+      console.error('Failed to load UI settings:', e)
+    }
+  }
+}))
+
+// Helper functions to apply settings to DOM
+function applyTheme(theme: string) {
+  const root = document.documentElement
+  if (theme === 'dark') {
+    root.classList.add('dark')
+  } else if (theme === 'light') {
+    root.classList.remove('dark')
+  } else if (theme === 'auto') {
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      root.classList.add('dark')
+    } else {
+      root.classList.remove('dark')
+    }
+  }
+}
+
+function applyLanguage(lang: string) {
+  document.documentElement.lang = lang
+  localStorage.setItem('language', lang)
+}
+
+function applyCompactMode(compact: boolean) {
+  const root = document.documentElement
+  if (compact) {
+    root.classList.add('compact-mode')
+  } else {
+    root.classList.remove('compact-mode')
+  }
+}
+
+function applyFontSize(size: string) {
+  const root = document.documentElement
+  root.classList.remove('text-sm', 'text-base', 'text-lg')
+  if (size === 'small') root.classList.add('text-sm')
+  else if (size === 'large') root.classList.add('text-lg')
+  else root.classList.add('text-base')
+}
+
+function saveUISettings() {
+  try {
+    const state = useUIStore.getState()
+    localStorage.setItem('uiSettings', JSON.stringify({
+      theme: state.theme,
+      language: state.language,
+      compactMode: state.compactMode,
+      sidebarPosition: state.sidebarPosition,
+      fontSize: state.fontSize,
+      colorScheme: state.colorScheme,
+      savedAt: new Date().toISOString()
+    }))
+  } catch (e) {
+    console.error('Failed to save UI settings:', e)
+  }
+}
+
 interface AuthState {
   user: User | null
   token: string | null
@@ -102,40 +313,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     console.log('[AuthStore.loadUserFromStorage] Called - DEPRECATED, using initializeAuth instead')
     // This is kept for backward compatibility but shouldn't be called
   },
-}))
-
-interface UIState {
-  sidebarOpen: boolean
-  notifications: Array<{
-    id: string
-    type: 'success' | 'error' | 'warning' | 'info'
-    message: string
-  }>
-  
-  toggleSidebar: () => void
-  addNotification: (type: string, message: string) => void
-  removeNotification: (id: string) => void
-}
-
-export const useUIStore = create<UIState>((set) => ({
-  sidebarOpen: true,
-  notifications: [],
-
-  toggleSidebar: () =>
-    set((state) => ({ sidebarOpen: !state.sidebarOpen })),
-
-  addNotification: (type: string, message: string) =>
-    set((state) => ({
-      notifications: [
-        ...state.notifications,
-        { id: Date.now().toString(), type: type as any, message },
-      ],
-    })),
-
-  removeNotification: (id: string) =>
-    set((state) => ({
-      notifications: state.notifications.filter((n) => n.id !== id),
-    })),
 }))
 
 export { usePermissionStore } from './permissionStore'

@@ -11,7 +11,8 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.models.users import User
-from app.core.permissions import ModuleName, Permission, require_permission
+from app.core.dependencies import require_permission
+from app.core.permissions import ModuleName, Permission
 from app.modules.embroidery import EmbroideryService
 
 router = APIRouter(prefix="/embroidery", tags=["Embroidery"])
@@ -170,6 +171,23 @@ def get_line_status(
 
     Shows which lines are occupied and with which article
     """
-    service = EmbroideryService(db)
-    line_statuses = service.get_line_status()
-    return line_statuses
+    try:
+        service = EmbroideryService(db)
+        line_statuses = service.get_line_status()
+        
+        # Transform model to response schema
+        results = []
+        for ls in line_statuses:
+            results.append(LineStatusResponse(
+                line_id=f"{ls.dept_name}_{ls.line_number}",
+                current_article=ls.current_batch_id,
+                is_occupied=ls.occupancy_status.value == "OCCUPIED" if ls.occupancy_status else False,
+                department="Embroidery",
+                destination=ls.current_destination
+            ))
+        return results
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving line status: {str(e)}"
+        )

@@ -63,7 +63,7 @@ export default function AuditTrailPage() {
         )
       });
       
-      const response = await api.get(`/api/audit/logs?${params}`);
+      const response = await api.get(`/audit/logs?${params}`);
       setLogs(response.data.data);
       setTotalPages(response.data.total_pages);
     } catch (error) {
@@ -75,7 +75,7 @@ export default function AuditTrailPage() {
 
   const fetchSummary = async () => {
     try {
-      const response = await api.get('/api/audit/summary');
+      const response = await api.get('/audit/summary');
       setSummary(response.data);
     } catch (error) {
       console.error('Failed to fetch summary:', error);
@@ -90,7 +90,7 @@ export default function AuditTrailPage() {
         )
       });
       
-      window.open(`/api/audit/export/csv?${params}`, '_blank');
+      window.open(`/audit/export/csv?${params}`, '_blank');
     } catch (error) {
       console.error('Failed to export:', error);
     }
@@ -109,11 +109,14 @@ export default function AuditTrailPage() {
     return colors[action] || 'bg-gray-100 text-gray-800';
   };
 
-  if (!['DEVELOPER', 'SUPERADMIN', 'MANAGER'].includes(user?.role || '')) {
+  // Check if user has audit.view_logs permission
+  // Backend permissions: DEVELOPER, SUPERADMIN, MANAGER, ADMIN, PPIC_MANAGER all have audit.view_logs
+  const auditRoles = ['DEVELOPER', 'SUPERADMIN', 'MANAGER', 'ADMIN', 'PPIC_MANAGER'];
+  if (!auditRoles.includes(user?.role || '')) {
     return (
       <div className="p-6">
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800">Access Denied: Audit Trail requires DEVELOPER, SUPERADMIN, or MANAGER role</p>
+          <p className="text-red-800">Access Denied: Audit Trail requires appropriate role (DEVELOPER, SUPERADMIN, MANAGER, ADMIN, or PPIC_MANAGER)</p>
         </div>
       </div>
     );

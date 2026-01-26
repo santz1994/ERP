@@ -69,7 +69,9 @@ def seed_all_users():
                 continue
 
             # Create new user
-            hashed_password = PasswordUtils.hash_password(DEFAULT_PASSWORD)
+            # Truncate password to 72 bytes (bcrypt limit)
+            truncated_password = DEFAULT_PASSWORD[:72]
+            hashed_password = PasswordUtils.hash_password(truncated_password)
             new_user = User(
                 username=user_data["username"],
                 email=user_data["email"],

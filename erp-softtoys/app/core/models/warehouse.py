@@ -37,6 +37,15 @@ class StockMoveStatus(str, enum.Enum):
     DONE = "Done"
 
 
+class MaterialRequestStatus(str, enum.Enum):
+    """Manual material request status."""
+
+    PENDING = "Pending"
+    APPROVED = "Approved"
+    REJECTED = "Rejected"
+    COMPLETED = "Completed"
+
+
 class POStatus(str, enum.Enum):
     """Purchase Order Status."""
 
@@ -204,3 +213,53 @@ class StockLot(Base):
 
     def __repr__(self):
         return f"<StockLot(lot={self.lot_number}, qty={self.qty_remaining})>"
+
+
+class MaterialRequest(Base):
+    """Manual Material Requests
+    Tracks requests for additional materials with approval workflow.
+    Requires SPV or Manager warehouse approval.
+    """
+
+    __tablename__ = "material_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    product_id = Column(Integer, ForeignKey("products.id"), nullable=False, index=True)
+    location_id = Column(Integer, ForeignKey("locations.id"), nullable=False, index=True)
+
+    # Quantity requested
+    qty_requested = Column(DECIMAL(10, 2), nullable=False)
+    uom = Column(String(10), nullable=False)  # Pcs, Meter, Kg, Roll, etc.
+
+    # Requester info
+    requested_by_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    requested_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Approval info
+    approved_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    approved_at = Column(DateTime(timezone=True), nullable=True)
+    rejection_reason = Column(String(500), nullable=True)
+
+    # Status
+    status = Column(Enum(MaterialRequestStatus), default=MaterialRequestStatus.PENDING, nullable=False, index=True)
+
+    # Purpose/notes
+    purpose = Column(String(500), nullable=False)  # Why this material is needed
+
+    # Completed by (after approval)
+    received_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    received_at = Column(DateTime(timezone=True), nullable=True)
+
+    # Tracking
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    product = relationship("Product", foreign_keys=[product_id])
+    location = relationship("Location", foreign_keys=[location_id])
+    requester = relationship("User", foreign_keys=[requested_by_id])
+    approver = relationship("User", foreign_keys=[approved_by_id])
+    receiver = relationship("User", foreign_keys=[received_by_id])
+
+    def __repr__(self):
+        return f"<MaterialRequest(product={self.product_id}, qty={self.qty_requested}, status={self.status.value})>"
