@@ -522,39 +522,6 @@ const PPICPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Quick Instructions */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="text-lg font-semibold text-blue-900 mb-2">📥 Import BOM</div>
-                <ol className="text-sm text-blue-700 space-y-1">
-                  <li>1. Go to Admin → Import/Export</li>
-                  <li>2. Select "Bill of Materials"</li>
-                  <li>3. Upload CSV/Excel file</li>
-                  <li>4. Confirm import</li>
-                </ol>
-              </div>
-
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <div className="text-lg font-semibold text-green-900 mb-2">📤 Export BOM</div>
-                <ol className="text-sm text-green-700 space-y-1">
-                  <li>1. Go to Admin → Import/Export</li>
-                  <li>2. Select "Bill of Materials"</li>
-                  <li>3. Choose format (CSV/Excel)</li>
-                  <li>4. Download file</li>
-                </ol>
-              </div>
-
-              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                <div className="text-lg font-semibold text-purple-900 mb-2">✏️ Manual BOM Entry</div>
-                <ol className="text-sm text-purple-700 space-y-1">
-                  <li>1. Click "Add BOM Manually" button</li>
-                  <li>2. Fill in product and material details</li>
-                  <li>3. Enter quantity, unit, and price</li>
-                  <li>4. Click "Save BOM"</li>
-                </ol>
-              </div>
-            </div>
-
             {/* BOM Info Card */}
             <div className="bg-white rounded-lg shadow p-6 border-l-4 border-orange-500">
               <h3 className="text-lg font-semibold text-gray-800 mb-3">📝 BOM Management Info</h3>
