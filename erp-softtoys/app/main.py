@@ -22,6 +22,12 @@ from app.api.v1 import (
     websocket,
 )
 
+# Import production module routers
+from app.api.v1.production import daily_input as production_daily_input
+from app.api.v1.production import approval as production_approval
+from app.api.v1.ppic import daily_production as ppic_daily_production
+from app.api.v1.ppic import dashboard as ppic_dashboard
+
 # Import all models to register them with Base before creating tables
 # This must be done before Base.metadata.create_all()
 from app.core import models  # noqa: F401
@@ -155,6 +161,17 @@ app.include_router(
     prefix=settings.API_PREFIX
 )
 
+# PPIC Sub-modules (Session 31)
+app.include_router(
+    ppic_daily_production.router,
+    prefix=settings.API_PREFIX
+)
+
+app.include_router(
+    ppic_dashboard.router,
+    prefix=settings.API_PREFIX
+)
+
 app.include_router(
     warehouse.router,
     prefix=settings.API_PREFIX
@@ -205,6 +222,17 @@ app.include_router(
 
 app.include_router(
     finishgoods.router,
+    prefix=settings.API_PREFIX
+)
+
+# Production Daily Input & Approval Workflow (Session 31)
+app.include_router(
+    production_daily_input.router,
+    prefix=settings.API_PREFIX
+)
+
+app.include_router(
+    production_approval.router,
     prefix=settings.API_PREFIX
 )
 

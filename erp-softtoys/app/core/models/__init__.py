@@ -13,6 +13,13 @@ from .sales import SalesOrder, SalesOrderLine
 from .transfer import LineOccupancy, TransferLog
 from .users import User
 from .warehouse import Location, PurchaseOrder, StockMove, StockQuant
+from .daily_production import (
+    SPKDailyProduction,
+    SPKProductionCompletion,
+    SPKModification,
+    MaterialDebt,
+    MaterialDebtSettlement
+)
 
 __all__ = [
     "Product",
@@ -42,5 +49,10 @@ __all__ = [
     "AuditLog",
     "UserActivityLog",
     "SecurityLog",
+    "SPKDailyProduction",
+    "SPKProductionCompletion",
+    "SPKModification",
+    "MaterialDebt",
+    "MaterialDebtSettlement",
 ]
 
