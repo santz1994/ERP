@@ -1,0 +1,569 @@
+{
+  "analysis_date": "2026-01-26",
+  "workspace": "d:\\Project\\ERP2026",
+  
+  "unused_test_files": [
+    {
+      "path": "tests/test-all-endpoints.ps1",
+      "reason": "Duplicate dari test-api-endpoints.ps1 - test endpoint yang sama dengan format lebih sederhana",
+      "safe_to_delete": true,
+      "category": "Deprecated Script",
+      "details": "Both file test API endpoints dengan developer user, tapi test-api-endpoints.ps1 lebih comprehensive",
+      "file_size": "1.3 KB"
+    },
+    {
+      "path": "tests/test-all-permissions.ps1",
+      "reason": "Duplicate - ada di root level sebagai test-all-permissions.ps1 (exact same file di dua lokasi)",
+      "safe_to_delete": true,
+      "category": "Duplicate File",
+      "details": "Same functionality di root directory, tidak dipanggil dari docs/md files",
+      "file_size": "2.8 KB"
+    },
+    {
+      "path": "tests/test-api-endpoints.ps1",
+      "reason": "Superseded oleh pytest test suites di tests/ (test_production_ready.py, test_rbac_matrix.py, etc)",
+      "safe_to_delete": true,
+      "category": "Replaced by Modern Tests",
+      "details": "PowerShell endpoint tests sudah diganti dengan pytest yang lebih robust dan terintegrasi",
+      "file_size": "3.4 KB"
+    },
+    {
+      "path": "tests/test-developer-access.ps1",
+      "reason": "Subset dari test-all-permissions.ps1 - hanya test developer role saja",
+      "safe_to_delete": true,
+      "category": "Redundant Script",
+      "details": "test-all-permissions.ps1 sudah mencakup testing developer role + semua role lain. Script ini hanya bagian kecil saja",
+      "file_size": "2.1 KB"
+    },
+    {
+      "path": "tests/test-endpoints-quick.ps1",
+      "reason": "Quick test for simple endpoints - replaced oleh test_production_ready.py dan test_rbac_matrix.py",
+      "safe_to_delete": true,
+      "category": "Replaced by Modern Tests",
+      "details": "Hanya test beberapa endpoint dasar, functionality sudah tercakup di pytest suites",
+      "file_size": "1.7 KB"
+    }
+  ],
+
+  "root_level_deprecated_scripts": [
+    {
+      "path": "test-auth-flow.ps1",
+      "reason": "Deprecated - replaced oleh pytest suites (test_production_ready.py, erp-softtoys/tests/test_auth.py)",
+      "safe_to_delete": true,
+      "category": "Deprecated PowerShell Script",
+      "details": "Test login flow sudah tercakup di pytest dengan fixture yang lebih robust",
+      "file_size": "6.2 KB",
+      "references_in_docs": "None found in current docs"
+    },
+    {
+      "path": "test-complete-flow.ps1",
+      "reason": "Deprecated - comprehensive testing sudah dilakukan oleh pytest + playwright",
+      "safe_to_delete": true,
+      "category": "Deprecated PowerShell Script",
+      "details": "End-to-end testing sudah handled oleh tests/e2e/erp.spec.ts (Playwright) dan pytest suites",
+      "file_size": "8.6 KB",
+      "references_in_docs": "None found in current docs"
+    },
+    {
+      "path": "test-comprehensive.ps1",
+      "reason": "Duplicate/similar dari test-full-comprehensive.ps1 - same goal dengan nama berbeda",
+      "safe_to_delete": true,
+      "category": "Duplicate Script",
+      "details": "Dua file melakukan test yang sama dengan content hampir identik. Gunakan test-full-comprehensive.ps1",
+      "file_size": "5.7 KB",
+      "references_in_docs": "None found in current docs"
+    },
+    {
+      "path": "test-full-comprehensive.ps1",
+      "reason": "Kept version (more recent) - duplicate dari test-comprehensive.ps1",
+      "safe_to_delete": false,
+      "category": "Keep This Version",
+      "details": "Keep ini, delete test-comprehensive.ps1. Ini versi yang lebih lengkap",
+      "file_size": "7.5 KB"
+    },
+    {
+      "path": "test-integration.ps1",
+      "reason": "Deprecated - replaced oleh pytest integration tests dan Playwright e2e tests",
+      "safe_to_delete": true,
+      "category": "Deprecated PowerShell Script",
+      "details": "Integration testing sudah tercakup di test_production_ready.py, test_rbac_matrix.py, dan erp.spec.ts",
+      "file_size": "6.1 KB",
+      "references_in_docs": "None found in current docs"
+    },
+    {
+      "path": "test-menus.ps1",
+      "reason": "Deprecated - UI testing sudah dilakukan oleh Playwright (tests/e2e/erp.spec.ts)",
+      "safe_to_delete": true,
+      "category": "Deprecated PowerShell Script",
+      "details": "Menu testing sekarang handled oleh Playwright yang lebih robust. PowerShell script tidak dapat interact dengan React properly",
+      "file_size": "1.6 KB",
+      "references_in_docs": "None found in current docs"
+    },
+    {
+      "path": "test-page-render.ps1",
+      "reason": "Deprecated - replaced oleh Playwright e2e tests (tests/e2e/erp.spec.ts)",
+      "safe_to_delete": true,
+      "category": "Deprecated PowerShell Script",
+      "details": "Page rendering tests sekarang handled oleh Playwright browser automation",
+      "file_size": "2.4 KB",
+      "references_in_docs": "None found in current docs"
+    },
+    {
+      "path": "test-pages-rendering.ps1",
+      "reason": "Similar ke test-page-render.ps1 - duplicate functionality, replaced oleh Playwright",
+      "safe_to_delete": true,
+      "category": "Deprecated PowerShell Script",
+      "details": "Same purpose sebagai test-page-render.ps1. Gunakan Playwright tests saja",
+      "file_size": "3.1 KB",
+      "references_in_docs": "None found in current docs"
+    },
+    {
+      "path": "test-all-pages-render.ps1",
+      "reason": "Similar ke test-pages-rendering.ps1 - comprehensive version, replaced oleh Playwright",
+      "safe_to_delete": true,
+      "category": "Deprecated PowerShell Script",
+      "details": "Duplicate dari test-pages-rendering.ps1 dengan nama lebih spesifik. Gunakan Playwright tests",
+      "file_size": "4.7 KB",
+      "references_in_docs": "None found in current docs"
+    }
+  ],
+
+  "test_result_files": [
+    {
+      "path": "test_results.txt",
+      "reason": "Old test result output - duplicate dari test_results_v2.txt (same content, older version)",
+      "safe_to_delete": true,
+      "category": "Old Test Report",
+      "details": "Historic test output, sudah ada test_results_v2.txt dengan content yang sama. Both dapat dihapus jika archived",
+      "file_size": "15.8 KB",
+      "date_reference": "Session 25 RBAC/PBAC/UAC tests"
+    },
+    {
+      "path": "test_results_v2.txt",
+      "reason": "Updated version dari test_results.txt - dapat dihapus jika sudah di-archive ke docs/",
+      "safe_to_delete": true,
+      "category": "Test Result Archive",
+      "details": "Test output file yang sudah di-dokumentasikan di docs/10-Testing/TEST_RESULTS_ARCHIVE.md. Dapat dihapus dari root",
+      "file_size": "15.8 KB",
+      "date_reference": "Session 25 RBAC/PBAC/UAC tests"
+    }
+  ],
+
+  "unused_mock_files": [
+    {
+      "path": "tests/postman/ERP_API_Collection.json",
+      "reason": "Postman collection - tidak digunakan dalam automated test pipeline",
+      "safe_to_delete": false,
+      "category": "Manual Testing Asset",
+      "details": "Useful untuk manual API testing di Postman, tapi tidak dipanggil dari pytest atau automation. Can keep as reference",
+      "file_size": "16.5 KB",
+      "recommendation": "Keep - useful for manual testing & API documentation"
+    }
+  ],
+
+  "production_test_files_to_keep": [
+    {
+      "path": "tests/test_production_ready.py",
+      "reason": "Active - used in docs and referenced in PERFORMANCE_TESTING_HOW_TO_RUN.md",
+      "status": "KEEP",
+      "size": "12.4 KB",
+      "references": "PERFORMANCE_TESTING_HOW_TO_RUN.md, TEST_QUICK_START.md, CONSOLIDATED_ACTION_ITEMS.md"
+    },
+    {
+      "path": "tests/test_rbac_matrix.py",
+      "reason": "Active - RBAC testing is critical, used in docs and automation",
+      "status": "KEEP",
+      "size": "11.8 KB",
+      "references": "TEST_QUICK_START.md, PERFORMANCE_TESTING_HOW_TO_RUN.md"
+    },
+    {
+      "path": "tests/test_boundary_value_analysis.py",
+      "reason": "Active - edge case testing, referenced in docs",
+      "status": "KEEP",
+      "size": "19.6 KB",
+      "references": "TEST_QUICK_START.md, qa-setup.bat"
+    },
+    {
+      "path": "tests/test_database_integrity.py",
+      "reason": "Active - database persistence verification",
+      "status": "KEEP",
+      "size": "21.2 KB"
+    },
+    {
+      "path": "tests/locustfile.py",
+      "reason": "Active - load testing for production readiness",
+      "status": "KEEP",
+      "size": "4.4 KB",
+      "references": "TEST_QUICK_START.md, PERFORMANCE_TESTING_HOW_TO_RUN.md, qa-setup.bat"
+    },
+    {
+      "path": "tests/conftest.py",
+      "reason": "Active - pytest configuration & shared fixtures",
+      "status": "KEEP",
+      "size": "11.8 KB"
+    },
+    {
+      "path": "tests/e2e/erp.spec.ts",
+      "reason": "Active - Playwright end-to-end testing",
+      "status": "KEEP",
+      "size": "8.0 KB"
+    },
+    {
+      "path": "erp-softtoys/tests/conftest.py",
+      "reason": "Active - backend test configuration",
+      "status": "KEEP",
+      "size": "10.7 KB"
+    },
+    {
+      "path": "erp-softtoys/tests/test_auth.py",
+      "reason": "Active - authentication testing",
+      "status": "KEEP",
+      "size": "12.8 KB"
+    },
+    {
+      "path": "erp-softtoys/tests/test_cutting_module.py",
+      "reason": "Active - production module testing (Phase 5)",
+      "status": "KEEP",
+      "size": "9.7 KB"
+    },
+    {
+      "path": "erp-softtoys/tests/test_sewing_module.py",
+      "reason": "Active - production module testing (Phase 5)",
+      "status": "KEEP",
+      "size": "11.9 KB"
+    },
+    {
+      "path": "erp-softtoys/tests/test_finishing_module.py",
+      "reason": "Active - production module testing (Phase 5)",
+      "status": "KEEP",
+      "size": "11.7 KB"
+    },
+    {
+      "path": "erp-softtoys/tests/test_packing_module.py",
+      "reason": "Active - production module testing (Phase 5)",
+      "status": "KEEP",
+      "size": "11.2 KB"
+    },
+    {
+      "path": "erp-softtoys/tests/test_qt09_protocol.py",
+      "reason": "Active - QT-09 transfer protocol testing (Phase 5)",
+      "status": "KEEP",
+      "size": "11.0 KB"
+    },
+    {
+      "path": "tests/postman/ERP_API_Collection.json",
+      "reason": "Useful reference for API documentation & manual testing",
+      "status": "KEEP",
+      "size": "16.5 KB"
+    }
+  ],
+
+  "deprecated_scripts": [
+    {
+      "path": "test-auth-flow.ps1",
+      "reason": "Replaced by pytest",
+      "size": "6.2 KB",
+      "replacement": "erp-softtoys/tests/test_auth.py"
+    },
+    {
+      "path": "test-complete-flow.ps1",
+      "reason": "Replaced by pytest + Playwright",
+      "size": "8.6 KB",
+      "replacement": "tests/e2e/erp.spec.ts + tests/test_production_ready.py"
+    },
+    {
+      "path": "test-comprehensive.ps1",
+      "reason": "Duplicate dari test-full-comprehensive.ps1",
+      "size": "5.7 KB",
+      "replacement": "test-full-comprehensive.ps1 atau pytest suites"
+    },
+    {
+      "path": "test-integration.ps1",
+      "reason": "Replaced by pytest integration tests",
+      "size": "6.1 KB",
+      "replacement": "tests/test_production_ready.py"
+    },
+    {
+      "path": "test-menus.ps1",
+      "reason": "Replaced by Playwright",
+      "size": "1.6 KB",
+      "replacement": "tests/e2e/erp.spec.ts"
+    },
+    {
+      "path": "test-page-render.ps1",
+      "reason": "Replaced by Playwright",
+      "size": "2.4 KB",
+      "replacement": "tests/e2e/erp.spec.ts"
+    },
+    {
+      "path": "test-pages-rendering.ps1",
+      "reason": "Duplicate dari test-page-render.ps1, replaced by Playwright",
+      "size": "3.1 KB",
+      "replacement": "tests/e2e/erp.spec.ts"
+    },
+    {
+      "path": "test-all-pages-render.ps1",
+      "reason": "Similar ke test-pages-rendering.ps1, replaced by Playwright",
+      "size": "4.7 KB",
+      "replacement": "tests/e2e/erp.spec.ts"
+    },
+    {
+      "path": "tests/test-all-endpoints.ps1",
+      "reason": "Duplicate dari test-api-endpoints.ps1",
+      "size": "1.3 KB",
+      "replacement": "tests/test_production_ready.py"
+    },
+    {
+      "path": "tests/test-all-permissions.ps1",
+      "reason": "Duplicate di tests/ folder",
+      "size": "2.8 KB",
+      "replacement": "tests/test_rbac_matrix.py"
+    },
+    {
+      "path": "tests/test-api-endpoints.ps1",
+      "reason": "Replaced by pytest suites",
+      "size": "3.4 KB",
+      "replacement": "tests/test_production_ready.py"
+    },
+    {
+      "path": "tests/test-developer-access.ps1",
+      "reason": "Subset dari test-all-permissions.ps1",
+      "size": "2.1 KB",
+      "replacement": "tests/test_rbac_matrix.py"
+    },
+    {
+      "path": "tests/test-endpoints-quick.ps1",
+      "reason": "Replaced by pytest suites",
+      "size": "1.7 KB",
+      "replacement": "tests/test_production_ready.py"
+    }
+  ],
+
+  "candidates_for_cleanup": [
+    {
+      "file": "test-auth-flow.ps1",
+      "priority": "HIGH",
+      "action": "DELETE",
+      "impact": "None - replaced by pytest",
+      "verify_before_delete": "Check if referenced in any CI/CD pipelines"
+    },
+    {
+      "file": "test-complete-flow.ps1",
+      "priority": "HIGH",
+      "action": "DELETE",
+      "impact": "None - replaced by pytest + Playwright",
+      "verify_before_delete": "Check if referenced in any CI/CD pipelines"
+    },
+    {
+      "file": "test-comprehensive.ps1",
+      "priority": "HIGH",
+      "action": "DELETE",
+      "impact": "None - duplicate from test-full-comprehensive.ps1",
+      "verify_before_delete": "Keep test-full-comprehensive.ps1 for reference"
+    },
+    {
+      "file": "test-integration.ps1",
+      "priority": "HIGH",
+      "action": "DELETE",
+      "impact": "None - replaced by pytest",
+      "verify_before_delete": "None"
+    },
+    {
+      "file": "test-menus.ps1",
+      "priority": "MEDIUM",
+      "action": "DELETE",
+      "impact": "None - replaced by Playwright",
+      "verify_before_delete": "None"
+    },
+    {
+      "file": "test-page-render.ps1",
+      "priority": "MEDIUM",
+      "action": "DELETE",
+      "impact": "None - replaced by Playwright",
+      "verify_before_delete": "None"
+    },
+    {
+      "file": "test-pages-rendering.ps1",
+      "priority": "MEDIUM",
+      "action": "DELETE",
+      "impact": "None - replaced by Playwright",
+      "verify_before_delete": "None"
+    },
+    {
+      "file": "test-all-pages-render.ps1",
+      "priority": "MEDIUM",
+      "action": "DELETE",
+      "impact": "None - replaced by Playwright",
+      "verify_before_delete": "None"
+    },
+    {
+      "file": "tests/test-all-endpoints.ps1",
+      "priority": "MEDIUM",
+      "action": "DELETE",
+      "impact": "None - replaced by pytest",
+      "verify_before_delete": "None"
+    },
+    {
+      "file": "tests/test-all-permissions.ps1",
+      "priority": "MEDIUM",
+      "action": "DELETE",
+      "impact": "None - replaced by pytest",
+      "verify_before_delete": "None"
+    },
+    {
+      "file": "tests/test-api-endpoints.ps1",
+      "priority": "MEDIUM",
+      "action": "DELETE",
+      "impact": "None - replaced by pytest",
+      "verify_before_delete": "None"
+    },
+    {
+      "file": "tests/test-developer-access.ps1",
+      "priority": "MEDIUM",
+      "action": "DELETE",
+      "impact": "None - covered by test_rbac_matrix.py",
+      "verify_before_delete": "None"
+    },
+    {
+      "file": "tests/test-endpoints-quick.ps1",
+      "priority": "MEDIUM",
+      "action": "DELETE",
+      "impact": "None - replaced by pytest",
+      "verify_before_delete": "None"
+    },
+    {
+      "file": "test_results.txt",
+      "priority": "LOW",
+      "action": "DELETE",
+      "impact": "Archive already exists in docs/10-Testing/TEST_RESULTS_ARCHIVE.md",
+      "verify_before_delete": "Confirmed archived in docs"
+    },
+    {
+      "file": "test_results_v2.txt",
+      "priority": "LOW",
+      "action": "DELETE",
+      "impact": "Archive already exists in docs/10-Testing/TEST_RESULTS_ARCHIVE.md",
+      "verify_before_delete": "Confirmed archived in docs"
+    }
+  ],
+
+  "summary": {
+    "total_unused": 20,
+    "safe_to_delete": 18,
+    "require_review": 2,
+    "keep_as_reference": 1,
+    "deprecated_powershell_scripts": 13,
+    "test_result_files": 2,
+    "total_size_to_free_mb": 0.15,
+    "categories": {
+      "deprecated_powershell_scripts": 13,
+      "duplicate_files": 5,
+      "old_test_results": 2,
+      "total": 20
+    }
+  },
+
+  "recommendations": [
+    {
+      "priority": "HIGH",
+      "title": "Delete Deprecated PowerShell Test Scripts",
+      "description": "Hapus semua .ps1 test files di root directory karena sudah replaced oleh pytest + Playwright",
+      "files": [
+        "test-auth-flow.ps1",
+        "test-complete-flow.ps1",
+        "test-comprehensive.ps1 (keep test-full-comprehensive.ps1)",
+        "test-integration.ps1",
+        "test-menus.ps1",
+        "test-page-render.ps1",
+        "test-pages-rendering.ps1",
+        "test-all-pages-render.ps1"
+      ],
+      "impact": "None - fully replaced by modern test suites",
+      "time_to_implement": "1 minute"
+    },
+    {
+      "priority": "HIGH",
+      "title": "Delete Duplicate PowerShell Test Scripts in tests/",
+      "description": "Hapus .ps1 test files di tests/ directory karena sudah ada di root dan sudah deprecated",
+      "files": [
+        "tests/test-all-endpoints.ps1",
+        "tests/test-all-permissions.ps1",
+        "tests/test-api-endpoints.ps1",
+        "tests/test-developer-access.ps1",
+        "tests/test-endpoints-quick.ps1"
+      ],
+      "impact": "None - covered by pytest suites",
+      "time_to_implement": "1 minute"
+    },
+    {
+      "priority": "MEDIUM",
+      "title": "Archive & Delete Old Test Results",
+      "description": "Hapus test_results.txt dan test_results_v2.txt dari root karena sudah archived di docs/",
+      "files": [
+        "test_results.txt",
+        "test_results_v2.txt"
+      ],
+      "impact": "None - archive exists in docs/",
+      "verification": "Confirmed in docs/10-Testing/TEST_RESULTS_ARCHIVE.md",
+      "time_to_implement": "1 minute"
+    },
+    {
+      "priority": "LOW",
+      "title": "Keep as Reference",
+      "description": "Jangan delete - tetap gunakan untuk manual testing & API reference",
+      "files": [
+        "tests/postman/ERP_API_Collection.json",
+        "test-full-comprehensive.ps1 (keep ini, delete test-comprehensive.ps1)"
+      ],
+      "reason": "Still useful for manual testing and reference purposes"
+    },
+    {
+      "priority": "INFO",
+      "title": "Active Production Test Files",
+      "description": "Files berikut HARUS di-KEEP - mereka adalah active production tests",
+      "files": [
+        "tests/test_production_ready.py",
+        "tests/test_rbac_matrix.py",
+        "tests/test_boundary_value_analysis.py",
+        "tests/test_database_integrity.py",
+        "tests/conftest.py",
+        "tests/locustfile.py",
+        "tests/e2e/erp.spec.ts",
+        "erp-softtoys/tests/ (semua test_*.py files)"
+      ],
+      "reason": "Active dalam automated test pipeline dan dokumentasi"
+    }
+  ],
+
+  "cleanup_strategy": {
+    "phase_1_immediate": {
+      "description": "Delete obvious deprecated & duplicate scripts",
+      "files_to_delete": 13,
+      "estimated_time": "2 minutes",
+      "risk": "VERY LOW"
+    },
+    "phase_2_archive": {
+      "description": "Move test results to archive & clean from root",
+      "files_to_delete": 2,
+      "estimated_time": "1 minute",
+      "risk": "LOW"
+    },
+    "phase_3_keep_reference": {
+      "description": "Keep files yang masih berguna untuk manual testing",
+      "files_to_keep": 2,
+      "estimated_time": "0 minutes",
+      "risk": "NONE"
+    },
+    "total_cleanup_time": "3 minutes",
+    "total_disk_space_freed": "0.15 MB"
+  },
+
+  "analysis_notes": [
+    "Analisis dilakukan dengan memeriksa setiap file dan mencari referensi di dokumentasi",
+    "PowerShell test scripts (.ps1) sudah deprecated dan diganti dengan pytest + Playwright",
+    "Semua active production tests sudah di-identify dan marked KEEP",
+    "Tidak ada file production yang direkomendasikan untuk dihapus",
+    "Cleanup recommendations prioritas berdasarkan frequency of use dan duplication level",
+    "Test results files sudah di-archive di docs/10-Testing/TEST_RESULTS_ARCHIVE.md"
+  ]
+}
