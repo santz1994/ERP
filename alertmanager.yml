@@ -5,8 +5,6 @@ global:
   smtp_auth_username: '${ALERTMANAGER_EMAIL:-admin@qutykarunia.com}'
   smtp_auth_password: '${ALERTMANAGER_EMAIL_PASSWORD:-password}'
   smtp_require_tls: true
-  # Slack webhook (optional)
-  slack_api_url: '${SLACK_WEBHOOK_URL:-}'
 
 # The root route contains the routing rules. 
 # Routing is done on incoming alerts based on label matching.
@@ -101,11 +99,6 @@ receivers:
   - name: 'null'
 
   - name: 'default'
-    slack_configs:
-      - channel: '#alerts-general'
-        title: 'Alert: {{ .GroupLabels.alertname }}'
-        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
-        send_resolved: true
     email_configs:
       - to: 'ops-team@qutykarunia.com'
         from: 'alertmanager@qutykarunia.com'
@@ -113,55 +106,22 @@ receivers:
           Subject: '[{{ .GroupLabels.severity | upper }}] {{ .GroupLabels.alertname }}'
 
   - name: 'critical-alerts'
-    slack_configs:
-      - channel: '#alerts-critical'
-        title: '🚨 CRITICAL: {{ .GroupLabels.alertname }}'
-        text: '{{ range .Alerts }}{{ .Annotations.summary }}\n{{ .Annotations.description }}\n{{ .Annotations.action }}{{ end }}'
-        send_resolved: true
-        color: '{{ if eq .Status "firing" }}danger{{ else }}good{{ end }}'
     email_configs:
       - to: 'oncall@qutykarunia.com'
         from: 'alertmanager@qutykarunia.com'
         headers:
           Subject: '🚨 CRITICAL ALERT: {{ .GroupLabels.alertname }} - IMMEDIATE ACTION REQUIRED'
           Priority: 'Urgent'
-    pagerduty_configs:
-      - service_key: '${PAGERDUTY_SERVICE_KEY:-}'
-        description: '{{ .GroupLabels.alertname }}'
-        details:
-          firing: '{{ template "pagerduty.default.instances" .Alerts.Firing }}'
 
   - name: 'metal-detector-incident'
-    slack_configs:
-      - channel: '#metal-detector-incidents'
-        title: '🚨🚨🚨 METAL DETECTOR INCIDENT 🚨🚨🚨'
-        text: |
-          *CRITICAL ALERT: Metal detected in finished product!*
-          
-          {{ range .Alerts }}
-          Status: {{ .Status }}
-          Description: {{ .Annotations.description }}
-          Action: {{ .Annotations.action }}
-          Time: {{ .StartsAt }}
-          {{ end }}
-        send_resolved: true
-        color: 'danger'
     email_configs:
       - to: 'quality-manager@qutykarunia.com,production-manager@qutykarunia.com'
         from: 'alertmanager@qutykarunia.com'
         headers:
           Subject: '🚨 CRITICAL: METAL DETECTED IN FINISHED PRODUCT - PRODUCTION STOPPED'
           Priority: 'Urgent'
-    pagerduty_configs:
-      - service_key: '${PAGERDUTY_QUALITY_KEY:-}'
-        description: 'Metal Detector Alert - Production Stopped'
 
   - name: 'database-team'
-    slack_configs:
-      - channel: '#alerts-database'
-        title: '⚠️ Database Alert: {{ .GroupLabels.alertname }}'
-        text: '{{ range .Alerts }}{{ .Annotations.description }}\n{{ .Annotations.recommendation }}{{ end }}'
-        send_resolved: true
     email_configs:
       - to: 'dba-team@qutykarunia.com'
         from: 'alertmanager@qutykarunia.com'
@@ -169,11 +129,6 @@ receivers:
           Subject: '[Database] {{ .GroupLabels.alertname }}'
 
   - name: 'api-team'
-    slack_configs:
-      - channel: '#alerts-api'
-        title: '⚠️ API Alert: {{ .GroupLabels.alertname }}'
-        text: '{{ range .Alerts }}{{ .Annotations.description }}\n{{ .Annotations.dashboard }}{{ end }}'
-        send_resolved: true
     email_configs:
       - to: 'backend-team@qutykarunia.com'
         from: 'alertmanager@qutykarunia.com'
@@ -181,11 +136,6 @@ receivers:
           Subject: '[API] {{ .GroupLabels.alertname }}'
 
   - name: 'workflow-team'
-    slack_configs:
-      - channel: '#alerts-workflow'
-        title: '⚠️ Workflow Alert: {{ .GroupLabels.alertname }}'
-        text: '{{ range .Alerts }}{{ .Annotations.description }}\n{{ .Annotations.runbook }}{{ end }}'
-        send_resolved: true
     email_configs:
       - to: 'production-team@qutykarunia.com'
         from: 'alertmanager@qutykarunia.com'
@@ -193,11 +143,6 @@ receivers:
           Subject: '[Production] {{ .GroupLabels.alertname }}'
 
   - name: 'quality-team'
-    slack_configs:
-      - channel: '#alerts-quality'
-        title: '⚠️ Quality Alert: {{ .GroupLabels.alertname }}'
-        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
-        send_resolved: true
     email_configs:
       - to: 'qa-team@qutykarunia.com'
         from: 'alertmanager@qutykarunia.com'
@@ -205,11 +150,6 @@ receivers:
           Subject: '[QA] {{ .GroupLabels.alertname }}'
 
   - name: 'infrastructure-team'
-    slack_configs:
-      - channel: '#alerts-infrastructure'
-        title: '⚠️ Infrastructure Alert: {{ .GroupLabels.alertname }}'
-        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
-        send_resolved: true
     email_configs:
       - to: 'devops-team@qutykarunia.com'
         from: 'alertmanager@qutykarunia.com'
@@ -217,21 +157,11 @@ receivers:
           Subject: '[Infrastructure] {{ .GroupLabels.alertname }}'
 
   - name: 'monitoring-team'
-    slack_configs:
-      - channel: '#alerts-monitoring'
-        title: 'Monitoring Alert: {{ .GroupLabels.alertname }}'
-        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
-        send_resolved: true
     email_configs:
       - to: 'monitoring-team@qutykarunia.com'
         from: 'alertmanager@qutykarunia.com'
 
   - name: 'backup-team'
-    slack_configs:
-      - channel: '#alerts-backup'
-        title: 'Backup Alert: {{ .GroupLabels.alertname }}'
-        text: '{{ range .Alerts }}{{ .Annotations.description }}\n{{ .Annotations.action }}{{ end }}'
-        send_resolved: true
     email_configs:
       - to: 'backup-admin@qutykarunia.com'
         from: 'alertmanager@qutykarunia.com'

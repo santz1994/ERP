@@ -3,6 +3,19 @@
 -- Created: 2026-01-26
 
 -- ============================================================================
+-- CREATE ROLES
+-- ============================================================================
+
+-- Create application user if not exists
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'erp_staging_user') THEN
+        CREATE ROLE erp_staging_user WITH LOGIN PASSWORD 'erp_staging_pass';
+    END IF;
+END
+$$;
+
+-- ============================================================================
 -- SCHEMA SETUP
 -- ============================================================================
 
