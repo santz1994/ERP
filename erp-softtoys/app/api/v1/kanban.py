@@ -17,7 +17,7 @@ from app.core.dependencies import require_permission
 from app.core.permissions import ModuleName, Permission
 from app.core.websocket import ws_manager
 
-router = APIRouter(prefix="/kanban", tags=["E-Kanban"])
+router = APIRouter(prefix="/ppic/kanban", tags=["E-Kanban"])
 
 
 # ========== SCHEMAS ==========

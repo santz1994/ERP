@@ -18,6 +18,7 @@ from app.core.models.warehouse import (
     Location, StockMove, StockQuant, 
     MaterialRequest, MaterialRequestStatus
 )
+from app.core.models.bom import BOMHeader
 from app.core.permissions import ModuleName, Permission
 from app.core.schemas import (
     StockCheckResponse,
@@ -29,6 +30,9 @@ from app.core.schemas import (
     MaterialRequestApprovalCreate,
     TransferDept,
     TransferStatus,
+    BOMHeaderCreate,
+    BOMHeaderResponse,
+    BOMUpdateMultiMaterial,
 )
 
 router = APIRouter(
@@ -863,3 +867,300 @@ async def get_warehouse_efficiency(
             }
         }
     }
+
+
+# ==================== BOM MANAGEMENT ====================
+# Session 28: Comprehensive BOM endpoints for warehouse inventory
+
+
+@router.post(
+    "/bom",
+    response_model=BOMHeaderResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create new Bill of Materials"
+)
+async def create_bom(
+    bom_data: BOMHeaderCreate,
+    current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.CREATE)),
+    db: Session = Depends(get_db)
+):
+    """Create a new Bill of Materials for a product.
+
+    **Required Permission**: warehouse.create
+
+    **Request Body**:
+    - `product_id`: Product this BOM is for
+    - `bom_type`: "Manufacturing" or "Kit/Phantom"
+    - `qty_output`: Output quantity (usually 1.0)
+    - `supports_multi_material`: Enable alternative material support (default: False)
+    - `revision`: Revision identifier (default: "Rev 1.0")
+
+    **Responses**:
+    - `201`: BOM created successfully
+    - `400`: Product not found or invalid BOM type
+    - `403`: Insufficient permissions
+    - `409`: BOM already exists for this product
+
+    **Business Logic**:
+    - Validates product exists
+    - Validates BOM type (Manufacturing or Kit/Phantom)
+    - Creates new BOM in active state
+    - Returns BOM ready for component definition
+
+    **Audit**: Creation logged with user and timestamp
+    """
+    # Validate product exists
+    product = db.query(Product).filter(Product.id == bom_data.product_id).first()
+    if not product:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Product with ID {bom_data.product_id} not found"
+        )
+
+    # Check BOM type is valid
+    if bom_data.bom_type not in ["Manufacturing", "Kit/Phantom"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="BOM type must be 'Manufacturing' or 'Kit/Phantom'"
+        )
+
+    # Check if BOM already exists
+    existing_bom = db.query(BOMHeader).filter(
+        BOMHeader.product_id == bom_data.product_id,
+        BOMHeader.is_active
+    ).first()
+
+    if existing_bom:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Active BOM already exists for product {product.name} (ID: {bom_data.product_id})"
+        )
+
+    # Create new BOM
+    new_bom = BOMHeader(
+        product_id=bom_data.product_id,
+        bom_type=bom_data.bom_type,
+        qty_output=bom_data.qty_output,
+        revision=bom_data.revision,
+        supports_multi_material=bom_data.supports_multi_material,
+        revised_by=current_user.id,
+        revision_reason=f"Initial BOM creation by {current_user.username}"
+    )
+
+    db.add(new_bom)
+    db.commit()
+    db.refresh(new_bom)
+
+    return BOMHeaderResponse.model_validate(new_bom)
+
+
+@router.get(
+    "/bom",
+    response_model=list[BOMHeaderResponse],
+    summary="List all Bills of Materials"
+)
+async def list_boms(
+    active_only: bool = Query(True, description="Filter by active status"),
+    product_id: int = Query(None, description="Filter by product ID"),
+    bom_type: str = Query(None, description="Filter by BOM type"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.VIEW)),
+    db: Session = Depends(get_db)
+):
+    """List all Bills of Materials with optional filtering.
+
+    **Required Permission**: warehouse.view
+
+    **Query Parameters**:
+    - `active_only`: Show only active BOMs (default: true)
+    - `product_id`: Filter by specific product (optional)
+    - `bom_type`: Filter by BOM type - "Manufacturing" or "Kit/Phantom" (optional)
+    - `skip`: Pagination offset (default: 0)
+    - `limit`: Results per page (default: 50, max: 100)
+
+    **Responses**:
+    - `200`: List of BOMs matching filters
+    - `403`: Insufficient permissions
+
+    **Returns**:
+    Array of BOM headers with component details and metadata
+    """
+    query = db.query(BOMHeader)
+
+    if active_only:
+        query = query.filter(BOMHeader.is_active)
+
+    if product_id is not None:
+        query = query.filter(BOMHeader.product_id == product_id)
+
+    if bom_type is not None:
+        query = query.filter(BOMHeader.bom_type == bom_type)
+
+    boms = query.offset(skip).limit(limit).all()
+
+    return [BOMHeaderResponse.model_validate(bom) for bom in boms]
+
+
+@router.get(
+    "/bom/{bom_id}",
+    response_model=BOMHeaderResponse,
+    summary="Get BOM details"
+)
+async def get_bom(
+    bom_id: int,
+    current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.VIEW)),
+    db: Session = Depends(get_db)
+):
+    """Get detailed information about a specific Bill of Materials.
+
+    **Required Permission**: warehouse.view
+
+    **Path Parameters**:
+    - `bom_id`: BOM identifier
+
+    **Responses**:
+    - `200`: BOM details with all components
+    - `403`: Insufficient permissions
+    - `404`: BOM not found
+
+    **Returns**:
+    - BOM header information
+    - All component lines with quantities
+    - Alternative materials (variants) if configured
+    - Revision history information
+    """
+    bom = db.query(BOMHeader).filter(BOMHeader.id == bom_id).first()
+
+    if not bom:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"BOM with ID {bom_id} not found"
+        )
+
+    return BOMHeaderResponse.model_validate(bom)
+
+
+@router.put(
+    "/bom/{bom_id}",
+    response_model=BOMHeaderResponse,
+    summary="Update BOM configuration"
+)
+async def update_bom(
+    bom_id: int,
+    update_data: BOMUpdateMultiMaterial,
+    current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.UPDATE)),
+    db: Session = Depends(get_db)
+):
+    """Update BOM configuration (e.g., enable/disable multi-material support).
+
+    **Required Permission**: warehouse.update
+
+    **Path Parameters**:
+    - `bom_id`: BOM identifier
+
+    **Request Body**:
+    - `supports_multi_material`: Enable/disable variant support
+    - `default_variant_selection`: How to select variant ("primary", "any", "weighted")
+    - `revision_reason`: Reason for this change (optional)
+
+    **Responses**:
+    - `200`: BOM updated successfully
+    - `403`: Insufficient permissions
+    - `404`: BOM not found
+
+    **Business Logic**:
+    - Updates multi-material support flag
+    - Creates audit trail with revision reason
+    - Increments revision number
+    - Logs who made the change and when
+
+    **Audit**: Update logged with reason and user
+    """
+    bom = db.query(BOMHeader).filter(BOMHeader.id == bom_id).first()
+
+    if not bom:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"BOM with ID {bom_id} not found"
+        )
+
+    # Update BOM configuration
+    bom.supports_multi_material = update_data.supports_multi_material
+    bom.default_variant_selection = update_data.default_variant_selection
+    bom.revised_by = current_user.id
+    bom.revision_reason = update_data.revision_reason or f"Updated by {current_user.username}"
+    bom.revision_date = datetime.utcnow()
+
+    # Increment revision
+    try:
+        current_rev = float(bom.revision.split()[1])
+        next_rev = current_rev + 0.1
+        bom.revision = f"Rev {next_rev:.1f}"
+    except (IndexError, ValueError):
+        bom.revision = f"Rev {bom.revision}"
+
+    db.commit()
+    db.refresh(bom)
+
+    return BOMHeaderResponse.model_validate(bom)
+
+
+@router.delete(
+    "/bom/{bom_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Soft delete BOM"
+)
+async def delete_bom(
+    bom_id: int,
+    current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.DELETE)),
+    db: Session = Depends(get_db)
+):
+    """Soft delete a Bill of Materials (mark as inactive).
+
+    **Required Permission**: warehouse.delete
+
+    **Path Parameters**:
+    - `bom_id`: BOM identifier
+
+    **Responses**:
+    - `204`: BOM deleted successfully
+    - `403`: Insufficient permissions
+    - `404`: BOM not found
+
+    **Business Logic**:
+    - Marks BOM as inactive (soft delete)
+    - Preserves historical data
+    - Data remains in database for audit trail
+    - Cannot delete if active manufacturing orders depend on it
+
+    **Audit**: Deletion logged with user and timestamp
+    """
+    bom = db.query(BOMHeader).filter(BOMHeader.id == bom_id).first()
+
+    if not bom:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"BOM with ID {bom_id} not found"
+        )
+
+    # Check if BOM is used in active manufacturing orders
+    from app.core.models.manufacturing import ManufacturingOrder
+    active_mos = db.query(ManufacturingOrder).filter(
+        ManufacturingOrder.product_id == bom.product_id,
+        ManufacturingOrder.state.in_(["draft", "in_progress", "pending_approval"])
+    ).count()
+
+    if active_mos > 0:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Cannot delete BOM - {active_mos} active manufacturing order(s) depend on it"
+        )
+
+    # Soft delete - mark as inactive
+    bom.is_active = False
+    bom.revision_reason = f"Deleted by {current_user.username}"
+    bom.revised_by = current_user.id
+    bom.revision_date = datetime.utcnow()
+
+    db.commit()

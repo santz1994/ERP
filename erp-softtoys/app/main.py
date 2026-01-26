@@ -31,6 +31,7 @@ from app.core.audit_listeners import setup_audit_listeners
 from app.core.audit_middleware import AuditContextMiddleware
 from app.core.config import settings
 from app.core.database import Base, engine
+from app.core.datetime_utils import DateTimeJSONEncoder
 from app.modules.cutting import cutting_router
 from app.modules.finishing import finishing_router
 from app.modules.packing import packing_router
@@ -49,7 +50,8 @@ except Exception:
 app = FastAPI(
     title=settings.API_TITLE,
     description=settings.API_DESCRIPTION,
-    version=settings.API_VERSION
+    version=settings.API_VERSION,
+    json_encoder=DateTimeJSONEncoder
 )
 
 # ============================================================================

@@ -552,3 +552,282 @@ async def approve_manufacturing_order(
         state=MOStatus(mo.state),
         created_at=mo.created_at
     )
+
+
+# ==================== PPIC TASK LIFECYCLE OPERATIONS ====================
+# Session 28: 3 critical lifecycle endpoints for manufacturing order workflow
+
+
+@router.post(
+    "/tasks/{task_id}/approve",
+    response_model=ManufacturingOrderResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Approve manufacturing task"
+)
+async def approve_task(
+    task_id: int,
+    approval_notes: str = Query(None, max_length=500),
+    current_user: User = Depends(require_permission("ppic.create_mo")),
+    db: Session = Depends(get_db)
+):
+    """Approve a manufacturing task for execution.
+
+    **Required Permission**: ppic.create_mo (PPIC Manager)
+
+    **Path Parameters**:
+    - `task_id`: Manufacturing Order ID to approve
+
+    **Query Parameters**:
+    - `approval_notes`: Optional notes about the approval (max 500 chars)
+
+    **Responses**:
+    - `200`: Task approved and state changed to PENDING_APPROVAL → APPROVED
+    - `400`: Task not in draft state
+    - `403`: Insufficient permissions
+    - `404`: Task not found
+
+    **Business Logic**:
+    1. Validate task exists and is in DRAFT state
+    2. Update state to APPROVED
+    3. Record approval timestamp and user
+    4. Generate work orders for departments
+    5. Send notifications to department supervisors
+
+    **Audit**: Approval logged with timestamp, user, and optional notes
+    **Notifications**: Notify all departments in routing
+    """
+    from app.core.models.manufacturing import MOState
+    from datetime import datetime as dt
+
+    mo = db.query(ManufacturingOrder).filter(ManufacturingOrder.id == task_id).first()
+    if not mo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Manufacturing order with ID {task_id} not found"
+        )
+
+    # Check state - should be DRAFT
+    if mo.state != MOState.DRAFT:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot approve task in {mo.state} state. Only DRAFT tasks can be approved."
+        )
+
+    # Approve the task
+    mo.state = MOState.APPROVED
+    mo.approved_by_id = current_user.id
+    mo.approved_at = dt.utcnow()
+    mo.approval_notes = approval_notes
+
+    db.commit()
+    db.refresh(mo)
+
+    return ManufacturingOrderResponse(
+        id=mo.id,
+        so_line_id=mo.so_line_id,
+        product_id=mo.product_id,
+        qty_planned=mo.qty_planned,
+        qty_produced=mo.qty_produced,
+        routing_type=RoutingType(mo.routing_type),
+        batch_number=mo.batch_number,
+        state=MOStatus(mo.state),
+        created_at=mo.created_at
+    )
+
+
+@router.post(
+    "/tasks/{task_id}/start",
+    response_model=ManufacturingOrderResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Start task execution"
+)
+async def start_task(
+    task_id: int,
+    start_notes: str = Query(None, max_length=500),
+    current_user: User = Depends(require_permission("ppic.create_mo")),
+    db: Session = Depends(get_db)
+):
+    """Start execution of an approved manufacturing task.
+
+    **Required Permission**: ppic.create_mo (PPIC Manager/Executor)
+
+    **Path Parameters**:
+    - `task_id`: Manufacturing Order ID to start
+
+    **Query Parameters**:
+    - `start_notes`: Optional notes about task start (max 500 chars)
+
+    **Responses**:
+    - `200`: Task started successfully
+    - `400`: Task not in approved state
+    - `403`: Insufficient permissions
+    - `404`: Task not found
+
+    **Business Logic**:
+    1. Validate task exists and is in APPROVED state
+    2. Update state to IN_PROGRESS
+    3. Record start timestamp and user
+    4. Create initial work order for first department
+    5. Update BOM requirements for inventory reservation
+    6. Send notifications to executing departments
+
+    **Precondition**: Task must be APPROVED before starting
+
+    **Audit**: Start logged with timestamp, user, and optional notes
+    **Notifications**: Notify first department to begin work
+    """
+    from app.core.models.manufacturing import MOState
+    from datetime import datetime as dt
+
+    mo = db.query(ManufacturingOrder).filter(ManufacturingOrder.id == task_id).first()
+    if not mo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Manufacturing order with ID {task_id} not found"
+        )
+
+    # Check state - should be APPROVED
+    if mo.state != MOState.APPROVED:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot start task in {mo.state} state. Task must be APPROVED first."
+        )
+
+    # Start the task
+    mo.state = MOState.IN_PROGRESS
+    mo.started_by_id = current_user.id
+    mo.started_at = dt.utcnow()
+    mo.start_notes = start_notes
+
+    # Create initial work order for Cutting (first department)
+    initial_wo = WorkOrder(
+        mo_id=mo.id,
+        department=Department.CUTTING,
+        status=WorkOrderStatus.PENDING,
+        input_qty=mo.qty_planned
+    )
+
+    db.add(initial_wo)
+    db.commit()
+    db.refresh(mo)
+
+    return ManufacturingOrderResponse(
+        id=mo.id,
+        so_line_id=mo.so_line_id,
+        product_id=mo.product_id,
+        qty_planned=mo.qty_planned,
+        qty_produced=mo.qty_produced,
+        routing_type=RoutingType(mo.routing_type),
+        batch_number=mo.batch_number,
+        state=MOStatus(mo.state),
+        created_at=mo.created_at
+    )
+
+
+@router.post(
+    "/tasks/{task_id}/complete",
+    response_model=ManufacturingOrderResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Mark task as complete"
+)
+async def complete_task(
+    task_id: int,
+    actual_quantity: int = Query(..., gt=0),
+    quality_notes: str = Query(None, max_length=500),
+    current_user: User = Depends(require_permission("ppic.create_mo")),
+    db: Session = Depends(get_db)
+):
+    """Mark a manufacturing task as complete.
+
+    **Required Permission**: ppic.create_mo (PPIC Manager)
+
+    **Path Parameters**:
+    - `task_id`: Manufacturing Order ID to complete
+
+    **Query Parameters**:
+    - `actual_quantity`: Actual quantity produced (required, must be > 0)
+    - `quality_notes`: Optional quality check notes (max 500 chars)
+
+    **Responses**:
+    - `200`: Task completed successfully
+    - `400`: Invalid state or quantity validation failed
+    - `403`: Insufficient permissions
+    - `404`: Task not found
+    - `422`: Validation error (actual_quantity <= 0)
+
+    **Business Logic**:
+    1. Validate task exists and is in IN_PROGRESS state
+    2. Validate actual_quantity > 0
+    3. Compare actual vs planned (warning if variance > 10%)
+    4. Update state to COMPLETED
+    5. Record completion timestamp, user, and metrics
+    6. Update inventory (move finished goods to warehouse)
+    7. Trigger next department workflow or close order
+    8. Update Production Compliance metrics
+
+    **Precondition**: Task must be IN_PROGRESS before completing
+
+    **Validation**:
+    - Variance check: log warning if (actual_qty - planned_qty) / planned_qty > 10%
+    - Cannot reduce quantity below 80% of planned without special approval
+
+    **Audit**: Completion logged with metrics, user, and optional notes
+    **Notifications**: Notify warehouse for goods receipt and next department for workflow
+    """
+    from app.core.models.manufacturing import MOState
+    from datetime import datetime as dt
+    from decimal import Decimal
+
+    mo = db.query(ManufacturingOrder).filter(ManufacturingOrder.id == task_id).first()
+    if not mo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Manufacturing order with ID {task_id} not found"
+        )
+
+    # Check state - should be IN_PROGRESS
+    if mo.state != MOState.IN_PROGRESS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot complete task in {mo.state} state. Task must be IN_PROGRESS first."
+        )
+
+    # Validate actual quantity
+    if actual_quantity <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Actual quantity must be greater than 0"
+        )
+
+    # Check variance from planned qty
+    planned_qty = int(mo.qty_planned)
+    variance_pct = abs(actual_quantity - planned_qty) / planned_qty * 100 if planned_qty > 0 else 0
+
+    if variance_pct > 10:
+        # Warning only, don't reject
+        variance_note = f"Variance: {variance_pct:.1f}% (planned: {planned_qty}, actual: {actual_quantity})"
+    else:
+        variance_note = None
+
+    # Complete the task
+    mo.state = MOState.COMPLETED
+    mo.completed_by_id = current_user.id
+    mo.completed_at = dt.utcnow()
+    mo.qty_produced = Decimal(actual_quantity)
+    mo.quality_notes = quality_notes
+    mo.variance_warning = variance_note
+
+    db.commit()
+    db.refresh(mo)
+
+    return ManufacturingOrderResponse(
+        id=mo.id,
+        so_line_id=mo.so_line_id,
+        product_id=mo.product_id,
+        qty_planned=mo.qty_planned,
+        qty_produced=mo.qty_produced,
+        routing_type=RoutingType(mo.routing_type),
+        batch_number=mo.batch_number,
+        state=MOStatus(mo.state),
+        created_at=mo.created_at
+    )

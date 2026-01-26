@@ -49,7 +49,7 @@ export default function KanbanPage() {
     queryKey: ['all-kanban-cards'],
     queryFn: async () => {
       const token = localStorage.getItem('access_token');
-      const response = await axios.get(`${API_BASE}/kanban/cards/all`, {
+      const response = await axios.get(`${API_BASE}/ppic/kanban/cards/all`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       return response.data;
@@ -60,7 +60,7 @@ export default function KanbanPage() {
   const approveCard = useMutation({
     mutationFn: async (cardId: number) => {
       const token = localStorage.getItem('access_token');
-      return axios.post(`${API_BASE}/kanban/cards/${cardId}/approve`, {}, {
+      return axios.post(`${API_BASE}/ppic/kanban/cards/${cardId}/approve`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
     },
@@ -72,7 +72,7 @@ export default function KanbanPage() {
   const rejectCard = useMutation({
     mutationFn: async (data: { cardId: number; reason: string }) => {
       const token = localStorage.getItem('access_token');
-      return axios.post(`${API_BASE}/kanban/cards/${data.cardId}/reject`, {
+      return axios.post(`${API_BASE}/ppic/kanban/cards/${data.cardId}/reject`, {
         reason: data.reason
       }, {
         headers: { Authorization: `Bearer ${token}` }
@@ -86,7 +86,7 @@ export default function KanbanPage() {
   const shipCard = useMutation({
     mutationFn: async (cardId: number) => {
       const token = localStorage.getItem('access_token');
-      return axios.post(`${API_BASE}/kanban/cards/${cardId}/ship`, {}, {
+      return axios.post(`${API_BASE}/ppic/kanban/cards/${cardId}/ship`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
     },
@@ -98,7 +98,7 @@ export default function KanbanPage() {
   const receiveCard = useMutation({
     mutationFn: async (cardId: number) => {
       const token = localStorage.getItem('access_token');
-      return axios.post(`${API_BASE}/kanban/cards/${cardId}/receive`, {}, {
+      return axios.post(`${API_BASE}/ppic/kanban/cards/${cardId}/receive`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
     },

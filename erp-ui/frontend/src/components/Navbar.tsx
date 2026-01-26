@@ -27,7 +27,7 @@ export const Navbar: React.FC = () => {
               {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
             <h1 className="ml-4 text-2xl font-bold text-brand-600">
-              Quty Karunia ERP
+              DR ERP
             </h1>
             {(user?.role === UserRole.DEVELOPER || user?.role === UserRole.ADMIN || user?.role === UserRole.SUPERADMIN) && (
               <EnvironmentIndicator />

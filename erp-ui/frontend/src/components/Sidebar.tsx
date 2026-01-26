@@ -393,7 +393,7 @@ export const Sidebar: React.FC = () => {
       <div className="p-4 pb-20">
         {sidebarOpen && (
           <div className="text-center mb-8">
-            <h2 className="text-xl font-bold text-brand-400">QK ERP</h2>
+            <h2 className="text-xl font-bold text-brand-400">DR ERP</h2>
             <p className="text-xs text-gray-400">Manufacturing System</p>
           </div>
         )}
@@ -405,7 +405,7 @@ export const Sidebar: React.FC = () => {
         {sidebarOpen && (
           <div className="mt-8 p-4 bg-gray-800 rounded-lg">
             <p className="text-xs text-gray-400 mb-2">Version</p>
-            <p className="text-sm font-semibold">1.0.0</p>
+            <p className="text-sm font-semibold">1.26.0</p>
           </div>
         )}
       </div>

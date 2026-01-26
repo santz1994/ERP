@@ -3,6 +3,7 @@ Centralized settings for development, testing, and production.
 """
 
 import json
+import os
 from enum import Enum
 
 from pydantic import BaseSettings, Field, validator
@@ -58,6 +59,7 @@ class Settings(BaseSettings):
 
     # CORS
     CORS_ORIGINS: list[str] = Field(default=[
+        # Development Origins
         "http://localhost:3000",
         "http://localhost:3001",
         "http://localhost:5173",  # Vite default dev port
@@ -70,11 +72,25 @@ class Settings(BaseSettings):
         "http://192.168.1.122:3001",
         "http://192.168.1.122:5173",
         "http://192.168.1.122:8080",
-        "*"  # Allow all origins for development (restrict in production)
+        # Production Origins (Update with actual domain)
+        # "https://erp.quty-karunia.co.id",
+        # "https://www.erp.quty-karunia.co.id",
+        # Keep wildcard for dev/testing only (remove for production)
+        "*" if os.getenv("ENVIRONMENT") != "production" else "https://erp.example.com"
     ])
     CORS_ALLOW_CREDENTIALS: bool = Field(default=True)
-    CORS_ALLOW_METHODS: list = Field(default=["*"])
-    CORS_ALLOW_HEADERS: list = Field(default=["*"])
+    # Restrict methods for security
+    CORS_ALLOW_METHODS: list = Field(default=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"])
+    # Restrict headers to only required ones
+    CORS_ALLOW_HEADERS: list = Field(default=[
+        "Accept",
+        "Authorization",
+        "Content-Type",
+        "Origin",
+        "X-Requested-With",
+        "X-CSRF-Token",
+        "Access-Control-Request-Headers",
+    ])
 
     @validator("CORS_ORIGINS", pre=True)
     def parse_cors_origins(cls, v):  # noqa: N805 - Pydantic v2 validator requires cls, not self
