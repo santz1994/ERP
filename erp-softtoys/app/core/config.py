@@ -72,11 +72,13 @@ class Settings(BaseSettings):
         "http://192.168.1.122:3001",
         "http://192.168.1.122:5173",
         "http://192.168.1.122:8080",
-        # Production Origins (Update with actual domain)
-        # "https://erp.quty-karunia.co.id",
-        # "https://www.erp.quty-karunia.co.id",
+        # Production Origins
+        "https://erp.qutykarunia.co.id",
+        "https://www.erp.qutykarunia.co.id",
+        "https://app.qutykarunia.co.id",
+        "https://mobile.qutykarunia.co.id",
         # Keep wildcard for dev/testing only (remove for production)
-        "*" if os.getenv("ENVIRONMENT") != "production" else "https://erp.example.com"
+        "*" if os.getenv("ENVIRONMENT") != "production" else None
     ])
     CORS_ALLOW_CREDENTIALS: bool = Field(default=True)
     # Restrict methods for security
@@ -94,7 +96,7 @@ class Settings(BaseSettings):
 
     @validator("CORS_ORIGINS", pre=True)
     def parse_cors_origins(cls, v):  # noqa: N805 - Pydantic v2 validator requires cls, not self
-        """Parse CORS_ORIGINS from string or list."""
+        """Parse CORS_ORIGINS from string or list. Filter out None values."""
         if isinstance(v, str):
             # Try to parse as JSON first
             try:
@@ -103,7 +105,8 @@ class Settings(BaseSettings):
                 # Fall back to comma-separated parsing
                 return [origin.strip() for origin in v.split(",") if origin.strip()]
         elif isinstance(v, list):
-            return v
+            # Filter out None values from list
+            return [origin for origin in v if origin is not None]
         else:
             return ["http://localhost:3000", "http://localhost:3001", "http://localhost:8080"]
 

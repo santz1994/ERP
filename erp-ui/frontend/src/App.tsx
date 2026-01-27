@@ -11,6 +11,7 @@ import { DashboardPage } from '@/pages/DashboardPage'
 import { UnauthorizedPage } from '@/pages/UnauthorizedPage'
 import { canAccessModule } from '@/utils/roleGuard'
 import PPICPage from '@/pages/PPICPage'
+import DailyProductionPage from '@/pages/DailyProductionPage'
 import CuttingPage from '@/pages/CuttingPage'
 import EmbroideryPage from '@/pages/EmbroideryPage'
 import SewingPage from '@/pages/SewingPage'
@@ -154,6 +155,17 @@ function App() {
             <PrivateRoute module="ppic">
               <ProtectedLayout>
                 <PPICPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/daily-production"
+          element={
+            <PrivateRoute module="production">
+              <ProtectedLayout>
+                <DailyProductionPage />
               </ProtectedLayout>
             </PrivateRoute>
           }
