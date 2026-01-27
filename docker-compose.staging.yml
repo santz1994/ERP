@@ -48,7 +48,7 @@ services:
       REDIS_URL: redis://redis:6379/0
       JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
       ENVIRONMENT: ${ENVIRONMENT:-staging}
-      CORS_ORIGINS: "http://localhost:3000"
+      CORS_ORIGINS: '["http://localhost:3000","http://localhost:3001","http://localhost:5173"]'
     ports:
       - "8000:8000"
     depends_on:
