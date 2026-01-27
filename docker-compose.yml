@@ -1,26 +1,9 @@
 version: '3.8'
 
 services:
-  # PostgreSQL Database
-  postgres:
-    image: postgres:15-alpine
-    container_name: erp_postgres
-    environment:
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
-      POSTGRES_DB: ${DB_NAME:-erp_quty_karunia}
-      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - erp_network
+  # NOTE: PostgreSQL is now EXTERNAL - not containerized
+  # Install PostgreSQL 15 locally and configure DATABASE_URL in .env
+  # Example: DATABASE_URL=postgresql://username:password@localhost:5432/erp_quty_karunia
 
   # Redis (for caching & real-time notifications)
   redis:
@@ -45,7 +28,7 @@ services:
       target: development
     container_name: erp_backend
     environment:
-      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-password}@postgres:5432/${DB_NAME:-erp_quty_karunia}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:password123@host.docker.internal:5432/erp_quty_karunia}
       REDIS_URL: redis://redis:6379/0
       ENVIRONMENT: ${ENVIRONMENT:-development}
       DEBUG: ${DEBUG:-true}
@@ -55,8 +38,6 @@ services:
     volumes:
       - ./erp-softtoys:/app
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_healthy
     command: >
@@ -78,20 +59,6 @@ services:
       - "3001:3000"
     depends_on:
       - backend
-    networks:
-      - erp_network
-
-  # pgAdmin (Database Management UI)
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: erp_pgadmin
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@erp.local
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-password123}
-    ports:
-      - "5050:80"
-    depends_on:
-      - postgres
     networks:
       - erp_network
 
@@ -125,19 +92,7 @@ services:
     networks:
       - erp_network
 
-  # Adminer (Alternative Database UI)
-  adminer:
-    image: adminer
-    container_name: erp_adminer
-    ports:
-      - "8080:8080"
-    depends_on:
-      - postgres
-    networks:
-      - erp_network
-
 volumes:
-  postgres_data:
   redis_data:
   prometheus_data:
   grafana_data:

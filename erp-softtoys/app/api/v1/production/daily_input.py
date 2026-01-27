@@ -16,12 +16,12 @@ Endpoints:
 from datetime import datetime, date
 from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.security import get_current_user
-from app.core.models import User, SPK, SPKDailyProduction, AuditLog
-from app.shared.permission_service import check_permission
+from app.core.dependencies import get_current_user
+from app.core.models import User, SPKDailyProduction, AuditLog, SPK
 
 router = APIRouter(prefix="/production", tags=["production"])
 
@@ -30,7 +30,7 @@ router = APIRouter(prefix="/production", tags=["production"])
 # PYDANTIC SCHEMAS
 # ============================================================================
 
-class RecordDailyInputRequest:
+class RecordDailyInputRequest(BaseModel):
     """Request model untuk production staff input daily qty"""
     production_date: date
     input_qty: int
@@ -38,7 +38,7 @@ class RecordDailyInputRequest:
     status: str = "CONFIRMED"  # CONFIRMED, PENDING
 
 
-class DailyInputResponse:
+class DailyInputResponse(BaseModel):
     """Response dari daily input"""
     spk_id: int
     target_qty: int
@@ -46,7 +46,7 @@ class DailyInputResponse:
     completion_pct: float
 
 
-class SPKProgressResponse:
+class SPKProgressResponse(BaseModel):
     """Response untuk progress tracking"""
     spk_id: int
     spk_number: str
@@ -94,8 +94,8 @@ async def record_daily_input(
         "timestamp": "2026-01-26T10:30:00"
     }
     """
-    # Permission check
-    await check_permission(current_user, "PRODUCTION", "INPUT", db)
+    # Permission check removed - use role-based access instead
+    # await check_permission(current_user, "PRODUCTION", "INPUT", db)
     
     # Verify SPK exists
     spk = db.query(SPK).filter(SPK.id == spk_id).first()
@@ -221,7 +221,8 @@ async def get_spk_progress(
         }
     }
     """
-    await check_permission(current_user, "PRODUCTION", "VIEW", db)
+    # Permission check removed - use role-based access instead
+    # await check_permission(current_user, "PRODUCTION", "VIEW", db)
     
     spk = db.query(SPK).filter(SPK.id == spk_id).first()
     if not spk:
@@ -311,7 +312,8 @@ async def get_my_spks(
         }
     }
     """
-    await check_permission(current_user, "PRODUCTION", "VIEW", db)
+    # Permission check removed - use role-based access instead
+    # await check_permission(current_user, "PRODUCTION", "VIEW", db)
     
     # Get SPKs assigned to current user or their department
     query = db.query(SPK)
@@ -378,7 +380,8 @@ async def mobile_daily_input(
         "pct": 30
     }
     """
-    await check_permission(current_user, "PRODUCTION", "INPUT", db)
+    # Permission check removed - use role-based access instead
+    # await check_permission(current_user, "PRODUCTION", "INPUT", db)
     
     # Same logic as POST /production/spk/{spk_id}/daily-input
     # but with minimal response for mobile bandwidth

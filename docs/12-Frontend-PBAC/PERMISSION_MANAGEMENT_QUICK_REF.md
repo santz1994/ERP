@@ -27,9 +27,9 @@ Sidebar → Admin → Permissions
 
 | Role | View Permissions | Grant/Revoke | User Management |
 |------|-----------------|--------------|-----------------|
-Superadmin
-Developer
-| **ADMIN** | ✅ | ✅ | ✅ |
+Superadmin | ✅ | ✅ | ✅ |
+Developer | ✅ | ✅ | ✅ |
+| **ADMIN** | ✅ | ✅ | ❌ |
 | **MANAGER** | ✅ | ❌ | ❌ |
 | **OPERATOR** | ❌ | ❌ | ❌ |
 | **SPV** | ❌ | ❌ | ❌ |

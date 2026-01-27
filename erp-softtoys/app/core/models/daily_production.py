@@ -123,7 +123,7 @@ class MaterialDebt(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     spk_id = Column(Integer, ForeignKey("spks.id", ondelete="CASCADE"), nullable=False, index=True)
-    material_id = Column(Integer, ForeignKey("materials.id"), nullable=False)
+    product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
     qty_owed = Column(Integer, nullable=False)  # Amount owed
     qty_settled = Column(Integer, default=0)    # Amount received
     approval_status = Column(String(50), default="PENDING")  # PENDING, APPROVED, REJECTED, SETTLED
@@ -136,7 +136,7 @@ class MaterialDebt(Base):
 
     # Relationships
     spk = relationship("SPK", back_populates="material_debts")
-    material = relationship("Material", foreign_keys=[material_id])
+    product = relationship("Product", foreign_keys=[product_id])
     created_by = relationship("User", foreign_keys=[created_by_id])
     approved_by = relationship("User", foreign_keys=[approved_by_id])
     settlements = relationship("MaterialDebtSettlement", back_populates="material_debt")

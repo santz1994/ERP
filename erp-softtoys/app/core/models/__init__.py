@@ -6,7 +6,7 @@ from .audit import AuditLog, SecurityLog, UserActivityLog
 from .bom import BOMDetail, BOMHeader
 from .exceptions import AlertLog, SegregasiAcknowledgement
 from .kanban import KanbanBoard, KanbanCard, KanbanRule
-from .manufacturing import ManufacturingOrder, MaterialConsumption, WorkOrder
+from .manufacturing import ManufacturingOrder, MaterialConsumption, WorkOrder, SPK
 from .products import Category, Partner, Product
 from .quality import QCInspection, QCLabTest
 from .sales import SalesOrder, SalesOrderLine
@@ -29,6 +29,7 @@ __all__ = [
     "BOMDetail",
     "ManufacturingOrder",
     "WorkOrder",
+    "SPK",
     "MaterialConsumption",
     "TransferLog",
     "LineOccupancy",

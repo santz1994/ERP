@@ -27,6 +27,7 @@ import {
   FileEdit,
   Building,
   Database,
+  Calendar,
 } from 'lucide-react'
 import { useAuthStore, useUIStore, usePermissionStore } from '@/store'
 import { UserRole } from '@/types'
@@ -80,6 +81,12 @@ const menuItems: MenuItem[] = [
     label: 'Production', 
     permissions: ['cutting.view_status', 'sewing.view_status', 'finishing.view_status', 'packing.view_status'],
     submenu: [
+      {
+        icon: <Calendar />,
+        label: 'Daily Input',
+        path: '/daily-production',
+        permissions: ['production.input_daily', 'production.view_spk']
+      },
       { 
         icon: <Scissors />, 
         label: 'Cutting', 

@@ -2,7 +2,8 @@
 
 import enum
 
-from sqlalchemy import DECIMAL, Column, DateTime, Enum, ForeignKey, Integer, String, func
+from datetime import datetime, date
+from sqlalchemy import DECIMAL, Column, DateTime, Enum, ForeignKey, Integer, String, func, Date, Boolean
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -34,6 +35,64 @@ class Department(str, enum.Enum):
     SEWING = "Sewing"
     FINISHING = "Finishing"
     PACKING = "Packing"
+
+
+class SPKStatus(str, enum.Enum):
+    """SPK (Surat Perintah Kerja) production status."""
+    NOT_STARTED = "NOT_STARTED"
+    IN_PROGRESS = "IN_PROGRESS"
+    COMPLETED = "COMPLETED"
+    CANCELLED = "CANCELLED"
+
+
+class SPK(Base):
+    """SPK - Surat Perintah Kerja (Production Work Order)
+    Per-department production order derived from Manufacturing Order
+    Tracks daily production input, modifications, and material debt.
+    """
+    __tablename__ = "spks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    mo_id = Column(Integer, ForeignKey("manufacturing_orders.id"), nullable=False, index=True)
+    department = Column(Enum(Department), nullable=False, index=True)
+    
+    # Original quantity tracking
+    original_qty = Column(Integer, default=0, nullable=False)
+    modified_qty = Column(Integer)
+    target_qty = Column(Integer, nullable=False)  # Current target for production
+    produced_qty = Column(Integer, default=0)
+    
+    # Modification tracking
+    modification_reason = Column(String(255))
+    modified_by_id = Column(Integer, ForeignKey("users.id"))
+    modified_at = Column(DateTime)
+    
+    # Status & dates
+    production_status = Column(String(50), default="NOT_STARTED", index=True)
+    start_date = Column(Date)
+    target_completion_date = Column(Date)
+    completion_date = Column(Date)
+    allow_negative_inventory = Column(Boolean, default=False)
+    
+    # Negative inventory approval
+    negative_approval_status = Column(String(50))  # PENDING, APPROVED, REJECTED
+    negative_approved_by_id = Column(Integer, ForeignKey("users.id"))
+    negative_approved_at = Column(DateTime)
+    
+    # Audit
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    manufacturing_order = relationship("ManufacturingOrder", foreign_keys=[mo_id])
+    daily_production = relationship("SPKDailyProduction", back_populates="spk")
+    production_completion = relationship("SPKProductionCompletion", back_populates="spk")
+    modifications = relationship("SPKModification", back_populates="spk")
+    material_debts = relationship("MaterialDebt", back_populates="spk")
+    created_by = relationship("User", foreign_keys=[created_by_id])
+    modified_by = relationship("User", foreign_keys=[modified_by_id])
+    negative_approved_by = relationship("User", foreign_keys=[negative_approved_by_id])
 
 
 class WorkOrderStatus(str, enum.Enum):

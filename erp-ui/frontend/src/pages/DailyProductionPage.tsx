@@ -59,7 +59,7 @@ interface SPKWithProgress {
 }
 
 export default function DailyProductionPage() {
-  const { hasPermission } = usePermission();
+  const canInputProduction = usePermission('production.input_daily');
   const queryClient = useQueryClient();
   
   // State management
@@ -78,7 +78,7 @@ export default function DailyProductionPage() {
     queryKey: ['spks/my-spks'],
     queryFn: async () => {
       const response = await axios.get(`${API_BASE}/production/my-spks`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
       });
       return response.data.data || [];
     }
@@ -90,7 +90,7 @@ export default function DailyProductionPage() {
     queryFn: async () => {
       if (!selectedSPK) return null;
       const response = await axios.get(`${API_BASE}/production/spk/${selectedSPK.spk_id}/progress`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
       });
       return response.data.data;
     },
@@ -125,7 +125,7 @@ export default function DailyProductionPage() {
           status: 'CONFIRMED'
         },
         {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
         }
       );
       return response.data;
@@ -196,7 +196,7 @@ export default function DailyProductionPage() {
   const stats = calculateStats();
 
   // Permission check
-  if (!hasPermission('PRODUCTION', 'INPUT')) {
+  if (!canInputProduction) {
     return (
       <div className="flex items-center justify-center h-screen bg-red-50">
         <div className="text-center">

@@ -74,7 +74,7 @@ export default function CuttingPage() {
     queryKey: ['line-status', 'cutting'],
     queryFn: async () => {
       const token = localStorage.getItem('access_token');
-      const response = await axios.get(`${API_BASE}/cutting/line-status`, {
+      const response = await axios.get(`${API_BASE}/production/cutting/line-status`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       return response.data;

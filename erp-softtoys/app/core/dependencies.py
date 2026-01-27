@@ -418,3 +418,31 @@ async def get_current_user_ws(token: str) -> User:
         return user
     finally:
         db.close()
+
+
+async def check_permission(user: User, module: str, action: str, db: Session) -> None:
+    """Check permission for user action on module.
+    
+    Args:
+        user: Current user
+        module: Module name (PPIC, PRODUCTION, WAREHOUSE, etc.)
+        action: Action type (INPUT, VIEW, EDIT, COMPLETE, APPROVE, etc.)
+        db: Database session
+        
+    Raises:
+        HTTPException: If permission denied
+    """
+    from app.core.permissions import ModuleName, Permission, AccessControl
+    
+    try:
+        # Map string to enum values
+        module_enum = ModuleName[module.upper()]
+        permission_enum = Permission[action.upper()]
+        
+        # Check permission
+        AccessControl.check_permission(user, module_enum, permission_enum)
+    except KeyError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid module or action: {e}"
+        )

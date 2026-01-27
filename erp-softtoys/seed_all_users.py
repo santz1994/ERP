@@ -6,7 +6,8 @@ from app.core.models.users import User, UserRole
 from app.core.security import PasswordUtils
 
 # Default password for all users (TESTING ONLY)
-DEFAULT_PASSWORD = "password123"
+# Truncate to 72 bytes for bcrypt compatibility
+DEFAULT_PASSWORD = "password123"[:72]
 
 # User data for all 22 roles
 USERS_DATA = [
@@ -69,9 +70,8 @@ def seed_all_users():
                 continue
 
             # Create new user
-            # Truncate password to 72 bytes (bcrypt limit)
-            truncated_password = DEFAULT_PASSWORD[:72]
-            hashed_password = PasswordUtils.hash_password(truncated_password)
+            # Password already truncated to 72 bytes (bcrypt limit)
+            hashed_password = PasswordUtils.hash_password(DEFAULT_PASSWORD)
             new_user = User(
                 username=user_data["username"],
                 email=user_data["email"],
