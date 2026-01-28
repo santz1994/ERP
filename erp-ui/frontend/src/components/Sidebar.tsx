@@ -18,6 +18,7 @@ import {
   FileText,
   ClipboardList,
   Shield,
+  AlertCircle,
   Settings,
   Lock,
   Globe,
@@ -124,6 +125,12 @@ const menuItems: MenuItem[] = [
     label: 'Warehouse', 
     path: '/warehouse', 
     roles: [UserRole.WAREHOUSE_ADMIN, UserRole.WAREHOUSE_OP, UserRole.ADMIN] 
+  },
+  { 
+    icon: <AlertCircle />, 
+    label: 'Material Debt', 
+    path: '/material-debt', 
+    roles: [UserRole.WAREHOUSE_ADMIN, UserRole.WAREHOUSE_OP, UserRole.ADMIN, UserRole.SPV, UserRole.MANAGER] 
   },
   { 
     icon: <TruckIcon />, 

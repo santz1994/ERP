@@ -1,5 +1,5 @@
 """Warehouse Management API Endpoints
-Stock management, transfers, inventory tracking.
+Stock management, transfers, inventory tracking, material debt management.
 """
 
 from datetime import datetime
@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_db, require_permission
+from app.api.v1.warehouse.material_debt import router as material_debt_router
 from app.core.models.products import Product
 from app.core.models.transfer import LineOccupancy, LineStatus, TransferLog
 from app.core.models.transfer import TransferDept as TransferDeptEnum
@@ -1164,3 +1165,8 @@ async def delete_bom(
     bom.revision_date = datetime.utcnow()
 
     db.commit()
+
+# ============================================================================
+# Include Material Debt Sub-router (Feature #4)
+# ============================================================================
+router.include_router(material_debt_router)

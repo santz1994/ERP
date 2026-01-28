@@ -28,6 +28,7 @@ import PermissionManagementPage from '@/pages/PermissionManagementPage'
 import AdminMasterdataPage from '@/pages/AdminMasterdataPage'
 import AdminImportExportPage from '@/pages/AdminImportExportPage'
 import AuditTrailPage from '@/pages/AuditTrailPage'
+import MaterialDebtPage from '@/pages/MaterialDebtPage'
 import ChangePasswordPage from '@/pages/settings/ChangePasswordPage'
 import { SettingsPlaceholder } from '@/pages/settings/SettingsPlaceholder'
 import { LanguageTimezoneSettings } from '@/pages/settings/LanguageTimezoneSettings'
@@ -287,6 +288,17 @@ function App() {
             <PrivateRoute module="warehouse">
               <ProtectedLayout>
                 <WarehousePage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/material-debt"
+          element={
+            <PrivateRoute module="warehouse">
+              <ProtectedLayout>
+                <MaterialDebtPage />
               </ProtectedLayout>
             </PrivateRoute>
           }

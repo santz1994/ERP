@@ -8,7 +8,8 @@ from datetime import datetime, timedelta
 from unittest.mock import Mock, AsyncMock, patch
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.production import DailyProductionInput, SPK
+from app.core.models.daily_production import DailyProductionInput
+from app.core.models.manufacturing import SPK
 from app.schemas.production import DailyInputRequest
 
 

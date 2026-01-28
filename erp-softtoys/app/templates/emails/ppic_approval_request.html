@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .header p {
+            margin: 5px 0 0 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .content {
+            padding: 30px;
+        }
+        .section {
+            margin-bottom: 25px;
+        }
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #667eea;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+        .detail-row {
+            display: flex;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        .detail-label {
+            flex: 0 0 150px;
+            font-weight: 600;
+            color: #333;
+        }
+        .detail-value {
+            flex: 1;
+            color: #666;
+            word-break: break-word;
+        }
+        .changes-box {
+            background-color: #f9f9f9;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .change-item {
+            display: flex;
+            padding: 8px 0;
+            font-size: 14px;
+        }
+        .change-item strong {
+            color: #333;
+            margin-right: 10px;
+            min-width: 120px;
+        }
+        .change-item span {
+            color: #666;
+        }
+        .action-section {
+            background-color: #f5f7ff;
+            padding: 20px;
+            border-radius: 6px;
+            text-align: center;
+            margin: 25px 0;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            margin: 0 10px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+        .button-approve {
+            background-color: #10b981;
+            color: white;
+        }
+        .button-approve:hover {
+            background-color: #059669;
+        }
+        .button-reject {
+            background-color: #ef4444;
+            color: white;
+        }
+        .button-reject:hover {
+            background-color: #dc2626;
+        }
+        .button-view {
+            background-color: #667eea;
+            color: white;
+        }
+        .button-view:hover {
+            background-color: #5568d3;
+        }
+        .footer {
+            background-color: #f9f9f9;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+            border-top: 1px solid #e5e5e5;
+        }
+        .footer p {
+            margin: 5px 0;
+        }
+        .reason-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+            font-size: 14px;
+            color: #856404;
+        }
+        .urgency-high {
+            border-left-color: #ef4444;
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .info-box {
+            background-color: #e0f2fe;
+            border-left: 4px solid #0284c7;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+            font-size: 13px;
+            color: #0c4a6e;
+        }
+        .step-indicator {
+            display: inline-block;
+            background-color: #667eea;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🔔 Persetujuan Dibutuhkan</h1>
+            <p>ERP Quty Karunia - Request untuk Tindakan Anda</p>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <!-- Greeting -->
+            <p style="font-size: 14px; color: #333; margin-bottom: 20px;">
+                Halo <strong>{{ approver_name }}</strong>,
+            </p>
+
+            <p style="font-size: 14px; color: #666; margin-bottom: 20px;">
+                Ada <strong>{{ entity_type_label }}</strong> yang menunggu persetujuan Anda. Silakan tinjau detail di bawah dan lakukan tindakan yang diperlukan.
+            </p>
+
+            <!-- Request Type & Priority -->
+            <div class="section">
+                <div class="section-title">📋 Request Details</div>
+                <div class="detail-row">
+                    <div class="detail-label">Tipe Request:</div>
+                    <div class="detail-value">
+                        <span class="step-indicator">{{ entity_type }}</span>
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Request ID:</div>
+                    <div class="detail-value" style="font-family: monospace;">{{ approval_request_id }}</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Diajukan Oleh:</div>
+                    <div class="detail-value">{{ submitted_by_name }} ({{ submitted_by_email }})</div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Tanggal Pengajuan:</div>
+                    <div class="detail-value">{{ submitted_at | format_datetime }}</div>
+                </div>
+                {% if priority %}
+                <div class="detail-row">
+                    <div class="detail-label">Prioritas:</div>
+                    <div class="detail-value" style="font-weight: 600; color: #ef4444;">{{ priority }}</div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Reason -->
+            {% if reason %}
+            <div class="reason-box">
+                <strong>💭 Alasan Perubahan:</strong><br/>
+                {{ reason }}
+            </div>
+            {% endif %}
+
+            <!-- Changes Preview -->
+            {% if changes %}
+            <div class="section">
+                <div class="section-title">📝 Perubahan yang Diusulkan</div>
+                <div class="changes-box">
+                    {% for key, value in changes.items() %}
+                    <div class="change-item">
+                        <strong>{{ key }}:</strong>
+                        <span>{{ value }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Approval Chain -->
+            {% if approval_chain %}
+            <div class="section">
+                <div class="section-title">🔄 Rantai Persetujuan</div>
+                <div class="info-box">
+                    <strong>Langkah Persetujuan:</strong><br/>
+                    {% for i, step in enumerate(approval_chain) %}
+                        {% if i == current_step %}
+                        <span style="color: #0284c7; font-weight: 600;">👉 {{ step }}</span>
+                        {% elif i < current_step %}
+                        <span style="color: #10b981;">✅ {{ step }}</span>
+                        {% else %}
+                        <span style="color: #999;">⏳ {{ step }}</span>
+                        {% endif %}
+                        {% if not loop.last %} → {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Action Section -->
+            <div class="action-section">
+                <p style="margin: 0 0 20px 0; font-size: 14px; font-weight: 600; color: #333;">
+                    Pilihan Anda:
+                </p>
+                <div style="margin: 15px 0;">
+                    <a href="{{ approve_url }}" class="button button-approve">
+                        ✅ Setujui Request
+                    </a>
+                    <a href="{{ reject_url }}" class="button button-reject">
+                        ❌ Tolak Request
+                    </a>
+                </div>
+                <p style="margin: 20px 0 0 0; font-size: 12px; color: #666;">
+                    atau kunjungi dashboard
+                </p>
+                <a href="{{ dashboard_url }}" class="button button-view" style="margin-top: 10px;">
+                    📊 Buka Dashboard
+                </a>
+            </div>
+
+            <!-- Quick Actions Info -->
+            {% if current_step == 0 %}
+            <div class="info-box">
+                <strong>ℹ️ Informasi:</strong><br/>
+                Anda adalah approver pertama ({{ approval_chain[0] }}) dalam rantai persetujuan. Keputusan Anda akan menentukan apakah request ini dilanjutkan ke langkah berikutnya.
+            </div>
+            {% endif %}
+
+            <!-- Deadline if exists -->
+            {% if deadline %}
+            <div class="reason-box urgency-high">
+                <strong>⏰ Deadline:</strong> {{ deadline | format_datetime }}<br/>
+                Mohon berikan persetujuan secepatnya.
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>
+                <strong>ERP Quty Karunia</strong> | Sistem Manajemen Produksi<br/>
+                Email ini dikirim secara otomatis. Jangan balas email ini.
+            </p>
+            <p>
+                Jika Anda tidak mengharapkan email ini, silakan abaikan atau hubungi IT Support.
+            </p>
+            <p style="margin-top: 15px; border-top: 1px solid #ddd; padding-top: 10px;">
+                © 2026 Quty Karunia. All rights reserved.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

@@ -18,15 +18,18 @@ from app.api.v1 import (
     qa_convenience_endpoints,
     report_builder,
     reports,
-    warehouse,
     websocket,
 )
+# Import warehouse from warehouse_endpoints module
+from app.api.v1 import warehouse_endpoints as warehouse
 
 # Import production module routers
 from app.api.v1.production import daily_input as production_daily_input
 from app.api.v1.production import approval as production_approval
+from app.api.v1.production import spk_edit as production_spk_edit
 from app.api.v1.ppic import daily_production as ppic_daily_production
 from app.api.v1.ppic import dashboard as ppic_dashboard
+from app.api.v1.ppic import reports as ppic_reports
 
 # Import all models to register them with Base before creating tables
 # This must be done before Base.metadata.create_all()
@@ -173,6 +176,11 @@ app.include_router(
 )
 
 app.include_router(
+    ppic_reports.router,
+    prefix=settings.API_PREFIX
+)
+
+app.include_router(
     warehouse.router,
     prefix=settings.API_PREFIX
 )
@@ -233,6 +241,12 @@ app.include_router(
 
 app.include_router(
     production_approval.router,
+    prefix=settings.API_PREFIX
+)
+
+# Production SPK Edit Workflow (Session 37, Feature #7)
+app.include_router(
+    production_spk_edit.router,
     prefix=settings.API_PREFIX
 )
 
