@@ -7,6 +7,26 @@
 **Status**: ✅ **PRODUCTION READY** (92/100 - Real implementation phase complete)  
 **Kesehatan Sistem**: 92/100 (Ready for Stage 2: Testing & QA)
 
+New Ideas & Improvements
+
+1. BOM Produksi (BOM Manufacturing) digunakan untuk alokasi material otomatis saat pembuatan SPK.
+2. Sistem approval multi-level untuk perubahan MO dan SPK (SPV → Manager → Director(View Only)).
+3. Input produksi harian dengan pelacakan progres oleh admin setiap departemen.
+4. Sistem inventaris negatif dengan mekanisme keterangan negatif dari departement terkait untuk produksi tanpa material tersedia. (Diakhir akan dilakukan adjustment dan konfirmasi pada departemen terkait lokasi negatif dan jumlah negatifnya). Workflow approval multi-level (SPV → Manager → Director(View Only)).
+5. Aplikasi Android untuk scan barcode FinishGood, verifikasi jumlah boxnya.
+6. Laporan PPIC harian dan notifikasi alert untuk keterlambatan produksi.
+7. SPK per-departement dapat diedit dengan workflow approval multi-level (SPV → Manager → Director(View Only)).
+8. Input SPK produksi harian dengan tampilan kalender grid, input jumlah harian, pelacakan progres kumulatif, dan konfirmasi penyelesaian. Dengan mengikat pada kode week, nomor artikel dan nama artikel, dan PO pada halaman input produksi harian.
+9. Purchasing yang melakukan pembuatan PO berdasarkan kebutuhan material dari BOM yang terhubung ke MO.
+10. PPIC membuat BOM berdasarkan BOM produksi (BOM Manufacturing) yang terhubung ke MO. BOM produksi (BOM Manufacturing) ini digunakan untuk alokasi material pada saat pembuatan MO.
+11. Purchasing dapat menginputkan BOM material produksi (BOM Purchasing) yang berbeda dengan BOM produksi (BOM Manufacturing) pada saat pembuatan PO. Sebagai pembandingan, BOM produksi (BOM Manufacturing) digunakan untuk alokasi material pada saat pembuatan MO. Melihat efisiensi material pada BOM produksi (BOM Manufacturing) sedangkan BOM purchasing digunakan untuk pembelian material dari vendor.
+12. Diakhir produksi akan ada perbandingan antara MO, SPK, BOM produksi (BOM Manufacturing), dan BOM material pembelian (BOM Purchasing) untuk melihat efisiensi penggunaan material dan kebutuhan pembelian material dari vendor.
+
+*BOM = Bill of Materials (Daftar Material). Terdapat 2 jenis BOM: BOM Purchasing dan BOM Manufacturing.
+*MO = Manufacturing Order (Order Produksi). Terdapat 2 jenis MO: MO Purchasing dan MO Manufacturing.
+*SPK = Surat Perintah Kerja (Work Order) digunakan oleh produksi per departemen disikan secara manual oleh masing-masing departemen produksi.
+
+
 ### SESSION 33 CLEANUP & IMPLEMENTATION (27 Januari 2026)
 
 **COMPLETED TASKS**:
