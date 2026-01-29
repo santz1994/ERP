@@ -28,7 +28,7 @@ def test_client():
 
 
 @pytest.fixture
-def auth_headers(role: UserRole = UserRole.WAREHOUSE):
+def auth_headers(role: UserRole = UserRole.WAREHOUSE_OP):
     """Auth headers for requests"""
     return {
         "Authorization": "Bearer test_token_12345",
@@ -43,7 +43,7 @@ def warehouse_user():
     user = MagicMock(spec=User)
     user.id = 1
     user.username = "warehouse_staff"
-    user.role = UserRole.WAREHOUSE
+    user.role = UserRole.WAREHOUSE_OP
     user.department_id = 5
     return user
 
@@ -54,7 +54,7 @@ def spv_user():
     user = MagicMock(spec=User)
     user.id = 2
     user.username = "spv_user"
-    user.role = UserRole.SPV
+    user.role = UserRole.SPV_CUTTING
     user.department_id = 5
     return user
 
@@ -76,7 +76,7 @@ def ppic_user():
     user = MagicMock(spec=User)
     user.id = 4
     user.username = "ppic_operator"
-    user.role = UserRole.PPIC_OPERATOR
+    user.role = UserRole.PPIC_MANAGER
     user.department_id = 6
     return user
 

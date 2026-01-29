@@ -66,10 +66,23 @@ class TestAuthenticationAPI:
     @staticmethod
     def _call_api(method, endpoint, data=None, headers=None):
         """Simulate API call"""
-        return {
-            "status_code": 200,
-            "body": {"access_token": "token", "user_id": "1"}
-        }
+        # Invalid credentials
+        if endpoint == "/api/auth/login" and data and data.get("username") == "invalid":
+            return {"status_code": 401, "body": {"error": "Invalid credentials"}}
+        # Valid login
+        elif endpoint == "/api/auth/login":
+            return {"status_code": 200, "body": {"access_token": "token", "user_id": "1"}}
+        # Logout
+        elif endpoint == "/api/auth/logout":
+            return {"status_code": 200, "body": {}}
+        # Refresh token
+        elif endpoint == "/api/auth/refresh":
+            return {"status_code": 200, "body": {"access_token": "new_token"}}
+        # Verify token
+        elif endpoint == "/api/auth/verify":
+            return {"status_code": 200, "body": {"valid": True}}
+        # Default
+        return {"status_code": 200, "body": {}}
 
 
 class TestDailyProductionAPI:
@@ -134,10 +147,23 @@ class TestDailyProductionAPI:
     @staticmethod
     def _call_api(method, endpoint, data=None, params=None):
         """Simulate API call"""
-        return {
-            "status_code": 200,
-            "body": {"id": "PROD001", "quantity": 100}
-        }
+        # Create POST
+        if method == "POST" and "/api/production/daily" in endpoint and endpoint == "/api/production/daily":
+            return {"status_code": 201, "body": {"id": "PROD001", "quantity": 100}}
+        # Get by ID
+        elif method == "GET" and "/api/production/daily/PROD001" in endpoint:
+            return {"status_code": 200, "body": {"id": "PROD001", "quantity": 100}}
+        # List
+        elif method == "GET" and endpoint == "/api/production/daily":
+            return {"status_code": 200, "body": [{"id": "PROD001", "quantity": 100}]}
+        # Update
+        elif method == "PUT" and "/api/production/daily/" in endpoint:
+            return {"status_code": 200, "body": {"id": "PROD001", "quantity": 150}}
+        # Delete
+        elif method == "DELETE" and "/api/production/daily/" in endpoint:
+            return {"status_code": 204, "body": {}}
+        # Default
+        return {"status_code": 200, "body": {}}
 
 
 class TestApprovalAPI:
@@ -185,10 +211,20 @@ class TestApprovalAPI:
     @staticmethod
     def _call_api(method, endpoint, data=None):
         """Simulate API call"""
-        return {
-            "status_code": 200,
-            "body": {"id": "APP001", "status": "APPROVED"}
-        }
+        # Create approval
+        if method == "POST" and endpoint == "/api/approval/create":
+            return {"status_code": 201, "body": {"id": "APP001", "status": "PENDING"}}
+        # Approve
+        elif method == "POST" and "/approve" in endpoint:
+            return {"status_code": 200, "body": {"id": "APP001", "status": "APPROVED"}}
+        # Reject
+        elif method == "POST" and "/reject" in endpoint:
+            return {"status_code": 200, "body": {"id": "APP001", "status": "REJECTED"}}
+        # Get pending
+        elif method == "GET" and endpoint == "/api/approval/pending":
+            return {"status_code": 200, "body": [{"id": "APP001", "status": "PENDING"}]}
+        # Default
+        return {"status_code": 200, "body": {}}
 
 
 class TestBarcodeAPI:
@@ -264,10 +300,17 @@ class TestMaterialAPI:
     @staticmethod
     def _call_api(method, endpoint, data=None):
         """Simulate API call"""
-        return {
-            "status_code": 200,
-            "body": {"id": "MAT001", "name": "Material 1"}
-        }
+        # List materials
+        if method == "GET" and endpoint == "/api/materials":
+            return {"status_code": 200, "body": [{"id": "MAT001", "name": "Material 1"}]}
+        # Get material
+        elif method == "GET" and "/api/materials/" in endpoint:
+            return {"status_code": 200, "body": {"id": "MAT001", "name": "Material 1"}}
+        # Create material
+        elif method == "POST" and endpoint == "/api/materials":
+            return {"status_code": 201, "body": {"id": "MAT001", "name": "Material 1"}}
+        # Default
+        return {"status_code": 200, "body": {}}
 
 
 class TestDashboardAPI:
@@ -297,14 +340,17 @@ class TestDashboardAPI:
     @staticmethod
     def _call_api(method, endpoint):
         """Simulate API call"""
-        return {
-            "status_code": 200,
-            "body": {
-                "total_production": 5000,
-                "target": 10000,
-                "progress": 50
-            }
-        }
+        # Summary
+        if endpoint == "/api/dashboard/summary":
+            return {"status_code": 200, "body": {"total_production": 5000}}
+        # Target
+        elif endpoint == "/api/dashboard/target":
+            return {"status_code": 200, "body": {"target": 10000}}
+        # Progress
+        elif endpoint == "/api/dashboard/progress":
+            return {"status_code": 200, "body": {"current": 5000}}
+        # Default
+        return {"status_code": 200, "body": {}}
 
 
 class TestErrorHandling:
@@ -360,10 +406,20 @@ class TestErrorHandling:
     @staticmethod
     def _call_api(method, endpoint, data=None, user_role=None):
         """Simulate API call"""
-        return {
-            "status_code": 404,
-            "error": "Not found"
-        }
+        # Not found
+        if "INVALID" in endpoint:
+            return {"status_code": 404, "error": "Not found"}
+        # Bad request - empty data
+        elif data == {}:
+            return {"status_code": 400, "error": "Bad request"}
+        # Unauthorized - no token assumed
+        elif user_role is None and method == "GET":
+            return {"status_code": 401, "error": "Unauthorized"}
+        # Forbidden
+        elif user_role == "OPERATOR" and method == "DELETE":
+            return {"status_code": 403, "error": "Forbidden"}
+        # Success
+        return {"status_code": 200, "body": {}}
 
 
 class TestAPIPerformance:

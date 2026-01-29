@@ -8,9 +8,8 @@ from datetime import datetime, timedelta
 from unittest.mock import Mock, AsyncMock, patch
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.models.daily_production import DailyProductionInput
 from app.core.models.manufacturing import SPK
-from app.schemas.production import DailyInputRequest
+# from app.core.schemas import DailyInputRequest  # TODO: Schema not yet implemented
 
 
 class TestDailyProductionValidation:
