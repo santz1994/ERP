@@ -10,27 +10,115 @@
 ---
 ⚠️ **New Idea**:
 1.  Sebelumnya alur proses production dimulai dari PO IKEA. Sekarang, alur proses produksi akan dimulai dari PO Purchasing.
-2.  Proses pembelian material PO IKEA -> PO Purchassing (Material) -> MO Purchassing (Material) -> Warehouse Receiving
-3.  Proses Production dari PO Purchasing -> MO Manufacturing (PPIC) -> SPK/WO Cutting, Sewing, Finishing, Packing -> Finish Good Inventory
+2.  Proses pembelian material PO IKEA -> PO Purchassing (Material Kain) -> PO Purchasing (Material Label) -> MO Purchassing (Material) -> Warehouse Receiving
+3.  Macro Flowchart alur proses produksi:
+    [PO IKEA (Forecast)] --> (Manual Check)
+                                  |
+                                  v
+                       [PO PURCHASING (Kain)] 
+                                  |
+                                  v
+                       [PO PURCHASING (Material Label)] <-- [PO PURCHASING (Material Lainnya)]
+                                  |
+                          (TRIGGER UTAMA)
+                                  v
+                        [MO MANUFACTURING (PPIC)]
+                                  |
+                                  v
+                      [WAREHOUSE RECEIVING] <---(Material In)--- [SUPPLIER]
+                                  |
+                                  v
+                      [PRODUCTION EXECUTION] (Cutting -> Embroidery -> Sewing -> Finishing -> Packing)
+                                  |
+                                  v
+                      [FINISH GOOD INVENTORY] ---> [SHIPPING]
+
+4.  Production Floor & Material Movement Detail Flowchart:
+    4.1. Preparation & Cutting
+      - Main Material: Kain (Roll/Yard).
+      - Bahan Penolong: (Sesuai BOM / MO Manufacturing) 
+        - Kertas Marker (Pola)
+        - Plastik Bundle
+        - Kapur/Tinta
+        - Pisau Cutting.
+        - Benang
+        - Dan lainnya sesuai kebutuhan.
+      - Activity: Warehouse release kain sesuai MO + release bahan penolong sesuai estimasi kebutuhan mingguan/harian.
+    4.2. Embroidery (Bordir)
+      - Input WIP: Potongan Kain dari Cutting.
+      - Bahan Penolong (Request ke Warehouse): (Sesuai BOM / MO Manufacturing)
+        - Benang Bordir (Aneka Warna).
+        - Kain Keras (Backing Paper/Interlining).
+        - Jarum Bordir.
+        - Dan lainnya sesuai kebutuhan.
+      - Activity: Operator mengambil benang sesuai kebutuhan warna desain MO.
+    4.3. Sewing (Penjahitan)
+      - Input WIP: Potongan Bordir/Polos + Label Identity.
+      - Bahan Penolong (Request ke Warehouse): (Sesuai BOM / MO Manufacturing)
+        - Benang Jahit (Sesuai warna kain).
+        - Jarum Jahit.
+        - Perekat (Adhesive).
+        - Minyak Mesin (Consumables).
+        - Gunting/Cekris.
+        - Dan lainnya sesuai kebutuhan.
+      - Activity: Distribusi benang ke setiap line/operator.
+    4.4. Finishing (Stuffing & Closing)
+      - Input WIP: Skin (dari Warehouse Finishing).
+      - Bahan Penolong (Request ke Warehouse): (Sesuai BOM / MO Manufacturing)
+        - Kapas/Dacron (Material Kritis - Volume Besar).
+        - Benang Jahit Tangan (untuk Closing).
+        - Hangtag / Price Tag (Aksesoris).
+        - Cairan Pembersih (Cleaning Fluid).
+        - Dan lainnya sesuai kebutuhan.
+      - Activity: Kapas biasanya di-supply dalam bentuk Bale (Karung Besar) langsung ke area mesin stuffing.
+    4.5. Packing
+      - Input WIP: Boneka Jadi (Lolos QC).
+      - Bahan Penolong (Request ke Warehouse): (Sesuai BOM / MO Manufacturing)
+        - Master Box / Karton (Material Kritis - Penentu Stok FG).
+        - Polybag (Plastik Pembungkus).
+        - Lakban (Tape).
+        - Silica Gel.
+        - Stiker Barcode.
+        - Pallet (Untuk Pengiriman).
+        - Dan lainnya sesuai kebutuhan.
+      - Activity: Packing mengambil kardus dan palet sesuai target packing hari itu.
+    
+    
+    
+    Workflow Proses Produksi Baru:
+      - Purchase (Material Kain dan Label) -> Warehouse Receiving -> [Manufacturing (Cutting, Embroidery (Jika ada), Sewing) -> Warehouse Finishing* (Sewing Balik, Stuffing) -> Manufacturing (Finishing, Packing)] -> Finish Good Inventory
+      - Warehouse Receiving <- Purchase (Material Kain dan Label)
+      - Warehouse Provide Material -> Cutting (Sesuai BOM)
+      - Warehouse Provide Material -> Embroidery (Jika ada) (Sesuai BOM)
+      - Warehouse Provide Material -> Sewing (Sesuai BOM)
+      - Warehouse Provide Material -> Finishing (Sesuai BOM)
+      - Warehouse Provide Material -> Packing (Sesuai BOM)
+      - Embroidery (Jika ada) <- Cutting
+      - Embroidery (Jika ada) -> Sewing
+      - Embroidery Provide Material -> Sewing (Sesuai BOM)
+      - Embroidery Provide Material (WIP*) -> Finishing
+      - Embroidery Provide Material -> Vendor (Potongan Kain, Aksesoris, WIP*)
+      - Vendor -> Embroidery (Jika ada)
+      - Warehouse Finishing ada 2 jenis material -> WIP Skin & Boneka yang sudah di Stuffing namun belum dikirim ke Finishing.
 4.  Production dibagi menjadi beberapa departemen: Cutting -> Embroidery (jika ada) -> Sewing -> Finishing -> Packing. Setiap departemen membuat SPK/WO sendiri berdasarkan Week Planning Production yang ditentukan di MO Manufacturing.
 5.  MO Manufacturing dibuat secara otomatis atau manual berdasarkan ketersediaan/PO Material Label.
       - Datestamp (Week Production) dan Destination (Gudang Tujuan) pada MO diwariskan/diambil dari data yang ada pada PO Label.
       - Jika PO Label belum ada, MO tidak dapat dijadwalkan (System Lock), meskipun kain sudah tersedia.
-6.  PO Purchasing dibuat berdasarkan BOM Purchasing berisikan rencana pembelian material dari supplier. 
-7.  Structurenya
-    - PO IKEA (SPI) (Rencana pembelian dari IKEA, forecast 2 mingguan)
+6.  PO Purchasing (Material) dibuat berdasarkan BOM Purchasing berisikan rencana pembelian material dari supplier. Namun karena untuk pembuatan POnya dilakukan oleh admin berbeda, maka PO Purchasing (Material) tidak menjadi trigger utama untuk pembuatan MO Manufacturing. Trigger utama untuk pembuatan MO Manufacturing adalah PO Purchasing (Material Label) yang berisikan informasi lengkap tentang rencana pembelian material label dari supplier.
+7. Alur proses produksi dimulai dari PO Purchasing (Material Label) yang menjadi trigger utama untuk pembuatan MO Manufacturing (PPIC) dan SPK/WO di setiap departemen produksi hingga produk jadi diterima di Finish Good Inventory.
+8.  Structurenya
+    - PO IKEA (SPI) (Rencana pembelian dari IKEA, forecast 2 mingguan) (Tidak diinputkan dalam ERP)
       - PO Purchasing (Material Non-Label: Kain, dll)
       - PO Purchasing (Material Label) -> TRIGGER UTAMA
-          - Menghasilkan MO Purchasing (Material)
-          - Menghasilkan MO Manufacturing (PPIC) (Week & Destination ikut Label)
-              - SPK (Surat Perintah Kerja)/WO (Work order) Cutting
-              - SPK/WO Embroidery (Jika ada)
-              - SPK/WO Sewing
-              - SPK/WO Finishing
-              - SPK/WO Packing
-          - Finish Good (FG) Inventory (Receiving and Shipping)
-          - PO Material (Karton)
-8. Alur proses produksi dimulai dari PO Purchasing, dimana PPIC membuat MO Manufacturing berdasarkan PO Purchasing yang ada. Dari MO Manufacturing PPIC/Purchasing, setiap departemen (Cutting, Sewing, Finishing, Packing) akan membuat SPK/WO sesuai dengan Week Planning Production atau mengacu pada MO Manufacturing yang telah ditentukan. Setelah semua SPK/WO selesai, produk jadi akan diterima di gudang Finish Good (FG) dengan dokumentasi lengkap.
+        - Menghasilkan MO Purchasing (Material)
+        - Menghasilkan MO Manufacturing (PPIC) (Week & Destination ikut Label)
+          - SPK (Surat Perintah Kerja)/WO (Work order) Cutting
+          - SPK/WO Embroidery (Jika ada)
+          - SPK/WO Sewing
+          - SPK/WO Finishing
+          - SPK/WO Packing
+        - Finish Good (FG) Inventory (Receiving and Shipping)
+        - PO Material (Karton)
 9. PO Purchasing berisikan informasi lengkap tentang rencana pembelian material dari supplier, termasuk:
     - PO Purchasing Document
       - No PO IKEA (Auto dari PO IKEA terkait) (SPI) (Tidak Wajib)
@@ -57,8 +145,8 @@
       - Kode Artikel (Auto dari PO Purchasing terkait)
       - Deskripsi/Product Information (Auto dari PO Purchasing terkait)
       - Jumlah yang direncanakan untuk diproduksi
-      - Tanggal Mulai Produksi
-      - Tanggal Selesai Produksi
+      - Tanggal Mulai Produksi (Start Production Date)
+      - Tanggal Selesai Produksi (End Production Date)
       - Status MO (Planned, In Progress, Completed, Cancelled)
 11. SPK/WO berikan informasi lengkap tentang proses produksi di setiap departemen, termasuk:
     - SPK/WO Document
@@ -73,16 +161,16 @@
         - Kode jenis material* (Raw Material, Bahan Penolong, WIP) (Auto dari BOM Manufacturing terkait MO Manufacturing)
         - Kode material (Auto dari BOM Manufacturing terkait MO Manufacturing)
         - Deskripsi material (Auto dari BOM Manufacturing terkait MO Manufacturing)
-        - Jumlah yang digunakan (Daily Material Input)
-          - Pcs (Pieces)
-          - Satuan (Unit)
-          - Yard/Meter (Cutting)
-          - Box/Dus (Packing)
-          - Gram (Finishing - Isi Kapas)
+      - Jumlah material yang digunakan (Daily Material Input)
+        - Pcs (Pieces)
+        - Satuan (Unit)
+        - Yard/Meter (Cutting)
+        - Box/Dus (Packing)
+        - Gram (Finishing - Isi Kapas)
       - Jumlah yang diproduksi (Daily Production Input)
-          - Pcs (Pieces)
-      - Tanggal Mulai Produksi (Start Production Date perdepartemen)
-      - Tanggal Selesai Produksi (End Production Date perdepartemen)
+        - Pcs (Pieces)
+      - Tanggal Mulai Produksi (Start Production Date Departemen Cutting)
+      - Tanggal Selesai Produksi (End Production Date Departemen Packing)
       - Nomor batch
       - Status QC
       - Lokasi penyimpanan di gudang bayangan departemen (Jika ada)
@@ -114,8 +202,8 @@
       - Informasi pengiriman (jika sudah dikirim)
       - Catatan tambahan
 13. Setiap departement, walau alur produksinya dimulai dari PO Purchasing, tetap akan melakukan receiving material bahan dari Warehouse Receiving sebelum memulai produksi.*
-14. Setiap departemen menerima WIP (Cutting, Embrodery, Sewing) dari departemen sebelumnya untuk diproses lebih lanjut hingga menjadi product jadi di Finishing.
-15. Setiap departemen memiliki warehouse bayangan sendiri. Hasil dari Sewing (Skin/WIP) akan disimpan di gudang bayangan Finishing. Di dalam departemen Finishing, WIP tersebut akan diproses: Filling (Isi Kapas) -> Closing (Jahit Tutup) -> Cleaning/QC Akhir. Setelah selesai, barang diserahkan ke Packing.
+14. Setiap departemen menerima WIP (Cutting, Embroidery, Sewing) dari departemen sebelumnya untuk diproses lebih lanjut hingga menjadi product jadi di Finishing.
+15. Setiap departemen memiliki warehouse bayangan sendiri. Hasil dari Sewing (Skin/WIP) akan disimpan di gudang bayangan Finishing. Di dalam departemen Finishing, WIP tersebut akan diproses: Stuffing (Isi Kapas) -> Closing (Jahit Tutup) -> Cleaning/QC Akhir. Setelah selesai, barang diserahkan ke Packing.
 16. Tampilan report dan dashboard dapat diatur sesuai kebutuhan setiap departemen untuk memantau kinerja produksi mereka masing-masing.
 17. Barang Jadi dari Packing masuk ke FinishGood Inventory otomatis menarik data dari SPK/WO Packing terkait untuk update stok FG Inventory. Lalu dikonfirmasi menggunakan Scan Barcode pada box/pallet FG saat receiving di gudang FG. Setiap dilakukan scan barcode pada box/pallet FG saat receiving di gudang FG, maka stok FG Inventory akan bertambah sesuai qty product jadi yang diterima. Tampilan report dan dashboard FinishGood Inventory dapat diatur sesuai kebutuhan untuk memantau stok barang jadi secara real-time.
 18. Finishing memiliki gudang bayangan sendiri untuk menyimpan material skin/WIP Sewing sebelum diisi kapas dan dijadikan produk jadi.
@@ -132,6 +220,16 @@
 29. Apa yang sudah terinput daily pada SPK tidak dapat diubah atau diinput ulang, sebelum product jadi diterima di gudang FG.
 30. Setelah product jadi diterima di gudang FG, sistem mengunci semua Daily Input di SPK terkait untuk mencegah perubahan data historis. Adjustment product dilakukan dengan pembuatan SPK baru (Ada tanda/keterangan SPK Tambahan. Hanya dapat dibuat menggunakan account SPV dan wajib dengan approval Manager).
 31. Setiap departemen dapat mengakses laporan produksi harian, mingguan, dan bulanan untuk analisis kinerja dan perencanaan ke depan.
+32. UOM Conversion juga ada pada departemen Cutting dan Packing harus diterapkan untuk konsistensi pelaporan stok dan produksi.
+33. Sistem harus mendukung integrasi dengan sistem EXIM untuk otomatisasi pengisian data ECIS pada dokumen Finish Good.
+34. Sistem harus mendukung pembuatan laporan kustom oleh setiap departemen sesuai kebutuhan mereka.
+35. Sistem harus memiliki fitur notifikasi untuk mengingatkan admin atau manajer tentang status kritis, seperti keterlambatan produksi atau stok material yang menipis.
+36. Fitur material Debt harus diimplementasikan untuk mengizinkan produksi berjalan meskipun stok material tidak mencukupi, dengan proses approval dan penyesuaian stok setelah MO dinyatakan selesai. Hanya berlaku untuk material bahan baku (Raw Material) dan bahan penolong (Auxiliary Material), tidak berlaku untuk WIP dan Finished Goods.
+37. Setiap SPK di semua Departement akan memunculkan 2 tampilan SPK dalam 1 halaman: 
+      - Tampilan utama untuk Daily Material Input dan Daily Production Input.
+      - Tampilan sekunder untuk melihat rincian BOM Manufacturing yang digunakan di SPK tersebut (Non-editable).
+
+## 📚 GLOSSARY ISTILAH PENTING
 
 *Week Planning Production*: Perencanaan produksi mingguan berdasarkan PO Purchasing dan kapasitas produksi. (Mengikat pada MO Manufacturing dan SPK/WO, tidak dapat diubah setelah dibuat).
 *Destination*: Tujuan produk jadi berdasarkan PO Label terkait pada MO Manufacturing.
@@ -139,7 +237,18 @@
   - Raw Material (Bahan Baku) (Contoh: kain, karton, label, benang)
   - Bahan Penolong (Auxiliary Material) (Contoh: perekat, benang jahit, aksesoris kecil)
   - Work-in-Progress (WIP) (Material setengah jadi antar departemen, biasanya berupa skin bahan yang sudah dipotong tapi belum selesai) (Setiap departemen menerima WIP (Cutting, Sewing) dari departemen sebelumnya untuk diproses lebih lanjut hingga menjadi product jadi di Finishing)
-  - Barang Jadi (Finished Goods) (Produk jadi siap kirim ke customer)
+  - Barang Jadi (Finished Goods) (Produk jadi yang siap kirim ke customer)
+*Goods Inventory*: Gudang penyimpanan material bahan baku, bahan penolong, WIP, dan barang jadi.
+*Warehouse Receiving*: Proses penerimaan material bahan baku di gudang.
+*Finish Good Inventory*: Gudang penyimpanan produk jadi siap kirim ke customer.
+*Daily Material Input*: Input harian jumlah material yang digunakan di setiap departemen produksi.
+*Daily Production Input*: Input harian jumlah produk yang dihasilkan di setiap departemen produksi.
+*SPK Tambahan*: SPK baru yang dibuat untuk menyesuaikan jumlah produksi setelah product jadi diterima di gudang FG, hanya dapat dibuat oleh SPV dengan approval Manager.
+*Scan Barcode*: Proses pemindaian barcode pada box/pallet FG saat receiving di gudang FG untuk konfirmasi penerimaan produk jadi. Dan penerimaan material di warehouse receiving.
+*QT-09 Handshake*: Proses otomatis untuk menginformasikan departemen berikutnya bahwa material WIP sudah siap untuk diproses lebih lanjut.
+*Adjustment Product*: Proses penyesuaian jumlah produksi melalui pembuatan SPK Tambahan setelah product jadi diterima di gudang FG.
+*UOM Conversion*: Konversi satuan unit pengukuran untuk konsistensi pelaporan stok dan produksi di setiap departemen. Terutama pada departemen Cutting, Packing, dan FinishGood Inventory.
+*Warehouse Finishing* : Gudang bayangan milik departemen Finishing untuk menyimpan WIP Sewing sebelum diisi kapas dan dijadikan produk jadi. (Dikelola oleh departemen Finishing)
 ---
 
 ## 🚀 SESSION 36 PROGRESS SUMMARY
