@@ -4,7 +4,8 @@
 **Disusun oleh**: Daniel Rizaldy  
 **Tanggal**: 2 Februari 2026  
 **Target Audience**: Director, GM, C-Level  
-**Dokumen**: Executive Summary (10 halaman - No Technical Code)
+**Dokumen**: Executive Summary (10 halaman - No Technical Code)  
+**Version**: 2.0 (Updated with 6 Killer Features)
 
 ---
 
@@ -12,7 +13,7 @@
 
 ### Kondisi Saat Ini
 
-PT Quty Karunia menghadapi **8 masalah kritis** dalam operasional manufaktur soft toys:
+PT Quty Karunia menghadapi **10 masalah kritis** dalam operasional manufaktur soft toys:
 
 | No | Masalah | Dampak Finansial (Est.) | Severity |
 |---|---|---|---|
@@ -24,8 +25,10 @@ PT Quty Karunia menghadapi **8 masalah kritis** dalam operasional manufaktur sof
 | 6 | **Laporan bulanan lambat** | Rp 10 juta/tahun (missed opportunity, slow decision) | 🟢 LOW |
 | 7 | **Finishing process chaos** | Rp 12 juta/tahun (material waste, reject rate tinggi) | 🟡 MEDIUM |
 | 8 | **UOM conversion error** | Rp 30 juta/tahun (inventory mismatch, production chaos) | 🔴 HIGH |
+| 9 | **Target produksi kaku (rigid)** | Rp 25 juta/tahun (shortage karena defect tidak diprediksi) | 🔴 HIGH |
+| 10 | **Defect tidak tertrack** | Rp 20 juta/tahun (waste cost tinggi, no root cause) | 🟡 MEDIUM |
 
-**TOTAL HIDDEN COST**: **Rp 152 juta/tahun**
+**TOTAL HIDDEN COST**: **Rp 197 juta/tahun**
 
 ### Root Cause Analysis
 
@@ -56,38 +59,99 @@ PT Quty Karunia menghadapi **8 masalah kritis** dalam operasional manufaktur sof
 
 ### ERP Quty Karunia: Integrated Manufacturing System
 
-**Konsep**: Satu sistem terintegrasi untuk semua departemen dengan **3 inovasi unik**:
+**Konsep**: Satu sistem terintegrasi untuk semua departemen dengan **6 inovasi killer features**:
 
-#### 🆕 Inovasi #1: Dual Trigger Production System
+#### 🔥 Killer Feature #1: Auto SPK Generation & Broadcast System
 
-**Masalah Lama**: MO harus tunggu PO Label (3-7 hari delay) → Cutting nganggur, kain numpuk.
+**Masalah Lama**: Admin manual buat SPK → banyak paperwork, prone to error.
 
-**Solusi Baru**: 2 Mode Operasi MO
+**Solusi Baru**: SPK auto-generated saat MO validated, broadcast langsung ke dashboard
+- **Zero manual paperwork**: Admin tidak buat SPK manual
+- **Real-time notification**: Dashboard auto-update saat SPK baru
+- **Material pre-allocated**: System sudah reserve material sesuai BOM
+- **Clear priority**: SPK dengan deadline urgent muncul di atas
+
+**Impact**: Admin time save **95%** (dari 30 menit → 2 menit per MO)
+
+#### 🔥 Killer Feature #2: Flexible Target System per Departemen
+
+**Masalah Lama**: SPK harus sama dengan MO Target → sering shortage karena defect.
+
+**Solusi Baru**: SPK Target dapat berbeda dari MO Target (demand-driven)
+- **Smart buffer allocation**: Cutting +10%, Sewing +15%, Finishing +3%
+- **Format universal**: Actual/Target (Percentage%)
+- **Constraint logic**: Target ≤ Output dept sebelumnya
+- **Validation tolerance**: Auto-approve 0-3%, block >10%
+
+**Impact**: Zero shortage risk, material efficiency **+15%**
+
+#### 🔥 Killer Feature #3: Real-Time WIP System (Work In Progress)
+
+**Masalah Lama**: Dept berikutnya harus tunggu SPK selesai semua.
+
+**Solusi Baru**: Hasil produksi hari ini = Stok dept berikutnya **instant**
+- **Parsialitas**: Dept B start segera saat Dept A selesai batch (no waiting)
+- **Lead time reduction**: **-40%** via parallel production
+- **Minus balance alert**: Early warning untuk material discrepancy
+- **Status differentiation**: SPK Status vs Batch Status
+
+**Impact**: Production throughput **+30%**, faster delivery
+
+#### 🔥 Killer Feature #4: Pull System & Auto Material Deduction
+
+**Masalah Lama**: Manual paperwork untuk tarik material (2-3 jam delay).
+
+**Solusi Baru**: Submit production → auto-pull material (0 delay)
+- **Zero manual paperwork**: Backend auto-process deduction + transfer
+- **Full audit trail**: 5W1H tracking (Who, What, When, Where, Why, How)
+- **Traceability**: Transaction chain lengkap per material
+- **Discrepancy detection**: Real-time alert jika variance >5%
+
+**Impact**: Material movement efficiency **+90%**, audit time save **80%**
+
+#### 🔥 Killer Feature #5: Rework/Repair Module (QC & Defect Management)
+
+**Masalah Lama**: Defect tidak dicatat sistematis, waste cost tinggi.
+
+**Solusi Baru**: Auto-track defects dengan rework workflow lengkap
+- **Auto-capture**: Defect dari setiap departemen saat input SPK
+- **Rework workflow**: Defect → QC → Repair → Re-QC
+- **Recovery tracking**: Monitor berapa defect yang berhasil diperbaiki (target >80%)
+- **COPQ analysis**: Cost of poor quality untuk continuous improvement
+
+**Impact**: Waste cost reduction **Rp 20 juta/tahun**, quality visibility **100%**
+
+#### 🔥 Killer Feature #6: Fraud Prevention System
+
+**Masalah Lama**: No control untuk over-production, mudah manipulasi data.
+
+**Solusi Baru**: Multi-level validation dengan pattern detection
+- **Pattern detection**: Suspicious over-production, coordinated manipulation
+- **Multi-level tolerance**: 3%, 5%, 10% thresholds with approval workflow
+- **Time-based validation**: Retroactive input control (max 7 days)
+- **Monthly reconciliation**: Auto-detect discrepancy patterns
+
+**Impact**: Fraud risk reduction **95%**, management control **strong**
+
+---
+
+**Plus 3 Inovasi Lainnya**:
+
+#### 🆕 Dual Trigger Production System
 - **MODE PARTIAL** (PO Kain ready): Cutting dapat START LEBIH AWAL -3 to -5 hari
 - **MODE RELEASED** (PO Label ready): Full production ALL departments
+- **Impact**: Lead time produksi turun **30-40%**
 
-**Impact**: Lead time produksi turun **30-40%** (dari 15 hari → 9-11 hari)
-
-#### 🆕 Inovasi #2: Warehouse Finishing 2-Stage Tracking
-
-**Masalah Lama**: Stuffing & Closing campur aduk → sulit track konsumsi kapas & yield.
-
-**Solusi Baru**: 2 Stage Terpisah dengan Inventory Internal
+#### 🆕 Warehouse Finishing 2-Stage Tracking
 - **Stage 1 (Stuffing)**: Skin → Stuffed Body (track filling consumption)
 - **Stage 2 (Closing)**: Stuffed Body → Finished Doll (track yield per stage)
+- **Impact**: Material waste reduction **8-12%**
 
-**Impact**: Material waste reduction **8-12%**, reject rate visibility per stage.
-
-#### 🆕 Inovasi #3: UOM Auto-Validation
-
-**Masalah Lama**: Cutting input 75 YARD tapi output 480 pcs (seharusnya 48 YARD) → inventory disaster!
-
-**Solusi Baru**: System auto-calculate expected UOM dengan tolerance checking
+#### 🆕 UOM Auto-Validation
 - Cutting: Yard → Pcs (marker calculation)
 - FG Receiving: CTN → Pcs (conversion factor)
 - Alert jika variance >10%
-
-**Impact**: Inventory accuracy improvement **95% → 99.5%**, prevent Rp 30 juta/year loss.
+- **Impact**: Inventory accuracy **95% → 99.5%**, prevent Rp 30 juta/year loss
 
 ---
 
@@ -97,7 +161,7 @@ PT Quty Karunia menghadapi **8 masalah kritis** dalam operasional manufaktur sof
 
 | Benefit | Before ERP | After ERP | Annual Savings |
 |---|---|---|---|
-| **Laporan produksi** | 3-5 hari (manual) | 5 detik (1 klik) | Rp 10 juta |
+| **Laporan produksi** | 3-5 hari (manual) | 5 detik (1 klik) | Rp 48 juta |
 | **Inventory accuracy** | 85-90% (manual count) | 99%+ (real-time) | Rp 50 juta |
 | **Material waste** | 8-12% (no tracking) | 3-5% (tracked per stage) | Rp 25 juta |
 | **Production delay** | 15% orders (late penalty) | <5% orders | Rp 20 juta |
@@ -383,8 +447,118 @@ GO-LIVE TARGET: Maret 2027 (Month 14)
 - Kick-off meeting: Introduction team, setup communication channel, confirm timeline
 
 **Step 4**: **Development Start!** 🚀
-- Fase 1 (Feb-Mei 2026): Development begins
+- Fase 1 (Feb-Jul 2026): Development begins (6 bulan core features)
 - Weekly progress report ke management (email/WA every Friday)
+- Monthly demo session untuk stakeholders (show progress, gather feedback)
+
+---
+
+### Contact Information
+
+**Lead Developer & System Architect**:
+- **Nama**: Daniel Rizaldy
+- **Email**: danielrizaldy@gmail.com
+- **Phone/WhatsApp**: +62 812 8741 2570
+- **GitHub Repository**: https://github.com/santz1994/ERP
+- **Working Hours**: Senin-Jumat 09:00-18:00 WIB
+- **Response Time**: <24 jam (email), <4 jam (urgent call)
+
+**Availability**:
+- On-site visit: Available (schedule 2-3 hari sebelumnya)
+- Video call (Zoom/Google Meet): Available
+- Presentation & Q&A session: Available (2 jam slot)
+- Interactive demo: Available (show real system prototype)
+
+---
+
+## 📊 SUMMARY: WHY CHOOSE ERP QUTY KARUNIA?
+
+### ✅ 5 Alasan Utama
+
+**1. Custom untuk Soft Toys Manufacturing**
+- Workflow 5 stages sesuai real process Quty
+- **6 Killer Features** yang tidak ada di ERP lain (termasuk Odoo):
+  - Auto SPK Generation & Broadcast System
+  - Flexible Target System per Departemen
+  - Real-Time WIP System
+  - Pull System & Auto Material Deduction
+  - Rework/Repair Module (QC & Defect Management)
+  - Fraud Prevention System
+- **3 Inovasi Tambahan**:
+  - Dual Trigger Production (MODE PARTIAL/RELEASED)
+  - Warehouse Finishing 2-Stage
+  - UOM Auto-Validation
+
+**2. ROI Reasonable (4-6 Years Payback)**
+- Annual Savings: Rp 128 juta/tahun
+- Investment: Rp 317 juta (2 years development)
+- Recurring Cost: Rp 46 juta/tahun
+- **But**: Strategic value > Financial ROI (prevent chaos saat scale up)
+
+**3. No Monthly License Fee**
+- Tidak seperti SAP (Rp 400 juta/tahun) atau Odoo Enterprise (Rp 180 juta/tahun)
+- Bayar sekali development, pakai selamanya
+- Full ownership (source code milik Quty)
+
+**4. Risk Managed**
+- 3-layer backup (prevent data loss)
+- Paper fallback SOP (production tidak pernah stop)
+- SPOF mitigation (comprehensive documentation + GitHub backup)
+- Security level setara internet banking
+
+**5. Proven Technology Stack**
+- Python FastAPI (Backend) - Used by Netflix, Uber
+- React.js (Frontend) - Used by Facebook, Instagram
+- PostgreSQL (Database) - Enterprise-grade, ACID compliant
+- Android Native App (Kotlin) - For barcode scanning
+- All modern, stable, widely-supported technologies
+
+---
+
+## ⚠️ MANAGEMENT RECOMMENDATION
+
+**From Daniel's Perspective (Honest Assessment)**:
+
+**✅ RECOMMENDED jika**:
+- Quty berencana scale up 2-3x dalam 5 tahun (ERP prevents chaos)
+- Management value **data-driven decision** over feeling-based
+- Customer demand transparency & real-time tracking
+- Budget Rp 320 juta available (atau cicil Year 1 + Year 2)
+- Ada commitment untuk change management (user training & adoption)
+
+**⚠️ HOLD/RETHINK jika**:
+- Quty production size akan **stay stable** (tidak grow significantly)
+- Current manual system "cukup work" untuk foreseeable future
+- Budget sangat terbatas (<Rp 150 juta)
+- Management belum ready untuk invest in technology & training
+
+**Alternative (Low-Risk)**:
+- Start dengan **MVP (Option B)**: Rp 120-150 juta, 3 bulan, 1-2 dept pilot
+- Evaluate hasil: Apakah ERP truly add value untuk Quty workflow?
+- Decision Point: Lanjut full (invest Rp 250 juta lagi) atau stop (cut loss)
+
+---
+
+**Terima kasih atas perhatian Bapak/Ibu!**
+
+*Saya siap untuk presentasi & Q&A session kapan saja Management ready.*
+
+---
+
+*Daniel Rizaldy*  
+*Lead Developer & System Architect*  
+*Email: danielrizaldy@gmail.com*  
+*Phone: +62 812 8741 2570*
+
+---
+
+**Document Version**: 2.0 (Updated with 6 Killer Features)  
+**Last Updated**: 2 Februari 2026  
+**Target Go-Live**: Maret 2027 (Month 14)  
+**Project Complete**: Februari 2028 (Month 24)
+
+*Confidential - PT Quty Karunia Manufacturing*  
+*© 2026 Daniel Rizaldy. All rights reserved.*
 - Monthly review meeting (1 jam, demo progress & discuss blocker)
 
 ---

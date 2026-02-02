@@ -224,21 +224,43 @@ def convert_to_pptx(md_file_path, output_path):
     print(f"✅ PPTX saved to: {output_path}")
 
 def main():
-    md_file = "docs/00-Overview/PRESENTASI_MANAGEMENT_ERP_QUTY_KARUNIA.md"
+    """Process multiple markdown files"""
+    files_to_convert = [
+        {
+            "input": "docs/00-Overview/TECHNICAL_SPECIFICATION.md",
+            "docx": "docs/00-Overview/TECHNICAL_SPECIFICATION.docx",
+            "pptx": "docs/00-Overview/TECHNICAL_SPECIFICATION.pptx"
+        },
+        {
+            "input": "docs/00-Overview/EXECUTIVE_SUMMARY.md",
+            "docx": "docs/00-Overview/EXECUTIVE_SUMMARY.docx",
+            "pptx": "docs/00-Overview/EXECUTIVE_SUMMARY.pptx"
+        }
+    ]
     
-    # Output paths
-    docx_output = "docs/00-Overview/PRESENTASI_MANAGEMENT_ERP_QUTY_KARUNIA.docx"
-    pptx_output = "docs/00-Overview/PRESENTASI_MANAGEMENT_ERP_QUTY_KARUNIA.pptx"
+    print("=" * 60)
+    print("📚 ERP QUTY KARUNIA - Document Converter")
+    print("=" * 60)
+    print()
     
-    # Convert to DOCX
-    convert_to_docx(md_file, docx_output)
+    for file_info in files_to_convert:
+        print(f"\n📄 Processing: {file_info['input']}")
+        print("-" * 60)
+        
+        # Convert to DOCX
+        convert_to_docx(file_info['input'], file_info['docx'])
+        
+        # Convert to PPTX
+        convert_to_pptx(file_info['input'], file_info['pptx'])
     
-    # Convert to PPTX
-    convert_to_pptx(md_file, pptx_output)
-    
-    print("\n✅ Conversion complete!")
-    print(f"📄 DOCX: {docx_output}")
-    print(f"📊 PPTX: {pptx_output}")
+    print("\n" + "=" * 60)
+    print("✅ All conversions complete!")
+    print("=" * 60)
+    print("\n📦 Generated files:")
+    for file_info in files_to_convert:
+        print(f"  📄 {file_info['docx']}")
+        print(f"  📊 {file_info['pptx']}")
+        print()
 
 if __name__ == "__main__":
     main()
