@@ -27,7 +27,7 @@
 
 ---
 
-## <a name="apa-itu-erp"></a>🎯 1. APA ITU ERP QUTY KARUNIA?
+## 🎯 1. APA ITU ERP QUTY KARUNIA?
 
 ### Definisi Sederhana
 **ERP (Enterprise Resource Planning)** adalah sistem komputer yang menghubungkan semua departemen di pabrik:
@@ -62,38 +62,38 @@ Bayangkan sistem ERP seperti **"otak pabrik"** yang mengingat semua hal:
 
 ---
 
-## <a name="masalah"></a>❌ 2. MASALAH YANG DISELESAIKAN
+## ❌ 2. MASALAH YANG DISELESAIKAN
 
 ### Masalah Lama di Quty (Sebelum ERP):
 
 | **No** | **Masalah** | **Dampak** |
 |--------|-------------|------------|
 | 1 | **Data Produksi Manual** (Excel/Kertas) | - Laporan lambat<br>- Sering salah hitung<br>- Sulit lacak progres |
-| 2 | **Material Tidak Terdata** | - Tiba-tiba material habis<br>- Produksi terhambat<br>- Pembelian dadakan (mahal) |
+| 2 | **Material Tidak Terdata** | - Tiba-tiba material habis<br>- Produksi terhambat<br>- Pembelian mendadak (mahal) |
 | 3 | **SPK Tidak Terpantau** | - Tidak tahu SPK mana yang terlambat<br>- PPIC kesulitan koordinasi |
 | 4 | **FinishGood Sulit Verifikasi** | - Hitung manual (lama)<br>- Salah hitung jumlah box<br>- Customer komplain |
 | 5 | **Approval Tidak Jelas** | - Siapa yang sudah approve?<br>- Perubahan SPK tanpa kontrol |
 | 6 | **Laporan Bulanan Lambat** | - Butuh 3-5 hari untuk buat laporan<br>- Data sudah telat ketika selesai |
-| 7 | **🆕 Finishing Process Tidak Terstruktur** | - Stuffing & Closing campur aduk<br>- Sulit track konsumsi kapas<br>- Stok Skin vs Stuffed Body tidak jelas |
-| 8 | **🆕 UOM Conversion Manual Rawan Error** | - Cutting: Yard → Pcs salah hitung<br>- FG Receiving: Box → Pcs tidak konsisten<br>- Inventory chaos karena konversi salah |
+| 7 | **🆕 Finishing Process Tidak Terstruktur** | - Stuffing & Closing campur aduk<br>- Sulit lacak konsumsi kapas<br>- Stok Skin vs Stuffed Body tidak jelas |
+| 8 | **🆕 UOM Conversion Manual Rawan Error** | - Cutting: Yard → Pcs salah hitung<br>- FG Receiving: Box → Pcs tidak konsisten<br>- Inventory kacau karena konversi salah |
 
 ### Solusi dengan ERP:
 
 | **Fitur ERP** | **Solusi** |
 |---------------|------------|
-| ✅ **Input Produksi Digital** | Setiap Admin input langsung di tablet/HP → data real-time |
+| ✅ **Input Produksi Digital** | Setiap Admin input langsung di tablet/HP → data tersedia seketika |
 | ✅ **Sistem Inventaris Otomatis** | Material keluar tercatat otomatis → selalu tahu stock terkini |
 | ✅ **Dashboard PPIC** | Lihat semua SPK dalam 1 layar → tahu mana yang terlambat |
 | ✅ **Barcode Scanner Android** | Scan barcode FinishGood → otomatis hitung jumlah box |
 | ✅ **Approval Workflow Digital** | SPV → Manager → Director (semua tercatat siapa & kapan approve) |
 | ✅ **Laporan Otomatis** | Klik 1 tombol → laporan muncul dalam 5 detik |
-| ✅ **🆕 Warehouse Finishing Internal Conversion** | 2-stage terpisah (Stuffing & Closing) dengan validasi stok real-time |
-| ✅ **🆕 UOM Conversion Otomatis** | Auto-calculate dengan rumus marker (Cutting) dan conversion factor (FG) |
-| ✅ **🆕 PO Label/Kain Flexible Trigger** | MO dapat dibuat mode PARTIAL (PO Kain) untuk Cutting early start, atau RELEASED (PO Label) untuk full production → prevent delay & chaos |
+| ✅ **🆕 Warehouse Finishing Internal Conversion** | 2-stage terpisah (Stuffing & Closing) dengan validasi stok langsung |
+| ✅ **🆕 UOM Conversion Otomatis** | Kalkulasi otomatis dengan rumus marker (Cutting) dan conversion factor (FG) |
+| ✅ **🆕 Flexible Production Trigger** | Produksi dapat dimulai dengan PO Kain untuk Cutting, upgrade ke full production saat PO Label ready → cegah delay & chaos |
 
 ---
 
-## <a name="fitur-utama"></a>🌟 3. FITUR UTAMA SISTEM
+## 🌟 3. FITUR UTAMA SISTEM
 
 ### A. **Dashboard Real-Time**
 ```
@@ -158,14 +158,14 @@ Bayangkan sistem ERP seperti **"otak pabrik"** yang mengingat semua hal:
 **Cara Kerja**:
 1. Admin produksi tap tanggal (contoh: 3 Januari)
 2. Input jumlah produksi hari itu (48 units = 10% dari target 480)
-3. Sistem otomatis hitung kumulatif dan yield
+3. Kalkulasi kumulatif otomatis dan yield
 4. Kalau sudah 480/480 → SPK auto-trigger final QC
 
 **Manfaat**:
 - Gampang track progres harian
 - Tahu kapan SPK akan selesai
 - Bisa prediksi keterlambatan
-- **Yield tracking real-time**: System track reject rate per hari
+- **Pelacakan yield langsung**: Sistem monitor reject rate per hari
 
 ---
 
@@ -420,11 +420,11 @@ PACKING MATERIALS:
 5. **Material Complexity**: 30+ unique SKU material untuk 1 artikel!
 
 **Keunggulan Cascade BOM**:
-1. System auto-calculate kebutuhan material end-to-end (30+ SKU material)
-2. Track material consumption per stage (bisa tahu mana stage yang boros)
+1. Perhitungan otomatis kebutuhan material end-to-end (30+ SKU material)
+2. Monitor konsumsi material per stage (bisa tahu mana stage yang boros)
 3. **Split tracking**: Boneka & Baju ditrack terpisah sampai Packing
 4. Variance tracking: jika Stuffing butuh lebih banyak filling dari BOM, system alert
-5. Real-time inventory update untuk Warehouse Finishing (Skin & Stuffed Body stock)
+5. Update inventori langsung untuk Warehouse Finishing (Skin & Stuffed Body stock)
 6. **Parallel production monitoring**: Dashboard bisa show Boneka progress vs Baju progress
 
 #### Perbandingan Akhir:
@@ -445,7 +445,7 @@ Di akhir produksi, sistem akan bandingkan:
 **Manfaat**: 
 - Tahu berapa banyak material yang dibuang/waste per stage
 - Bisa evaluasi efisiensi produksi per departemen
-- 🆕 **Track internal conversion accuracy** (Skin → Stuffed → Finished)
+- 🆕 **Pelacakan akurasi konversi internal** (Skin → Stuffed → Finished)
 - 🆕 **Split production visibility**: Boneka vs Baju dapat dimonitor terpisah
 - 🆕 **Complex BOM handling**: 30+ SKU material dengan UOM berbeda (YARD, GRAM, CM, PCE)
 
@@ -632,7 +632,7 @@ Contoh Real Case - AFTONSPARV Production:
 ### G. **Laporan PPIC Harian & Alert Keterlambatan**
 
 #### Laporan Otomatis:
-Setiap pagi jam 08:00, sistem otomatis kirim laporan via email/WhatsApp:
+Setiap pagi jam 08:00, laporan dikirim otomatis via email/WhatsApp:
 
 ```
 📧 LAPORAN HARIAN PPIC - 28 Januari 2026
@@ -682,7 +682,7 @@ Setiap pagi jam 08:00, sistem otomatis kirim laporan via email/WhatsApp:
      └─ MO-2026-00091: W07-2026 → Just started (0/480 pcs)
 ```
 
-#### Alert Real-Time:
+#### Notifikasi Langsung:
 Jika ada masalah, sistem langsung kirim notifikasi:
 
 ```
@@ -1084,7 +1084,7 @@ Packing: SPK-PKG-2026-00045
 - ✅ **Auto-Upgrade**: System otomatis upgrade MO PARTIAL → RELEASED saat PO Label ready
 - ✅ **100% Traceability**: Tetap track PO Kain + PO Label untuk audit
 - ✅ **Zero Manual Error**: Week & Destination tetap auto-inherit dari PO Label (tidak manual)
-- ✅ **Smart Blocking**: Sewing onwards tetap blocked sampai PO Label ready (prevent chaos)
+- ✅ **Smart Blocking**: Sewing onwards tetap blocked sampai PO Label ready (cegah kekacauan)
 
 ---
 
@@ -1132,7 +1132,7 @@ Packing: SPK-PKG-2026-00045
 ```
 
 **Keuntungan**:
-- ✅ **Real-time Visibility**: Tahu berapa Skin ready & Stuffed Body ready setiap saat
+- ✅ **Visibilitas Langsung**: Tahu berapa Skin ready & Stuffed Body ready setiap saat
 - ✅ **Material Control**: Track konsumsi kapas per batch (variance >10% → alert)
 - ✅ **Paperless Internal**: Tidak perlu surat jalan untuk Stuffing (efficiency)
 - ✅ **2-Stage BOM**: Bisa optimize masing-masing stage terpisah
@@ -1142,14 +1142,14 @@ Packing: SPK-PKG-2026-00045
 
 #### **3. UOM Conversion dengan Auto-Validation** 🚨
 
-**Konsep**: System auto-calculate & validate konversi satuan di **2 titik kritis**.
+**Konsep**: Kalkulasi dan validasi otomatis konversi satuan di **2 titik kritis**.
 
 **Titik Kritis 1 - Cutting (YARD → Pcs)**:
 
 **Masalah Lama**:
 - Admin input: "70.38 YARD fabric KOHAIR menghasilkan 480 pcs"
 - Tidak tahu apakah 480 pcs itu wajar atau tidak
-- Kadang salah hitung → inventory chaos
+- Kadang salah hitung → kekacauan inventori
 
 **Solusi Baru**:
 ```
@@ -1173,7 +1173,7 @@ Packing: SPK-PKG-2026-00045
 │                                         │
 │  Material Efficiency:                   │
 │  • Waste: 0.01 YARD (~0.01%)            │
-│  • Rating: ⭐⭐⭐⭐⭐ (5/5)             │
+│  • Rating: ⭐⭐⭐⭐⭐ (5/5)          │
 │                                         │
 │  [✓ CONFIRM INPUT]  [ADJUST QTY]        │
 └─────────────────────────────────────────┘
@@ -1226,7 +1226,7 @@ Packing: SPK-PKG-2026-00045
 │  Article: [40551542] AFTONSPARV         │
 │  Carton Received: 8 CTN                 │
 │                                         │
-│  System Auto-Calculate:                 │
+│  Kalkulasi Otomatis:                    │
 │  Standard: 8 CTN × 60 pcs/CTN = 480 Pcs│
 │                                         │
 │  Physical Count Verification:           │
@@ -1252,10 +1252,10 @@ Packing: SPK-PKG-2026-00045
 ```
 
 **Keuntungan**:
-- ✅ **Zero Conversion Error**: System calculate otomatis berdasarkan BOM real
+- ✅ **Zero Conversion Error**: Perhitungan otomatis berdasarkan BOM real
 - ✅ **Multi-UOM Support**: YARD, GRAM, CM, PCE, CTN semua ter-handle
-- ✅ **Real-time Validation**: Warning langsung jika variance >10%
-- ✅ **Prevent Inventory Chaos**: Catch error SEBELUM data masuk system
+- ✅ **Validasi Langsung**: Warning segera jika variance >10%
+- ✅ **Cegah Kekacauan Inventori**: Catch error SEBELUM data masuk sistem
 - ✅ **Audit Trail**: Record setiap conversion dengan variance tracking
 - ✅ **Barcode Integration**: Scan per carton untuk akurasi 100%
 - ✅ **Learning System**: System catat pattern (jika marker ternyata lebih efficient)
@@ -1266,7 +1266,7 @@ Packing: SPK-PKG-2026-00045
 
 | Fitur | Impact | Unique? |
 |-------|--------|---------|
-| PO Label Trigger | 🔥 HIGH - Mencegah production chaos | ✅ **UNIQUE** (tidak ada di ERP lain) |
+| PO Label Trigger | 🔥 HIGH - Mencegah kekacauan produksi | ✅ **UNIQUE** (tidak ada di ERP lain) |
 | Warehouse Finishing 2-Stage | 🔥 HIGH - Control internal conversion | ✅ **UNIQUE** (tidak ada di ERP manapun) |
 | UOM Auto-Validation | 🔥 HIGH - Prevent inventory disaster | ✅ **UNIQUE** (Odoo tidak punya auto-validation) |
 | Daily Input Calendar | 🟡 MEDIUM - Track progress harian | ⚠️ Semi-unique (Odoo tidak punya) |
@@ -1577,7 +1577,7 @@ Sistem tampilkan: "Expected usage: ~50.65 YARD (±5%)"
      ```
    - Pilih Artikel: [40551542] AFTONSPARV
    - Input target quantity: 480 pcs
-   - System auto-calculate kebutuhan fabric per jenis:
+   - Perhitungan otomatis kebutuhan fabric per jenis:
      ```
      FABRIC BODY:
      ├─ [IKHR504] KOHAIR D.BROWN: 50.65 YARD
@@ -1667,7 +1667,7 @@ Sistem tampilkan: "Expected usage: ~50.65 YARD (±5%)"
    - Input design embroidery (upload pattern file)
    - Input warna benang yang dibutuhkan
    
-3. **Operator Embroidery**:
+3. **Admin Embroidery**:
    - Setup mesin dengan pattern
    - Input progres harian (pcs embroidered)
    - QC inline: check kualitas bordir (density, alignment)
@@ -2191,7 +2191,7 @@ Admin packing input **8 CTN**, tapi system inventory harus record dalam **pieces
    ║  CTN-008: ✅ 45 pcs (Partial) ⚠️        ║
    ║                                       ║
    ║  Total Scanned: 8 CTN                 ║
-   ║  System Calculate: 465 pcs            ║
+   ║  Kalkulasi Sistem: 465 pcs            ║
    ║  Expected: 465 pcs                    ║
    ║                                       ║
    ║  ✅ Perfect Match! Ready to Confirm    ║
@@ -2368,7 +2368,7 @@ Admin packing input **8 CTN**, tapi system inventory harus record dalam **pieces
 2. **Department Access Discipline**: Sewing onwards hanya dapat start setelah MO = RELEASED (butuh Label EU [ALL40030] & Hang Tag [ALB40011] available)
 3. **UOM Conversion Accuracy**: Zero tolerance untuk error konversi (Cutting & FG Receiving adalah titik kritis)
 4. **Warehouse Finishing Control**: Dual inventory tracking harus akurat (Skin vs Stuffed Body stock)
-5. **Daily Input Compliance**: Operator wajib input sebelum shift selesai
+5. **Daily Input Compliance**: Admin wajib input sebelum shift selesai
 6. **QC Checkpoint**: Tidak boleh ada transfer WIP tanpa QC approval
 7. **Barcode Scanning**: 100% material movement pakai barcode
 
@@ -3570,7 +3570,7 @@ Director:
 ```
 SPV Cutting: "Edit SPK" ← Bahaya!
 ```
-↑ Masalah: Jika SPK sudah berjalan (sudah potong 100 pcs), terus di-edit jadi 200 pcs, stok WIP chaos!
+↑ Masalah: Jika SPK sudah berjalan (sudah potong 100 pcs), terus di-edit jadi 200 pcs, stok WIP kacau!
 
 **✅ NEW WORKFLOW (REVISION REQUEST)** 🆕:
 ```yaml
@@ -3907,7 +3907,7 @@ if (currentUser.canSeeCost) {
 
 **Problem**:
 - Admin Cutting bisa lihat (bahkan edit) data Sewing department
-- SPV Sewing bisa approve SPK Cutting (cross-department chaos)
+- SPV Sewing bisa approve SPK Cutting (kekacauan lintas departemen)
 - **Risk**: Data leak antar departemen, fraud collaboration
 
 **Solution**: Restrict data access by department
@@ -4163,38 +4163,38 @@ Mitigasi:
 #### 2️⃣ **Dashboard Screen** (🆕 with MO Status Indicator)
 ```
 ┌─────────────────────────────────┐
-│  📊 DASHBOARD PRODUKSI          │
+│  📊 DASHBOARD PRODUKSI            │
 ├─────────────────────────────────┤
 │                                 │
 │  📅 30 Januari 2026              │
 │  👤 Admin: Ahmad (Cutting)       │
 │                                 │
 │  🆕 Active MO Status:            │
-│  ─────────────────────────────── │
+│  ───────────────────────────────  │
 │  MO-2026-00089                   │
 │  [40551542] AFTONSPARV           │
-│  Status: 🟢 RELEASED            │
+│  Status: 🟢 RELEASED              │
 │  (All Dept Can Start)            │
 │                                 │
 │  MO-2026-00090                   │
 │  [40551543] KRAMIG Bear          │
-│  Status: 🟡 PARTIAL             │
+│  Status: 🟡 PARTIAL               │
 │  (Cutting/Emb Only)              │
-│  ⚠️ PO Label Pending            │
+│  ⚠️ PO Label Pending              │
 │                                 │
-│  📋 SPK Hari Ini: 3             │
-│  ├─ SPK-CUT-00120: 95% ✅       │
-│  ├─ SPK-CUT-00121: 60% 🔄       │
-│  └─ SPK-CUT-00122: 5% ⏳        │
+│  📋 SPK Hari Ini: 3               │
+│  ├─ SPK-CUT-00120: 95% ✅          │
+│  ├─ SPK-CUT-00121: 60% 🔄          │
+│  └─ SPK-CUT-00122: 5% ⏳           │
 │                                 │
-│  📦 Material Stock:             │
-│  ├─ KOHAIR: 125 YD ⚠️ Low       │
-│  └─ Filling: 45 KG ✅ OK        │
+│  📦 Material Stock:              │
+│  ├─ KOHAIR: 125 YD ⚠️ Low        │
+│  └─ Filling: 45 KG ✅ OK         │
 │                                 │
-│  [📝 Input Harian]              │
-│  [📷 Scan Barcode]              │
-│  [📊 Laporan]                   │
-│  [🚪 Logout]                    │
+│  [📝 Input Harian]                │
+│  [📷 Scan Barcode]                │
+│  [📊 Laporan]                     │
+│  [🚪 Logout]                      │
 └─────────────────────────────────┘
 ```
 
@@ -4202,7 +4202,7 @@ Mitigasi:
 - 🟢 **RELEASED**: Green badge - All departments can start
 - 🟡 **PARTIAL**: Yellow badge - Limited to Cutting/Embroidery
 - ⚪ **DRAFT**: Gray badge - Planning only
-- Operator dapat lihat MO status sebelum mulai input
+- Admin dapat lihat MO status sebelum mulai input
 - Warning notification jika coba input SPK yang blocked
 
 ```
@@ -4225,10 +4225,10 @@ Mitigasi:
 │  Jumlah Good: [____] pcs        │
 │  Reject: [__] pcs               │
 │  Defect Type:                   │
-│  ☐ Jahitan tidak rapi           │
-│  ☐ Label EU posisi miring       │
-│  ☐ KOHAIR fabric sobek          │
-│  ☐ Thread skip                  │
+│  ☐ Jahitan tidak rapi            │
+│  ☐ Label EU posisi miring         │
+│  ☐ KOHAIR fabric sobek           │
+│  ☐ Thread skip                    │
 │                                 │
 │  Material Used Today:           │
 │  [ATR10500] Thread: [___] CM    │
@@ -4262,15 +4262,15 @@ Mitigasi:
 │  [40551542] AFTONSPARV          │
 │  soft toy w astronaut suit      │
 │                                 │
-│  📝 PO: PO-LBL-2026-0456        │
-│  📅 Week: W05-2026              │
-│  📦 MO: MO-2026-00089           │
+│  📝 PO: PO-LBL-2026-0456         │
+│  📅 Week: W05-2026                │
+│  📦 MO: MO-2026-00089             │
 │                                 │
 │  Units/CTN: 60 pcs              │
 │  Scanned: 5/8 CTN               │
 │  Total: 300/465 pcs (64.5%)     │
 │                                 │
-│  ✅ VALID - Continue scanning   │
+│  ✅ VALID - Continue scanning     │
 │                                 │
 │  [SCAN NEXT CTN] [FINISH]       │
 └─────────────────────────────────┘
@@ -4306,7 +4306,7 @@ Mitigasi:
 
 **Solusi**: 
 - PPIC buat BOM Manufacturing per artikel (dengan 30+ SKU material untuk complex product)
-- Saat buat SPK → sistem otomatis alokasi material dari BOM
+- Saat buat SPK → alokasi material otomatis dari BOM
 - Contoh: SPK 480 pcs AFTONSPARV → otomatis reserve:
   - [IKHR504] KOHAIR: 70.38 YARD
   - [IKP20157] Filling: 25.92 kg
@@ -4417,7 +4417,7 @@ Mitigasi:
 
 **Fitur**:
 - BOM Manufacturing untuk alokasi material saat buat MO
-- Sistem otomatis reserve material
+- Reservasi material otomatis
 - Check stock availability
 
 **Status**: ✅ **SUDAH DIIMPLEMENTASIKAN**
@@ -4843,7 +4843,7 @@ fun RMAReceivingScreen(rmaId: Int) {
 ```
 
 **Benefits**:
-- ✅ Systematic RMA handling (tidak chaos)
+- ✅ Systematic RMA handling (teratur dan terkontrol)
 - ✅ QC inspection forced (classify defect level)
 - ✅ Inventory accurate (RESTOCK add back to FG)
 - ✅ Repair tracking (SPK Repair auto-created)
@@ -5029,7 +5029,7 @@ class ProductionService:
 │                                                          │
 │ 💡 Conclusion:                                           │
 │ Team performance EXCELLENT (102.7% vs adjusted target).  │
-│ Low output disebabkan downtime, bukan kinerja operator.  │
+│ Low output disebabkan downtime, bukan kinerja Admin.  │
 │                                                          │
 │ 🔧 Action Items:                                         │
 │ ├─ Schedule preventive maintenance Mesin #5 & #3        │
@@ -5040,7 +5040,7 @@ class ProductionService:
 ```
 
 **Benefits**:
-- ✅ Fair performance evaluation (downtime = not operator's fault)
+- ✅ Fair performance evaluation (downtime = not Admin's fault)
 - ✅ Root cause analysis (machine vs human vs external)
 - ✅ Preventive maintenance trigger (track machine breakdown pattern)
 - ✅ Cost analysis (downtime = lost productivity = money)
@@ -5371,7 +5371,7 @@ Perubahan label sering terjadi (3-5 kali per bulan) karena:
 
 Tanpa system approval, rawan:
 - ❌ Label salah kirim (Week 5 kirim ke Torsvik, harusnya Älmhult)
-- ❌ Inventory chaos (stock tidak match dengan PO)
+- ❌ Kekacauan inventori (stock tidak match dengan PO)
 - ❌ IKEA complaint (wrong week/destination)
 - ❌ No audit trail (tidak bisa trace siapa yang ubah)
 
@@ -5794,7 +5794,7 @@ Fitur lengkap: Manufacturing, Inventory, Sales, Accounting, HR, dll.
 |--------|----------------|----------------|
 | 1 | **🆕 Flexible MO Trigger (Dual Mode)** | MO dapat dibuat mode PARTIAL (PO Kain only) untuk Cutting early start (-3 hari lead time), auto-upgrade ke RELEASED saat PO Label ready. Week & Destination auto-inherit dari PO Label (zero manual error). Smart department blocking: Sewing onwards tetap blocked sampai PO Label ready. |
 | 2 | **🆕 Warehouse Finishing Internal Conversion** | Dual inventory (Skin & Stuffed Body) dengan 2-stage BOM terpisah - fitur unik yang tidak ada di ERP manapun! |
-| 3 | **🆕 UOM Conversion Auto-Validation** | Real-time check & alert (Cutting: Yard→Pcs, FG: Box→Pcs) - mencegah inventory chaos sebelum terjadi |
+| 3 | **🆕 UOM Conversion Auto-Validation** | Validasi dan alert langsung (Cutting: Yard→Pcs, FG: Box→Pcs) - mencegah kekacauan inventori sebelum terjadi |
 | 4 | **Custom untuk Soft Toys** | Workflow 7 stages sesuai real process Quty + Embroidery optional (bukan generic) |
 | 5 | **Bahasa Indonesia Native** | Semua UI + dokumentasi + error messages dalam bahasa Indonesia (Admin tidak bingung) |
 | 6 | **Approval Workflow Lengkap** | Multi-level approval dengan audit trail detail (siapa approve, kapan, alasan) |
@@ -5837,7 +5837,7 @@ Fitur lengkap: Manufacturing, Inventory, Sales, Accounting, HR, dll.
 - Butuh customisasi cepat (tidak tunggu vendor lama)
 - Admin pakai Android (butuh offline mode untuk production floor)
 - **🆕 Butuh internal conversion tracking** (Skin → Stuffed Body → Finished Doll)
-- **🆕 Butuh real-time UOM validation** untuk mencegah inventory chaos
+- **🆕 Butuh validasi UOM langsung** untuk mencegah kekacauan inventori
 - **🆕 Produksi dapat dimulai dengan PO Kain (PARTIAL) atau PO Label (RELEASED)** (flexibility & traceability)
 
 **Kesimpulan**: Untuk Quty, **ERP Quty Karunia lebih cocok** karena:
@@ -6791,7 +6791,7 @@ Ini **custom development**, bukan commercial software. Quty punya **full ownersh
 
 **Q9: Bagaimana kalau butuh ubah workflow di tengah jalan?**
 
-**A**: **Bisa**, tapi ada **formal change request process** (prevent chaos).
+**A**: **Bisa**, tapi ada **formal change request process** (cegah kekacauan).
 
 **Change Request Flow**:
 1. User submit change request (form di ERP atau email ke Daniel)
