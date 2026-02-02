@@ -31,7 +31,12 @@
 
 ### Definisi Sederhana
 **ERP (Enterprise Resource Planning)** adalah sistem komputer yang menghubungkan semua departemen di pabrik:
-- **Purchasing** membeli material dan menciptakan **PO Kain** (🔑 TRIGGER 1: Early Start) dan **PO Label** (🔑 TRIGGER 2: Full Release)
+
+- **Purchasing Department** (3 Staff Specialist):
+  - **Purchasing A (Fabric Specialist)**: Membeli kain dan menciptakan **PO Kain** (🔑 TRIGGER 1: Early Start Production)
+  - **Purchasing B (Label Specialist)**: Membeli label dan menciptakan **PO Label** (🔑 TRIGGER 2: Full Release Production)  
+  - **Purchasing C (Accessories Specialist)**: Membeli benang, box, filling, dan aksesoris lainnya (benang, kapas, carton, pallet, dll)
+  
 - **PPIC** membuat MO Manufacturing dengan 2 mode: **PARTIAL** (PO Kain only) atau **RELEASED** (PO Label ready)
 - **Warehouse** menyediakan material untuk setiap departemen
 - **Produksi** menjalankan 5 departemen: **Cutting → Embroidery (optional) → Sewing → Finishing (2-stage) → Packing**
@@ -813,6 +818,191 @@ Action Required:
 - Lead time produksi terlalu panjang
 
 **Solusi Baru - Flexible MO Creation**:
+
+#### **🆕 Contoh Workflow Real - 3 Purchasing Staff Parallel**
+
+**Order Baru**: MO-2026-00089 untuk 480 pcs [40551542] AFTONSPARV  
+**Timeline**: 25-Jan (order) → 5-Feb (delivery to customer)
+
+**Day 1 (25-Jan) - Purchasing A (Fabric)**:
+```
+┌──────────────────────────────────────────────────┐
+│ PURCHASING A - FABRIC SPECIALIST                 │
+├──────────────────────────────────────────────────┤
+│ Login: purchasing_fabric_a@qutykarunia.com       │
+│ Task: Create PO Kain untuk MO-2026-00089         │
+│                                                  │
+│ BOM Calculation (480 pcs AFTONSPARV):           │
+│ ├─ [IKHR504] KOHAIR D.BROWN: 70.38 YD           │
+│ ├─ [IJBR105] JS BOA BROWN: 4.51 YD              │
+│ ├─ [INYR002] NYLEX BLACK: 0.48 YD               │
+│ ├─ [INYNR701] NYLEX WHITE: 2.11 YD              │
+│ ├─ [IPPR351] POLYESTER PRINT: 33.55 YD          │
+│ └─ [IPR301] POLYESTER WHITE: 59.95 YD           │
+│                                                  │
+│ Vendor Selection:                                │
+│ ├─ PT Kain Jaya (KOHAIR, POLYESTER)             │
+│ ├─ PT Tekstil Makmur (JS BOA, NYLEX)            │
+│                                                  │
+│ Create PO-KAIN-2026-0450:                        │
+│ ├─ Total Value: Rp 12,450,000                   │
+│ ├─ Lead Time: 2 days (ETA: 27-Jan)              │
+│ ├─ Status: Draft → Submit for approval          │
+│ └─ Approval: → Director (no manager layer)      │
+│                                                  │
+│ [SUBMIT PO] → Waiting Director Approval...       │
+└──────────────────────────────────────────────────┘
+
+Day 1 (25-Jan 15:00) - Director Approve:
+✅ PO-KAIN-2026-0450 APPROVED
+   Status: Approved → Sent to Vendor
+   
+🔔 NOTIFICATION to PPIC:
+   "PO Kain approved! Can create MO PARTIAL mode now"
+```
+
+**Day 1 (25-Jan 16:00) - PPIC Create MO PARTIAL**:
+```
+┌──────────────────────────────────────────────────┐
+│ PPIC - CREATE MO EARLY START                     │
+├──────────────────────────────────────────────────┤
+│ ✅ PO-KAIN-2026-0450: Approved (fabric ready)    │
+│ ❌ PO-LBL-2026-XXXX: Not yet created             │
+│                                                  │
+│ Decision: CREATE MO PARTIAL (early start)        │
+│                                                  │
+│ MO-2026-00089:                                   │
+│ ├─ Article: [40551542] AFTONSPARV               │
+│ ├─ Target: 480 pcs                              │
+│ ├─ Status: PARTIAL ⚠️                            │
+│ ├─ Can Start: Cutting ✅, Embroidery ✅          │
+│ ├─ Blocked: Sewing ❌, Finishing ❌, Packing ❌  │
+│ └─ Week/Dest: TBD (waiting PO Label)            │
+│                                                  │
+│ Benefits:                                        │
+│ • Cutting can start on 27-Jan (kain datang)     │
+│ • Save 3-5 days lead time                       │
+│ • Cutting WIP ready when label arrives          │
+└──────────────────────────────────────────────────┘
+```
+
+**Day 2 (26-Jan) - Purchasing B (Label) + C (Accessories) Parallel**:
+```
+┌──────────────────────────────────────────────────┐
+│ PURCHASING B - LABEL SPECIALIST                  │
+├──────────────────────────────────────────────────┤
+│ Login: purchasing_label_b@qutykarunia.com        │
+│ Task: Create PO Label untuk MO-2026-00089        │
+│                                                  │
+│ BOM Calculation (480 pcs AFTONSPARV):           │
+│ ├─ [ALL40030] LABEL EU: 480 pcs                 │
+│ ├─ [ALB40011] HANG TAG: 480 pcs                 │
+│ ├─ [ALS40012] STICKER MIA: 8 pcs (1 per carton) │
+│ └─ [AUL20220] STICKER ULL: 16 pcs (2 per FG)    │
+│                                                  │
+│ Vendor: PT Label Indo                            │
+│ Lead Time: 3 days (ETA: 29-Jan)                  │
+│                                                  │
+│ **CRITICAL INFO from Customer PO**:              │
+│ ├─ Week: W05-2026 (29-Jan to 2-Feb) 🔑          │
+│ └─ Destination: WH-IKEA-SWEDEN 🔑                │
+│                                                  │
+│ Create PO-LBL-2026-0456:                         │
+│ ├─ Total Value: Rp 3,250,000                    │
+│ ├─ Week: W05-2026 (input manual) 📝             │
+│ ├─ Destination: WH-IKEA-SWEDEN (input manual) 📝│
+│ └─ Status: Draft → Submit for approval          │
+│                                                  │
+│ [SUBMIT PO]                                      │
+└──────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────┐
+│ PURCHASING C - ACCESSORIES SPECIALIST            │
+├──────────────────────────────────────────────────┤
+│ Login: purchasing_accessories_c@qutykarunia.com  │
+│ Task: Create PO Benang, Kapas, Carton           │
+│                                                  │
+│ BOM Calculation (480 pcs AFTONSPARV):           │
+│ ├─ Threads (9 colors): 4,448 meter total        │
+│ ├─ [IKP20157] Filling: 25.92 kg                 │
+│ ├─ [ACB30104] Carton: 8 pcs                     │
+│ ├─ [ACB30121] Pallet: 1 pcs                     │
+│ └─ [ACB30132] Pad: 1 pcs                        │
+│                                                  │
+│ Vendors:                                         │
+│ ├─ PT Benang Kuat (threads)                     │
+│ ├─ PT Kapas Jaya (filling)                      │
+│ └─ PT Karton Box (carton, pallet, pad)          │
+│                                                  │
+│ Create 3 separate POs:                           │
+│ ├─ PO-ACC-2026-0780 (threads) - Rp 1,800,000    │
+│ ├─ PO-ACC-2026-0781 (filling) - Rp 2,100,000    │
+│ └─ PO-ACC-2026-0782 (packing) - Rp 950,000      │
+│                                                  │
+│ [SUBMIT ALL POs]                                 │
+└──────────────────────────────────────────────────┘
+
+Day 2 (26-Jan 14:00) - Director Approve All:
+✅ PO-LBL-2026-0456 APPROVED ← **TRIGGER 2!**
+✅ PO-ACC-2026-0780 APPROVED
+✅ PO-ACC-2026-0781 APPROVED
+✅ PO-ACC-2026-0782 APPROVED
+
+🔔 AUTO-UPGRADE MO:
+   MO-2026-00089: PARTIAL ⚠️ → RELEASED ✅
+   Week: W05-2026 (auto-inherit from PO Label)
+   Destination: WH-IKEA-SWEDEN (auto-inherit from PO Label)
+   
+🔔 NOTIFICATION to PPIC & Production:
+   "MO-2026-00089 RELEASED! All departments can proceed!"
+```
+
+**Day 3 (27-Jan) - Kain Datang, Cutting Start**:
+```
+Warehouse receive fabric from PO-KAIN-2026-0450
+Cutting Department:
+├─ SPK-CUT-2026-00120 (Body) - START ✅
+└─ SPK-CUT-2026-00121 (Baju) - START ✅
+
+Progress: Cutting 480 pcs → Complete in 1 day
+```
+
+**Day 4 (28-Jan) - Embroidery Start**:
+```
+SPK-EMB-2026-00122: Embroidery Body → Complete
+```
+
+**Day 5 (29-Jan) - Label Datang, Sewing Start**:
+```
+Warehouse receive label from PO-LBL-2026-0456
+MO-2026-00089: Status = RELEASED ✅
+
+Sewing Department (NOW UNBLOCKED):
+├─ SPK-SEW-2026-00156 (Body) - START ✅
+└─ SPK-SEW-2026-00157 (Baju) - START ✅
+
+Progress: Sewing 480 pcs → Complete in 1 day
+```
+
+**Day 6 (30-Jan) - Finishing & Packing**:
+```
+Finishing: SPK-FIN-2026-00089
+├─ Stuffing: 480 → 470 pcs (2% reject)
+└─ Closing: 470 → 465 pcs (1% reject)
+
+Packing: SPK-PKG-2026-00045
+└─ 465 pcs → 8 CTN (avg 58 pcs/CTN)
+    Week: W05-2026 (from PO Label)
+    Destination: WH-IKEA-SWEDEN (from PO Label)
+```
+
+**Result**:
+- ✅ **Lead Time**: 5 days (vs 8 days jika tunggu PO Label dulu)
+- ✅ **On-Time**: Ready 30-Jan, ship 31-Jan, arrive 5-Feb ✅
+- ✅ **3 Purchasing Staff** bekerja parallel tanpa manager bottleneck
+- ✅ **Dual Trigger** bekerja sempurna: PO Kain (early) + PO Label (full)
+
+---
 
 **Scenario A: PO Kain Sudah Ada, PO Label Belum**
 ```
@@ -2251,19 +2441,20 @@ Admin packing input **8 CTN**, tapi system inventory harus record dalam **pieces
 ---
 
 ### D. **Modul Purchasing**
-**User**: Purchasing Staff, Manager Purchasing
+**User**: Purchasing Staff (3 Specialists: Fabric, Label, Accessories)
 
 **Fitur**:
-- Buat Purchase Order (PO) dengan **2 kategori kritis**:
-  - **PO Kain/Fabric** (🔑 TRIGGER 1): Unlock Cutting/Embroidery (MO PARTIAL)
-  - **PO Label** (🔑 TRIGGER 2): Unlock Sewing/Finishing/Packing (MO RELEASED)
-  - PO Material Lainnya: Supporting materials
+- Buat Purchase Order (PO) dengan **3 kategori khusus**:
+  - **PO Kain/Fabric** (🔑 TRIGGER 1): Dibuat oleh Purchasing A → Unlock Cutting/Embroidery (MO PARTIAL)
+  - **PO Label** (🔑 TRIGGER 2): Dibuat oleh Purchasing B → Unlock Sewing/Finishing/Packing (MO RELEASED)
+  - **PO Accessories**: Dibuat oleh Purchasing C → Supporting materials (benang, kapas, carton, pallet, dll)
 - BOM Purchasing (bisa beda dengan BOM Manufacturing)
 - Vendor management
 - Material request dari PPIC/Produksi
 - PO tracking (status: draft, sent, partial, completed)
 - Material receipt confirmation
 - **Auto-notification ke PPIC**: Saat PO Label approved → trigger MO upgrade
+- **Approval**: Langsung ke Director (tidak ada manager layer)
 
 **Akses**:
 - Web Portal
