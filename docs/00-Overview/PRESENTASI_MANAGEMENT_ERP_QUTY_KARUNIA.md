@@ -4636,99 +4636,208 @@ Fitur lengkap: Manufacturing, Inventory, Sales, Accounting, HR, dll.
 
 ## <a name="timeline"></a>📅 12. TIMELINE & ROADMAP
 
-### A. **Status Saat Ini (28 Januari 2026)**
+### A. **Status Saat Ini (2 Februari 2026)**
 
 ```
-✅ COMPLETED (92/100):
+✅ COMPLETED (95/100):
 ├─ Backend API (124 endpoints)
 ├─ Frontend Web Portal (15+ pages)
 ├─ Android App (4 screens, Kotlin Native)
 ├─ Database Schema (27+ tabel)
-├─ Security & PBAC (22 roles)
-└─ Dokumentasi (241 .md files)
+├─ Security & PBAC (23 roles) 🆕 +System/Bot role
+├─ Fraud Prevention System 🆕
+└─ Dokumentasi (250+ .md files)
 
-⚠️ REMAINING (Stage 2):
-├─ Testing & QA (2-3 minggu)
-├─ User Training (1 minggu)
-├─ Data Migration (1 minggu)
-└─ Go-Live Preparation (1 minggu)
+⚠️ REMAINING (11 bulan sampai go-live):
+├─ Feature Enhancement (4-5 bulan)
+├─ Testing & QA (2-3 bulan)
+├─ User Training (1 bulan)
+├─ Data Migration (1 bulan)
+└─ Go-Live Preparation (1 bulan)
+
+🎯 TARGET GO-LIVE: JANUARI 2027
 ```
 
 ---
 
-### B. **Roadmap Next 3 Months**
+### B. **Roadmap Lengkap sampai Go-Live (Februari 2026 - Januari 2027)**
 
-#### **FEBRUARI 2026: Testing & QA**
+#### **FASE 1: FEBRUARI - MEI 2026 (Feature Enhancement & Refinement)**
 
-**Week 1-2**: Internal Testing
-- Developer test semua fitur
-- Fix bug yang ditemukan
-- Performance testing (load test)
+**FEBRUARI 2026**: Security & Fraud Prevention Enhancement
+- ✅ System/Bot role (Role 23) implementation
+- ✅ SPK Revision Request workflow
+- ✅ Auto-Approve Manager logic
+- ✅ Database security flags (can_see_cost, department_scope)
+- ✅ Fraud detection dashboard preparation
 
-**Week 3-4**: User Acceptance Testing (UAT)
-- Training untuk 5-10 user pilot (Admin Produksi, SPV, Admin)
-- Mereka test sistem pakai data real
-- Feedback → improvement
+**MARET 2026**: Async Processing & Document Generation
+- Celery/ARQ worker implementation
+- PDF generation (WeasyPrint): SPK, Surat Jalan, Laporan
+- Label printing integration (ZPL/TSPL)
+- Background task queue untuk heavy processes
 
----
+**APRIL 2026**: Deployment Infrastructure & Backup Strategy
+- Off-site backup implementation (NAS + Cloud)
+- APK auto-update system
+- Database migration automation (Alembic)
+- Monitoring stack (Prometheus + Grafana)
 
-#### **MARET 2026: Data Migration & Training**
-
-**Week 1**: Data Migration
-- Import master data:
-  - User (50-100 users)
-  - Material (200+ items)
-  - Artikel (100+ SKUs)
-  - Vendor (20+ vendors)
-  - Customer (10+ customers)
-
-**Week 2-3**: Training All Users
-- Kelompok 1: Admin & SPV (2 hari)
-- Kelompok 2: Admin Produksi (3 hari)
-- Kelompok 3: Warehouse Staff (2 hari)
-- Kelompok 4: PPIC & Purchasing (2 hari)
-- Kelompok 5: Manager & Director (1 hari)
-
-**Week 4**: Soft Launch (Parallel Run)
-- ERP jalan berbarengan dengan sistem lama
-- Compare data untuk validasi
-- Fix issue yang muncul
+**MEI 2026**: Reporting & Analytics Module
+- BOM comparison report (Manufacturing vs Purchasing)
+- Material efficiency dashboard
+- Production KPI analytics
+- Fraud detection automated alerts
 
 ---
 
-#### **APRIL 2026: GO-LIVE!**
+#### **FASE 2: JUNI - AGUSTUS 2026 (Internal Testing & QA)**
 
-**Week 1**: Hard Launch
-- Switch off sistem lama
-- Semua departemen pakai ERP 100%
-- Support team on-site (developer + IT)
+**JUNI 2026**: Developer Testing
+- Unit testing (pytest coverage >80%)
+- Integration testing (API endpoints)
+- Performance testing (load test 100 concurrent users)
+- Security testing (penetration test)
 
-**Week 2-4**: Stabilization
-- Monitor sistem 24/7
-- Quick fix untuk issue urgent
+**JULI 2026**: Staging Environment Setup
+- Deploy ke staging server
+- Import sample data (1000+ records)
+- Stress testing (production-like load)
+- Bug fixing & optimization
+
+**AGUSTUS 2026**: User Acceptance Testing (UAT) - Pilot Phase
+- Select 10-15 pilot users:
+  - 3 Admin Produksi (Cutting, Sewing, Finishing)
+  - 2 SPV (Cutting, Sewing)
+  - 2 PPIC Staff
+  - 2 Warehouse Staff
+  - 1 Purchasing Staff
+  - 1 QC Staff
+- Training pilot users (1 minggu)
+- UAT execution (3 minggu):
+  - Test dengan data real (production scenarios)
+  - Collect feedback & issues
+  - Iterative improvement
+
+---
+
+#### **FASE 3: SEPTEMBER - OKTOBER 2026 (Data Migration & Training)**
+
+**SEPTEMBER 2026**: Data Migration Preparation
+- **Week 1-2**: Data Cleaning
+  - Audit existing data (Excel/paper records)
+  - Standardize material codes, artikel names
+  - Verify vendor & customer data
+  - Remove duplicates & inconsistencies
+
+- **Week 3-4**: Migration Script Development
+  - Python scripts untuk import master data
+  - Validation rules (data integrity check)
+  - Rollback mechanism (jika error)
+  - Test migration di staging (dry run)
+
+**OKTOBER 2026**: Full Data Migration
+- **Week 1**: Import Master Data
+  - 50-100 users (dengan role assignment)
+  - 200+ material items (dengan BOM)
+  - 100+ artikel/SKUs
+  - 20+ vendors
+  - 10+ customers
+  - Historical data (optional: 3-6 bulan terakhir)
+
+- **Week 2-4**: Data Validation
+  - Cross-check dengan sistem lama
+  - Verify BOM accuracy
+  - Test transactions (sample MO/SPK/PO)
+  - Fix migration errors
+
+---
+
+#### **FASE 4: NOVEMBER - DESEMBER 2026 (Mass Training & Preparation)**
+
+**NOVEMBER 2026**: Training All Users (Batch-wise)
+- **Week 1**: PPIC & Purchasing (10-15 users)
+  - Modul: MO, BOM, SPK, PO
+  - Duration: 3 hari (8 jam/hari)
+  - Lab session: Create MO → Generate SPK
+
+- **Week 2**: Production Team (20-30 users)
+  - Admin Cutting, Sewing, Finishing, Packing
+  - Modul: Daily production input, Material request
+  - Duration: 3 hari
+  - Lab session: Input produksi harian, Handover dept
+
+- **Week 3**: Warehouse & QC (10-15 users)
+  - Modul: Material issue/receive, Stock opname, QC inspection
+  - Duration: 2 hari
+  - Lab session: Barcode scanning, Surat jalan
+
+- **Week 4**: Manager & SPV (10-15 users)
+  - Modul: Approval workflow, Dashboard, Reports
+  - Duration: 2 hari
+  - Lab session: Approve SPK, Review dashboard
+
+**DESEMBER 2026**: Soft Launch (Parallel Run)
+- **Week 1-4**: ERP Parallel dengan Sistem Lama
+  - Input data di kedua sistem (double entry)
+  - Compare hasil (accuracy check)
+  - Identify discrepancies
+  - Fine-tuning & bug fixing
+
+- **Special Focus**:
+  - Monitor performance (response time, server load)
+  - Collect user feedback (pain points, UX issues)
+  - On-site support team standby
+  - Weekly progress meeting dengan management
+
+---
+
+#### **FASE 5: JANUARI 2027 (GO-LIVE!)** 🎯
+
+**Week 1 (1-7 Januari 2027)**: Hard Launch
+- **Day 1 (Senin, 3 Januari)**:
+  - 06:00 AM: Switch off sistem lama
+  - 07:00 AM: ERP go-live announcement (all users)
+  - 08:00 AM: Production start dengan ERP 100%
+  - Support team on-site (developer + IT + trainer)
+
+- **Day 2-7**: Intensive Support
+  - Monitor sistem 24/7
+  - Quick response untuk issue urgent (<1 jam)
+  - On-site support di setiap departemen
+  - Daily standup meeting (progress & blocker)
+
+**Week 2-4 (8-31 Januari 2027)**: Stabilization & Optimization
+- System monitoring & performance tuning
+- Bug fixing (priority: critical > high > medium)
+- User re-training (jika perlu)
 - Collect feedback untuk improvement
+- Celebrate success! 🎉
 
 ---
 
-### C. **Roadmap Phase 2 (Post Go-Live)**
+### C. **Roadmap Phase 2 (Post Go-Live: Februari 2027+)**
 
-#### **MEI-JUNI 2026: Reporting & Analytics**
-
-- Laporan efisiensi material (BOM comparison)
-- Dashboard BI (Business Intelligence)
-- Prediksi demand dengan AI/ML (basic)
-
-#### **JULI-AGUSTUS 2026: Integration**
+#### **FEBRUARI - MARET 2027: Integration & Advanced Features**
 
 - Integrasi dengan accounting software (Accurate/Zahir)
-- Integrasi dengan customer portal (jika ada)
-- API untuk vendor (jika diperlukan)
+- API untuk customer portal (jika diperlukan)
+- API untuk vendor EDI (Electronic Data Interchange)
+- Advanced reporting (AI/ML basic predictions)
 
-#### **SEPTEMBER+ 2026: Advanced Features**
+#### **APRIL - MEI 2027: Optimization & Scale**
+
+- Performance optimization (query tuning, caching)
+- Mobile App enhancement (iOS version jika perlu)
+- Fraud detection AI model training
+- Predictive maintenance (machine downtime prediction)
+
+#### **JUNI 2027+: Future Features**
 
 - Modul HR/Payroll (jika diperlukan)
-- Mobile App iOS (jika ada user iPhone)
-- Predictive maintenance (prediksi mesin rusak)
+- IoT integration (sensor mesin, RFID material)
+- Blockchain untuk supply chain transparency (future R&D)
+- Multi-factory support (jika ekspansi)
 
 ---
 
@@ -4783,19 +4892,37 @@ Fitur lengkap: Manufacturing, Inventory, Sales, Accounting, HR, dll.
 1. **Review Presentasi Ini**
    - Diskusi dengan tim management
    - Tanyakan hal yang belum jelas
+   - Schedule meeting untuk Q&A session
 
 2. **Approve Budget**
    - Server (Rp 20,000,000 - 30,000,000/tahun)
    - Maintenance & Support (Rp 10,000,000 - 15,000,000/tahun)
    - Training (Rp 5,000,000)
+   - Contingency fund (Rp 10,000,000 untuk issue tak terduga)
 
-3. **Set Timeline**
-   - Tentukan target go-live (rekomendasi: 1 April 2026)
-   - Alokasi tim untuk UAT & training
+3. **Set Timeline** 🎯
+   - **Target Go-Live: JANUARI 2027** (confirmed)
+   - **Fase Development: Februari - Mei 2026** (4 bulan)
+   - **Fase Testing: Juni - Agustus 2026** (3 bulan)
+   - **Fase Migration & Training: September - Oktober 2026** (2 bulan)
+   - **Fase Preparation: November - Desember 2026** (2 bulan)
+   - **Team allocation**: Menyusul (akan dikonfirmasi setelah budget approval)
+     - UAT Team: 10-15 pilot users (dari berbagai departemen)
+     - Training coordinators: 2-3 senior staff
+     - On-site support: Developer + IT (during go-live week)
 
-4. **Prepare Data**
+4. **Prepare Data** (Mulai Q3 2026)
    - Kumpulkan master data (material, artikel, user, dll)
-   - Siapkan untuk data migration
+   - Audit & clean existing data (remove duplicates)
+   - Standardize naming convention (material codes, artikel names)
+   - Siapkan historical data (optional: 3-6 bulan terakhir)
+   - Assign data migration coordinator
+
+5. **Communication Plan**
+   - Announce ERP project ke seluruh karyawan (Q2 2026)
+   - Monthly progress update ke management
+   - Weekly newsletter untuk user awareness (Q4 2026)
+   - Change management strategy (minimize resistance)
 
 ---
 
@@ -4815,11 +4942,13 @@ Fitur lengkap: Manufacturing, Inventory, Sales, Accounting, HR, dll.
 
 ---
 
-*Document Version: 3.0 - Dual Trigger Production System*  
-*Last Updated: 30 Januari 2026*  
+*Document Version: 4.0 - Security & Timeline Update*  
+*Last Updated: 2 Februari 2026*  
 *Major Changes:*
+- *v4.0 (02-Feb-2026): Added Fraud Prevention System, Role 23 (System/Bot), Refined PBAC, Updated Timeline (Go-Live: Jan 2027)*
 - *v3.0 (30-Jan-2026): Added Dual Trigger System (PO Kain PARTIAL + PO Label RELEASED)*
 - *v2.0 (28-Jan-2026): Added Warehouse Finishing 2-Stage + UOM Conversion*
 - *v1.0 (15-Jan-2026): Initial Release*
 
-*Confidential - PT Quty Karunia Manufacturing*
+*Confidential - PT Quty Karunia Manufacturing*  
+*🎯 Target Go-Live: Januari 2027*
