@@ -2519,9 +2519,23 @@ Admin packing input **8 CTN**, tapi system inventory harus record dalam **pieces
 🐍 Python 3.11+ (FastAPI Framework)
 ├─ FastAPI: API REST untuk komunikasi frontend-backend
 ├─ PostgreSQL: Database utama (27+ tabel)
-├─ Redis: Cache untuk performa cepat
+├─ Redis: Cache & Message Broker
 ├─ JWT: Token untuk keamanan login
-└─ Pydantic: Validasi data otomatis
+├─ Pydantic: Validasi data otomatis
+├─ SQLAlchemy 2.0 (Async): ORM modern
+├─ Alembic: Database migration & versioning
+└─ Celery / ARQ: Asynchronous Task Queue Worker 🆕
+
+🔄 Async Processing (Background Tasks):
+├─ Celery Worker (alternatif: ARQ)
+├─ Redis sebagai Message Broker
+├─ Tugas Berat yang Di-offload:
+│  ├─ Generate Laporan PDF (Produksi Bulanan)
+│  ├─ Re-kalkulasi HPP (Cost Analysis)
+│  ├─ Email/SMS Notification (Approval, Alert)
+│  ├─ Export Excel (Material Usage Report)
+│  └─ Backup Database (Daily at 03:00 AM)
+└─ Benefit: FastAPI main thread tidak hang, response tetap cepat
 
 🔒 Keamanan:
 ├─ PBAC (Permission-Based Access Control) - 22 roles
@@ -2534,6 +2548,10 @@ Admin packing input **8 CTN**, tapi system inventory harus record dalam **pieces
 - Mudah dipelajari (untuk maintenance tim lokal)
 - Banyak library (untuk AI/ML di masa depan)
 - Cepat develop (hemat waktu & biaya)
+
+**🆕 Mengapa Async Processing Penting?**:
+- **Masalah Tanpa Worker**: Generate PDF laporan 50 halaman bisa butuh 10-15 detik. Jika dilakukan di main thread FastAPI, user yang request akan wait 15 detik (bad UX), dan request lain yang masuk akan queue (server terlihat hang).
+- **Solusi dengan Celery/ARQ**: Request generate PDF langsung return "Task submitted, please wait..." (200ms), kemudian worker proses di background. User bisa lihat progres bar dan notifikasi saat selesai.
 
 ---
 
@@ -2567,7 +2585,8 @@ Admin packing input **8 CTN**, tapi system inventory harus record dalam **pieces
 ├─ Room Database: Offline storage
 ├─ WorkManager: Background sync otomatis
 ├─ Jetpack Compose: UI modern
-└─ Retrofit: HTTP client untuk API
+├─ Retrofit: HTTP client untuk API
+└─ App Updater Module: Cek versi ke server & download APK update otomatis
 
 📡 Offline Mode:
 ├─ Data scan disimpan di HP
@@ -2605,12 +2624,320 @@ Core Tables:
 Performance:
 ├─ Indexing: 30+ indexes untuk query cepat
 ├─ Materialized Views: Dashboard PPIC (refresh tiap 5 menit)
-└─ Partitioning: Tabel besar dipartisi per bulan
+├─ Partitioning: Tabel besar dipartisi per bulan
+└─ 🆕 Timezone Strategy: UTC di database, WIB di display layer
+
+🌐 Timezone Configuration (Critical for Audit):
+├─ PostgreSQL: SET timezone = 'UTC'
+├─ Backend API: Simpan semua timestamp di UTC
+├─ Frontend Display: Convert UTC → WIB (UTC+7) saat render
+└─ Benefit: Audit trail akurat, tidak bingung saat daylight saving
+
+🔄 Database Migration & Versioning:
+├─ Tool: Alembic (integrated dengan SQLAlchemy)
+├─ Version Control: Migration files di Git
+├─ Auto-generate: Alembic detect schema changes
+├─ Rollback Support: Downgrade jika migration error
+└─ Production Flow:
+   1. Developer buat migration (local)
+   2. Test di staging environment
+   3. Review migration SQL (manual check)
+   4. Deploy ke production (kubectl apply / docker-compose up)
+   5. Alembic auto-run pending migrations
+
+Contoh Migration File:
+```python
+"""add_mo_status_partial_mode
+
+Revision ID: a1b2c3d4
+Create Date: 2026-01-25 14:30:00
+"""
+from alembic import op
+import sqlalchemy as sa
+
+def upgrade():
+    # Add new column 'mo_status' with default 'DRAFT'
+    op.add_column('manufacturing_orders', 
+                  sa.Column('mo_status', sa.String(20), 
+                           server_default='DRAFT'))
+    # Add check constraint
+    op.create_check_constraint(
+        'ck_mo_status_valid',
+        'manufacturing_orders',
+        "mo_status IN ('DRAFT', 'PARTIAL', 'RELEASED')"
+    )
+
+def downgrade():
+    # Rollback: remove column
+    op.drop_constraint('ck_mo_status_valid', 'manufacturing_orders')
+    op.drop_column('manufacturing_orders', 'mo_status')
+```
 ```
 
 ---
 
-### E. **Infrastructure (Production)**
+### E. **Document & Label Generation** 🆕
+
+#### **PDF Generation untuk Dokumen Manufaktur**
+
+**Library**: WeasyPrint (HTML to PDF) + Jinja2 Templates
+
+**Dokumen yang Di-generate**:
+```
+📄 Production Documents:
+├─ SPK (Surat Perintah Kerja)
+│  ├─ Header: No SPK, Artikel, Target Qty
+│  ├─ BOM Material List (tabel)
+│  ├─ QR Code untuk tracking
+│  └─ Signature area (SPV, Manager)
+│
+├─ Surat Jalan (Delivery Note)
+│  ├─ From Department → To Department
+│  ├─ Material/WIP details
+│  ├─ Barcode untuk scan
+│  └─ Received by (signature area)
+│
+├─ Laporan Produksi Bulanan (Monthly Report)
+│  ├─ Executive Summary (1 page)
+│  ├─ Production Chart (efficiency, yield)
+│  ├─ Material Usage Detail (20+ pages)
+│  └─ Reject Analysis (by department)
+│
+└─ Invoice/Purchase Order
+   ├─ Vendor details
+   ├─ Material list dengan harga
+   ├─ Total calculation
+   └─ Terms & conditions
+```
+
+**Mengapa WeasyPrint?**
+- **Pro**: HTML/CSS familiar (designer web bisa buat template), support Unicode (Bahasa Indonesia + simbol), rendering cepat (~1-2 detik per halaman)
+- **Cons**: Tidak bisa edit PDF hasil (read-only), butuh Linux fonts untuk production
+- **Alternatif**: ReportLab (lebih low-level, Python code untuk layout, lebih cepat tapi susah maintain)
+
+**Contoh Template SPK** (Jinja2 + HTML):
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    @page { size: A4; margin: 2cm; }
+    .header { text-align: center; font-size: 18pt; }
+    .material-table { width: 100%; border-collapse: collapse; }
+    .material-table th, td { border: 1px solid #000; padding: 5px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>SURAT PERINTAH KERJA</h1>
+    <p>PT QUTY KARUNIA - Soft Toy Manufacturing</p>
+  </div>
+  
+  <table>
+    <tr><td>No SPK:</td><td>{{ spk.no_spk }}</td></tr>
+    <tr><td>Artikel:</td><td>{{ spk.artikel_code }} - {{ spk.artikel_name }}</td></tr>
+    <tr><td>Target:</td><td>{{ spk.target_qty }} {{ spk.uom }}</td></tr>
+    <tr><td>Deadline:</td><td>{{ spk.deadline | date_format }}</td></tr>
+  </table>
+  
+  <h3>Material Requirement:</h3>
+  <table class="material-table">
+    <thead>
+      <tr>
+        <th>No</th><th>Material Code</th><th>Material Name</th>
+        <th>Qty</th><th>UOM</th><th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for mat in materials %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ mat.code }}</td>
+        <td>{{ mat.name }}</td>
+        <td>{{ mat.qty | number_format }}</td>
+        <td>{{ mat.uom }}</td>
+        <td>{{ mat.stock_status }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  
+  <div style="margin-top: 50px;">
+    <img src="data:image/png;base64,{{ qr_code_base64 }}" />
+    <p>Scan QR untuk tracking progres</p>
+  </div>
+  
+  <div class="signature" style="margin-top: 100px;">
+    <table style="width: 100%;">
+      <tr>
+        <td style="width: 33%;">Dibuat Oleh:<br><br><br>_____________<br>Admin PPIC</td>
+        <td style="width: 33%;">Disetujui Oleh:<br><br><br>_____________<br>SPV {{ dept }}</td>
+        <td style="width: 33%;">Diketahui Oleh:<br><br><br>_____________<br>Manager</td>
+      </tr>
+    </table>
+  </div>
+</body>
+</html>
+```
+
+**Backend API untuk Generate PDF**:
+```python
+# File: app/services/pdf_service.py
+from weasyprint import HTML
+from jinja2 import Environment, FileSystemLoader
+import qrcode
+import io
+import base64
+
+class PDFService:
+    def __init__(self):
+        self.jinja_env = Environment(
+            loader=FileSystemLoader('app/templates/pdf')
+        )
+    
+    async def generate_spk_pdf(self, spk_id: int) -> bytes:
+        # Fetch SPK data from database
+        spk = await get_spk_detail(spk_id)
+        materials = await get_spk_materials(spk_id)
+        
+        # Generate QR code
+        qr = qrcode.make(f"SPK-{spk.no_spk}")
+        buffer = io.BytesIO()
+        qr.save(buffer, format='PNG')
+        qr_base64 = base64.b64encode(buffer.getvalue()).decode()
+        
+        # Render template
+        template = self.jinja_env.get_template('spk_template.html')
+        html_content = template.render(
+            spk=spk,
+            materials=materials,
+            qr_code_base64=qr_base64
+        )
+        
+        # Convert HTML to PDF (offload ke Celery worker!)
+        pdf_bytes = HTML(string=html_content).write_pdf()
+        return pdf_bytes
+
+# File: app/api/endpoints/spk.py
+from app.services.pdf_service import PDFService
+from app.tasks.celery_tasks import generate_pdf_task
+from fastapi import BackgroundTasks
+from fastapi.responses import FileResponse
+
+@router.get("/spk/{spk_id}/pdf")
+async def download_spk_pdf(
+    spk_id: int,
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user)
+):
+    # Option 1: Generate sync (untuk dokumen kecil <5 pages)
+    # pdf_service = PDFService()
+    # pdf_bytes = await pdf_service.generate_spk_pdf(spk_id)
+    # return Response(content=pdf_bytes, media_type="application/pdf")
+    
+    # Option 2: Generate async via Celery (untuk laporan besar >10 pages)
+    task = generate_pdf_task.delay(spk_id, 'spk')  # Offload ke worker
+    return {
+        "message": "PDF generation started",
+        "task_id": task.id,
+        "status_url": f"/api/tasks/{task.id}/status"
+    }
+    # Frontend poll /api/tasks/{task_id}/status setiap 2 detik
+    # Ketika status = 'SUCCESS', download PDF dari /api/tasks/{task_id}/result
+```
+
+#### **Label Barcode Printing** 🏷️
+
+**Use Case**:
+- Label material (saat receiving dari vendor)
+- Label WIP (saat transfer antar departemen)
+- Label Finished Good (saat packing)
+
+**Printer Type**:
+- **Thermal Printer** (Zebra ZD420, TSC TTP-244 Pro)
+- Protokol: ZPL (Zebra) atau TSPL (TSC)
+- Koneksi: USB, Ethernet, atau WiFi
+
+**Raw Printing** (Direct Socket untuk printer network):
+```python
+# File: app/services/label_printer.py
+import socket
+import barcode
+from barcode.writer import ImageWriter
+import io
+
+class LabelPrinterService:
+    def __init__(self, printer_ip: str, port: int = 9100):
+        self.printer_ip = printer_ip
+        self.port = port
+    
+    def print_material_label(self, material_code: str, qty: float, uom: str):
+        """
+        Print label untuk material receiving
+        Format: Barcode + Material Info
+        """
+        # Generate ZPL command (Zebra Printer Language)
+        zpl_template = f"""
+        ^XA
+        ^FO50,50^BY2^BCN,100,Y,N,N
+        ^FD{material_code}^FS
+        ^FO50,180^A0N,30,30^FDMaterial: {material_code}^FS
+        ^FO50,220^A0N,25,25^FDQty: {qty} {uom}^FS
+        ^FO50,260^A0N,20,20^FDDate: {{date}}^FS
+        ^XZ
+        """
+        
+        # Send ke printer via socket
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect((self.printer_ip, self.port))
+            sock.send(zpl_template.encode('utf-8'))
+            sock.close()
+            return {"success": True, "message": "Label printed"}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    
+    def print_finishgood_label(self, fg_code: str, week: str, 
+                                destination: str, carton_no: int, 
+                                total_cartons: int):
+        """
+        Print label untuk carton Finished Good
+        Include: Article Code, Week, Destination, Carton X of Y
+        """
+        zpl_template = f"""
+        ^XA
+        ^FO50,30^A0N,40,40^FDPT QUTY KARUNIA^FS
+        ^FO50,80^BY3^BCN,120,Y,N,N
+        ^FD{fg_code}^FS
+        ^FO50,220^A0N,35,35^FDArticle: {fg_code}^FS
+        ^FO50,270^A0N,30,30^FDWeek: {week}^FS
+        ^FO50,310^A0N,30,30^FDDest: {destination}^FS
+        ^FO50,350^A0N,25,25^FDCarton {carton_no} of {total_cartons}^FS
+        ^XZ
+        """
+        # ... (sama seperti di atas, send via socket)
+
+# API Endpoint
+@router.post("/labels/print-material")
+async def print_material_label(
+    material_code: str,
+    qty: float,
+    uom: str,
+    current_user: User = Depends(get_current_user)
+):
+    printer = LabelPrinterService(printer_ip="192.168.1.100")
+    result = printer.print_material_label(material_code, qty, uom)
+    return result
+```
+
+**Alternatif** (jika tidak ada thermal printer):
+- Generate PDF label (4 label per A4 sheet)
+- Print dengan printer kantor biasa
+- Gunting manual dan tempel
+
+---
+
+### F. **Infrastructure (Production)**
 ```
 🐳 Docker Containers
 ├─ Backend Container (Python FastAPI)
@@ -2631,13 +2958,417 @@ Performance:
 ├─ Grafana: Dashboard monitoring
 ├─ Alertmanager: Alert jika server down
 └─ Backup otomatis tiap hari (03:00 AM)
+
+🗄️ Backup Strategy (3-2-1 Rule): 🆕 ENHANCED
+├─ Tier 1 - Local Same Server:
+│  ├─ PostgreSQL dump (.sql) ke /backups/
+│  ├─ Docker volumes snapshot (bila perlu restore cepat)
+│  ├─ Schedule: Daily 03:00 AM (Celery Periodic Task)
+│  └─ ⚠️ Risk: Jika HDD server jebol, data hilang!
+│
+├─ Tier 2 - Off-site Local (Network Storage): 🆕
+│  ├─ Rsync backup files ke NAS (Network Attached Storage)
+│  ├─ Location: Ruangan berbeda / Gedung berbeda (jika ada)
+│  ├─ Protocol: NFS mount atau SMB/CIFS
+│  ├─ Retention: 30 hari (auto-delete old backups)
+│  ├─ Estimated Cost: NAS 4TB + Raid 1 = Rp 8-12 juta (one-time)
+│  └─ Benefit: Aman dari kerusakan server, tapi tetap on-premise
+│  
+│  Script Example:
+│  ```bash
+│  # /scripts/backup-to-nas.sh
+│  #!/bin/bash
+│  BACKUP_FILE="/backups/erp_$(date +%Y%m%d_%H%M%S).sql"
+│  NAS_PATH="/mnt/nas-backup/erp/"
+│  
+│  # Dump database
+│  docker exec erp-postgres pg_dump -U erp_user erp_db > $BACKUP_FILE
+│  
+│  # Compress (gzip reduce size ~70%)
+│  gzip $BACKUP_FILE
+│  
+│  # Rsync to NAS
+│  rsync -avz $BACKUP_FILE.gz $NAS_PATH
+│  
+│  # Delete local file older than 7 days
+│  find /backups/ -name "*.sql.gz" -mtime +7 -delete
+│  
+│  # Delete NAS file older than 30 days
+│  find $NAS_PATH -name "*.sql.gz" -mtime +30 -delete
+│  ```
+│
+└─ Tier 3 - Cloud Backup (Disaster Recovery): 🆕
+   ├─ Upload encrypted backup ke cloud storage
+   ├─ Options:
+   │  ├─ AWS S3 Glacier Deep Archive: $1/TB/month (cheapest, slow restore)
+   │  ├─ Google Cloud Storage (Coldline): $4/TB/month (balance)
+   │  └─ Backblaze B2: $5/TB/month (no egress fee, good for restore)
+   │
+   ├─ Encryption: GPG/AES-256 sebelum upload
+   ├─ Retention: 90 hari (compliance requirement)
+   ├─ Schedule: Weekly (tiap Minggu 04:00 AM)
+   ├─ Estimated Cost: ~100 GB backup × $1/month = $1-2/month (~Rp 30k/bulan)
+   └─ Use Case: Disaster recovery (kebakaran, banjir, ransomware)
+   
+   Script Example (with Rclone):
+   ```bash
+   # /scripts/backup-to-cloud.sh
+   #!/bin/bash
+   BACKUP_FILE="/backups/erp_weekly_$(date +%Y%m%d).sql.gz"
+   ENCRYPTED_FILE="$BACKUP_FILE.gpg"
+   
+   # Encrypt backup (GPG passphrase di environment var)
+   gpg --batch --yes --passphrase "$GPG_PASSPHRASE" \
+       -c $BACKUP_FILE -o $ENCRYPTED_FILE
+   
+   # Upload ke AWS S3 via rclone
+   rclone copy $ENCRYPTED_FILE aws-s3:quty-erp-backup/weekly/
+   
+   # Cleanup
+   rm $ENCRYPTED_FILE
+   
+   # Alert jika gagal
+   if [ $? -ne 0 ]; then
+     curl -X POST "https://api.telegram.org/botXXX/sendMessage" \
+          -d "chat_id=123456&text=Cloud backup FAILED!"
+   fi
+   ```
+
+🚨 Why Off-site Backup Critical?
+├─ Real Risk di Indonesia:
+│  ├─ Kebakaran: Server room terbakar → data lokal hilang 100%
+│  ├─ Banjir: Jakarta/Semarang rawan banjir → server terendam
+│  ├─ Ransomware: Hacker encrypt semua data → minta tebusan Bitcoin
+│  └─ Hardware Failure: HDD/SSD tiba-tiba mati (lifetime ~5 tahun)
+│
+├─ Without Off-site:
+│  └─ Jika server + NAS di ruangan sama terbakar → SEMUA DATA HILANG!
+│     (Bisnis bisa collapse, 3-6 bulan data produksi hilang)
+│
+└─ With Cloud Backup (Tier 3):
+   └─ Worst case: Restore dari cloud (butuh 2-3 jam download)
+      Bisnis bisa recover dalam 1 hari, tidak kehilangan data.
+
+📊 Restore Time Objective (RTO):
+├─ Tier 1 (local): 15 menit (restore dari /backups/)
+├─ Tier 2 (NAS): 30-60 menit (rsync dari NAS)
+└─ Tier 3 (cloud): 2-4 jam (download + decrypt + restore)
+```
+
+---
+
+### G. **Deployment & Update Strategy** 🆕
+
+#### **Strategi Deployment Lokal** (On-Premise Server)
+
+**Challenge**:
+- Tidak bisa pakai cloud auto-update (Play Store, AWS CodeDeploy)
+- Manual deployment ke server lokal
+- APK Android harus distribute manual ke HP karyawan
+
+**Solution - 3 Stage Deployment**:
+
+```
+🔄 Backend/Frontend Update:
+├─ Development (Local)
+│  ├─ Developer code di laptop
+│  ├─ Test di local Docker
+│  └─ Push ke Git repository
+│
+├─ Staging (Test Server)
+│  ├─ Git pull latest code
+│  ├─ Run migration: alembic upgrade head
+│  ├─ Docker Compose rebuild:
+│  │  docker-compose -f docker-compose.staging.yml up -d --build
+│  ├─ Test by QA team (1-2 hari)
+│  └─ If OK → promote to production
+│
+└─ Production (Main Server)
+   ├─ Scheduled maintenance (Sabtu 22:00-23:00)
+   ├─ Announce to users (email/WA group)
+   ├─ Backup database before update (safety)
+   ├─ Git pull production branch
+   ├─ Run migration: alembic upgrade head
+   ├─ Docker Compose rebuild:
+   │  docker-compose -f docker-compose.production.yml up -d --build
+   ├─ Smoke test (check critical APIs)
+   └─ Monitor logs for 30 minutes
+
+🚨 Rollback Plan (jika error):
+   1. Stop containers: docker-compose down
+   2. Restore database: psql < backup_pre_update.sql
+   3. Git checkout previous version
+   4. Docker Compose up old version
+   5. Notify team & investigate issue
+```
+
+#### **APK Distribution & Auto-Update** 🤖 🆕
+
+**Problem**:
+- Android APK tidak bisa auto-update via Play Store (karena internal only)
+- Manual download & install repot (50+ karyawan)
+- Susah track versi APK di setiap HP
+
+**Solution - Built-in Update Checker**:
+
+**Backend API** (`/api/mobile/check-update`):
+```python
+# File: app/api/endpoints/mobile.py
+from fastapi import APIRouter
+from pydantic import BaseModel
+
+router = APIRouter()
+
+class AppVersion(BaseModel):
+    version_code: int  # Integer: 1, 2, 3, ... (increment setiap release)
+    version_name: str  # String: "1.0.0", "1.1.0", "2.0.0"
+    apk_url: str       # URL download APK
+    release_notes: str # Changelog
+    force_update: bool # True = wajib update, False = opsional
+    min_supported_version: int  # Version code minimal yang masih didukung
+
+@router.get("/check-update")
+async def check_app_update(
+    current_version: int,  # dari query param
+    platform: str = "android"  # untuk future support iOS
+) -> dict:
+    """
+    Endpoint untuk cek versi terbaru APK.
+    Dipanggil saat app startup atau manual refresh.
+    """
+    # Hardcode atau simpan di database tabel 'app_versions'
+    LATEST_VERSION = AppVersion(
+        version_code=5,
+        version_name="1.2.0",
+        apk_url="http://192.168.1.10:8000/static/apk/erp-quty-v1.2.0.apk",
+        release_notes="""🆕 New Features:
+        - Dual MO Mode (PARTIAL/RELEASED)
+        - Warehouse Finishing 2-stage
+        - Performance improvements
+        
+        🐛 Bug Fixes:
+        - Fix barcode scanner crash on low light
+        - Fix material debt calculation
+        """,
+        force_update=False,  # Set True jika breaking changes
+        min_supported_version=3  # Versi 1, 2 tidak support lagi
+    )
+    
+    if current_version < LATEST_VERSION.min_supported_version:
+        return {
+            "update_available": True,
+            "force_update": True,  # Paksa update (API tidak support versi lama)
+            "latest_version": LATEST_VERSION.dict(),
+            "message": "⚠️ Your app version is too old. Please update immediately."
+        }
+    
+    if current_version < LATEST_VERSION.version_code:
+        return {
+            "update_available": True,
+            "force_update": LATEST_VERSION.force_update,
+            "latest_version": LATEST_VERSION.dict(),
+            "message": "🆕 New version available. Update now!"
+        }
+    
+    return {
+        "update_available": False,
+        "message": "✅ You are using the latest version."
+    }
+
+@router.get("/download-apk/{version}")
+async def download_apk(version: str):
+    """
+    Serve APK file untuk download.
+    Alternative: gunakan Nginx static file serving.
+    """
+    apk_path = f"/var/www/apk/erp-quty-{version}.apk"
+    return FileResponse(
+        apk_path,
+        media_type="application/vnd.android.package-archive",
+        filename=f"erp-quty-{version}.apk"
+    )
+```
+
+**Android App - Update Checker** (Kotlin):
+```kotlin
+// File: app/src/main/kotlin/com/qutykarunia/erp/UpdateChecker.kt
+class UpdateChecker(private val context: Context) {
+    private val apiClient = ApiClient.getInstance()
+    
+    suspend fun checkForUpdates(): UpdateInfo? {
+        val currentVersion = BuildConfig.VERSION_CODE  // dari build.gradle
+        
+        try {
+            val response = apiClient.checkAppUpdate(currentVersion)
+            
+            if (response.update_available) {
+                return UpdateInfo(
+                    versionName = response.latest_version.version_name,
+                    versionCode = response.latest_version.version_code,
+                    downloadUrl = response.latest_version.apk_url,
+                    releaseNotes = response.latest_version.release_notes,
+                    forceUpdate = response.force_update
+                )
+            }
+        } catch (e: Exception) {
+            Log.e("UpdateChecker", "Failed to check update: ${e.message}")
+        }
+        
+        return null  // No update available or error
+    }
+    
+    fun showUpdateDialog(updateInfo: UpdateInfo, onConfirm: () -> Unit) {
+        val dialog = AlertDialog.Builder(context)
+            .setTitle("🆕 Update Tersedia")
+            .setMessage("""
+                Versi terbaru: ${updateInfo.versionName}
+                
+                ${updateInfo.releaseNotes}
+                
+                ${if (updateInfo.forceUpdate) 
+                    "⚠️ Update wajib dilakukan untuk melanjutkan." 
+                  else 
+                    "Update sekarang untuk fitur terbaru."}
+            """.trimIndent())
+            .setPositiveButton("Update Sekarang") { _, _ ->
+                downloadAndInstallApk(updateInfo.downloadUrl)
+            }
+        
+        // Jika force_update = true, dialog tidak bisa di-dismiss
+        if (!updateInfo.forceUpdate) {
+            dialog.setNegativeButton("Nanti Saja", null)
+        } else {
+            dialog.setCancelable(false)
+        }
+        
+        dialog.show()
+    }
+    
+    private fun downloadAndInstallApk(url: String) {
+        val request = DownloadManager.Request(Uri.parse(url))
+            .setTitle("ERP Quty Karunia Update")
+            .setDescription("Downloading APK...")
+            .setNotificationVisibility(
+                DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
+            )
+            .setDestinationInExternalFilesDir(
+                context,
+                Environment.DIRECTORY_DOWNLOADS,
+                "erp-update.apk"
+            )
+        
+        val downloadManager = context.getSystemService(
+            Context.DOWNLOAD_SERVICE
+        ) as DownloadManager
+        
+        val downloadId = downloadManager.enqueue(request)
+        
+        // Listen for download completion
+        val onComplete = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                val id = intent.getLongExtra(
+                    DownloadManager.EXTRA_DOWNLOAD_ID, -1
+                )
+                if (id == downloadId) {
+                    // Install APK (requires user permission)
+                    installApk(context)
+                }
+            }
+        }
+        
+        context.registerReceiver(
+            onComplete,
+            IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE)
+        )
+    }
+    
+    private fun installApk(context: Context) {
+        val apkFile = File(
+            context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS),
+            "erp-update.apk"
+        )
+        
+        val apkUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                apkFile
+            )
+        } else {
+            Uri.fromFile(apkFile)
+        }
+        
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(apkUri, "application/vnd.android.package-archive")
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or 
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+        }
+        
+        context.startActivity(intent)
+    }
+}
+
+// Di MainActivity.kt - Cek update saat app start
+class MainActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        
+        // Check for updates on app startup
+        lifecycleScope.launch {
+            val updateChecker = UpdateChecker(this@MainActivity)
+            val updateInfo = updateChecker.checkForUpdates()
+            
+            updateInfo?.let {
+                updateChecker.showUpdateDialog(it) {
+                    // User confirmed update
+                }
+            }
+        }
+    }
+}
+```
+
+**Workflow Update APK**:
+```
+1. Developer release APK baru (v1.2.0)
+   ├─ Build APK di Android Studio
+   ├─ Upload ke server: /var/www/apk/erp-quty-v1.2.0.apk
+   └─ Update backend database: app_versions.version_code = 5
+
+2. Karyawan buka app di HP
+   ├─ App call API /check-update (background)
+   ├─ Server respond: "update available"
+   └─ Dialog muncul: "Update Sekarang" atau "Nanti Saja"
+
+3. User tap "Update Sekarang"
+   ├─ Download APK dari server (via WiFi, ~15 MB)
+   ├─ Install prompt muncul (perlu izin "Install from Unknown Sources")
+   ├─ User tap "Install"
+   └─ App auto-restart dengan versi baru
+
+4. Jika force_update = true
+   ├─ Dialog tidak bisa di-close
+   ├─ User wajib update sebelum bisa pakai app
+   └─ Prevent old version access API (security/compatibility)
+```
+
+**Benefits**:
+- ✅ IT Admin tidak perlu install manual di 50+ HP
+- ✅ Update bisa dilakukan bertahap (rollout 10 user dulu, test, baru rollout semua)
+- ✅ User dapat notifikasi otomatis saat ada update
+- ✅ Force update untuk breaking changes critical
+
+**Alternative (jika IT resource terbatas)**:
+- Gunakan **Firebase App Distribution** (free untuk internal testing)
+- Upload APK ke Firebase, invite user via email
+- User download dari link Firebase (ada notifikasi push)
 ```
 
 ---
 
 ## <a name="keamanan"></a>🔒 7. KEAMANAN & HAK AKSES
 
-### A. **22 Roles Defined**
+### A. **23 Roles Defined** 🆕 (Updated with System Role & Fraud Prevention)
 
 | **No** | **Role** | **Akses** |
 |--------|----------|-----------|
@@ -2663,26 +3394,332 @@ Performance:
 | 20 | **QC Staff** | Input inspection, reject/approve |
 | 21 | **IT Admin** | Buat user, assign role, view audit trail |
 | 22 | **View-Only** | Lihat data (untuk trainee, auditor) |
+| 23 | **System / Bot** 🆕 | Hidden role untuk automated tasks (user_id: 0) |
+
+**🆕 Role 23: System / Bot** (Special Hidden Role):
+```
+Purpose: Untuk audit trail automated actions
+User ID: 0 (reserved, tidak bisa login)
+
+Use Cases:
+├─ Auto-reject SPK yang expired (lewat deadline >7 hari)
+├─ Auto-close MO yang sudah complete
+├─ Scheduled backup (tiap malam pukul 03:00)
+├─ Auto-notification email/SMS
+├─ Material stock alert trigger
+└─ Celery/ARQ background task execution
+
+Benefit:
+✅ Audit log jelas: "System" yang action, bukan admin random
+✅ Prevent confusion: Admin tidak disalahkan untuk auto-action
+✅ Compliance: External audit bisa bedakan human vs system action
+
+Example Audit Log:
+┌────────────────────────────────────────────────┐
+│ 02-Feb-2026 03:00 | System | AUTO_BACKUP    │
+│ 02-Feb-2026 08:15 | System | AUTO_CLOSE_MO  │
+│ 02-Feb-2026 08:15 | admin_ppic_01 | VIEW_MO  │
+└────────────────────────────────────────────────┘
+```
 
 ---
 
-### B. **Permission Matrix (PBAC)**
+### B. **Permission Matrix (PBAC)** 🆕 Refined with CRUD+A+V Logic
 
-Contoh permission untuk **Admin Produksi**:
+**Permission Types**:
+- **C**reate: Buat data baru
+- **R**ead: Lihat data
+- **U**pdate: Edit data existing
+- **D**elete: Hapus data (soft delete)
+- **A**pprove: Approve workflow
+- **V**oid: Batalkan/void dokumen (hard constraint)
 
+---
+
+#### **Refined Permission: Admin Produksi (Role 13)** 🆕
+
+**❌ OLD (MASALAH)**:
 ```
-✅ ALLOWED:
-- CREATE: SPK (semua departemen)
-- READ: MO, SPK, BOM Manufacturing
-- UPDATE: Daily Production Input
-- APPROVE: (none - butuh SPV)
-
-❌ DENIED:
-- CREATE: MO (hanya PPIC)
-- DELETE: SPK (hanya Manager)
-- APPROVE: Material Debt (butuh SPV)
-- VIEW: Financial Data (hanya Manager+)
+✅ CREATE: SPK (semua departemen) <- Bahaya! Bisa bikin SPK gelap
 ```
+
+**✅ NEW (SECURE)**:
+```yaml
+Admin Produksi:
+  ✅ ALLOWED:
+    - GENERATE: SPK (Strictly based on MO Data)
+      Logic: Ambil data dari MO yang sudah RELEASED
+      Qty/Material tidak bisa diubah manual (inherit dari BOM)
+      System validate: MO Status >= PARTIAL untuk Cutting/Emb
+                       MO Status >= RELEASED untuk Sewing/Finishing/Packing
+    
+    - READ: 
+      ├─ MO (Manufacturing Order) - untuk referensi
+      ├─ BOM Manufacturing - untuk cek material requirement
+      ├─ Stock WIP (Work In Progress) - untuk tahu availability
+      └─ SPK History - untuk tracking
+    
+    - UPDATE:
+      ├─ Progress Tracking (Daily Input Output)
+      ├─ Reject Quantity (dengan alasan & foto)
+      └─ Status SPK (Draft → In Progress → Completed)
+    
+    - PRINT:
+      ├─ SPK Ticket (PDF dengan QR Code)
+      └─ Material Request Form (jika stock kurang)
+  
+  ❌ DENIED:
+    - CREATE: SPK Manual (tanpa referensi MO)
+      Reason: Prevent "produksi gelap" (unauthorized production)
+      
+    - UPDATE: BOM Values (Qty per unit, material code)
+      Reason: Hanya Admin PPIC yang boleh (master data)
+      
+    - DELETE: Any data
+      Reason: Audit trail harus utuh, pakai VOID jika perlu batalkan
+      
+    - APPROVE: SPK / Material Debt
+      Reason: Butuh level SPV+ untuk approval
+      
+    - VIEW: Financial Data (Harga material, Cost per unit)
+      Reason: Sensitive data, hanya Manager+ dan Purchasing
+```
+
+**Impact**:
+- ✅ Prevent produksi tanpa PO (fraud)
+- ✅ Material tracking akurat (tidak bisa manipulasi qty)
+- ✅ Audit trail solid
+
+---
+
+#### **Refined Permission: Director (Role 1)** 🆕
+
+**❌ OLD (TERLALU LEMAH)**:
+```
+Director: View-only semua data + notifikasi approval
+```
+↑ Masalah: Direktur tidak bisa action apapun saat emergency!
+
+**✅ NEW (EMERGENCY POWER)**:
+```yaml
+Director:
+  ✅ ALLOWED:
+    - VIEW: All Data (Dashboard Executive, Real-time)
+      ├─ Financial Summary (Revenue, Cost, Margin)
+      ├─ Production KPI (Efficiency, Yield, OTD)
+      ├─ Material Stock Value (Total inventory Rp)
+      └─ Employee Performance (per department)
+    
+    - ACTION: Emergency Override 🚨
+      ├─ Emergency Unlock SPK (yang stuck/terkunci sistem)
+      ├─ Force Approve PO (bypass budget limit saat urgent)
+      ├─ Override Material Debt (izinkan produksi dengan stok -)
+      └─ Manual Close MO (jika ada bug sistem)
+      
+      ⚠️ Constraint:
+      • Setiap override tercatat di Audit Log dengan badge MERAH
+      • Notification otomatis ke IT Admin & Manager terkait
+      • Butuh input "Reason" (wajib, min 20 karakter)
+      • Max 5 override per hari (prevent abuse)
+    
+    - NOTIFICATION:
+      ├─ Real-time alert (Telegram/WhatsApp)
+      ├─ Weekly summary email (production performance)
+      └─ Monthly report (financial + operational)
+  
+  ❌ DENIED:
+    - CREATE/UPDATE: Master Data (Material, BOM, User)
+      Reason: Operational task, delegasi ke Manager/Admin
+      
+    - DELETE: Historical Data
+      Reason: Audit compliance, data tidak boleh hilang
+```
+
+**Emergency Override Log Example**:
+```
+┌───────────────────────────────────────────────────────────┐
+│ 🚨 EMERGENCY OVERRIDE - AUDIT LOG                         │
+├───────────────────────────────────────────────────────────┤
+│ Date: 02-Feb-2026 14:30                                   │
+│ User: director_rizaldy (Role: Director)                   │
+│ Action: FORCE_APPROVE_PO                                  │
+│ Target: PO-2026-0789 (IKHR504 KOHAIR - Rp 25,000,000)    │
+│                                                           │
+│ Original Status: PENDING_BUDGET_APPROVAL                  │
+│ Budget Limit: Rp 20,000,000 (EXCEEDED by Rp 5,000,000)   │
+│                                                           │
+│ Reason (Input Director):                                  │
+│ "Customer IKEA urgent order 2000 pcs AFTONSPARV.          │
+│  Kain KOHAIR stock critical (hanya 50 YARD).              │
+│  Delay 1 hari = penalty $5000. Approve exceptional."     │
+│                                                           │
+│ System Validation:                                        │
+│ ✅ Reason length: 120 characters (min 20)                 │
+│ ✅ Override count today: 2/5 (safe)                       │
+│ ✅ Notification sent: manager_ppic_01, it_admin_01        │
+│                                                           │
+│ Result: PO-2026-0789 status → APPROVED (by Director)     │
+└───────────────────────────────────────────────────────────┘
+```
+
+---
+
+#### **Refined Permission: SPV Cutting/Sewing/Finishing (Role 7-9)** 🆕
+
+**❌ OLD WORKFLOW (RAWAN ERROR)**:
+```
+SPV Cutting: "Edit SPK" ← Bahaya!
+```
+↑ Masalah: Jika SPK sudah berjalan (sudah potong 100 pcs), terus di-edit jadi 200 pcs, stok WIP chaos!
+
+**✅ NEW WORKFLOW (REVISION REQUEST)** 🆕:
+```yaml
+SPV Cutting/Sewing/Finishing:
+  ✅ ALLOWED:
+    - APPROVE: SPK Creation (dari Admin Produksi)
+    
+    - REQUEST_REVISION: SPK (tidak langsung edit!)
+      Workflow:
+      1. SPV klik "Request Revision" (bukan "Edit")
+      2. Input alasan revisi (wajib, min 20 char)
+      3. System void SPK lama:
+         - Status: ACTIVE → VOIDED
+         - Void reason: "Revised to SPK-2026-00123-R1"
+         - Void by: spv_cutting_01
+         - Void date: 02-Feb-2026 10:30
+      
+      4. System create SPK baru:
+         - No SPK: SPK-2026-00123-R1 (suffix R1 = Revision 1)
+         - Parent: SPK-2026-00123 (link ke SPK lama)
+         - Status: DRAFT (perlu re-approve Manager)
+         - Revision reason: Copy dari input SPV
+      
+      5. Manager approve SPK revisi (lihat history perubahan)
+      
+      6. SPK-R1 active, SPK lama tetap di database (audit trail)
+    
+    - APPROVE: Material Debt (stok minus sementara)
+    - APPROVE: Reject/Rework Decision
+    - VIEW: Department Performance (hanya dept sendiri)
+  
+  ❌ DENIED:
+    - UPDATE: SPK yang sudah IN_PROGRESS (pakai Revision!)
+    - DELETE: SPK History
+    - VIEW: Other Department Data (restrict by department_scope)
+    - VIEW: Cost/Price (financial data)
+```
+
+**SPK Revision History UI**:
+```
+┌──────────────────────────────────────────────────────┐
+│ SPK HISTORY - AFTONSPARV Cutting Body                │
+├──────────────────────────────────────────────────────┤
+│                                                      │
+│ ① SPK-2026-00123 (Original)                         │
+│    Created: 28-Jan-2026 08:00 by admin_prod_01      │
+│    Target: 480 pcs                                   │
+│    Status: ❌ VOIDED (02-Feb-2026 10:30)             │
+│    Void Reason: "BOM updated, fabric qty changed"   │
+│    Void By: spv_cutting_01                           │
+│    Progress saat di-void: 120/480 pcs (25%)         │
+│    [VIEW DETAILS]                                    │
+│                                                      │
+│ ② SPK-2026-00123-R1 (Revision 1) ← ACTIVE           │
+│    Created: 02-Feb-2026 10:35 by spv_cutting_01     │
+│    Target: 360 pcs (updated from 480)               │
+│    Status: ✅ IN_PROGRESS                            │
+│    Progress: 120/360 pcs (33%) - inherited from old │
+│    [VIEW DETAILS] [TRACK PROGRESS]                  │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+```
+
+**Benefits**:
+- ✅ History SPK tidak hilang (audit trail utuh)
+- ✅ WIP stock calculation akurat (tidak double count)
+- ✅ Manager tahu kenapa SPK di-revisi (transparency)
+
+---
+
+#### **Auto-Approve Logic: Manager Production (Role 2)** 🆕
+
+**❌ OLD (MANAGER BOTTLENECK)**:
+```
+Manager Production: Approve SPK (ALL SPK! 100+ per hari)
+```
+↑ Masalah: Manager lelah klik "Approve" terus → asal approve tanpa periksa → rawan fraud
+
+**✅ NEW (LIMIT APPROVAL)** 🆕:
+```yaml
+Manager Production:
+  Auto-Approve Conditions (System bypass Manager):
+  ├─ SPK sesuai BOM (material qty & code match 100%)
+  ├─ SPK linked to valid MO (MO Status >= PARTIAL/RELEASED)
+  ├─ No material debt (stock available)
+  ├─ Target qty <= MO target (tidak over-produksi)
+  └─ Created by authorized Admin (role verified)
+  
+  IF all conditions TRUE:
+    → SPK auto-approved by System (user_id: 0)
+    → Manager hanya dapat notification summary (harian)
+    → Approval log: "Auto-approved (standard SPK)"
+  
+  Manual Approval Required (Manager review):
+  ├─ Material variance > ±5% dari BOM
+  ├─ Material debt requested (stok minus)
+  ├─ Revision SPK (suffix -R1, -R2, etc)
+  ├─ Target qty > MO target (over-produksi)
+  ├─ Custom BOM (bukan standard artikel)
+  └─ Priority "URGENT" flag (expedite request)
+  
+  IF any condition TRUE:
+    → SPK status: PENDING_MANAGER_APPROVAL
+    → Manager dapat notification: "Action required"
+    → UI highlight red: Alasan kenapa perlu manual review
+```
+
+**Manager Dashboard - Approval Queue** 🆕:
+```
+┌────────────────────────────────────────────────────────┐
+│ MANAGER PRODUCTION - APPROVAL QUEUE                    │
+├────────────────────────────────────────────────────────┤
+│                                                        │
+│ 📊 Summary Today (02-Feb-2026):                        │
+│ ├─ Total SPK Created: 127                             │
+│ ├─ Auto-Approved: 119 (93.7%) ✅                       │
+│ └─ Need Your Review: 8 (6.3%) ⚠️                       │
+│                                                        │
+│ ⚠️ PENDING YOUR APPROVAL (8):                          │
+│                                                        │
+│ 1. SPK-2026-00134 (Cutting - AFTONSPARV)              │
+│    🚨 Material Variance: +12% (KOHAIR)                 │
+│    Reason: "Fabric defect, butuh extra 8 YARD"        │
+│    Created by: admin_prod_02                           │
+│    [APPROVE] [REJECT] [REQUEST_INFO]                   │
+│                                                        │
+│ 2. SPK-2026-00135-R1 (Sewing - KRAMIG)                │
+│    🔄 Revision from SPK-00135                          │
+│    Change: Target 480 → 360 pcs (customer reduce)     │
+│    Requested by: spv_sewing_02                         │
+│    [APPROVE] [REJECT] [VIEW_HISTORY]                   │
+│                                                        │
+│ 3. SPK-2026-00136 (Finishing - AFTONSPARV)            │
+│    📦 Material Debt: -5.2 kg (Filling)                 │
+│    ETA Material: Today 15:00 (PO-2026-0456)           │
+│    Requested by: admin_finishing_03                    │
+│    [APPROVE] [REJECT] [CHECK_PO]                       │
+│                                                        │
+│ ... (5 more items)                                     │
+│                                                        │
+│ [APPROVE ALL STANDARD] [VIEW ALL] [FILTER]             │
+└────────────────────────────────────────────────────────┘
+```
+
+**Benefits**:
+- ✅ Manager fokus review yang critical only (8 dari 127 = 6%)
+- ✅ Approval cepat (119 SPK auto-approved dalam hitungan detik)
+- ✅ Reduce human error (system validasi ketat)
+- ✅ Audit log jelas: Auto vs Manual approval
 
 ---
 
@@ -2707,6 +3744,389 @@ Semua aktivitas dicatat:
 - Tahu siapa yang ubah data
 - Investigasi jika ada masalah
 - Compliance (untuk audit external)
+
+---
+
+### D. **Database Security Flags** 🆕 (Fraud Prevention)
+
+#### **1. can_see_cost (Boolean Flag)** 💰
+
+**Problem**:
+- Admin Cutting tidak perlu tahu harga kain per meter (Rp 150,000/YD)
+- Admin Sewing tidak perlu tahu cost per unit (Rp 85,000/pcs)
+- **Risk**: Data harga bocor ke kompetitor via karyawan
+
+**Solution**: Role-based cost visibility
+
+**Database Schema** (`users` table):
+```sql
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    role_id INTEGER REFERENCES roles(id),
+    department_id INTEGER REFERENCES departments(id),
+    can_see_cost BOOLEAN DEFAULT FALSE,  -- 🆕 Flag
+    department_scope INTEGER[],          -- 🆕 Array
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+**Role Assignment**:
+```yaml
+can_see_cost: TRUE (Boleh lihat harga):
+├─ Director (semua data financial)
+├─ Manager PPIC (untuk cost analysis)
+├─ Manager Purchasing (nego vendor)
+├─ Purchasing Staff (buat PO dengan harga)
+├─ Finance Staff (accounting)
+└─ IT Admin / Developer (untuk debug)
+
+can_see_cost: FALSE (Hanya lihat Qty, HIDE harga):
+├─ Admin Produksi (semua dept)
+├─ Admin Cutting/Sewing/Finishing/Packing
+├─ Warehouse Staff (hanya qty stock)
+├─ QC Staff (hanya qty reject)
+└─ SPV (kecuali SPV Finance)
+```
+
+**Backend API Middleware**:
+```python
+# File: app/api/dependencies.py
+from fastapi import Depends, HTTPException
+from app.models.user import User
+
+async def check_cost_permission(current_user: User = Depends(get_current_user)):
+    """
+    Middleware untuk protect endpoint yang expose financial data.
+    Jika user.can_see_cost = False, return 403 Forbidden.
+    """
+    if not current_user.can_see_cost:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "INSUFFICIENT_PERMISSION",
+                "message": "You are not authorized to view cost/price data.",
+                "required_permission": "can_see_cost"
+            }
+        )
+    return current_user
+
+# Usage di endpoint
+@router.get("/materials/{material_id}")
+async def get_material_detail(
+    material_id: int,
+    current_user: User = Depends(get_current_user)
+):
+    material = await get_material(material_id)
+    
+    # Conditional response based on permission
+    if current_user.can_see_cost:
+        return {
+            "code": material.code,
+            "name": material.name,
+            "stock_qty": material.stock_qty,
+            "uom": material.uom,
+            "unit_price": material.unit_price,      # 💰 Show price
+            "total_value": material.stock_qty * material.unit_price,
+            "supplier": material.supplier
+        }
+    else:
+        return {
+            "code": material.code,
+            "name": material.name,
+            "stock_qty": material.stock_qty,
+            "uom": material.uom,
+            "unit_price": "***HIDDEN***",           # 🔒 Hide price
+            "total_value": "***HIDDEN***",
+            "supplier": material.supplier
+        }
+```
+
+**Frontend UI - Conditional Rendering**:
+```typescript
+// File: frontend/src/components/MaterialTable.tsx
+import { useAuthStore } from '@/store/authStore';
+
+const MaterialTable = ({ materials }) => {
+  const { currentUser } = useAuthStore();
+  
+  return (
+    <table>
+      <thead>
+        <tr>
+          <th>Material Code</th>
+          <th>Name</th>
+          <th>Stock Qty</th>
+          {currentUser.can_see_cost && (
+            <>
+              <th>Unit Price</th>
+              <th>Total Value</th>
+            </>
+          )}
+        </tr>
+      </thead>
+      <tbody>
+        {materials.map(mat => (
+          <tr key={mat.id}>
+            <td>{mat.code}</td>
+            <td>{mat.name}</td>
+            <td>{mat.stock_qty} {mat.uom}</td>
+            {currentUser.can_see_cost && (
+              <>
+                <td>Rp {mat.unit_price.toLocaleString()}</td>
+                <td>Rp {mat.total_value.toLocaleString()}</td>
+              </>
+            )}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+};
+```
+
+**Mobile App - Hide Price**:
+```kotlin
+// File: mobile/app/src/.../MaterialDetailScreen.kt
+if (currentUser.canSeeCost) {
+    Text(text = "Unit Price: Rp ${material.unitPrice}")
+    Text(text = "Total Value: Rp ${material.totalValue}")
+} else {
+    // Don't render price fields at all
+    Text(
+        text = "Price: ***RESTRICTED***",
+        color = Color.Gray,
+        fontStyle = FontStyle.Italic
+    )
+}
+```
+
+---
+
+#### **2. department_scope (Array/JSON Flag)** 🏢
+
+**Problem**:
+- Admin Cutting bisa lihat (bahkan edit) data Sewing department
+- SPV Sewing bisa approve SPK Cutting (cross-department chaos)
+- **Risk**: Data leak antar departemen, fraud collaboration
+
+**Solution**: Restrict data access by department
+
+**Database Schema**:
+```sql
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(50),
+    role_id INTEGER,
+    department_scope INTEGER[],  -- 🆕 Array of department IDs
+    -- Example values:
+    -- Admin Cutting: [1]           (hanya dept Cutting)
+    -- SPV Cutting:   [1]           (hanya dept Cutting)
+    -- Manager Prod:  [1,2,3,4,5]   (semua dept produksi)
+    -- Director:      NULL          (unrestricted, semua dept)
+    CONSTRAINT ck_dept_scope CHECK (
+        department_scope IS NULL OR array_length(department_scope, 1) > 0
+    )
+);
+
+CREATE TABLE departments (
+    id SERIAL PRIMARY KEY,
+    code VARCHAR(20) UNIQUE,  -- CUT, SEW, FIN, PKG, WHS, PPIC, PUR, QC
+    name VARCHAR(100)
+);
+```
+
+**Auto-populate department_scope saat create user**:
+```python
+# File: app/services/user_service.py
+def create_user(username: str, role: str, department: str) -> User:
+    # Mapping role → department_scope
+    scope_rules = {
+        "Admin Cutting": [1],       # dept_id 1 = Cutting
+        "Admin Sewing": [2],        # dept_id 2 = Sewing
+        "Admin Finishing": [3],     # dept_id 3 = Finishing
+        "SPV Cutting": [1],
+        "SPV Sewing": [2],
+        "Manager Production": [1,2,3,4,5],  # All production depts
+        "Manager PPIC": [1,2,3,4,5,6],      # Production + PPIC
+        "Director": None,                   # Unrestricted
+        "IT Admin": None,                   # Unrestricted (for debug)
+    }
+    
+    user = User(
+        username=username,
+        role=role,
+        department_scope=scope_rules.get(role, [department.id])
+    )
+    db.add(user)
+    db.commit()
+    return user
+```
+
+**Backend Query Filter** (SQLAlchemy):
+```python
+# File: app/api/endpoints/spk.py
+from sqlalchemy import or_
+
+@router.get("/spk/list")
+async def get_spk_list(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    query = db.query(SPK)
+    
+    # Apply department scope filter
+    if current_user.department_scope is not None:
+        # User has restricted scope (e.g., Admin Cutting)
+        query = query.filter(
+            SPK.department_id.in_(current_user.department_scope)
+        )
+    # else: unrestricted (Director, IT Admin)
+    
+    spk_list = query.all()
+    return spk_list
+
+# Example:
+# Admin Cutting (dept_scope=[1]) → Only sees SPK where department_id = 1
+# Manager Prod (dept_scope=[1,2,3,4,5]) → Sees SPK from 5 depts
+# Director (dept_scope=NULL) → Sees ALL SPK
+```
+
+**Frontend - Hide Tabs for Restricted Departments**:
+```typescript
+// File: frontend/src/components/Sidebar.tsx
+import { useAuthStore } from '@/store/authStore';
+
+const Sidebar = () => {
+  const { currentUser } = useAuthStore();
+  
+  const canAccessDepartment = (deptId: number) => {
+    if (!currentUser.department_scope) return true; // Unrestricted
+    return currentUser.department_scope.includes(deptId);
+  };
+  
+  return (
+    <nav>
+      {canAccessDepartment(1) && <Link to="/cutting">Cutting</Link>}
+      {canAccessDepartment(2) && <Link to="/sewing">Sewing</Link>}
+      {canAccessDepartment(3) && <Link to="/finishing">Finishing</Link>}
+      {/* ... */}
+    </nav>
+  );
+};
+```
+
+**Benefits**:
+- ✅ Admin Cutting tidak bisa "mengintip" data Sewing
+- ✅ SPV tidak bisa approve SPK dept lain (prevent collusion fraud)
+- ✅ Query database lebih cepat (filter by scope, less data loaded)
+- ✅ UI lebih clean (hanya tampilkan menu relevan)
+
+---
+
+### E. **Fraud Prevention Checklist** 🚨 🆕
+
+#### **Common Fraud Scenarios di Manufaktur & Mitigasi**:
+
+**1. Produksi Gelap (Ghost Production)**
+```
+Skenario:
+Admin Produksi buat SPK palsu tanpa MO/PO.
+Ambil material dari gudang untuk produksi "sampingan".
+Jual hasil produksi ke pasar gelap (tanpa invoice).
+
+Mitigasi:
+✅ SPK hanya bisa di-GENERATE dari MO (bukan CREATE manual)
+✅ Material issue butuh approve SPV Warehouse
+✅ Barcode tracking: Material → WIP → Finished Good (full chain)
+✅ Audit Trail: Siapa ambil material, untuk SPK mana
+✅ AI Anomaly Detection (future): Material usage vs output variance >15%
+```
+
+**2. Material Theft (Pencurian Material)**
+```
+Skenario:
+Warehouse Staff scan barcode material keluar.
+Tapi material tidak sampai ke produksi (dibawa pulang).
+
+Mitigasi:
+✅ Double verification: Warehouse issue + Production receive
+✅ Surat Jalan dengan barcode: Scan keluar + Scan masuk
+✅ Weight check (future): Timbang material saat keluar warehouse
+✅ CCTV integration (future): Auto-capture foto saat material keluar
+✅ Periodic cycle count: Stock opname tiap minggu (random material)
+```
+
+**3. Quantity Manipulation**
+```
+Skenario:
+Admin Cutting input: "Potong 480 pcs" (sesuai SPK).
+Actual produksi: 450 pcs (30 pcs disembunyikan untuk dijual).
+
+Mitigasi:
+✅ QC random check: Sample 10% output per SPK
+✅ Material variance alert: Jika fabric usage >10% dari BOM, flag red
+✅ Packing verification: Barcode scan carton, hitung total pcs
+✅ Cross-check: Cutting output 480 → Sewing input harus 480 (jika beda, alert)
+```
+
+**4. Approval Bypass (Kolusi SPV + Admin)**
+```
+Skenario:
+SPV Cutting approve SPK dengan material variance 50%.
+SPV dapat "komisi" dari Admin (kolusi).
+
+Mitigasi:
+✅ Auto-Approve untuk SPK standard (Manager tidak terlibat)
+✅ Manager review hanya untuk variance >5% (prevent SPV abuse)
+✅ Audit Log: Variance approval history per SPV (track pattern)
+✅ Quarterly audit: Finance team review semua high-variance approval
+```
+
+**5. Data Manipulation (Edit History)**
+```
+Skenario:
+IT Admin dengan akses database langsung.
+Edit data SPK di database (bypass aplikasi).
+
+Mitigasi:
+✅ Database access restricted: Hanya via application API (no direct SQL)
+✅ Database audit log: PostgreSQL pgAudit extension (log all DML)
+✅ Immutable audit trail: Gunakan append-only log table (tidak bisa edit/delete)
+✅ Role separation: Developer != Production DBA (different credentials)
+```
+
+#### **Fraud Detection Dashboard (Future Enhancement)**:
+```
+┌──────────────────────────────────────────────────────┐
+│ 🚨 FRAUD DETECTION DASHBOARD                         │
+├──────────────────────────────────────────────────────┤
+│                                                      │
+│ 🔍 Anomaly Detected (Last 7 Days):                   │
+│                                                      │
+│ 1. ⚠️ Material Variance Alert                        │
+│    User: admin_cutting_05                            │
+│    SPK: SPK-2026-00134 (AFTONSPARV)                  │
+│    Variance: +28.5% (KOHAIR fabric)                  │
+│    Expected: 70.4 YD | Actual: 90.5 YD               │
+│    Frequency: 3x dalam 7 hari (pattern!)             │
+│    [INVESTIGATE] [NOTIFY_MANAGER]                    │
+│                                                      │
+│ 2. ⚠️ WIP Mismatch                                   │
+│    Cutting output: 480 pcs (SPK-2026-00120)          │
+│    Sewing input: 450 pcs (30 pcs hilang!)            │
+│    Date: 01-Feb-2026                                 │
+│    Status: Pending investigation                     │
+│    [VIEW_SURAT_JALAN] [CONTACT_SPV]                  │
+│                                                      │
+│ 3. 🚨 High Emergency Override                        │
+│    User: director_rizaldy                            │
+│    Action: 5 override dalam 1 hari (MAX LIMIT!)     │
+│    Last: Force approve PO Rp 50,000,000 (15:30)     │
+│    [VIEW_AUDIT_LOG]                                  │
+│                                                      │
+└──────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -3390,7 +4810,8 @@ Fitur lengkap: Manufacturing, Inventory, Sales, Accounting, HR, dll.
 
 **Terima kasih atas perhatiannya!**
 
-**Tim Pengembangan ERP Quty Karunia**
+*Daniel Rizaldy*
+*Lead Developer & System Architect*
 
 ---
 
