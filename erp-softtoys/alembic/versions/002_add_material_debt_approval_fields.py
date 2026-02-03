@@ -1,7 +1,7 @@
 """Add Material Debt Approval Fields
 
-Revision ID: 002_add_material_debt_approval_fields
-Revises: 001_add_spk_material_allocation
+Revision ID: 002
+Revises: 001
 Create Date: 2026-01-28 17:45:00.000000
 
 Feature #4: Material Debt System - Approval Workflow Integration
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '002_add_material_debt_approval_fields'
-down_revision = '001_add_spk_material_allocation'
+revision = '002'
+down_revision = '001'
 branch_labels = None
 depends_on = None
 

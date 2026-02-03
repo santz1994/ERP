@@ -3,7 +3,7 @@
 import enum
 
 from datetime import datetime, date
-from sqlalchemy import DECIMAL, Column, DateTime, Enum, ForeignKey, Integer, String, func, Date, Boolean
+from sqlalchemy import DECIMAL, Column, DateTime, Enum, ForeignKey, Integer, String, func, Date, Boolean, TEXT
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -150,6 +150,14 @@ class WorkOrder(Base):
     mo_id = Column(Integer, ForeignKey("manufacturing_orders.id"), nullable=False, index=True)
     product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
 
+    # WIP Routing fields (NEW)
+    wo_number = Column(String(100), nullable=True)  # Work Order number
+    sequence = Column(Integer, nullable=True)  # Order in production flow
+    input_wip_product_id = Column(Integer, ForeignKey("products.id"), nullable=True)  # Input WIP
+    output_wip_product_id = Column(Integer, ForeignKey("products.id"), nullable=True)  # Output WIP
+    target_qty = Column(DECIMAL(10, 2), nullable=True)  # Target quantity with buffer
+    notes = Column(TEXT, nullable=True)  # Additional notes
+
     # Department & process
     department = Column(Enum(Department), nullable=False, index=True)
 
@@ -173,7 +181,7 @@ class WorkOrder(Base):
 
     # Relationships
     manufacturing_order = relationship("ManufacturingOrder", back_populates="work_orders")
-    product = relationship("Product", back_populates="work_orders")
+    product = relationship("Product", foreign_keys=[product_id], back_populates="work_orders")
     material_consumptions = relationship("MaterialConsumption", back_populates="work_order", cascade="all, delete-orphan")
     qc_inspections = relationship("QCInspection", back_populates="work_order")
 

@@ -1,6 +1,6 @@
 """Add SPK Material Allocation table
 
-Revision ID: 001_add_spk_material_allocation
+Revision ID: 001
 Revises: 
 Create Date: 2026-01-28 17:30:00.000000
 
@@ -12,7 +12,7 @@ from sqlalchemy.dialects import postgresql
 
 
 # revision identifiers, used by Alembic.
-revision = '001_add_spk_material_allocation'
+revision = '001'
 down_revision = None
 branch_labels = None
 depends_on = None

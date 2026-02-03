@@ -110,7 +110,7 @@ class Product(Base):
     bom_headers = relationship("BOMHeader", back_populates="product")
     stock_quants = relationship("StockQuant", back_populates="product")
     stock_moves_from = relationship("StockMove", foreign_keys="StockMove.product_id", back_populates="product")
-    work_orders = relationship("WorkOrder", back_populates="product")
+    work_orders = relationship("WorkOrder", foreign_keys="WorkOrder.product_id", back_populates="product")
     manufacturing_orders = relationship("ManufacturingOrder", back_populates="product")
 
     def __repr__(self):
