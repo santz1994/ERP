@@ -3645,214 +3645,385 @@ Payback Period: ~2.3 tahun
 <a name="section-12"></a>
 ## 📅 12. TIMELINE & ROADMAP
 
-### Project Timeline (Updated)
+### Project Timeline (Updated - 24 Months)
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│  ERP QUTY KARUNIA - PROJECT TIMELINE                     │
-│  Target Go-Live: Januari 2027                            │
+│  ERP QUTY KARUNIA - PROJECT TIMELINE (24 MONTHS)        │
+│  Start: Februari 2026                                    │
+│  Go-Live: Maret 2027 (Month 14)                          │
+│  Project Complete: Februari 2028 (Month 24)              │
 └──────────────────────────────────────────────────────────┘
 
-[PHASE 1: CORE DEVELOPMENT] ✅ 95% COMPLETE
-Feb - Apr 2026 (3 bulan)
+[PHASE 1: CORE DEVELOPMENT] ✅ 15% COMPLETE
+Feb - Jul 2026 (6 bulan)
 
-Week 1-4:
-├─ Database Design & Setup ✅
-├─ Authentication & RBAC ✅
-├─ Basic CRUD (MO, SPK, Material) ✅
+Month 1-2: Foundation & Master Data
+├─ Mockup/Template ✅
+├─ Database Design & Setup ⏳
+├─ Authentication & RBAC ⏳
+├─ Master Data: Material, Artikel, User ⏳
+├─ Basic CRUD operations ⏳
+└─ Status: 20% Complete ⏳
 
-Week 5-8:
+Month 3-4: Production Core
+├─ Manufacturing Order (MO) ⏳
+├─ SPK Generation & Workflow ⏳
 ├─ BOM Manufacturing ✅
-├─ Production Input (Cutting, Sewing) ✅
-├─ Inventory Management ✅
-├─ 🆕 Warehouse Finishing 2-Stage ✅
+├─ Production Input (6 stages) ⏳
+└─ Status: 40% Complete ⏳
 
-Week 9-12:
-├─ Approval Workflow ✅
-├─ Dashboard & Reporting ✅
-├─ 🆕 Dual Trigger MO (PARTIAL/RELEASED) ✅
-├─ 🆕 UOM Auto-Validation ✅
+Month 5: Inventory & Warehouse
+├─ Inventory Management 🔄
+├─ Warehouse Finishing 2-Stage 🔄
+├─ Material consumption tracking 🔄
+└─ Status: 20% Planning 🔄
 
-Status: 95% Complete ✅
+Month 6: Integration & Testing
+├─ Module integration testing 📅
+├─ API endpoint validation 📅
+├─ Frontend-backend sync 📅
+└─ Status: Not Started 📅
 
----
-
-[PHASE 2: FEATURE ENHANCEMENT]
-Mei - Jul 2026 (3 bulan)
-
-**MEI 2026**: Document Generation & Export
-├─ PDF generation (SPK, DN, Laporan)
-├─ Export Journal CSV untuk Finance
-├─ Barcode label printing (thermal printer)
-├─ Business Continuity: Paper Fallback SOP
-└─ Machine Downtime Log
-
-**JUNI 2026**: Advanced Modules
-├─ Sales Return Receiving (RMA Phase 1)
-├─ Training/Sandbox Mode (Android app)
-├─ Material Debt workflow enhancement
-└─ Dashboard analytics enhancement
-
-**JULI 2026**: Deployment & Monitoring
-├─ Off-site backup (NAS + Cloud)
-├─ APK auto-update system
-├─ Monitoring stack (Prometheus + Grafana)
-└─ Security audit & penetration testing
-
-Status: Planned ⏳
+Overall Phase 1 Status: 15% Complete ✅
 
 ---
 
-[PHASE 3: TESTING & QA]
-Agu - Okt 2026 (3 bulan)
+[PHASE 2: TESTING & BUG FIXING]
+Agu 2026 - Jan 2027 (6 bulan) - Extended for Solo Developer
 
-**AGUSTUS 2026**: Developer Testing
-├─ Unit testing (pytest coverage >80%)
-├─ Integration testing (API endpoints)
-├─ Performance testing (100 concurrent users)
-└─ Security testing
+**Month 7-9** (Agu-Okt 2026): User Acceptance Testing (UAT)
+├─ Select & train 10-15 pilot users
+├─ UAT execution with real production data (sandbox)
+├─ Collect feedback & identify bugs
+├─ Priority bug fixing (P0: Critical, P1: High)
+└─ Status: Planned 📅
 
-**SEPTEMBER 2026**: Staging Environment
-├─ Deploy ke staging server
-├─ Import sample data (1000+ records)
-├─ Stress testing (production-like load)
-└─ Bug fixing & optimization
+**Month 10-11** (Nov-Des 2026): Bug Fixing & Refinement
+├─ Fix all P0 & P1 bugs (critical path)
+├─ UI/UX improvements based on user feedback
+├─ Workflow optimization (reduce clicks)
+├─ Performance tuning (query optimization)
+└─ Status: Planned 📅
 
-**OKTOBER 2026**: User Acceptance Testing (UAT)
-├─ Select 10-15 pilot users
-├─ Training pilot users (1 minggu)
-├─ UAT execution (3 minggu)
-└─ Iterative improvement based on feedback
+**Month 12** (Jan 2027): Performance Optimization
+├─ Load testing (100+ concurrent users)
+├─ Database indexing & query optimization
+├─ Frontend optimization (lazy loading)
+├─ API response time <500ms
+└─ Status: Planned 📅
 
-Status: Planned ⏳
+Status: Not Started 📅
 
 ---
 
-[PHASE 4: DATA MIGRATION]
-Nov - Des 2026 (2 bulan)
+[PHASE 3: DATA MIGRATION & GO-LIVE PREP]
+Feb - Mar 2027 (2 bulan)
 
-**NOVEMBER 2026**: Data Preparation
+**Month 13** (Feb 2027): Data Preparation
 ├─ Week 1-2: Data cleaning & standardization
+│   - Remove duplicates, fix naming inconsistencies
+│   - Validate material codes & artikel names
 ├─ Week 3-4: Migration script development
-└─ Test migration di staging (dry run)
+│   - ETL pipeline (Extract-Transform-Load)
+│   - Dry run di staging environment
+│   - Data validation & integrity check
+└─ Status: Planned 📅
 
-**DESEMBER 2026**: Full Migration & Parallel Run
-├─ Week 1: Import master data
-├─ Week 2-4: Data validation & parallel run
-└─ Fine-tuning & bug fixing
+**Month 14** (Mar 2027): Full Migration & GO-LIVE 🚀
+├─ Week 1: Import master data (Material, Artikel, Users)
+├─ Week 2: Import transactional data (MO, SPK, Inventory)
+├─ Week 3: Data validation & parallel run
+│   - Old system vs New system comparison
+│   - Fix discrepancies & data issues
+├─ Week 4: 🎯 GO-LIVE (Hard Launch!)
+│   - Switch from old system to ERP
+│   - On-site support team ready
+│   - Monitoring dashboard 24/7
+└─ Status: Target 🎯
 
-Status: Planned ⏳
-
----
-
-[PHASE 5: TRAINING & GO-LIVE]
-Jan 2027 (1 bulan)
-
-**JANUARI 2027**:
-├─ Week 1-2: Mass training (all users, batch-wise)
-├─ Week 3: Final preparation & dress rehearsal
-├─ Week 4: 🚀 GO-LIVE (Hard Launch!)
-└─ Intensive support team on-site
-
-Status: Target 🎯
+Status: Planned 📅
 
 ---
 
-[PHASE 6: STABILIZATION]
-Feb - Jul 2027 (6 bulan)
+[PHASE 4: STABILIZATION (POST GO-LIVE)]
+Apr - Sep 2027 (6 bulan) - Trial/Error Period
 
-├─ Post go-live support
-├─ Bug fixing (priority-based)
-├─ Performance optimization
-├─ User feedback collection
-└─ Continuous improvement
+**Month 15-17** (Apr-Jun 2027): Intensive Support
+├─ On-site support team daily (first month)
+├─ Bug fixing & hotfix deployment
+├─ User training refresher sessions
+├─ Monitor system performance & uptime
+└─ Status: Planned 📅
 
-Status: Planned ⏳
+**Month 18-19** (Jul-Ago 2027): Process Refinement
+├─ Optimize workflows based on real usage
+├─ Add minor features requested by users
+├─ Improve UI/UX based on feedback
+├─ Performance tuning (database, queries)
+└─ Status: Planned 📅
+
+**Month 20** (Sep 2027): System Stabilization
+├─ Reduce support hours (on-call only)
+├─ Document lessons learned
+├─ Finalize SOPs & user manuals
+├─ System stability >95% uptime
+└─ Status: Planned 📅
+
+Status: Planned 📅
 
 ---
 
-🎯 **TARGET GO-LIVE: JANUARI 2027**
-✅ **PROJECT COMPLETE: JULI 2027** (18 months total)
+[PHASE 5: OPTIMIZATION & ENHANCEMENT]
+Okt 2027 - Feb 2028 (5 bulan) - Final Polish
+
+**Month 21-23** (Okt-Des 2027): Performance Tuning
+├─ Database optimization (indexing, partitioning)
+├─ Frontend optimization (caching, CDN)
+├─ API optimization (response time <200ms)
+├─ Load balancing (if needed)
+└─ Status: Planned 📅
+
+**Month 24** (Jan-Feb 2028): Feature Enhancement
+├─ Implement requested features (backlog)
+├─ Advanced reporting & analytics
+├─ Dashboard customization per role
+├─ Integration with external systems (optional)
+└─ ✅ PROJECT COMPLETE: Februari 2028
+
+Status: Planned 📅
 
 ---
 
-### Project Status Saat Ini (2 Februari 2026)
+🎯 **TARGET GO-LIVE: MARET 2027** (Month 14)
+✅ **PROJECT COMPLETE: FEBRUARI 2028** (24 months total)
+📊 **POST-LAUNCH SUPPORT: 11 bulan** (Stabilization + Optimization)
+
+---
+
+### Project Status Saat Ini (3 Februari 2026)
 
 ```
-✅ COMPLETED (95/100):
-├─ Backend API (124 endpoints)
-├─ Frontend Web Portal (15+ pages)
-├─ Android App (4 screens, Kotlin Native)
-├─ Database Schema (27+ tabel)
-├─ Security & PBAC (23 roles)
-├─ Fraud Prevention System
-└─ Dokumentasi (250+ .md files)
+✅ COMPLETED (30/100) - Realistic Progress:
+├─ Backend API (40+ endpoints core features)
+├─ Frontend Web Portal (8 pages: Login, Dashboard, MO, Material)
+├─ Database Schema (27+ tabel designed)
+├─ Security & RBAC framework (23 roles defined)
+├─ Dokumentasi framework (250+ .md files)
+└─ Development environment setup
 
-⚠️ REMAINING (5% - Priority Items):
-├─ PDF generation & reporting
-├─ Export Journal CSV
-├─ APK auto-update
-└─ Off-site backup
+🔄 IN PROGRESS (Current Sprint):
+├─ Manufacturing Order (MO) module
+├─ SPK Generation workflow
+├─ Production input forms (6 stages)
+└─ Inventory management module
 
-🎯 NEXT MILESTONE: Mei 2026 (Phase 2 Enhancement)
+📅 REMAINING (70% - Next 22 Months):
+├─ Complete all production modules (Month 1-6)
+├─ Android app development (Month 7-12)
+├─ Testing & bug fixing (Month 7-12)
+├─ Data migration (Month 13-14)
+├─ Go-Live & stabilization (Month 14-20)
+└─ Optimization & enhancement (Month 21-24)
+
+🎯 NEXT MILESTONE: Juli 2026 (Phase 1 Complete - Core Features)
+💡 NOTE: Masih banyak perombakan & code ulang (iterative development)
 ```
 
 ---
 
 ### Budget Breakdown (Realistic Estimate)
 
+> **📝 Project Status Update (Feb 2026)**:  
+> - Template/framework: ✅ Sudah dibuat  
+> - Development stage: 🔄 Masih draft overall project  
+> - Expected: Banyak perombakan & code ulang (iterative development)
+
 #### ONE-TIME COST (Year 1-2 - Development Phase)
 
 **1. Development Team (24 months)** ✅ SELECTED:
-- **Solo Developer**: Rp 240 juta
-  - Daniel Rizaldy @ Rp 10 juta/bulan × 24 bulan = Rp 240 juta
+- **Solo Developer**: Rp 144 juta
+  - Daniel Rizaldy @ **Rp 6 juta/bulan** × 24 bulan = Rp 144 juta
+  - ⚠️ *Note: Gaji aktual, bukan rate konsultan*
 
-**2. Infrastructure Setup**: Rp 12.4 juta
-- Server VPS/Cloud: Rp 5-10 juta
-- Domain & SSL Certificate (2 years): Rp 1.4 juta
-- Development Tools & Licenses (2 years): Rp 6 juta
+**2. Infrastructure Setup (Factory-Grade Server)**: Rp 35-45 juta ✅ **10-20 YEAR LIFESPAN**
+- 🏭 **Industrial Server (On-Premise)**:
+  - **Enterprise Server**: Rp 25-30 juta
+    - CPU: Intel Xeon E-2388G / AMD EPYC (8-16 cores)
+    - RAM: 64GB ECC DDR4 (expandable to 128GB)
+    - Storage: 2TB NVMe SSD (RAID 1 mirroring) + 4TB HDD (RAID 5)
+    - Network: Dual Gigabit Ethernet (redundancy)
+    - Form factor: Rackmount 2U / Tower (depends on factory space)
+    - Warranty: 3-5 years on-site service
+  - **Industrial UPS**: Rp 5-8 juta
+    - Capacity: 3000VA / 2400W (pure sine wave)
+    - Battery backup: 60-90 minutes runtime (full load)
+    - Surge protection & voltage regulation
+    - LCD display + network management card
+    - Lifespan: 5-7 years (battery replacement every 3-4 years)
+  - **Network Infrastructure**: Rp 3-5 juta
+    - Managed Gigabit Switch 24-port: Rp 2-3 juta
+    - Network cables Cat6 (50m): Rp 500k
+    - Patch panel + rack accessories: Rp 500k-1 juta
+    - WiFi Access Point industrial-grade: Rp 1-1.5 juta
+- 🌐 **Domain & Certificates** (2 years):
+  - Domain name (.id / .com): Rp 400k-600k
+  - SSL Certificate (Let's Encrypt FREE or Sectigo): Rp 0-1 juta
+- 💾 **Backup & Storage**:
+  - NAS (Network Attached Storage) 8TB: Rp 5-7 juta (RAID 5, 4-bay)
+  - External HDD 4TB (2 units untuk rotation): Rp 2-3 juta
+  - Cloud storage subscription (1TB Google Workspace): Rp 500k/year
+- 🖥️ **Client Devices** (Phase 1 - Pilot):
+  - Tablet Android 10" (5 units untuk production floor): Rp 3-4 juta
+  - Barcode Scanner Bluetooth (5 units): Rp 2.5-3.5 juta
+  - Thermal Printer 4" (for labels): Rp 1.5-2 juta
 
-**3. Training & Migration**: Rp 15 juta
-- Training materials: Rp 2 juta
-- Data migration specialist: Rp 5 juta
-- On-site training logistics: Rp 8 juta
+**🔧 Hardware Longevity Strategy**:
+- ✅ Enterprise-grade components (10+ year lifespan)
+- ✅ ECC RAM (error correction untuk stability)
+- ✅ RAID configuration (redundancy, no single point of failure)
+- ✅ Hot-swappable components (replace tanpa shutdown)
+- ✅ Industrial UPS (protect dari PLN unstable)
+- ✅ Spare parts budget (Rp 3-5 juta/3 years untuk battery, HDD replacement)
 
-**4. Contingency Fund (20%)**: Rp 53 juta
-- Buffer untuk unexpected cost
+**3. Training & Migration**: Rp 10-15 juta
+- Training materials development: Rp 2-3 juta
+- User training sessions (on-site): Rp 3-5 juta
+- Data migration & cleanup: Rp 5-7 juta
+  - *(Jika menggunakan existing data dari system lama)*
+
+**4. Contingency Fund (20%)**: Rp 40-44 juta
+- Buffer untuk unexpected cost & revisions
+- Hardware issues & replacement parts
+- Additional training sessions jika diperlukan
+- Network infrastructure upgrades
 
 **📊 TOTAL ONE-TIME COST**:
 ```
-Development (24 months):     Rp 240 juta
-Infrastructure Setup:        Rp 12.4 juta
-Training & Migration:        Rp 15 juta
-Contingency Fund (20%):      Rp 53 juta
+Development (24 months):     Rp 144 juta
+Infrastructure Setup:        Rp 35-45 juta ⭐ FACTORY-GRADE
+Training & Migration:        Rp 10-15 juta
+Contingency Fund (20%):      Rp 40-44 juta
 ─────────────────────────────────────────
-🎯 TOTAL: Rp 320.4 juta (~Rp 324 juta)
+🎯 TOTAL: Rp 229-248 juta (~Rp 240 juta)
+
+💡 Investment Breakdown:
+   - Developer (2 years):       Rp 144 juta (60%)
+   - Factory Server:            Rp 35-45 juta (18%)
+   - Training & Data:           Rp 10-15 juta (5%)
+   - Safety Buffer (20%):       Rp 40-44 juta (17%)
+
+🏭 Server Specs: Enterprise-grade, 10-20 year lifespan
+   ✅ 64GB ECC RAM, RAID storage, Industrial UPS
+   ✅ 3000VA UPS (60-90 min backup), Dual network
+   ✅ NAS backup + Cloud redundancy
 ```
 
 ---
 
 #### RECURRING COST (Per Year - Post Go-Live)
 
-**1. Server & Hosting** (Annual): Rp 9-14 juta
-- AWS/GCP/Azure VPS: Rp 8-12 juta/tahun
-- Backup storage (S3/GCS): Rp 0.5-1 juta/tahun
-- Domain renewal: Rp 200k/tahun
-- SSL renewal: Rp 500k/tahun
+**1. Server & Infrastructure** (Annual): Rp 2-4 juta ✅ **MUCH CHEAPER**
+- 🖥️ **Server Lokal Maintenance**:
+  - Electricity cost (~500W 24/7): Rp 1.5-2 juta/tahun
+  - Cooling & maintenance: Rp 0.5-1 juta/tahun
+  - Hardware upgrades (SSD, RAM): Rp 0-1 juta (jika perlu)
+- 🌐 **Internet & Network**:
+  - *(Asumsi sudah ada internet kantor)*
+  - Domain renewal: Rp 200-300k/tahun
+  - SSL renewal (Let's Encrypt FREE): Rp 0
+- 💾 **Backup & Storage**:
+  - External backup drive replacement (yearly): Rp 0-500k
+  - Cloud backup (optional, minimal): Rp 0-500k/tahun
 
-**2. Maintenance & Support**: Rp 15-25 juta
-- Bug fixing & minor updates: Rp 5-10 juta/tahun
-- Developer on-call (part-time): Rp 10-15 juta/tahun
+**2. Maintenance & Support**: Rp 18-30 juta
+- Bug fixing & minor updates: Rp 6-10 juta/tahun
+- Developer on-call (part-time, ~3-5 jam/minggu): Rp 12-20 juta/tahun
+  - Support & troubleshooting
+  - System monitoring
+  - User assistance
 
-**3. Continuous Improvement** (Optional): Rp 30-45 juta
+**3. Continuous Improvement** (Optional): Rp 30-50 juta
 - Feature enhancements: Rp 20-30 juta/tahun
-- Performance optimization: Rp 10-15 juta
+  - New modules (CRM, Accounting, etc.)
+  - Advanced reporting & analytics
+- Performance optimization: Rp 10-20 juta/tahun
+  - Database optimization
+  - UI/UX improvements
 
-**📊 TOTAL RECURRING COST**:
+**📊 TOTAL RECURRING COST** ✅ **USING RECOMMENDED BUDGET**:
 ```
-Minimum (no improvement):     Rp 24-39 juta/tahun
-Recommended (with improvement): Rp 54-84 juta/tahun
+🔹 Recommended (Full Support):        Rp 60-74 juta/tahun ⭐ SELECTED
+   ├─ Server & Infrastructure:        Rp 4-6 juta
+   ├─ Maintenance & Support:          Rp 26-30 juta
+   └─ Continuous Improvement:         Rp 30-38 juta
+
+💡 Recurring Cost Breakdown:
+   - Electricity (500W 24/7):         Rp 2-2.5 juta/year
+   - Hardware maintenance:            Rp 1-2 juta/year
+   - Network & internet:              Rp 500k-1 juta/year
+   - Domain & SSL renewal:            Rp 200-500k/year
+   - Developer support (5-8 jam/week): Rp 26-30 juta/year
+   - Feature enhancements:            Rp 20-25 juta/year
+   - Performance optimization:        Rp 10-13 juta/year
+
+🏭 Factory Server Benefits:
+   ✅ No monthly cloud fees (save Rp 8-12jt/year)
+   ✅ Full data control (security & compliance)
+   ✅ Low latency (local network, <5ms response)
+   ✅ 10-20 year lifespan (long-term ROI)
 ```
+
+---
+
+#### 🔍 COST COMPARISON BREAKDOWN
+
+| Item | Cloud (Odoo) | Custom ERP (Lokal) | Saving |
+|------|-------------|-------------------|---------|
+| **Development** | Rp 0 (SaaS) | Rp 144 juta | - |
+| **Infrastructure (2 years)** | Rp 18-28 juta | Rp 8-12 juta | **Rp 10-16 juta** |
+| **Year 1-2 Total** | Rp 18-28 juta | Rp 195-206 juta | - |
+| **Year 3 onwards** | Rp 9-14 juta/thn | Rp 2-4 juta/thn | **Rp 7-10 juta/thn** |
+| **10 Years Total** | Rp 90-140 juta | Rp 211-238 juta | - |
+
+**💰 ROI Analysis**:
+- Break-even point: ~2-3 tahun
+- After 3 years: Custom ERP **lebih murah** dan **full control**
+- After 10 years: Hemat **Rp 50-100 juta** dengan server lokal
+
+---
+
+#### ⚠️ IMPORTANT NOTES
+
+**Mengapa Budget Bisa Lebih Rendah?**
+1. ✅ **Gaji Developer Realistis**: Rp 6 juta/bulan (bukan consulting rate)
+2. ✅ **Server Lokal**: Tidak perlu bayar cloud hosting recurring
+3. ✅ **Open Source Stack**: Semua tools development gratis (Python, PostgreSQL, React)
+4. ✅ **In-House Development**: Tidak perlu bayar vendor external
+5. ⚠️ **Trade-off**: Perlu maintenance internal dan backup discipline
+
+**Risiko & Mitigasi - Server Lokal**:
+- **Risiko 1**: Power outage → **Solusi**: UPS + generator backup
+- **Risiko 2**: Hardware failure → **Solusi**: Regular backup + spare parts
+- **Risiko 3**: Physical security → **Solusi**: Server room dengan akses terbatas
+- **Risiko 4**: Scalability → **Solusi**: Upgrade hardware jika traffic naik
+
+**Factory Server Best Practices** 🏭:
+- 🔧 **Regular Maintenance**: Monthly health check (SMART status, temperature, logs)
+- 🔋 **UPS Battery**: Replace every 3-4 years (Rp 2-3 juta)
+- 💾 **Storage Upgrade**: Add HDD/SSD setiap 5 tahun jika perlu (Rp 2-5 juta)
+- 🌡️ **Environment**: AC room 20-25°C, humidity <60%, dust-free
+- 🔒 **Physical Security**: Server room dengan akses terbatas + CCTV
+- 📊 **Monitoring**: Nagios/Zabbix untuk uptime & performance alerts
+
+**Kapan Harus Upgrade ke Cloud?** ☁️
+- Multiple branch locations (>3 cabang remote)
+- Concurrent users >100 users
+- Traffic >20,000 requests/day
+- Global access requirement (international offices)
+- Compliance requirement (ISO 27001, SOC 2)
+
+**Factory Server Advantages**: ✅ Low latency, ✅ No internet dependency, ✅ Data privacy, ✅ Cost predictability
 
 ---
 
@@ -3942,17 +4113,79 @@ Recommended (with improvement): Rp 54-84 juta/tahun
 - Tanyakan hal yang belum jelas
 - Schedule meeting untuk Q&A session
 
-**2. Approve Budget**
-- Total Investment: Rp 324 juta (one-time)
-- Recurring: Rp 55 juta/tahun (maintenance)
-- ROI Timeline: ~2-3 tahun
+**2. Approve Budget** ✅ **FACTORY-GRADE INFRASTRUCTURE**
+- Total Investment: **Rp 229-248 juta** (one-time)
+  - 🏭 **Factory Server**: Enterprise-grade, 10-20 year lifespan
+  - 💡 **Real Developer Cost**: Rp 6jt/bln × 24 months
+  - ⚡ **Industrial UPS**: 60-90 min backup power
+  - 💾 **RAID + NAS**: Triple redundancy backup
+- Recurring: **Rp 60-74 juta/tahun** ⭐ **RECOMMENDED BUDGET**
+  - Full support + continuous improvement
+  - Developer on-call 5-8 jam/minggu
+  - Feature enhancements & optimization
+- ROI Timeline: ~15-18 tahun vs cloud (long-term investment)
 
-**3. Set Timeline** 🎯
-- **Target Go-Live: JANUARI 2027** (confirmed)
-- Fase Development: Februari - Juli 2026 (6 bulan)
-- Fase Testing: Agustus - Oktober 2026 (3 bulan)
-- Fase Migration & Training: November - Desember 2026 (2 bulan)
-- Fase Go-Live: Januari 2027 (1 bulan)
+**💡 Budget Breakdown Approval Needed**:
+```
+☑️ Development (24 months):        Rp 144 juta (60%)
+☑️ Factory Server & Hardware:     Rp 35-45 juta (18%) ⭐
+☑️ Training & Migration:           Rp 10-15 juta (5%)
+☑️ Contingency Fund (20%):         Rp 40-44 juta (17%)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   TOTAL ONE-TIME:                 Rp 229-248 juta
+
+☑️ Annual Recurring (RECOMMENDED): Rp 60-74 juta/year ⭐
+   ├─ Server operations:           Rp 4-6 juta
+   ├─ Developer support:           Rp 26-30 juta
+   └─ Continuous improvement:      Rp 30-38 juta
+
+🏭 Server Specs: 64GB ECC RAM, 2TB NVMe RAID, 3000VA UPS
+⏱️ Lifespan: 10-20 years (vs cloud: forever paying)
+```
+
+**3. Set Timeline** 🎯 **UPDATED: 24-MONTH DEVELOPMENT**
+- **Target Go-Live: MARET 2027** (Month 14) ⭐ **CONFIRMED**
+- **Project Complete: FEBRUARI 2028** (Month 24)
+
+**Timeline Breakdown**:
+```
+┌────────────────────────────────────────────────────────────┐
+│  FASE 1: FEB-JUL 2026 (6 bulan)                            │
+│  Development Core Features                                 │
+│  ├─ Month 1-2: Setup & Master Data Module                  │
+│  ├─ Month 3-4: Production Module (MO, SPK, BOM)            │
+│  ├─ Month 5: Inventory & Warehouse Module                  │
+│  └─ Month 6: Integration Testing                           │
+├────────────────────────────────────────────────────────────┤
+│  FASE 2: AGU 2026-JAN 2027 (6 bulan)                       │
+│  Testing & Bug Fixing (Extended - Solo Developer)         │
+│  ├─ Month 7-9: UAT with Pilot Users (10-15 users)          │
+│  ├─ Month 10-11: Bug fixing & refinement                   │
+│  └─ Month 12: Performance optimization                     │
+├────────────────────────────────────────────────────────────┤
+│  FASE 3: FEB-MAR 2027 (2 bulan)                            │
+│  Data Migration & Go-Live Preparation                      │
+│  ├─ Month 13: Data cleaning & migration script             │
+│  ├─ Month 14: Full data migration & validation             │
+│  └─ 🎯 GO-LIVE: MARET 2027                                 │
+├────────────────────────────────────────────────────────────┤
+│  FASE 4: APR-SEP 2027 (6 bulan)                            │
+│  Trial/Error & Stabilization (Post Go-Live)                │
+│  ├─ Month 15-17: Intensive support & bug fixing            │
+│  ├─ Month 18-19: Process refinement                        │
+│  └─ Month 20: System stabilization                         │
+├────────────────────────────────────────────────────────────┤
+│  FASE 5: OKT 2027-FEB 2028 (5 bulan)                       │
+│  Optimization & Enhancement                                │
+│  ├─ Month 21-23: Performance tuning                        │
+│  ├─ Month 24: Feature enhancement based on feedback        │
+│  └─ ✅ PROJECT COMPLETE: FEBRUARI 2028                     │
+└────────────────────────────────────────────────────────────┘
+
+TOTAL DURATION: 24 bulan / 2 tahun (Feb 2026 - Feb 2028)
+GO-LIVE TARGET: Maret 2027 (Month 14)
+PROJECT COMPLETE: Februari 2028 (Month 24)
+```
 
 **4. Prepare Data** (Mulai Q3 2026)
 - Kumpulkan master data (material, artikel, user, dll)
