@@ -4549,6 +4549,60 @@ Admin atur internal ke lines secara manual:
 
 ---
 
+### 🌍 Kode Destinasi Label (Shipping Destination)
+
+Setiap PO Label memiliki kode destinasi yang menentukan tujuan pengiriman produk. Kode ini **auto-inherit** ke MO dan semua SPK terkait (zero manual input).
+
+| Kode | Kepanjangan | Region/Country | Contoh Usage |
+|------|-------------|----------------|--------------|
+| **EU** | **Euro** | Eropa (wilayah Uni Eropa) | General European distribution centers |
+| **AP** | **Asia Pacific** | Asia-Pasifik | Multiple Asian countries distribution |
+| **NA** | **North America** | Amerika Utara | General North American distribution |
+| **US** | **United States** | Amerika Serikat | IKEA US distribution centers |
+| **CA** | **Canada** | Kanada | IKEA Canada distribution centers |
+| **ID** | **Indonesia** | Indonesia | Domestic market / local IKEA stores |
+| **DE** | **Germany** | Jerman | IKEA Deutschland distribution centers |
+| **GB** | **Great Britain** | Inggris Raya | IKEA UK distribution centers |
+| **SE** | Sweden | Swedia | IKEA Sverige (headquarters market) |
+| **FR** | France | Prancis | IKEA France distribution centers |
+| **BE** | Belgium | Belgia | IKEA Belgium/Luxembourg DC |
+| **NL** | Netherlands | Belanda | IKEA Netherlands DC |
+| **AU** | Australia | Australia | IKEA Australia distribution |
+| **JP** | Japan | Jepang | IKEA Japan distribution |
+
+**Contoh Penggunaan dalam System**:
+
+```
+PO-LBL-2026-0789:
+├─ Week: W05-2026
+├─ Destination: BE (Belgium) ✅
+├─ Artikel: [40551542] AFTONSPARV
+└─ Qty: 480 pcs
+
+↓ Auto-inherit saat MO RELEASED
+
+MO-2026-00089:
+├─ Week: W05-2026 (read-only)
+├─ Destination: BE - Belgium (read-only)
+└─ Status: RELEASED ✅
+
+↓ Cascade ke semua SPK
+
+SPK-PCK-2026-00045:
+├─ Packing Target: 465 pcs
+├─ Carton Label: "Week W05-2026, Dest: BE"
+└─ Shipping Doc: IKEA Belgium DC
+```
+
+**Benefit Kode Standar**:
+- ✅ Konsistensi labeling (tidak ada typo "Belgia" vs "Belgium")
+- ✅ Auto-sort shipping by destination di Warehouse FG
+- ✅ Easy filtering untuk laporan per region
+- ✅ Compliance dengan customer requirement (IKEA global standard)
+- ✅ Integration-ready untuk EDI (Electronic Data Interchange)
+
+---
+
 <a name="kontak"></a>
 ## 📞 KONTAK
 
