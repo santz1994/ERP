@@ -38,7 +38,7 @@ interface DebtDetailData extends MaterialDebt {
 }
 
 const MaterialDebtPage: React.FC = () => {
-  const { hasPermission } = usePermission();
+  const hasPermission = (permission: string) => usePermission(permission);
   const [debts, setDebts] = useState<MaterialDebt[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedDebt, setSelectedDebt] = useState<DebtDetailData | null>(null);

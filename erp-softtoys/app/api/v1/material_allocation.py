@@ -191,6 +191,7 @@ def start_work_order(
 
 
 @router.get("/shortage-alerts", response_model=List[MaterialShortageAlertResponse])
+@router.get("/shortages", response_model=List[MaterialShortageAlertResponse])  # Alias for frontend
 def get_shortage_alerts(
     mo_id: Optional[int] = Query(None, description="Filter by Manufacturing Order ID"),
     department: Optional[str] = Query(None, description="Filter by department"),

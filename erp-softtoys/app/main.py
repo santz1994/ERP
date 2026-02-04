@@ -13,6 +13,7 @@ from app.api.v1 import (
     finishgoods,
     import_export,
     kanban,
+    material_allocation,  # ✅ NEW: Material Allocation API
     ppic,
     purchasing,
     qa_convenience_endpoints,
@@ -262,6 +263,13 @@ app.include_router(
 app.include_router(
     production_execution.router,
     prefix=settings.API_PREFIX
+)
+
+# ✅ Material Allocation API (Week 3-4 Implementation)
+app.include_router(
+    material_allocation.router,
+    # Note: material_allocation.router already has prefix="/api/v1/material-allocation"
+    # so we don't add settings.API_PREFIX here
 )
 
 # Phase 3: Quality Control Module

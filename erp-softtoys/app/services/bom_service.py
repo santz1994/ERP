@@ -23,7 +23,8 @@ from app.core.models.manufacturing import SPK, ManufacturingOrder, Department, S
 from app.core.models.warehouse import StockMove, StockMoveStatus, StockQuant
 from app.core.models.products import Product
 from app.core.models.users import User
-from app.core.models.production import SPKMaterialAllocation, SPKMaterialAllocationStatus
+from app.core.models.manufacturing import SPKMaterialAllocation
+from app.core.models.production import SPKMaterialAllocationStatus
 
 logger = logging.getLogger(__name__)
 

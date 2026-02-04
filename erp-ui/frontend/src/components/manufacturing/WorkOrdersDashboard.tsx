@@ -326,12 +326,12 @@ export const WorkOrdersDashboard: React.FC<WorkOrdersDashboardProps> = ({
                 <div className="mb-4">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm font-medium text-gray-700">Progress</span>
-                    <span className="text-sm font-bold text-blue-600">{wo.progress_percentage.toFixed(1)}%</span>
+                    <span className="text-sm font-bold text-blue-600">{(wo.progress_percentage || 0).toFixed(1)}%</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2.5">
                     <div
                       className="bg-blue-600 h-2.5 rounded-full transition-all"
-                      style={{ width: `${wo.progress_percentage}%` }}
+                      style={{ width: `${wo.progress_percentage || 0}%` }}
                     ></div>
                   </div>
                 </div>

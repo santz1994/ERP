@@ -118,7 +118,7 @@ export const StockManagement: React.FC<StockManagementProps> = ({
     queryKey: ['products-for-stock'],
     queryFn: async () => {
       const response = await apiClient.get('/admin/products');
-      return response.data;
+      return response.data.products;
     }
   });
 

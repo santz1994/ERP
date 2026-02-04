@@ -2,7 +2,7 @@
 Data validation and serialization.
 """
 
-from datetime import datetime
+from datetime import datetime, date
 from decimal import Decimal
 from enum import Enum
 
@@ -152,26 +152,49 @@ class MOStatus(str, Enum):
 
 
 class ManufacturingOrderCreate(BaseModel):
-    """Create manufacturing order request."""
+    """Create manufacturing order request with Dual Trigger System support."""
 
-    so_line_id: int = Field(..., description="Sales order line ID")
+    so_line_id: int | None = Field(None, description="Sales order line ID (optional)")
     product_id: int = Field(..., description="WIP/FG product ID")
-    qty_planned: Decimal = Field(..., gt=0)
-    routing_type: RoutingType
-    batch_number: str = Field(..., min_length=1, max_length=50)
+    qty_planned: Decimal = Field(..., gt=0, description="Planned production quantity")
+    routing_type: RoutingType = Field(..., description="Production routing (Route 1/2/3)")
+    batch_number: str = Field(..., min_length=1, max_length=50, description="Batch number for traceability")
+    
+    # Dual Trigger System (NEW)
+    po_fabric_id: int | None = Field(None, description="PO for fabric materials (TRIGGER 1)")
+    po_label_id: int | None = Field(None, description="PO for labels/tags (TRIGGER 2)")
+    trigger_mode: str = Field("PARTIAL", description="Production release mode: PARTIAL or RELEASED")
+    
+    # IKEA Compliance (NEW)
+    production_week: str | None = Field(None, description="IKEA week format (e.g., 05-2026)")
+    destination_country: str | None = Field(None, description="Shipping destination")
+    planned_production_date: date | None = Field(None, description="Planned production start date")
+    target_shipment_date: date | None = Field(None, description="Target shipment date")
 
 
 class ManufacturingOrderResponse(BaseModel):
-    """Manufacturing order response."""
+    """Manufacturing order response with dual trigger info."""
 
     id: int
-    so_line_id: int
+    so_line_id: int | None
     product_id: int
     qty_planned: Decimal
     qty_produced: Decimal
     routing_type: RoutingType
     batch_number: str
     state: MOStatus
+    
+    # Dual Trigger System
+    po_fabric_id: int | None = None
+    po_label_id: int | None = None
+    trigger_mode: str = "PARTIAL"
+    
+    # IKEA Compliance
+    production_week: str | None = None
+    destination_country: str | None = None
+    planned_production_date: date | None = None
+    target_shipment_date: date | None = None
+    
     created_at: datetime
 
     class Config:

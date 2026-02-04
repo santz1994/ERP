@@ -1167,6 +1167,86 @@ async def delete_bom(
     db.commit()
 
 # ============================================================================
+# Locations Endpoints
+# ============================================================================
+@router.get("/locations")
+async def get_locations(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.VIEW))
+):
+    """Get all warehouse locations.
+    
+    **Required Permission**: warehouse.view
+    
+    **Returns**: List of all location records
+    """
+    locations = db.query(Location).all()
+    return [
+        {
+            "id": loc.id,
+            "name": loc.name,
+            "location_type": loc.location_type.value if loc.location_type else None,
+            "barcode": loc.barcode,
+            "parent_id": loc.parent_id,
+            "is_active": loc.is_active
+        }
+        for loc in locations
+    ]
+
+
+@router.get("/stock-quants")
+async def get_stock_quants(
+    product_id: int = Query(None),
+    location_id: int = Query(None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.VIEW))
+):
+    """Get stock quants (inventory records).
+    
+    **Required Permission**: warehouse.view
+    
+    **Query Parameters**:
+    - `product_id`: Filter by product ID
+    - `location_id`: Filter by location ID
+    
+    **Returns**: List of stock quant records with availability info
+    """
+    query = db.query(StockQuant)
+    
+    if product_id:
+        query = query.filter(StockQuant.product_id == product_id)
+    
+    if location_id:
+        query = query.filter(StockQuant.location_id == location_id)
+    
+    quants = query.all()
+    
+    result = []
+    for quant in quants:
+        # Get product info
+        product = db.query(Product).filter(Product.id == quant.product_id).first()
+        
+        # Get location info
+        location = db.query(Location).filter(Location.id == quant.location_id).first()
+        
+        result.append({
+            "id": quant.id,
+            "product_id": quant.product_id,
+            "product_code": product.code if product else None,
+            "product_name": product.name if product else None,
+            "location_id": quant.location_id,
+            "location_name": location.name if location else None,
+            "qty_on_hand": float(quant.qty_on_hand) if quant.qty_on_hand else 0,
+            "qty_reserved": float(quant.qty_reserved) if quant.qty_reserved else 0,
+            "available_quantity": float(quant.qty_on_hand - quant.qty_reserved) if quant.qty_on_hand and quant.qty_reserved else 0,
+            "lot_id": quant.lot_id,
+            "package_id": quant.package_id
+        })
+    
+    return result
+
+
+# ============================================================================
 # Include Material Debt Sub-router (Feature #4)
 # ============================================================================
 router.include_router(material_debt_router)

@@ -95,7 +95,7 @@ async def create_manufacturing_order(
             detail="Batch number already exists"
         )
 
-    # Create manufacturing order
+    # Create manufacturing order with dual trigger support
     from app.core.models.manufacturing import MOState
     new_mo = ManufacturingOrder(
         so_line_id=mo_data.so_line_id,
@@ -105,7 +105,17 @@ async def create_manufacturing_order(
         routing_type=mo_data.routing_type.value,
         batch_number=mo_data.batch_number,
         state=MOState.DRAFT,
-        created_by_id=current_user.id
+        
+        # Dual Trigger System (NEW)
+        po_fabric_id=mo_data.po_fabric_id,
+        po_label_id=mo_data.po_label_id,
+        trigger_mode=mo_data.trigger_mode,
+        
+        # IKEA Compliance (NEW)
+        production_week=mo_data.production_week,
+        destination_country=mo_data.destination_country,
+        planned_production_date=mo_data.planned_production_date,
+        target_shipment_date=mo_data.target_shipment_date
     )
 
     db.add(new_mo)
@@ -121,6 +131,18 @@ async def create_manufacturing_order(
         routing_type=RoutingType(new_mo.routing_type),
         batch_number=new_mo.batch_number,
         state=MOStatus(new_mo.state),
+        
+        # Dual Trigger System
+        po_fabric_id=new_mo.po_fabric_id,
+        po_label_id=new_mo.po_label_id,
+        trigger_mode=new_mo.trigger_mode,
+        
+        # IKEA Compliance
+        production_week=new_mo.production_week,
+        destination_country=new_mo.destination_country,
+        planned_production_date=new_mo.planned_production_date,
+        target_shipment_date=new_mo.target_shipment_date,
+        
         created_at=new_mo.created_at
     )
 
@@ -711,6 +733,121 @@ async def start_task(
     db.commit()
     db.refresh(mo)
 
+    return ManufacturingOrderResponse(
+        id=mo.id,
+        so_line_id=mo.so_line_id,
+        product_id=mo.product_id,
+        qty_planned=mo.qty_planned,
+        qty_produced=mo.qty_produced,
+        routing_type=RoutingType(mo.routing_type),
+        batch_number=mo.batch_number,
+        state=MOStatus(mo.state),
+        created_at=mo.created_at
+    )
+
+
+@router.post(
+    "/manufacturing-order/{mo_id}/start",
+    response_model=ManufacturingOrderResponse,
+    dependencies=[Depends(require_permission("ppic.approve_mo"))]
+)
+async def start_manufacturing_order(
+    mo_id: int,
+    current_user: User = Depends(require_permission("ppic.approve_mo")),
+    db: Session = Depends(get_db)
+):
+    """Start Manufacturing Order (change from DRAFT to IN_PROGRESS).
+    
+    **Required Permission**: ppic.approve_mo
+    
+    **Path Parameters**:
+    - `mo_id`: Manufacturing Order ID to start
+    
+    **Responses**:
+    - `200`: MO started successfully
+    - `404`: MO not found
+    - `400`: Invalid state transition
+    """
+    from app.core.models.manufacturing import MOState
+    
+    mo = db.query(ManufacturingOrder).filter(ManufacturingOrder.id == mo_id).first()
+    if not mo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Manufacturing order #{mo_id} not found"
+        )
+    
+    # Validate state transition
+    if mo.state not in [MOState.DRAFT, "Draft"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot start MO in {mo.state} state. Must be Draft."
+        )
+    
+    # Update state
+    mo.state = MOState.IN_PROGRESS
+    db.commit()
+    db.refresh(mo)
+    
+    return ManufacturingOrderResponse(
+        id=mo.id,
+        so_line_id=mo.so_line_id,
+        product_id=mo.product_id,
+        qty_planned=mo.qty_planned,
+        qty_produced=mo.qty_produced,
+        routing_type=RoutingType(mo.routing_type),
+        batch_number=mo.batch_number,
+        state=MOStatus(mo.state),
+        created_at=mo.created_at
+    )
+
+
+@router.post(
+    "/manufacturing-order/{mo_id}/complete",
+    response_model=ManufacturingOrderResponse,
+    dependencies=[Depends(require_permission("ppic.approve_mo"))]
+)
+async def complete_manufacturing_order(
+    mo_id: int,
+    current_user: User = Depends(require_permission("ppic.approve_mo")),
+    db: Session = Depends(get_db)
+):
+    """Complete Manufacturing Order (change to DONE state).
+    
+    **Required Permission**: ppic.approve_mo
+    
+    **Path Parameters**:
+    - `mo_id`: Manufacturing Order ID to complete
+    
+    **Responses**:
+    - `200`: MO completed successfully
+    - `404`: MO not found
+    - `400`: Invalid state transition
+    """
+    from app.core.models.manufacturing import MOState
+    import datetime as dt
+    
+    mo = db.query(ManufacturingOrder).filter(ManufacturingOrder.id == mo_id).first()
+    if not mo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Manufacturing order #{mo_id} not found"
+        )
+    
+    # Validate state transition
+    if mo.state not in [MOState.IN_PROGRESS, "In Progress"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot complete MO in {mo.state} state. Must be In Progress."
+        )
+    
+    # Update state
+    mo.state = MOState.DONE
+    mo.completed_at = dt.datetime.utcnow()
+    mo.completed_by_id = current_user.id
+    db.commit()
+    db.refresh(mo)
+    
     return ManufacturingOrderResponse(
         id=mo.id,
         so_line_id=mo.so_line_id,

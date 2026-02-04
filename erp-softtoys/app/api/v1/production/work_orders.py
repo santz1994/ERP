@@ -218,9 +218,8 @@ async def list_work_orders(
     """
     
     query = db.query(WorkOrder).options(
-        joinedload(WorkOrder.mo),
-        joinedload(WorkOrder.input_wip_product),
-        joinedload(WorkOrder.output_wip_product)
+        joinedload(WorkOrder.manufacturing_order),
+        joinedload(WorkOrder.product)
     )
     
     # Apply filters
@@ -263,21 +262,21 @@ async def list_work_orders(
         wo_responses.append(WorkOrderResponse(
             id=wo.id,
             mo_id=wo.mo_id,
-            wo_number=wo.wo_number,
+            wo_number=wo.wo_number or f"WO-{wo.id}",
             department=wo.department.value if hasattr(wo.department, 'value') else str(wo.department),
-            sequence=wo.sequence,
+            sequence=wo.sequence or 0,
             status=wo.status.value if hasattr(wo.status, 'value') else str(wo.status),
-            target_qty=wo.target_qty,
-            actual_qty=wo.actual_qty,
-            good_qty=wo.good_qty,
-            defect_qty=wo.defect_qty,
+            target_qty=wo.target_qty or wo.input_qty,
+            actual_qty=wo.output_qty,
+            good_qty=wo.output_qty,
+            defect_qty=wo.reject_qty,
             notes=wo.notes,
             input_wip_product_id=wo.input_wip_product_id,
-            input_wip_product_code=wo.input_wip_product.code if wo.input_wip_product else None,
-            input_wip_product_name=wo.input_wip_product.name if wo.input_wip_product else None,
+            input_wip_product_code=wo.product.code if wo.product else None,
+            input_wip_product_name=wo.product.name if wo.product else None,
             output_wip_product_id=wo.output_wip_product_id,
-            output_wip_product_code=wo.output_wip_product.code if wo.output_wip_product else None,
-            output_wip_product_name=wo.output_wip_product.name if wo.output_wip_product else None,
+            output_wip_product_code=None,
+            output_wip_product_name=None,
             can_start=can_start,
             dependency_reason=reason
         ))
@@ -491,3 +490,129 @@ async def update_work_order_status(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error updating Work Order status: {str(e)}"
         )
+
+
+@router.post("/{wo_id}/start", status_code=status.HTTP_200_OK)
+async def start_work_order(
+    wo_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    Start a Work Order (change status from PENDING to RUNNING)
+    
+    **Universal endpoint for all departments**
+    
+    Path Parameters:
+    - wo_id: Work Order ID to start
+    
+    Response:
+    - 200: WO started successfully
+    - 404: WO not found
+    - 400: Invalid state transition
+    """
+    from datetime import datetime
+    
+    wo = db.query(WorkOrder).filter_by(id=wo_id).first()
+    if not wo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Work Order #{wo_id} not found"
+        )
+    
+    # Validate state transition
+    if wo.status != WorkOrderStatus.PENDING:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot start WO in {wo.status} state. Must be PENDING."
+        )
+    
+    # Update status
+    wo.status = WorkOrderStatus.RUNNING
+    wo.start_time = datetime.utcnow()
+    db.commit()
+    
+    return {
+        "success": True,
+        "message": f"Work Order #{wo_id} started",
+        "wo_id": wo_id,
+        "department": wo.department.value if hasattr(wo.department, 'value') else str(wo.department),
+        "status": "RUNNING",
+        "start_time": wo.start_time.isoformat()
+    }
+
+
+@router.post("/{wo_id}/complete", status_code=status.HTTP_200_OK)
+async def complete_work_order(
+    wo_id: int,
+    actual_qty: Optional[Decimal] = None,
+    good_qty: Optional[Decimal] = None,
+    defect_qty: Optional[Decimal] = None,
+    notes: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Complete a Work Order (change status from RUNNING to FINISHED)
+    
+    **Universal endpoint for all departments**
+    
+    Path Parameters:
+    - wo_id: Work Order ID to complete
+    
+    Query Parameters:
+    - actual_qty: Actual quantity produced
+    - good_qty: Good quality quantity
+    - defect_qty: Defect quantity
+    - notes: Optional completion notes
+    
+    Response:
+    - 200: WO completed successfully
+    - 404: WO not found
+    - 400: Invalid state transition
+    """
+    from datetime import datetime
+    
+    wo = db.query(WorkOrder).filter_by(id=wo_id).first()
+    if not wo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Work Order #{wo_id} not found"
+        )
+    
+    # Validate state transition
+    if wo.status != WorkOrderStatus.RUNNING:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Cannot complete WO in {wo.status} state. Must be RUNNING."
+        )
+    
+    # Update status and quantities
+    wo.status = WorkOrderStatus.FINISHED
+    wo.end_time = datetime.utcnow()
+    
+    if actual_qty is not None:
+        wo.actual_qty = actual_qty
+    if good_qty is not None:
+        wo.good_qty = good_qty
+    if defect_qty is not None:
+        wo.defect_qty = defect_qty
+    if notes:
+        wo.notes = notes
+    
+    db.commit()
+    
+    # Trigger auto-update for dependent WOs
+    service = BOMExplosionService(db)
+    service.update_wo_status_auto(mo_id=wo.mo_id)
+    
+    return {
+        "success": True,
+        "message": f"Work Order #{wo_id} completed",
+        "wo_id": wo_id,
+        "department": wo.department.value if hasattr(wo.department, 'value') else str(wo.department),
+        "status": "FINISHED",
+        "end_time": wo.end_time.isoformat(),
+        "actual_qty": float(wo.actual_qty) if wo.actual_qty else 0,
+        "good_qty": float(wo.good_qty) if wo.good_qty else 0,
+        "defect_qty": float(wo.defect_qty) if wo.defect_qty else 0
+    }
+

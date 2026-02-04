@@ -50,6 +50,15 @@ class SPK(Base):
     Per-department production order derived from Manufacturing Order
     Tracks daily production input, modifications, and material debt.
     
+    FLEXIBLE TARGET SYSTEM (NEW):
+    - original_qty: Base quantity from MO
+    - buffer_percentage: Department-specific buffer (+10% Cutting, +6.7% Sewing, etc.)
+    - target_qty: Adjusted target (original × buffer)
+    - good_qty: Good output produced
+    - defect_qty: Rejected/defect output
+    - rework_qty: Units sent for rework
+    - produced_qty: Total produced (good + defect)
+    
     DATE TRACKING:
     - planned_start_date: Production scheduled start
     - actual_start_date: When production actually began
@@ -61,12 +70,24 @@ class SPK(Base):
     mo_id = Column(Integer, ForeignKey("manufacturing_orders.id"), nullable=False, index=True)
     department = Column(Enum(Department), nullable=False, index=True)
     
-    # Original quantity tracking
-    original_qty = Column(Integer, default=0, nullable=False)
-    modified_qty = Column(Integer)
-    target_qty = Column(Integer, nullable=False)  # Current target for production
-    produced_qty = Column(Integer, default=0)
+    # ========================================================================
+    # FLEXIBLE TARGET SYSTEM - Buffer Allocation per Department
+    # ========================================================================
+    original_qty = Column(Integer, default=0, nullable=False, comment="Base quantity from MO")
+    buffer_percentage = Column(DECIMAL(5, 2), default=0, nullable=False, 
+                              comment="Department buffer % (10% Cutting, 6.7% Sewing, etc.)")
+    target_qty = Column(Integer, nullable=False, comment="Target with buffer (original × buffer)")
     
+    # Production output tracking
+    good_qty = Column(Integer, default=0, nullable=False, comment="Good output produced")
+    defect_qty = Column(Integer, default=0, nullable=False, comment="Defect/reject output")
+    rework_qty = Column(Integer, default=0, nullable=False, comment="Sent to rework")
+    produced_qty = Column(Integer, default=0, nullable=False, comment="Total produced (good + defect)")
+    
+    # Legacy fields (deprecated - use good_qty/defect_qty instead)
+    modified_qty = Column(Integer, comment="DEPRECATED: Use target_qty instead")
+    
+    # ========================================================================
     # Modification tracking
     modification_reason = Column(String(255))
     modified_by_id = Column(Integer, ForeignKey("users.id"))
@@ -122,6 +143,11 @@ class ManufacturingOrder(Base):
     
     FLOW: PO Purchasing → MO → BOM Explosion → SPK/WO
     
+    DUAL TRIGGER SYSTEM (NEW):
+    - PARTIAL mode: PO Fabric only → Cutting & Embroidery can start
+    - RELEASED mode: PO Fabric + PO Label → All departments can start
+    - Lead time reduction: -3 to -5 days
+    
     IKEA COMPLIANCE:
     - traceability_code: Unique code for product recall (batch + date)
     - label_production_date: Date printed on physical product label
@@ -132,6 +158,18 @@ class ManufacturingOrder(Base):
     __tablename__ = "manufacturing_orders"
 
     id = Column(Integer, primary_key=True, index=True)
+    
+    # ========================================================================
+    # DUAL TRIGGER SYSTEM - PO Fabric + PO Label
+    # ========================================================================
+    po_fabric_id = Column(Integer, ForeignKey("purchase_orders.id"), nullable=True, index=True,
+                         comment="PO for fabric materials (TRIGGER 1: enables Cutting/Embroidery)")
+    po_label_id = Column(Integer, ForeignKey("purchase_orders.id"), nullable=True, index=True,
+                        comment="PO for labels/tags (TRIGGER 2: enables all departments)")
+    trigger_mode = Column(String(20), nullable=False, default="PARTIAL", index=True,
+                         comment="Production release mode: PARTIAL (fabric only) or RELEASED (fabric+label)")
+    
+    # Legacy PO field (deprecated - use po_fabric_id instead)
     po_id = Column(Integer, ForeignKey("purchase_orders.id"), nullable=True, index=True)  # Link to PO Purchasing
     so_line_id = Column(Integer, ForeignKey("sales_order_lines.id"), nullable=True)  # Link to sales order (legacy)
     product_id = Column(Integer, ForeignKey("products.id"), nullable=False)  # Article to produce
@@ -192,6 +230,12 @@ class WorkOrder(Base):
     """Work Order (SPK per Department)
     Individual work instructions for each department/process.
     
+    FLEXIBLE OUTPUT TRACKING (NEW):
+    - output_qty: Primary field for good output (backward compatible)
+    - good_qty: Computed property alias for output_qty
+    - defect_qty: Computed property alias for reject_qty
+    - Supports both new (output/reject) and legacy (good/defect) naming
+    
     DATE TRACKING:
     - planned_start_date: When this WO should start (from production schedule)
     - actual_start_date: When production actually began
@@ -245,16 +289,36 @@ class WorkOrder(Base):
     start_time = Column(DateTime(timezone=True), nullable=True)
     end_time = Column(DateTime(timezone=True), nullable=True)
 
-    # Material tracking
-    input_qty = Column(DECIMAL(10, 2), nullable=False)  # Material received
-    output_qty = Column(DECIMAL(10, 2), nullable=True)  # CRITICAL: Can be Surplus/Shortage
-    reject_qty = Column(DECIMAL(10, 2), default=0)  # Defective units
+    # ========================================================================
+    # MATERIAL TRACKING - Primary Fields
+    # ========================================================================
+    input_qty = Column(DECIMAL(10, 2), nullable=False, comment="Material received as input")
+    output_qty = Column(DECIMAL(10, 2), nullable=True, comment="Good output produced")
+    reject_qty = Column(DECIMAL(10, 2), default=0, comment="Defective/rejected units")
 
     # Labor tracking
     worker_id = Column(Integer, ForeignKey("users.id"), nullable=True)
 
     # Audit
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # ========================================================================
+    # COMPUTED PROPERTIES - Backward Compatibility Aliases
+    # ========================================================================
+    @property
+    def good_qty(self):
+        """Alias for output_qty (backward compatibility)."""
+        return self.output_qty
+    
+    @property
+    def defect_qty(self):
+        """Alias for reject_qty (backward compatibility)."""
+        return self.reject_qty
+    
+    @property
+    def actual_qty(self):
+        """Alias for output_qty (backward compatibility)."""
+        return self.output_qty
 
     # Relationships
     manufacturing_order = relationship("ManufacturingOrder", back_populates="work_orders")
@@ -288,8 +352,8 @@ class SPKMaterialAllocation(Base):
     qty_allocated = Column(DECIMAL(12, 3), nullable=False, comment="Allocated quantity (soft reservation)")
     qty_consumed = Column(DECIMAL(12, 3), nullable=False, default=0, comment="Actually consumed quantity")
     
-    # Unit of Measure
-    uom_id = Column(Integer, ForeignKey("uoms.id"), nullable=True)
+    # Unit of Measure (stored as string enum)
+    uom = Column(String(20), nullable=True, comment="Unit of measurement (Pcs, Meter, Yard, Kg, etc)")
     
     # Status flags
     is_reserved = Column(Boolean, nullable=False, default=True, comment="Is material reserved?")
@@ -306,7 +370,6 @@ class SPKMaterialAllocation(Base):
     # Relationships
     work_order = relationship("WorkOrder", back_populates="allocated_materials")
     material = relationship("Product", foreign_keys=[material_id])
-    uom = relationship("UOM", foreign_keys=[uom_id])
     
     def __repr__(self):
         return f"<SPKMaterialAllocation(wo_id={self.wo_id}, material_id={self.material_id}, allocated={self.qty_allocated})>"

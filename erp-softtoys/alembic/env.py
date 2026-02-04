@@ -28,11 +28,11 @@ from app.core.database import Base
 # This is critical for Alembic autogenerate to work correctly
 from app.core.models.users import User
 from app.core.models.products import Product
-from app.core.models.manufacturing import ManufacturingOrder, SPK, Department
+from app.core.models.manufacturing import ManufacturingOrder, SPK, Department, SPKMaterialAllocation
 from app.core.models.bom import BOMHeader, BOMDetail, BOMVariant
 from app.core.models.warehouse import StockMove, StockQuant, Location
 from app.core.models.audit import AuditLog
-from app.core.models.production import SPKMaterialAllocation
+# from app.core.models.production import SPKMaterialAllocation  # ❌ Moved to manufacturing.py
 from app.modules.approval.models import ApprovalRequest, ApprovalStep
 
 target_metadata = Base.metadata

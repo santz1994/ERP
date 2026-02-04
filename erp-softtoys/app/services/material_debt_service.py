@@ -14,7 +14,8 @@ from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
 from app.core.models.daily_production import MaterialDebt, MaterialDebtSettlement
-from app.core.models.production import SPKMaterialAllocation, SPKMaterialAllocationStatus
+from app.core.models.manufacturing import SPKMaterialAllocation
+from app.core.models.production import SPKMaterialAllocationStatus
 from app.core.models.users import User
 from app.core.models.products import Product
 from app.services.approval_service import ApprovalWorkflowEngine, ApprovalEntityType

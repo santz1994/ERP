@@ -62,7 +62,7 @@ export const BOMExplorer: React.FC<BOMExplorerProps> = ({
     queryKey: ['products-with-bom'],
     queryFn: async () => {
       const response = await apiClient.get('/admin/products?has_bom=true');
-      return response.data;
+      return response.data.products;
     },
     enabled: showSearch
   });

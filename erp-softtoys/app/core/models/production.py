@@ -45,9 +45,11 @@ class SPKEditStatus(str, enum.Enum):
     CANCELLED = "CANCELLED"
 
 
-class SPKMaterialAllocation(Base):
-    """Track material allocation for SPK - Feature #1"""
-    __tablename__ = "spk_material_allocation"
+# DEPRECATED: Use SPKMaterialAllocation from manufacturing.py instead
+# This class kept for backward compatibility only
+class SPKMaterialAllocationOLD(Base):
+    """Track material allocation for SPK - Feature #1 (DEPRECATED)"""
+    __tablename__ = "spk_material_allocation_old"
 
     id = Column(Integer, primary_key=True, index=True)
     spk_id = Column(Integer, ForeignKey("spks.id"), nullable=False, index=True)
