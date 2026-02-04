@@ -1,6 +1,6 @@
 /**
  * PPIC Page - Manufacturing Order Management
- * Updated: 2026-02-04 | Week 5-10 | Frontend Dashboard Integration
+ * Updated: 2026-02-04 | Week 5-10 | Frontend Dashboard Integration + MO Monitoring
  */
 
 import React, { useState } from 'react';
@@ -8,7 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Lock, Eye } from 'lucide-react';
 import { apiClient } from '@/api/client';
 import { usePermission } from '@/hooks/usePermission';
-import { MOCreateForm } from '@/components/manufacturing';
+import { MOCreateForm, MOAggregateView } from '@/components/manufacturing';
 import { BOMExplorer, BOMExplosionViewer } from '@/components/bom';
 
 // Types
@@ -36,12 +36,13 @@ interface Product {
 
 const PPICPage: React.FC = () => {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'mos' | 'bom' | 'planning' | 'workorders' | 'bom-explorer'>('mos');
+  const [activeTab, setActiveTab] = useState<'mos' | 'bom' | 'planning' | 'workorders' | 'bom-explorer' | 'mo-monitoring'>('mos');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showBOMForm, setShowBOMForm] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [selectedMO, setSelectedMO] = useState<number | null>(null);
   const [selectedMOForExplosion, setSelectedMOForExplosion] = useState<number | null>(null);
+  const [selectedMOForMonitoring, setSelectedMOForMonitoring] = useState<number | null>(null);
 
   // Permission checks (PBAC - Phase 16 Week 4)
   const canViewMO = usePermission('ppic.view_mo');
@@ -266,6 +267,16 @@ const PPICPage: React.FC = () => {
           📦 Manufacturing Orders
         </button>
         <button
+          onClick={() => setActiveTab('mo-monitoring')}
+          className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
+            activeTab === 'mo-monitoring'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-600 hover:text-gray-800'
+          }`}
+        >
+          📊 MO Monitoring
+        </button>
+        <button
           onClick={() => setActiveTab('workorders')}
           className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
             activeTab === 'workorders'
@@ -423,6 +434,47 @@ const PPICPage: React.FC = () => {
                 <div className="text-6xl mb-4">📋</div>
                 <p className="text-gray-500 text-lg">No manufacturing orders found</p>
                 <p className="text-gray-400 text-sm mt-2">Create your first MO to start production</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* MO Monitoring Tab - NEW CRITICAL FEATURE */}
+        {activeTab === 'mo-monitoring' && (
+          <div className="p-6">
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Manufacturing Order to Monitor
+              </label>
+              <select
+                value={selectedMOForMonitoring || ''}
+                onChange={(e) => setSelectedMOForMonitoring(e.target.value ? parseInt(e.target.value) : null)}
+                className="w-full md:w-1/2 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">-- Select MO to View Aggregate Data --</option>
+                {mosData?.map((mo: ManufacturingOrder) => (
+                  <option key={mo.id} value={mo.id}>
+                    {mo.batch_number} - {mo.product_name} ({mo.qty_planned} pcs) - {mo.state}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            {selectedMOForMonitoring ? (
+              <MOAggregateView moId={selectedMOForMonitoring} />
+            ) : (
+              <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-12 text-center">
+                <div className="text-6xl mb-4">📊</div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  MO Aggregate Monitoring
+                </h3>
+                <p className="text-gray-600 max-w-2xl mx-auto">
+                  Select a Manufacturing Order from the dropdown above to view:<br/>
+                  • All SPKs progress for the MO<br/>
+                  • Aggregate metrics (total production, good output, defects, rework)<br/>
+                  • MO coverage percentage<br/>
+                  • Real-time status updates
+                </p>
               </div>
             )}
           </div>

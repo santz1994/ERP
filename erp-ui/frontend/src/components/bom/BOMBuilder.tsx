@@ -39,6 +39,15 @@ export const BOMBuilder: React.FC<BOMBuilderProps> = ({ productId, onSave }) => 
   const [showNewDetail, setShowNewDetail] = useState(false)
   const [editingDetailId, setEditingDetailId] = useState<number | null>(null)
 
+  // Multi-item state for bulk add
+  const [bulkDetails, setBulkDetails] = useState([{
+    id: Date.now(),
+    component_id: 0,
+    qty_needed: 0,
+    wastage_percent: 0,
+    has_variants: false,
+  }])
+
   const [newDetail, setNewDetail] = useState({
     component_id: 0,
     qty_needed: 0,
@@ -81,30 +90,44 @@ export const BOMBuilder: React.FC<BOMBuilderProps> = ({ productId, onSave }) => 
     },
   })
 
-  // Add detail mutation
+  // Add detail mutation (supports bulk add)
   const addDetailMutation = useMutation({
-    mutationFn: async (detail: typeof newDetail) => {
+    mutationFn: async (details: typeof bulkDetails) => {
       if (!bom) throw new Error('No BOM selected')
-      return await apiClient.post(`/bom/${bom.id}/details`, {
-        component_id: detail.component_id,
-        qty_needed: parseFloat(detail.qty_needed as any),
-        wastage_percent: parseFloat(detail.wastage_percent as any),
-        has_variants: detail.has_variants,
-      })
+      
+      // Filter valid details
+      const validDetails = details.filter(d => d.component_id > 0 && d.qty_needed > 0)
+      
+      if (validDetails.length === 0) {
+        throw new Error('No valid details to add')
+      }
+
+      // Add all details in parallel
+      const promises = validDetails.map(detail =>
+        apiClient.post(`/bom/${bom.id}/details`, {
+          component_id: detail.component_id,
+          qty_needed: parseFloat(detail.qty_needed as any),
+          wastage_percent: parseFloat(detail.wastage_percent as any),
+          has_variants: detail.has_variants,
+        })
+      )
+      
+      return await Promise.all(promises)
     },
-    onSuccess: () => {
-      addNotification('success', 'BOM detail added')
-      setNewDetail({
+    onSuccess: (results) => {
+      addNotification('success', `✅ Added ${results.length} BOM detail${results.length > 1 ? 's' : ''}`)
+      setBulkDetails([{
+        id: Date.now(),
         component_id: 0,
         qty_needed: 0,
         wastage_percent: 0,
         has_variants: false,
-      })
+      }])
       setShowNewDetail(false)
       refetch()
     },
     onError: (error: any) => {
-      addNotification('error', error.response?.data?.detail || 'Failed to add detail')
+      addNotification('error', error.message || error.response?.data?.detail || 'Failed to add details')
     },
   })
 
@@ -205,93 +228,167 @@ export const BOMBuilder: React.FC<BOMBuilderProps> = ({ productId, onSave }) => 
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div className="p-4 bg-gray-50 border-b flex justify-between items-center">
           <h3 className="font-semibold text-gray-900">
-            BOM Details ({bom.details.length})
+            📦 BOM Details ({bom.details.length})
           </h3>
           <button
             onClick={() => setShowNewDetail(!showNewDetail)}
-            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium flex items-center gap-1"
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm"
           >
             <Plus className="w-4 h-4" />
-            Add Line Item
+            {showNewDetail ? 'Close' : 'Bulk Add Materials'}
           </button>
         </div>
 
-        {/* New Detail Form */}
+        {/* Bulk Add Form - MULTI-ITEM SUPPORT */}
         {showNewDetail && (
-          <div className="p-4 bg-blue-50 border-b space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+          <div className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-b space-y-4">
+            <div className="flex items-center justify-between mb-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Component ID
-                </label>
-                <input
-                  type="number"
-                  value={newDetail.component_id}
-                  onChange={(e) =>
-                    setNewDetail({ ...newDetail, component_id: parseInt(e.target.value) || 0 })
-                  }
-                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                  placeholder="Material ID"
-                />
+                <h4 className="text-lg font-bold text-gray-900">Add Multiple Materials</h4>
+                <p className="text-sm text-gray-600">Add multiple components to BOM at once</p>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Quantity Needed
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={newDetail.qty_needed}
-                  onChange={(e) =>
-                    setNewDetail({ ...newDetail, qty_needed: e.target.value as any })
-                  }
-                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                  placeholder="0.00"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Wastage %
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={newDetail.wastage_percent}
-                  onChange={(e) =>
-                    setNewDetail({ ...newDetail, wastage_percent: e.target.value as any })
-                  }
-                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                  placeholder="0.00"
-                />
-              </div>
-              <div className="flex items-end">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={newDetail.has_variants}
-                    onChange={(e) =>
-                      setNewDetail({ ...newDetail, has_variants: e.target.checked })
-                    }
-                    className="w-4 h-4"
-                  />
-                  <span className="text-sm font-medium text-gray-700">Multi-Material</span>
-                </label>
-              </div>
+              <button
+                onClick={() => setBulkDetails([...bulkDetails, {
+                  id: Date.now(),
+                  component_id: 0,
+                  qty_needed: 0,
+                  wastage_percent: 0,
+                  has_variants: false,
+                }])}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Add Row
+              </button>
             </div>
 
-            <div className="flex gap-2">
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {bulkDetails.map((detail, index) => (
+                <div key={detail.id} className="bg-white p-4 rounded-lg border-2 border-blue-200 shadow-sm">
+                  <div className="flex items-start gap-3">
+                    <span className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                      {index + 1}
+                    </span>
+
+                    <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Component ID <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          value={detail.component_id || ''}
+                          onChange={(e) => {
+                            const newDetails = [...bulkDetails]
+                            newDetails[index].component_id = parseInt(e.target.value) || 0
+                            setBulkDetails(newDetails)
+                          }}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                          placeholder="Material ID"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Qty Needed <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={detail.qty_needed || ''}
+                          onChange={(e) => {
+                            const newDetails = [...bulkDetails]
+                            newDetails[index].qty_needed = parseFloat(e.target.value) || 0
+                            setBulkDetails(newDetails)
+                          }}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                          placeholder="0.00"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Wastage %
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={detail.wastage_percent || ''}
+                          onChange={(e) => {
+                            const newDetails = [...bulkDetails]
+                            newDetails[index].wastage_percent = parseFloat(e.target.value) || 0
+                            setBulkDetails(newDetails)
+                          }}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                          placeholder="0.00"
+                        />
+                      </div>
+
+                      <div className="flex flex-col justify-between">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={detail.has_variants}
+                            onChange={(e) => {
+                              const newDetails = [...bulkDetails]
+                              newDetails[index].has_variants = e.target.checked
+                              setBulkDetails(newDetails)
+                            }}
+                            className="w-4 h-4"
+                          />
+                          <span className="text-xs font-medium text-gray-700">Multi-Material</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {bulkDetails.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => setBulkDetails(bulkDetails.filter((_, i) => i !== index))}
+                        className="flex-shrink-0 p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                        title="Remove"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {detail.component_id > 0 && detail.qty_needed > 0 && (
+                    <div className="mt-2 text-sm text-green-600 font-medium">
+                      ✓ Valid - {detail.qty_needed} units {detail.wastage_percent > 0 ? `+ ${detail.wastage_percent}% wastage` : ''}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Summary & Actions */}
+            <div className="flex gap-3 pt-4 border-t border-blue-200">
               <button
-                onClick={() => addDetailMutation.mutate(newDetail)}
-                disabled={addDetailMutation.isPending || !newDetail.component_id}
-                className="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm font-medium disabled:opacity-50"
-              >
-                {addDetailMutation.isPending ? 'Adding...' : 'Add Detail'}
-              </button>
-              <button
-                onClick={() => setShowNewDetail(false)}
-                className="flex-1 px-3 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded text-sm font-medium"
+                type="button"
+                onClick={() => {
+                  setShowNewDetail(false)
+                  setBulkDetails([{
+                    id: Date.now(),
+                    component_id: 0,
+                    qty_needed: 0,
+                    wastage_percent: 0,
+                    has_variants: false,
+                  }])
+                }}
+                className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-lg text-sm font-medium"
               >
                 Cancel
+              </button>
+              <button
+                onClick={() => addDetailMutation.mutate(bulkDetails)}
+                disabled={addDetailMutation.isPending || bulkDetails.filter(d => d.component_id > 0 && d.qty_needed > 0).length === 0}
+                className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {addDetailMutation.isPending 
+                  ? 'Adding...' 
+                  : `Add ${bulkDetails.filter(d => d.component_id > 0 && d.qty_needed > 0).length} Material${bulkDetails.filter(d => d.component_id > 0 && d.qty_needed > 0).length !== 1 ? 's' : ''}`
+                }
               </button>
             </div>
           </div>

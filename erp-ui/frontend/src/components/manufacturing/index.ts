@@ -6,3 +6,4 @@
 export { MOCreateForm } from './MOCreateForm';
 export { MaterialShortageAlerts } from './MaterialShortageAlerts';
 export { WorkOrdersDashboard } from './WorkOrdersDashboard';
+export { MOAggregateView } from './MOAggregateView';

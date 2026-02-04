@@ -23,6 +23,7 @@ import WarehousePage from '@/pages/WarehousePage'
 import KanbanPage from '@/pages/KanbanPage'
 import ReportsPage from '@/pages/ReportsPage'
 import QCPage from '@/pages/QCPage'
+import ReworkManagementPage from '@/pages/ReworkManagementPage'
 import AdminUserPage from '@/pages/AdminUserPage'
 import PermissionManagementPage from '@/pages/PermissionManagementPage'
 import AdminMasterdataPage from '@/pages/AdminMasterdataPage'
@@ -277,6 +278,17 @@ function App() {
             <PrivateRoute module="qc">
               <ProtectedLayout>
                 <QCPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/rework-management"
+          element={
+            <PrivateRoute module="qc">
+              <ProtectedLayout>
+                <ReworkManagementPage />
               </ProtectedLayout>
             </PrivateRoute>
           }

@@ -145,6 +145,12 @@ const menuItems: MenuItem[] = [
     roles: [UserRole.QC_INSPECTOR, UserRole.QC_LAB, UserRole.ADMIN] 
   },
   { 
+    icon: <FileEdit />, 
+    label: 'Rework Management', 
+    path: '/rework-management', 
+    roles: [UserRole.QC_INSPECTOR, UserRole.QC_LAB, UserRole.SPV, UserRole.MANAGER, UserRole.ADMIN] 
+  },
+  { 
     icon: <FileText />, 
     label: 'Reports', 
     path: '/reports', 
