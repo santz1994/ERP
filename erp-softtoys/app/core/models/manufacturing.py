@@ -49,6 +49,11 @@ class SPK(Base):
     """SPK - Surat Perintah Kerja (Production Work Order)
     Per-department production order derived from Manufacturing Order
     Tracks daily production input, modifications, and material debt.
+    
+    DATE TRACKING:
+    - planned_start_date: Production scheduled start
+    - actual_start_date: When production actually began
+    - production_date_stamp: Date for traceability tracking
     """
     __tablename__ = "spks"
 
@@ -74,6 +79,14 @@ class SPK(Base):
     completion_date = Column(Date)
     allow_negative_inventory = Column(Boolean, default=False)
     
+    # ========================================================================
+    # DATE TRACKING - Production Planning & Traceability
+    # ========================================================================
+    planned_start_date = Column(Date, nullable=True, comment="Production scheduled start date")
+    actual_start_date = Column(Date, nullable=True, comment="Actual production start date")
+    production_date_stamp = Column(Date, nullable=True, comment="Production date stamp for traceability")
+    
+    # ========================================================================
     # Negative inventory approval
     negative_approval_status = Column(String(50))  # PENDING, APPROVED, REJECTED
     negative_approved_by_id = Column(Integer, ForeignKey("users.id"))
@@ -106,12 +119,21 @@ class WorkOrderStatus(str, enum.Enum):
 class ManufacturingOrder(Base):
     """Manufacturing Order (SPK Induk)
     Master production order that spans multiple departments.
+    
+    FLOW: PO Purchasing → MO → BOM Explosion → SPK/WO
+    
+    IKEA COMPLIANCE:
+    - traceability_code: Unique code for product recall (batch + date)
+    - label_production_date: Date printed on physical product label
+    - production_week: IKEA week format (WW-YYYY) - inherited from PO
+    - destination_country: Shipping destination - inherited from PO
     """
 
     __tablename__ = "manufacturing_orders"
 
     id = Column(Integer, primary_key=True, index=True)
-    so_line_id = Column(Integer, ForeignKey("sales_order_lines.id"), nullable=True)  # Link to sales order
+    po_id = Column(Integer, ForeignKey("purchase_orders.id"), nullable=True, index=True)  # Link to PO Purchasing
+    so_line_id = Column(Integer, ForeignKey("sales_order_lines.id"), nullable=True)  # Link to sales order (legacy)
     product_id = Column(Integer, ForeignKey("products.id"), nullable=False)  # Article to produce
 
     # Quantity tracking
@@ -125,6 +147,33 @@ class ManufacturingOrder(Base):
     # Status
     state = Column(Enum(MOState), default=MOState.DRAFT, index=True)
 
+    # ========================================================================
+    # IKEA COMPLIANCE - Production Date Tracking & Traceability
+    # ========================================================================
+    
+    # Production planning dates (set by management/PPIC)
+    planned_production_date = Column(Date, nullable=True, index=True,
+                                    comment="Target date when production should start (set by PPIC)")
+    target_shipment_date = Column(Date, nullable=True,
+                                  comment="Target date for shipment to customer/IKEA")
+    
+    # Actual production dates (auto-updated from work orders)
+    actual_production_start_date = Column(Date, nullable=True,
+                                         comment="Actual date when production started (first WO began)")
+    actual_production_end_date = Column(Date, nullable=True,
+                                       comment="Actual date when production completed (last WO finished)")
+    
+    # IKEA traceability requirements
+    label_production_date = Column(Date, nullable=True, index=True,
+                                   comment="Date printed on product label (IKEA traceability requirement)")
+    production_week = Column(String(10), nullable=True, index=True,
+                            comment="Production week in IKEA format (e.g., 05-2026)")
+    destination_country = Column(String(50), nullable=True, index=True,
+                                comment="Shipping destination country")
+    traceability_code = Column(String(50), nullable=True, unique=True, index=True,
+                              comment="Unique traceability code (batch + date) for product recall")
+    
+    # ========================================================================
     # Audit
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     started_at = Column(DateTime(timezone=True), nullable=True)
@@ -142,6 +191,13 @@ class ManufacturingOrder(Base):
 class WorkOrder(Base):
     """Work Order (SPK per Department)
     Individual work instructions for each department/process.
+    
+    DATE TRACKING:
+    - planned_start_date: When this WO should start (from production schedule)
+    - actual_start_date: When production actually began
+    - planned_completion_date: Target completion date
+    - actual_completion_date: When work was actually finished
+    - production_date_stamp: Date for this department's output (traceability)
     """
 
     __tablename__ = "work_orders"
@@ -164,7 +220,28 @@ class WorkOrder(Base):
     # Execution status
     status = Column(Enum(WorkOrderStatus), default=WorkOrderStatus.PENDING, index=True)
 
-    # Timing
+    # ========================================================================
+    # DATE TRACKING - Department-Level Production Dates
+    # ========================================================================
+    
+    # Planned dates (from production schedule)
+    planned_start_date = Column(Date, nullable=True, index=True,
+                               comment="Planned date when this WO should start")
+    planned_completion_date = Column(Date, nullable=True,
+                                    comment="Planned date when this WO should complete")
+    
+    # Actual dates (from operators)
+    actual_start_date = Column(Date, nullable=True, index=True,
+                              comment="Actual date when this WO started production")
+    actual_completion_date = Column(Date, nullable=True,
+                                   comment="Actual date when this WO was completed")
+    
+    # Traceability date stamp
+    production_date_stamp = Column(Date, nullable=True,
+                                  comment="Date stamp for this department output (for traceability)")
+    
+    # ========================================================================
+    # Timing (legacy - datetime tracking)
     start_time = Column(DateTime(timezone=True), nullable=True)
     end_time = Column(DateTime(timezone=True), nullable=True)
 
@@ -183,10 +260,56 @@ class WorkOrder(Base):
     manufacturing_order = relationship("ManufacturingOrder", back_populates="work_orders")
     product = relationship("Product", foreign_keys=[product_id], back_populates="work_orders")
     material_consumptions = relationship("MaterialConsumption", back_populates="work_order", cascade="all, delete-orphan")
+    allocated_materials = relationship("SPKMaterialAllocation", back_populates="work_order", cascade="all, delete-orphan")
     qc_inspections = relationship("QCInspection", back_populates="work_order")
 
     def __repr__(self):
         return f"<WorkOrder(id={self.id}, dept={self.department.value}, status={self.status.value})>"
+
+
+class SPKMaterialAllocation(Base):
+    """
+    SPK Material Allocation - Week 4 Implementation
+    Tracks material allocation and consumption per Work Order
+    
+    Features:
+    - Soft reservation (is_reserved=True, is_consumed=False)
+    - Hard consumption (is_consumed=True)
+    - Material debt support (negative inventory)
+    """
+    
+    __tablename__ = "spk_material_allocations"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    wo_id = Column(Integer, ForeignKey("work_orders.id"), nullable=False, index=True)
+    material_id = Column(Integer, ForeignKey("products.id"), nullable=False, index=True)
+    
+    # Quantities
+    qty_allocated = Column(DECIMAL(12, 3), nullable=False, comment="Allocated quantity (soft reservation)")
+    qty_consumed = Column(DECIMAL(12, 3), nullable=False, default=0, comment="Actually consumed quantity")
+    
+    # Unit of Measure
+    uom_id = Column(Integer, ForeignKey("uoms.id"), nullable=True)
+    
+    # Status flags
+    is_reserved = Column(Boolean, nullable=False, default=True, comment="Is material reserved?")
+    is_consumed = Column(Boolean, nullable=False, default=False, comment="Is material consumed?")
+    
+    # Timestamps
+    allocated_at = Column(DateTime, nullable=True, comment="When allocated")
+    consumed_at = Column(DateTime, nullable=True, comment="When consumed")
+    
+    # Audit
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    work_order = relationship("WorkOrder", back_populates="allocated_materials")
+    material = relationship("Product", foreign_keys=[material_id])
+    uom = relationship("UOM", foreign_keys=[uom_id])
+    
+    def __repr__(self):
+        return f"<SPKMaterialAllocation(wo_id={self.wo_id}, material_id={self.material_id}, allocated={self.qty_allocated})>"
 
 
 class MaterialConsumption(Base):

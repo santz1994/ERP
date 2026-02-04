@@ -34,10 +34,11 @@ interface Product {
 
 const PPICPage: React.FC = () => {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'mos' | 'bom' | 'planning'>('mos');
+  const [activeTab, setActiveTab] = useState<'mos' | 'bom' | 'planning' | 'workorders'>('mos');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showBOMForm, setShowBOMForm] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [selectedMO, setSelectedMO] = useState<number | null>(null);
 
   // Permission checks (PBAC - Phase 16 Week 4)
   const canViewMO = usePermission('ppic.view_mo');
@@ -76,6 +77,19 @@ const PPICPage: React.FC = () => {
         p.type === 'WIP' || p.type === 'Finish Good'
       );
     }
+  });
+
+  // Fetch Work Orders
+  const { data: workOrdersData, isLoading: wosLoading } = useQuery({
+    queryKey: ['work-orders', selectedMO],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (selectedMO) params.append('mo_id', selectedMO.toString());
+      const response = await apiClient.get(`/work-orders?${params}`);
+      return response.data;
+    },
+    enabled: activeTab === 'workorders',
+    refetchInterval: 5000
   });
 
   // Create MO Mutation
@@ -128,6 +142,22 @@ const PPICPage: React.FC = () => {
     },
     onError: (error: any) => {
       alert('❌ Error: ' + (error.response?.data?.detail || error.message));
+    }
+  });
+
+  // Generate Work Orders Mutation
+  const generateWOMutation = useMutation({
+    mutationFn: async (moId: number) => {
+      const response = await apiClient.post('/work-orders/generate', { mo_id: moId });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['manufacturing-orders'] });
+      alert(`✅ Successfully generated ${data.work_orders_created} Work Orders!`);
+    },
+    onError: (error: any) => {
+      const errorMsg = error.response?.data?.detail || error.message;
+      alert('❌ Error generating Work Orders: ' + errorMsg);
     }
   });
 
@@ -233,6 +263,16 @@ const PPICPage: React.FC = () => {
           📦 Manufacturing Orders
         </button>
         <button
+          onClick={() => setActiveTab('workorders')}
+          className={`px-6 py-3 font-medium transition-colors ${
+            activeTab === 'workorders'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-600 hover:text-gray-800'
+          }`}
+        >
+          🏭 Work Orders
+        </button>
+        <button
           onClick={() => setActiveTab('bom')}
           className={`px-6 py-3 font-medium transition-colors ${
             activeTab === 'bom'
@@ -320,14 +360,24 @@ const PPICPage: React.FC = () => {
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="flex justify-center gap-2">
+                          <div className="flex justify-center gap-2 flex-wrap">
                             {mo.state === 'Draft' && (
-                              <button
-                                onClick={() => startMOMutation.mutate(mo.id)}
-                                className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
-                              >
-                                ▶️ Start
-                              </button>
+                              <>
+                                <button
+                                  onClick={() => generateWOMutation.mutate(mo.id)}
+                                  disabled={generateWOMutation.isPending}
+                                  className="px-3 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
+                                  title="Generate Work Orders from BOM"
+                                >
+                                  🏭 Generate WOs
+                                </button>
+                                <button
+                                  onClick={() => startMOMutation.mutate(mo.id)}
+                                  className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                                >
+                                  ▶️ Start
+                                </button>
+                              </>
                             )}
                             {mo.state === 'In Progress' && (
                               <button
@@ -352,6 +402,101 @@ const PPICPage: React.FC = () => {
                 <div className="text-6xl mb-4">📋</div>
                 <p className="text-gray-500 text-lg">No manufacturing orders found</p>
                 <p className="text-gray-400 text-sm mt-2">Create your first MO to start production</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Work Orders Tab */}
+        {activeTab === 'workorders' && (
+          <div>
+            <div className="p-4 border-b flex justify-between items-center">
+              <h3 className="font-semibold text-lg">Work Orders by Department</h3>
+              <select
+                value={selectedMO || ''}
+                onChange={(e) => setSelectedMO(e.target.value ? parseInt(e.target.value) : null)}
+                className="px-3 py-2 border rounded-lg"
+              >
+                <option value="">All MOs</option>
+                {mosData?.map((mo: ManufacturingOrder) => (
+                  <option key={mo.id} value={mo.id}>
+                    {mo.batch_number} - {mo.product_code}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            {wosLoading ? (
+              <div className="p-12 text-center">
+                <div className="text-4xl mb-4">⏳</div>
+                <p className="text-gray-500">Loading work orders...</p>
+              </div>
+            ) : workOrdersData && workOrdersData.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">WO Number</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Department</th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Sequence</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Target Qty</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actual Qty</th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Input WIP</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Output WIP</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {workOrdersData.map((wo: any) => (
+                      <tr key={wo.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 text-sm font-medium text-blue-600">{wo.wo_number}</td>
+                        <td className="px-6 py-4 text-sm">
+                          <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                            wo.department === 'CUTTING' ? 'bg-red-100 text-red-800' :
+                            wo.department === 'EMBROIDERY' ? 'bg-yellow-100 text-yellow-800' :
+                            wo.department === 'SEWING' ? 'bg-blue-100 text-blue-800' :
+                            wo.department === 'FINISHING' ? 'bg-purple-100 text-purple-800' :
+                            wo.department === 'PACKING' ? 'bg-green-100 text-green-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {wo.department}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-center font-bold text-gray-900">#{wo.sequence}</td>
+                        <td className="px-6 py-4 text-sm text-right font-semibold text-gray-900">
+                          {parseFloat(wo.target_qty).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-right font-bold text-green-600">
+                          {wo.actual_qty ? parseFloat(wo.actual_qty).toLocaleString(undefined, { maximumFractionDigits: 2 }) : '-'}
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                            wo.status === 'PENDING' ? 'bg-gray-100 text-gray-800' :
+                            wo.status === 'READY' ? 'bg-blue-100 text-blue-800' :
+                            wo.status === 'IN_PROGRESS' ? 'bg-yellow-100 text-yellow-800' :
+                            wo.status === 'FINISHED' ? 'bg-green-100 text-green-800' :
+                            wo.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {wo.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-xs text-gray-600">
+                          {wo.input_wip_product_code || 'Raw Materials'}
+                        </td>
+                        <td className="px-6 py-4 text-xs text-gray-600">
+                          {wo.output_wip_product_code || '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="p-12 text-center">
+                <div className="text-6xl mb-4">🏭</div>
+                <p className="text-gray-500 text-lg">No work orders found</p>
+                <p className="text-gray-400 text-sm mt-2">Generate WOs from a Manufacturing Order first</p>
               </div>
             )}
           </div>

@@ -1,131 +1,118 @@
 """
-Approval Workflow Models - Database schema for multi-level approvals
+Approval Workflow Models
+Feature #2: Multi-level Approval System
 
 Tables:
 - approval_requests: Main approval request tracking
-- approval_steps: Individual approval steps (SPV → Manager → Director)
+- approval_steps: Individual step tracking per approval chain
+
+Author: IT Developer Senior
+Date: 4 Februari 2026
 """
 
+from sqlalchemy import Column, String, Integer, Text, DateTime, ForeignKey, JSON, Index
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from sqlalchemy.orm import relationship
 from datetime import datetime
 from uuid import uuid4
-from sqlalchemy import (
-    Column, DateTime, String, Integer, UUID, JSON, ForeignKey, 
-    Text, Index, Boolean, Enum as SQLEnum
-)
-from sqlalchemy.orm import relationship
-import enum
 
 from app.core.database import Base
 
 
-class ApprovalEntityType(str, enum.Enum):
-    """Entity types that can be approved"""
-    SPK_CREATE = "SPK_CREATE"
-    SPK_EDIT_QUANTITY = "SPK_EDIT_QUANTITY"
-    SPK_EDIT_DEADLINE = "SPK_EDIT_DEADLINE"
-    MO_EDIT = "MO_EDIT"
-    MATERIAL_DEBT = "MATERIAL_DEBT"
-    STOCK_ADJUSTMENT = "STOCK_ADJUSTMENT"
-
-
-class ApprovalRequestStatus(str, enum.Enum):
-    """Status of approval request"""
-    PENDING = "PENDING"
-    SPV_APPROVED = "SPV_APPROVED"
-    MANAGER_APPROVED = "MANAGER_APPROVED"
-    APPROVED = "APPROVED"
-    REJECTED = "REJECTED"
-    CANCELLED = "CANCELLED"
-
-
-class ApprovalStepStatus(str, enum.Enum):
-    """Status of individual approval step"""
-    PENDING = "PENDING"
-    APPROVED = "APPROVED"
-    REJECTED = "REJECTED"
-
-
 class ApprovalRequest(Base):
-    """Main approval request table"""
+    """
+    Main approval request table
+    
+    Tracks approval requests for various entities:
+    - SPK_CREATE
+    - SPK_EDIT_QUANTITY
+    - SPK_EDIT_DEADLINE
+    - MO_EDIT
+    - MATERIAL_DEBT
+    - STOCK_ADJUSTMENT
+    """
     __tablename__ = "approval_requests"
+
+    id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
     
-    # Primary Key
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    # Entity being approved
+    entity_type = Column(String(50), nullable=False, index=True)
+    entity_id = Column(PG_UUID(as_uuid=True), nullable=False, index=True)
     
-    # Entity Information
-    entity_type = Column(SQLEnum(ApprovalEntityType), nullable=False, index=True)
-    entity_id = Column(UUID(as_uuid=True), nullable=False, index=True)
+    # Submission details
+    submitted_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    changes = Column(JSON, nullable=False)  # What's being changed
+    reason = Column(Text, nullable=False)  # Why the change
     
-    # Submitter Information
-    submitted_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    # Approval workflow state
+    status = Column(String(20), nullable=False, default="PENDING", index=True)
+    # Status values: PENDING, SPV_APPROVED, MANAGER_APPROVED, APPROVED, REJECTED, REVERTED
     
-    # Request Details
-    changes = Column(JSON, nullable=False)  # JSON of proposed changes
-    reason = Column(Text, nullable=False)
+    current_step = Column(Integer, default=0, nullable=False)  # 0=SPV, 1=Manager, 2=Director
+    approval_chain = Column(JSON, nullable=False)  # ["SPV", "MANAGER"] or ["SPV", "MANAGER", "DIRECTOR"]
+    approvals = Column(JSON)  # Array of approval steps with timestamps
+    # Format: [{"step": 0, "approver_id": int, "approved_at": "timestamp", "notes": "text"}, ...]
     
-    # Approval Flow
-    status = Column(SQLEnum(ApprovalRequestStatus), default=ApprovalRequestStatus.PENDING, nullable=False)
-    current_step = Column(Integer, default=0)  # Which step in approval chain (0=SPV, 1=Manager, 2=Director)
-    approval_chain = Column(JSON, nullable=False)  # ["SPV", "MANAGER"] or ["MANAGER"]
-    
-    # Approval History (JSON array of approvals with timestamps)
-    approvals = Column(JSON)
-    
-    # Rejection Info
+    # Rejection tracking
     rejection_reason = Column(Text)
-    rejected_by = Column(UUID(as_uuid=True), ForeignKey("users.id"))
+    rejected_by = Column(Integer, ForeignKey("users.id"))
     rejected_at = Column(DateTime)
     
     # Timestamps
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
     # Relationships
-    approval_steps = relationship("ApprovalStep", back_populates="approval_request", cascade="all, delete-orphan")
-    
-    # Indexes for performance
+    submitter = relationship("User", foreign_keys=[submitted_by], backref="approval_requests_submitted")
+    rejector = relationship("User", foreign_keys=[rejected_by], backref="approval_requests_rejected")
+    steps = relationship("ApprovalStep", back_populates="approval_request", cascade="all, delete-orphan")
+
+    # Indexes
     __table_args__ = (
-        Index("idx_approval_requests_entity", "entity_type", "entity_id"),
-        Index("idx_approval_requests_status", "status"),
-        Index("idx_approval_requests_created", "created_at"),
-        Index("idx_approval_requests_submitted", "submitted_by"),
+        Index('idx_approval_requests_entity', 'entity_type', 'entity_id'),
+        Index('idx_approval_requests_status', 'status'),
+        Index('idx_approval_requests_created', 'created_at'),
     )
+
+    def __repr__(self):
+        return f"<ApprovalRequest {self.entity_type} {self.entity_id} - {self.status}>"
 
 
 class ApprovalStep(Base):
-    """Individual approval steps (SPV, Manager, Director)"""
+    """
+    Individual approval step tracking
+    
+    Each approval request has multiple steps (SPV → Manager → Director)
+    This table tracks each step individually for detailed audit trail
+    """
     __tablename__ = "approval_steps"
+
+    id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
+    approval_request_id = Column(PG_UUID(as_uuid=True), ForeignKey("approval_requests.id"), nullable=False, index=True)
     
-    # Primary Key
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    
-    # Foreign Key
-    approval_request_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("approval_requests.id"),
-        nullable=False,
-        index=True
-    )
-    
-    # Step Information
+    # Step details
     step_number = Column(Integer, nullable=False)  # 1=SPV, 2=Manager, 3=Director
     approver_role = Column(String(50), nullable=False)  # SPV, MANAGER, DIRECTOR
-    status = Column(SQLEnum(ApprovalStepStatus), default=ApprovalStepStatus.PENDING, nullable=False)
+    status = Column(String(20), nullable=False, default="PENDING", index=True)
+    # Status values: PENDING, APPROVED, REJECTED, SKIPPED
     
-    # Approval Information
-    approved_by = Column(UUID(as_uuid=True), ForeignKey("users.id"))
+    # Approval action
+    approved_by = Column(Integer, ForeignKey("users.id"))
     approved_at = Column(DateTime)
-    notes = Column(Text)  # Approver notes
+    notes = Column(Text)  # Approver can add notes
     
     # Timestamps
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
-    
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+
     # Relationships
-    approval_request = relationship("ApprovalRequest", back_populates="approval_steps")
-    
+    approval_request = relationship("ApprovalRequest", back_populates="steps")
+    approver = relationship("User", foreign_keys=[approved_by], backref="approval_steps_approved")
+
     # Indexes
     __table_args__ = (
-        Index("idx_approval_steps_request", "approval_request_id"),
-        Index("idx_approval_steps_status", "status"),
+        Index('idx_approval_steps_request', 'approval_request_id'),
+        Index('idx_approval_steps_status', 'status'),
     )
+
+    def __repr__(self):
+        return f"<ApprovalStep {self.step_number} - {self.approver_role} - {self.status}>"

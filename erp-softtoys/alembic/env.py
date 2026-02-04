@@ -23,6 +23,18 @@ if config.config_file_name is not None:
 # add your model's MetaData object here
 # for 'autogenerate' support
 from app.core.database import Base
+
+# Import all models so they're registered with Base.metadata
+# This is critical for Alembic autogenerate to work correctly
+from app.core.models.users import User
+from app.core.models.products import Product
+from app.core.models.manufacturing import ManufacturingOrder, SPK, Department
+from app.core.models.bom import BOMHeader, BOMDetail, BOMVariant
+from app.core.models.warehouse import StockMove, StockQuant, Location
+from app.core.models.audit import AuditLog
+from app.core.models.production import SPKMaterialAllocation
+from app.modules.approval.models import ApprovalRequest, ApprovalStep
+
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
