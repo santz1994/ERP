@@ -5,6 +5,11 @@ import BarcodeScanner from '../components/BarcodeScanner';
 import MaterialRequestModal, { MaterialRequestFormData } from '../components/warehouse/MaterialRequestModal';
 import MaterialRequestsList from '../components/warehouse/MaterialRequestsList';
 import { useUIStore } from '@/store';
+import { 
+  StockManagement, 
+  MaterialReservation, 
+  StockDeductionTracker 
+} from '@/components/warehouse';
 
 // Types
 interface StockItem {
@@ -33,7 +38,7 @@ interface StockMovement {
 
 const WarehousePage: React.FC = () => {
   const { addNotification } = useUIStore();
-  const [activeTab, setActiveTab] = useState<'inventory' | 'movements' | 'barcode' | 'transfers' | 'material-requests'>('inventory');
+  const [activeTab, setActiveTab] = useState<'inventory' | 'movements' | 'barcode' | 'transfers' | 'material-requests' | 'stock-management' | 'material-reservation' | 'stock-deduction'>('stock-management');
   const [searchTerm, setSearchTerm] = useState('');
   const [showLowStockOnly, setShowLowStockOnly] = useState(false);
   
@@ -351,6 +356,36 @@ const WarehousePage: React.FC = () => {
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b overflow-x-auto">
         <button
+          onClick={() => setActiveTab('stock-management')}
+          className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
+            activeTab === 'stock-management'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-600 hover:text-gray-800'
+          }`}
+        >
+          📋 Stock Management
+        </button>
+        <button
+          onClick={() => setActiveTab('material-reservation')}
+          className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
+            activeTab === 'material-reservation'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-600 hover:text-gray-800'
+          }`}
+        >
+          🔒 Material Reservation
+        </button>
+        <button
+          onClick={() => setActiveTab('stock-deduction')}
+          className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
+            activeTab === 'stock-deduction'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-600 hover:text-gray-800'
+          }`}
+        >
+          📉 Stock Deduction
+        </button>
+        <button
           onClick={() => setActiveTab('inventory')}
           className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
             activeTab === 'inventory'
@@ -394,6 +429,27 @@ const WarehousePage: React.FC = () => {
 
       {/* Content Area */}
       <div className="bg-white rounded-lg shadow">
+        {/* Stock Management Tab - NEW */}
+        {activeTab === 'stock-management' && (
+          <div className="p-6">
+            <StockManagement />
+          </div>
+        )}
+
+        {/* Material Reservation Tab - NEW */}
+        {activeTab === 'material-reservation' && (
+          <div className="p-6">
+            <MaterialReservation />
+          </div>
+        )}
+
+        {/* Stock Deduction Tracker Tab - NEW */}
+        {activeTab === 'stock-deduction' && (
+          <div className="p-6">
+            <StockDeductionTracker />
+          </div>
+        )}
+
         {/* Barcode Scanner Tab */}
         {activeTab === 'barcode' && (
           <div className="p-6">

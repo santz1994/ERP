@@ -16,7 +16,7 @@ from datetime import datetime
 from app.core.database import get_db
 from app.core.models.manufacturing import WorkOrder, ManufacturingOrder, WorkOrderStatus, Department
 from app.core.models.products import Product
-from app.core.models.warehouse import StockQuant, StockLocation
+from app.core.models.warehouse import StockQuant, Location
 from app.services.bom_explosion_service import BOMExplosionService
 from pydantic import BaseModel, Field
 

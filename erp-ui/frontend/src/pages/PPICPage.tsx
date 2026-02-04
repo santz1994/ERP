@@ -1,13 +1,15 @@
 /**
  * PPIC Page - Manufacturing Order Management
- * Updated: 2026-01-21 | Phase 16 Week 4 | PBAC Integration
+ * Updated: 2026-02-04 | Week 5-10 | Frontend Dashboard Integration
  */
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Lock } from 'lucide-react';
+import { Lock, Eye } from 'lucide-react';
 import { apiClient } from '@/api/client';
 import { usePermission } from '@/hooks/usePermission';
+import { MOCreateForm } from '@/components/manufacturing';
+import { BOMExplorer, BOMExplosionViewer } from '@/components/bom';
 
 // Types
 interface ManufacturingOrder {
@@ -34,11 +36,12 @@ interface Product {
 
 const PPICPage: React.FC = () => {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<'mos' | 'bom' | 'planning' | 'workorders'>('mos');
+  const [activeTab, setActiveTab] = useState<'mos' | 'bom' | 'planning' | 'workorders' | 'bom-explorer'>('mos');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showBOMForm, setShowBOMForm] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [selectedMO, setSelectedMO] = useState<number | null>(null);
+  const [selectedMOForExplosion, setSelectedMOForExplosion] = useState<number | null>(null);
 
   // Permission checks (PBAC - Phase 16 Week 4)
   const canViewMO = usePermission('ppic.view_mo');
@@ -251,10 +254,10 @@ const PPICPage: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-6 border-b">
+      <div className="flex gap-2 mb-6 border-b overflow-x-auto">
         <button
           onClick={() => setActiveTab('mos')}
-          className={`px-6 py-3 font-medium transition-colors ${
+          className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
             activeTab === 'mos'
               ? 'text-blue-600 border-b-2 border-blue-600'
               : 'text-gray-600 hover:text-gray-800'
@@ -264,7 +267,7 @@ const PPICPage: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('workorders')}
-          className={`px-6 py-3 font-medium transition-colors ${
+          className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
             activeTab === 'workorders'
               ? 'text-blue-600 border-b-2 border-blue-600'
               : 'text-gray-600 hover:text-gray-800'
@@ -273,8 +276,18 @@ const PPICPage: React.FC = () => {
           🏭 Work Orders
         </button>
         <button
+          onClick={() => setActiveTab('bom-explorer')}
+          className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
+            activeTab === 'bom-explorer'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-600 hover:text-gray-800'
+          }`}
+        >
+          🌲 BOM Explorer
+        </button>
+        <button
           onClick={() => setActiveTab('bom')}
-          className={`px-6 py-3 font-medium transition-colors ${
+          className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
             activeTab === 'bom'
               ? 'text-blue-600 border-b-2 border-blue-600'
               : 'text-gray-600 hover:text-gray-800'
@@ -284,7 +297,7 @@ const PPICPage: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('planning')}
-          className={`px-6 py-3 font-medium transition-colors ${
+          className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
             activeTab === 'planning'
               ? 'text-blue-600 border-b-2 border-blue-600'
               : 'text-gray-600 hover:text-gray-800'
@@ -361,6 +374,14 @@ const PPICPage: React.FC = () => {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex justify-center gap-2 flex-wrap">
+                            <button
+                              onClick={() => setSelectedMOForExplosion(mo.id)}
+                              className="px-3 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700 flex items-center gap-1"
+                              title="View BOM Explosion"
+                            >
+                              <Eye size={14} />
+                              View BOM
+                            </button>
                             {mo.state === 'Draft' && (
                               <>
                                 <button
@@ -388,7 +409,7 @@ const PPICPage: React.FC = () => {
                               </button>
                             )}
                             {mo.state === 'Done' && (
-                              <span className="text-xs text-gray-400">No actions</span>
+                              <span className="text-xs text-gray-400">Completed</span>
                             )}
                           </div>
                         </td>
@@ -404,6 +425,13 @@ const PPICPage: React.FC = () => {
                 <p className="text-gray-400 text-sm mt-2">Create your first MO to start production</p>
               </div>
             )}
+          </div>
+        )}
+
+        {/* BOM Explorer Tab */}
+        {activeTab === 'bom-explorer' && (
+          <div className="p-6">
+            <BOMExplorer showSearch={true} />
           </div>
         )}
 
@@ -807,11 +835,42 @@ const PPICPage: React.FC = () => {
         )}
       </div>
 
-      {/* Create MO Modal */}
+      {/* BOM Explosion Viewer Modal */}
+      {selectedMOForExplosion && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-white z-10">
+              <h3 className="text-xl font-bold">🌲 BOM Explosion - MO #{selectedMOForExplosion}</h3>
+              <button 
+                onClick={() => setSelectedMOForExplosion(null)}
+                className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-4">
+              <BOMExplosionViewer moId={selectedMOForExplosion} showCosts={true} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create MO Modal - NEW COMPONENT */}
       {showCreateModal && (
+        <MOCreateForm 
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['manufacturing-orders'] });
+            setShowCreateModal(false);
+          }}
+        />
+      )}
+
+      {/* OLD Create MO Modal - DEPRECATED */}
+      {false && showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4">➕ Create Manufacturing Order</h3>
+            <h3 className="text-xl font-bold mb-4">➕ Create Manufacturing Order (OLD)</h3>
             
             <div className="space-y-4">
               <div>

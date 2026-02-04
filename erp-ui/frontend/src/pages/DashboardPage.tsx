@@ -3,6 +3,7 @@ import { BarChart3, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react'
 import { useUIStore } from '@/store'
 import { EnvironmentBanner } from '@/components/EnvironmentBanner'
 import { apiClient } from '@/api/client'
+import { MaterialShortageAlerts, WorkOrdersDashboard } from '@/components/manufacturing'
 
 interface DashboardStats {
   total_mos: number
@@ -97,6 +98,11 @@ export const DashboardPage: React.FC = () => {
           </p>
         </div>
 
+        {/* Material Shortage Alerts Widget - NEW */}
+        <div className="mb-8">
+          <MaterialShortageAlerts maxItems={5} />
+        </div>
+
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatCard
@@ -126,9 +132,9 @@ export const DashboardPage: React.FC = () => {
         </div>
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Production Status */}
-        <div className="lg:col-span-2 bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Production Status</h2>
           <div className="space-y-4">
             {productionStatus.map((dept) => (
@@ -161,6 +167,12 @@ export const DashboardPage: React.FC = () => {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Work Orders Dashboard - NEW */}
+      <div className="mt-8">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">🏭 Production Work Orders</h2>
+        <WorkOrdersDashboard departmentFilter="ALL" />
       </div>
     </div>
     </div>
