@@ -1,256 +1,131 @@
 import React, { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
-  BarChart3,
-  Scissors,
-  Palette,
-  Zap,
-  Sparkles,
-  Package,
-  Beaker,
-  Warehouse,
-  ShoppingCart,
-  TruckIcon,
-  Users,
-  Factory,
-  ChevronDown,
-  ChevronRight,
-  FileText,
-  ClipboardList,
-  Shield,
-  AlertCircle,
-  Settings,
-  Lock,
-  Globe,
-  Bell,
-  Palette as PaletteIcon,
-  Mail,
-  FileEdit,
-  Building,
-  Database,
-  Calendar,
+  BarChart3, Scissors, Palette, Zap, Sparkles, Package, Beaker,
+  Warehouse, ShoppingCart, TruckIcon, Users, Factory, ChevronDown,
+  ChevronRight, FileText, ClipboardList, Shield, AlertCircle,
+  Settings, Lock, Globe, Bell, Palette as PaletteIcon, Mail,
+  FileEdit, Building, Database, Calendar, LayoutDashboard
 } from 'lucide-react'
 import { useAuthStore, useUIStore, usePermissionStore } from '@/store'
 import { UserRole } from '@/types'
 
+// Tipe data diperbarui dengan 'section'
 interface SubMenuItem {
   icon: React.ReactNode
   label: string
   path: string
-  roles?: UserRole[]  // Optional: backward compatible
-  permissions?: string[]  // NEW: permission-based access
+  roles?: UserRole[]
+  permissions?: string[]
 }
 
 interface MenuItem {
   icon: React.ReactNode
   label: string
   path?: string
-  roles?: UserRole[]  // Optional: backward compatible
-  permissions?: string[]  // NEW: permission-based access
+  roles?: UserRole[]
+  permissions?: string[]
   submenu?: SubMenuItem[]
+  section?: string // New: Untuk grouping menu
 }
 
-/**
- * Menu items with PBAC (Permission-Based Access Control)
- * Phase 16 Week 4
- * 
- * Backward compatible:
- * - If `permissions` is defined, use permission-based check
- * - If only `roles` is defined, use role-based check (old behavior)
- */
+// Menu Items dengan Grouping Section
 const menuItems: MenuItem[] = [
+  // --- SECTION: MAIN ---
   { 
-    icon: <BarChart3 />, 
+    section: 'MAIN',
+    icon: <LayoutDashboard />, 
     label: 'Dashboard', 
     path: '/dashboard', 
-    permissions: ['dashboard.view_stats', 'dashboard.view_production', 'dashboard.view_alerts']
+    permissions: ['dashboard.view_stats']
   },
+  
+  // --- SECTION: OPERATIONS ---
   { 
-    icon: <ShoppingCart />, 
-    label: 'Purchasing', 
-    path: '/purchasing', 
-    roles: [UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN, UserRole.PURCHASING, UserRole.ADMIN] 
-  },
-  { 
+    section: 'OPERATIONS',
     icon: <ClipboardList />, 
-    label: 'PPIC', 
+    label: 'PPIC & Planning', 
     path: '/ppic', 
-    permissions: ['ppic.view_mo', 'ppic.create_mo', 'ppic.schedule_production', 'ppic.approve_mo']
+    permissions: ['ppic.view_mo']
   },
   { 
     icon: <Factory />, 
-    label: 'Production', 
-    permissions: ['cutting.view_status', 'sewing.view_status', 'finishing.view_status', 'packing.view_status'],
+    label: 'Production Floor', 
+    permissions: ['production.view_status'],
     submenu: [
-      {
-        icon: <Calendar />,
-        label: 'Daily Input',
-        path: '/daily-production',
-        permissions: ['production.input_daily', 'production.view_spk']
-      },
-      { 
-        icon: <Scissors />, 
-        label: 'Cutting', 
-        path: '/cutting', 
-        permissions: ['cutting.view_status', 'cutting.allocate_material', 'cutting.complete_operation']
-      },
-      { 
-        icon: <Palette />, 
-        label: 'Embroidery', 
-        path: '/embroidery', 
-        roles: [UserRole.OPERATOR_EMBRO, UserRole.SPV_CUTTING, UserRole.ADMIN] 
-      },
-      { 
-        icon: <Zap />, 
-        label: 'Sewing', 
-        path: '/sewing', 
-        permissions: ['sewing.view_status', 'sewing.accept_transfer', 'sewing.inline_qc', 'sewing.create_transfer']
-      },
-      { 
-        icon: <Sparkles />, 
-        label: 'Finishing', 
-        path: '/finishing', 
-        permissions: ['finishing.view_status', 'finishing.accept_transfer', 'finishing.final_qc', 'finishing.convert_to_fg']
-      },
-      { 
-        icon: <Package />, 
-        label: 'Packing', 
-        path: '/packing', 
-        permissions: ['packing.view_status', 'packing.pack_product', 'packing.label_carton', 'packing.complete_operation']
-      },
+      { icon: <Calendar />, label: 'Daily Input', path: '/daily-production', permissions: ['production.input_daily'] },
+      { icon: <Scissors />, label: 'Cutting', path: '/cutting', permissions: ['cutting.view_status'] },
+      { icon: <Palette />, label: 'Embroidery', path: '/embroidery', roles: [UserRole.OPERATOR_EMBRO, UserRole.SPV_CUTTING, UserRole.ADMIN] },
+      { icon: <Zap />, label: 'Sewing', path: '/sewing', permissions: ['sewing.view_status'] },
+      { icon: <Sparkles />, label: 'Finishing', path: '/finishing', permissions: ['finishing.view_status'] },
+      { icon: <Package />, label: 'Packing', path: '/packing', permissions: ['packing.view_status'] },
     ]
+  },
+  { 
+    icon: <Beaker />, 
+    label: 'Quality Control', 
+    path: '/quality', 
+    roles: [UserRole.QC_INSPECTOR, UserRole.ADMIN] 
+  },
+  { 
+    icon: <FileEdit />, 
+    label: 'Rework Station', 
+    path: '/rework-management',
+    roles: [UserRole.QC_INSPECTOR, UserRole.SPV]
+  },
+
+  // --- SECTION: INVENTORY & LOGISTICS ---
+  { 
+    section: 'INVENTORY',
+    icon: <ShoppingCart />, 
+    label: 'Purchasing', 
+    path: '/purchasing', 
+    roles: [UserRole.PURCHASING, UserRole.ADMIN] 
   },
   { 
     icon: <Warehouse />, 
     label: 'Warehouse', 
     path: '/warehouse', 
-    roles: [UserRole.WAREHOUSE_ADMIN, UserRole.WAREHOUSE_OP, UserRole.ADMIN] 
+    roles: [UserRole.WAREHOUSE_ADMIN, UserRole.ADMIN] 
   },
   { 
     icon: <AlertCircle />, 
     label: 'Material Debt', 
     path: '/material-debt', 
-    roles: [UserRole.WAREHOUSE_ADMIN, UserRole.WAREHOUSE_OP, UserRole.ADMIN, UserRole.SPV, UserRole.MANAGER] 
+    roles: [UserRole.WAREHOUSE_ADMIN, UserRole.SPV] 
   },
   { 
     icon: <TruckIcon />, 
     label: 'Finish Goods', 
     path: '/finishgoods', 
-    roles: [UserRole.WAREHOUSE_ADMIN, UserRole.WAREHOUSE_OP, UserRole.ADMIN] 
+    roles: [UserRole.WAREHOUSE_ADMIN, UserRole.ADMIN] 
   },
+
+  // --- SECTION: SYSTEM ---
   { 
-    icon: <Beaker />, 
-    label: 'QC', 
-    path: '/quality', 
-    roles: [UserRole.QC_INSPECTOR, UserRole.QC_LAB, UserRole.ADMIN] 
-  },
-  { 
-    icon: <FileEdit />, 
-    label: 'Rework Management', 
-    path: '/rework-management', 
-    roles: [UserRole.QC_INSPECTOR, UserRole.QC_LAB, UserRole.SPV, UserRole.MANAGER, UserRole.ADMIN] 
-  },
-  { 
+    section: 'SYSTEM',
     icon: <FileText />, 
     label: 'Reports', 
     path: '/reports', 
-    roles: [UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN, UserRole.ADMIN] 
+    roles: [UserRole.PPIC_MANAGER, UserRole.ADMIN] 
   },
   { 
     icon: <Users />, 
-    label: 'Admin', 
-    permissions: ['admin.manage_users', 'admin.view_system_info'],
+    label: 'Administration', 
+    permissions: ['admin.manage_users'],
     submenu: [
-      { 
-        icon: <Users />, 
-        label: 'User Management', 
-        path: '/admin/users', 
-        permissions: ['admin.manage_users']
-      },
-      { 
-        icon: <Shield />, 
-        label: 'Permissions', 
-        path: '/admin/permissions', 
-        permissions: ['admin.view_system_info']
-      },
-      { 
-        icon: <Shield />, 
-        label: 'Audit Trail', 
-        path: '/admin/audit-trail', 
-        roles: [UserRole.DEVELOPER, UserRole.SUPERADMIN, UserRole.MANAGER] 
-      },
-      { 
-        icon: <FileText />, 
-        label: 'Import/Export', 
-        path: '/admin/import-export', 
-        permissions: ['import_export.import_data', 'import_export.export_data']
-      },
+      { icon: <Users />, label: 'User Management', path: '/admin/users', permissions: ['admin.manage_users'] },
+      { icon: <Shield />, label: 'Permissions', path: '/admin/permissions', permissions: ['admin.view_system_info'] },
+      { icon: <Shield />, label: 'Audit Trail', path: '/admin/audit-trail', roles: [UserRole.DEVELOPER, UserRole.SUPERADMIN] },
+      { icon: <FileText />, label: 'Import/Export', path: '/admin/import-export', permissions: ['import_export.import_data'] },
     ]
   },
   { 
     icon: <Settings />, 
     label: 'Settings', 
     submenu: [
-      { 
-        icon: <Lock />, 
-        label: 'Change Password', 
-        path: '/settings/password',
-        // All users can change their password
-      },
-      { 
-        icon: <Globe />, 
-        label: 'Language & Timezone', 
-        path: '/settings/language',
-        // All users can set preferences
-      },
-      { 
-        icon: <Bell />, 
-        label: 'Notifications', 
-        path: '/settings/notifications',
-        // All users can manage notifications
-      },
-      { 
-        icon: <PaletteIcon />, 
-        label: 'Display Preferences', 
-        path: '/settings/display',
-        // All users can customize display
-      },
-      { 
-        icon: <Users />, 
-        label: 'User Access Control', 
-        path: '/settings/access-control',
-        roles: [UserRole.SUPERADMIN, UserRole.ADMIN]
-      },
-      { 
-        icon: <Mail />, 
-        label: 'Email Configuration', 
-        path: '/settings/email',
-        roles: [UserRole.SUPERADMIN, UserRole.ADMIN]
-      },
-      { 
-        icon: <FileEdit />, 
-        label: 'Document Templates', 
-        path: '/settings/templates',
-        roles: [UserRole.SUPERADMIN, UserRole.ADMIN]
-      },
-      { 
-        icon: <Building />, 
-        label: 'Company Settings', 
-        path: '/settings/company',
-        roles: [UserRole.SUPERADMIN]
-      },
-      { 
-        icon: <Lock />, 
-        label: 'Security Settings', 
-        path: '/settings/security',
-        roles: [UserRole.SUPERADMIN, UserRole.DEVELOPER]
-      },
-      { 
-        icon: <Database />, 
-        label: 'Database Management', 
-        path: '/settings/database',
-        roles: [UserRole.SUPERADMIN, UserRole.DEVELOPER]
-      },
+      { icon: <Lock />, label: 'Security', path: '/settings/security' },
+      { icon: <Globe />, label: 'General', path: '/settings/company' },
     ]
   },
 ]
@@ -262,173 +137,135 @@ export const Sidebar: React.FC = () => {
   const location = useLocation()
   const [openDropdowns, setOpenDropdowns] = useState<string[]>([])
 
-  /**
-   * Check if user has access to a menu item
-   * Supports both permission-based (new) and role-based (old) checks
-   * 
-   * DEVELOPER and SUPERADMIN roles bypass all checks (full access)
-   */
+  // Helper: Check Access (Logic tetap sama, hanya disederhanakan)
   const hasAccess = (item: MenuItem | SubMenuItem): boolean => {
     if (!user) return false
-    
-    // BYPASS: Developer, Superadmin, and ADMIN have full access (matches backend)
-    // Handle both database format (ADMIN, DEVELOPER, SUPERADMIN) and TypeScript enum format
-    const userRoleUpper = user.role.toUpperCase()
-    if (userRoleUpper === 'DEVELOPER' || userRoleUpper === 'SUPERADMIN' || userRoleUpper === 'ADMIN') {
-      return true
-    }
-    
-    // Settings submenu items without roles/permissions are accessible to all logged-in users
-    if (!item.roles && !item.permissions) {
-      return true
-    }
-    
-    // Priority 1: PBAC - Permission-based check (primary system)
-    if (item.permissions && item.permissions.length > 0) {
-      // Check if user has ANY of the required permissions (OR logic)
-      return item.permissions.some(perm => hasPermission(perm))
-    }
-    
-    // Priority 2: RBAC - Role-based check (fallback for backward compatibility)
-    if (item.roles && item.roles.length > 0) {
-      return item.roles.includes(user.role as UserRole)
-    }
-    
-    // Default: deny access if no permissions or roles defined
+    const role = user.role.toUpperCase()
+    if (['DEVELOPER', 'SUPERADMIN', 'ADMIN'].includes(role)) return true
+    if (!item.roles && !item.permissions) return true
+    if (item.permissions?.some(p => hasPermission(p))) return true
+    if (item.roles?.includes(user.role as UserRole)) return true
     return false
   }
 
-  const visibleItems = menuItems.filter((item) => {
-    // Check main item access
-    if (hasAccess(item)) {
-      return true
-    }
-    
-    // Check if user has access to any submenu item
-    if (item.submenu) {
-      return item.submenu.some(sub => hasAccess(sub))
-    }
-    
-    return false
-  })
-
   const toggleDropdown = (label: string) => {
-    setOpenDropdowns(prev => 
-      prev.includes(label) 
-        ? prev.filter(item => item !== label)
-        : [...prev, label]
+    setOpenDropdowns(prev => prev.includes(label) ? prev.filter(i => i !== label) : [...prev, label])
+  }
+
+  // Helper: Styles
+  const getLinkClasses = (isActive: boolean, isSubmenu = false) => {
+    const base = "flex items-center gap-3 transition-all duration-200 group relative "
+    const padding = isSubmenu ? "px-3 py-2 text-sm ml-8" : "px-4 py-3"
+    const activeState = isActive 
+      ? "text-brand-500 bg-brand-50/10 border-r-[3px] border-brand-500 font-medium" 
+      : "text-slate-400 hover:text-slate-100 hover:bg-slate-800/50 border-r-[3px] border-transparent"
+    
+    return `${base} ${padding} ${activeState}`
+  }
+
+  const renderMenuItem = (item: MenuItem, index: number) => {
+    if (!hasAccess(item)) return null
+
+    const isActive = item.path === location.pathname || item.submenu?.some(sub => sub.path === location.pathname)
+    const isDropdownOpen = openDropdowns.includes(item.label) || isActive // Auto open if active
+    const showSectionLabel = item.section && sidebarOpen && (index === 0 || menuItems[index - 1].section !== item.section)
+
+    return (
+      <div key={item.label}>
+        {/* Section Label */}
+        {showSectionLabel && (
+          <div className="px-4 mt-6 mb-2">
+            <p className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">{item.section}</p>
+          </div>
+        )}
+
+        {item.submenu ? (
+          // --- Dropdown Menu ---
+          <div>
+            <button
+              onClick={() => toggleDropdown(item.label)}
+              className={`w-full flex items-center justify-between ${getLinkClasses(false)}`}
+              title={!sidebarOpen ? item.label : undefined}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`transition-colors ${isActive ? 'text-brand-400' : 'text-slate-400 group-hover:text-slate-100'}`}>
+                  {item.icon}
+                </div>
+                {sidebarOpen && <span>{item.label}</span>}
+              </div>
+              {sidebarOpen && (
+                <ChevronRight size={14} className={`transition-transform duration-200 ${isDropdownOpen ? 'rotate-90' : ''}`} />
+              )}
+            </button>
+            
+            {/* Submenu Items */}
+            {sidebarOpen && isDropdownOpen && (
+              <div className="mt-1 mb-2 space-y-0.5">
+                {item.submenu.filter(hasAccess).map(sub => (
+                  <Link
+                    key={sub.path}
+                    to={sub.path}
+                    className={getLinkClasses(location.pathname === sub.path, true)}
+                  >
+                    <span className="truncate">{sub.label}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          // --- Single Menu ---
+          <Link
+            to={item.path!}
+            className={getLinkClasses(isActive)}
+            title={!sidebarOpen ? item.label : undefined}
+          >
+            <div className={`transition-colors ${isActive ? 'text-brand-400' : 'text-slate-400 group-hover:text-slate-100'}`}>
+              {item.icon}
+            </div>
+            {sidebarOpen && <span>{item.label}</span>}
+          </Link>
+        )}
+      </div>
     )
   }
 
-  const isActive = (path?: string, submenu?: SubMenuItem[]) => {
-    if (path && location.pathname === path) return true
-    if (submenu) {
-      return submenu.some(sub => location.pathname === sub.path)
-    }
-    return false
-  }
-
-  const renderMenuItem = (item: MenuItem) => {
-    const hasSubmenu = item.submenu && item.submenu.length > 0
-    const isDropdownOpen = openDropdowns.includes(item.label)
-    const active = isActive(item.path, item.submenu)
-
-    // Filter visible submenu items using hasAccess (supports both permissions and roles)
-    const visibleSubmenu = item.submenu?.filter(sub => hasAccess(sub))
-
-    if (hasSubmenu && visibleSubmenu && visibleSubmenu.length > 0) {
-      return (
-        <div key={item.label}>
-          <button
-            onClick={() => toggleDropdown(item.label)}
-            className={`flex items-center justify-between w-full gap-3 px-4 py-3 rounded-lg transition-colors ${
-              active
-                ? 'bg-brand-600 text-white'
-                : 'text-gray-300 hover:bg-gray-800'
-            }`}
-            title={!sidebarOpen ? item.label : undefined}
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-6 h-6 flex-shrink-0">{item.icon}</div>
-              {sidebarOpen && <span className="text-sm">{item.label}</span>}
-            </div>
-            {sidebarOpen && (
-              <div className="w-4 h-4 flex-shrink-0">
-                {isDropdownOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-              </div>
-            )}
-          </button>
-
-          {/* Submenu */}
-          {sidebarOpen && isDropdownOpen && (
-            <div className="ml-4 mt-1 space-y-1 border-l-2 border-gray-700 pl-4">
-              {visibleSubmenu.map((subItem) => (
-                <Link
-                  key={subItem.path}
-                  to={subItem.path}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm ${
-                    location.pathname === subItem.path
-                      ? 'bg-brand-500 text-white'
-                      : 'text-gray-400 hover:bg-gray-800 hover:text-white'
-                  }`}
-                >
-                  <div className="w-5 h-5 flex-shrink-0">{subItem.icon}</div>
-                  <span>{subItem.label}</span>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      )
-    }
-
-    // Regular menu item without submenu
-    if (item.path) {
-      return (
-        <Link
-          key={item.path}
-          to={item.path}
-          className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-            location.pathname === item.path
-              ? 'bg-brand-600 text-white'
-              : 'text-gray-300 hover:bg-gray-800'
-          }`}
-          title={!sidebarOpen ? item.label : undefined}
-        >
-          <div className="w-6 h-6 flex-shrink-0">{item.icon}</div>
-          {sidebarOpen && <span className="text-sm">{item.label}</span>}
-        </Link>
-      )
-    }
-
-    return null
-  }
-
   return (
-    <div
-      className={`bg-gray-900 text-white h-screen shadow-lg transition-all duration-300 overflow-y-auto relative z-20 ${
-        sidebarOpen ? 'w-64' : 'w-20'
-      }`}
-    >
-      <div className="p-4 pb-20">
-        {sidebarOpen && (
-          <div className="text-center mb-8">
-            <h2 className="text-xl font-bold text-brand-400">DR ERP</h2>
-            <p className="text-xs text-gray-400">Manufacturing System</p>
+    <div className={`bg-slate-900 text-slate-300 h-screen shadow-xl transition-all duration-300 flex flex-col relative z-20 ${sidebarOpen ? 'w-64' : 'w-20'}`}>
+      {/* Brand Header */}
+      <div className="h-16 flex items-center justify-center border-b border-slate-800 bg-slate-950">
+        {sidebarOpen ? (
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold">Q</div>
+            <div>
+              <h1 className="font-bold text-white leading-none">Quty Karunia</h1>
+              <span className="text-[10px] text-brand-400 font-medium">ERP SYSTEM v1.2</span>
+            </div>
           </div>
-        )}
-
-        <nav className="space-y-2 mb-8">
-          {visibleItems.map(renderMenuItem)}
-        </nav>
-        
-        {sidebarOpen && (
-          <div className="mt-8 p-4 bg-gray-800 rounded-lg">
-            <p className="text-xs text-gray-400 mb-2">Version</p>
-            <p className="text-sm font-semibold">1.26.0</p>
-          </div>
+        ) : (
+          <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold">Q</div>
         )}
       </div>
+
+      {/* Menu List */}
+      <nav className="flex-1 overflow-y-auto py-4 custom-scrollbar">
+        {menuItems.map((item, idx) => renderMenuItem(item, idx))}
+      </nav>
+
+      {/* Footer Profile (Optional) */}
+      {sidebarOpen && user && (
+        <div className="p-4 border-t border-slate-800 bg-slate-950/50">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center border border-slate-600">
+              <span className="font-bold text-xs">{user.username.substring(0, 2).toUpperCase()}</span>
+            </div>
+            <div className="overflow-hidden">
+              <p className="text-sm font-medium text-white truncate">{user.username}</p>
+              <p className="text-xs text-slate-500 truncate capitalize">{user.role.replace('_', ' ')}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
