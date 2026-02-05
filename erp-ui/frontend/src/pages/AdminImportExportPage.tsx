@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { apiClient } from '@/api/client'
+import { apiClient } from '@/api'
 
 const AdminImportExportPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'import' | 'export'>('import')

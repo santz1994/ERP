@@ -3,9 +3,17 @@
 
 Dokumen ini menjelaskan secara detail tampilan, navigasi, dan fitur-fitur UI/UX untuk Sistem ERP Manufaktur Soft Toys PT Quty Karunia.
 
-**Versi**: 4.0  
-**Tanggal Update**: 4 Februari 2026  
-**Status**: Production Ready
+**Versi**: 4.2  
+**Tanggal Update**: 5 Februari 2026  
+**Status**: Production Ready - Complete with Visual Diagrams  
+**Update Notes**: Added comprehensive workflow visualizations:
+- Three Purchasing Specialists diagram dengan detail PO tracking
+- PPIC complete workflow (MO auto-generation from PO, WO/SPK review & explosion, BOM calculation)
+- **TERMINOLOGY**: WO (Work Order) = SPK (Surat Perintah Kerja) - used interchangeably
+- Production Flow 6-Stages end-to-end dengan Real-Time WIP Dashboard
+- Warehouse 3-Types structure dengan 2-Stage Finishing detail
+- QC 4-Checkpoint visualization dengan Rework Module workflow
+- Material Flow Tracking dan Timeline/Gantt Chart lengkap
 
 ---
 
@@ -22,11 +30,72 @@ Dokumen ini menjelaskan secara detail tampilan, navigasi, dan fitur-fitur UI/UX 
 10. [User Management](#user-management)
 11. [Mobile Application](#mobile-app)
 12. [Notification System](#notification)
+13. [Material Flow Tracking](#material-flow-tracking)
+14. [Timeline & Gantt Chart](#timeline-gantt)
+15. [Barcode & Label System](#barcode-label)
+16. [Security & Fraud Prevention](#security)
 
 ---
 
 <a name="dashboard-utama"></a>
 ## 1. DASHBOARD UTAMA
+
+### 1.0 Login Screen - Entry Point
+
+#### 🔐 Login Page Design
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                                                              │
+│              🏭 ERP QUTY KARUNIA                            │
+│         Manufacturing Management System                      │
+│                                                              │
+│  ┌────────────────────────────────────────────────────┐    │
+│  │                                                      │    │
+│  │  👤 Username / Email                                │    │
+│  │  ┌──────────────────────────────────────────────┐  │    │
+│  │  │ [Input text]                                  │  │    │
+│  │  └──────────────────────────────────────────────┘  │    │
+│  │                                                      │    │
+│  │  🔒 Password                                        │    │
+│  │  ┌──────────────────────────────────────────────┐  │    │
+│  │  │ [Input password] 👁️                          │  │    │
+│  │  └──────────────────────────────────────────────┘  │    │
+│  │                                                      │    │
+│  │  ☐ Remember me for 30 days                         │    │
+│  │                                                      │    │
+│  │  ┌──────────────────────────────────────────────┐  │    │
+│  │  │         [LOGIN] 🚀                           │  │    │
+│  │  └──────────────────────────────────────────────┘  │    │
+│  │                                                      │    │
+│  │  Forgot password? | Need help?                     │    │
+│  │                                                      │    │
+│  └────────────────────────────────────────────────────┘    │
+│                                                              │
+│  📱 Mobile App Available: Android | iOS                    │
+│  🌐 Language: 🇮🇩 Indonesia | 🇬🇧 English                   │
+│                                                              │
+│  © 2026 PT Quty Karunia. All rights reserved.              │
+│  Version 4.2 | Status: ✅ All Systems Operational          │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Features**:
+- ✅ Responsive design (Desktop, Tablet, Mobile)
+- ✅ Password visibility toggle
+- ✅ Remember me functionality
+- ✅ Multi-language support
+- ✅ SSO integration ready
+- ✅ Biometric login (Mobile app)
+
+**Security**:
+- 🔒 SSL/TLS encryption
+- 🔒 2FA optional untuk Superadmin
+- 🔒 IP whitelist untuk production access
+- 🔒 Session timeout: 30 minutes idle
+- 🔒 Auto-logout pada browser close
+
+---
 
 ### 1.1 Dashboard Overview
 Dashboard utama menampilkan **real-time monitoring** dari seluruh operasional pabrik:
@@ -132,15 +201,15 @@ Real-time monitoring material dengan **color coding**:
 ├─ 🏭 Operation
 │  ├─ PPIC
 │  │  ├─ Manufacturing Order (MO)
-│  │  │  ├─ List MO
-│  │  │  ├─ Create MO (Auto from PO)
+│  │  │  ├─ List MO (Auto-generated from PO)
+│  │  │  ├─ Review MO (Edit/Accept/Reject)
 │  │  │  ├─ Release MO (PARTIAL → RELEASED)
 │  │  │  └─ Track MO Status
-│  │  ├─ SPK Management
-│  │  │  ├─ Generate SPK (Auto from MO)
-│  │  │  ├─ Flexible Target Setup
-│  │  │  ├─ Multi-SPK per MO
-│  │  │  └─ SPK Timeline View
+│  │  ├─ WO/SPK Management (Work Order = Surat Perintah Kerja)
+│  │  │  ├─ Generate WO/SPK (Auto-explode from MO)
+│  │  │  ├─ Flexible Target Setup per Department
+│  │  │  ├─ Multi-WO/SPK per MO (parallel streams)
+│  │  │  └─ WO/SPK Timeline View
 │  │  └─ Material Allocation
 │  │     ├─ BOM Explosion
 │  │     ├─ Material Reservation
@@ -148,7 +217,7 @@ Real-time monitoring material dengan **color coding**:
 │  │
 │  ├─ Production
 │  │  ├─ Cutting
-│  │  │  ├─ List SPK
+│  │  │  ├─ List WO/SPK (Work Orders)
 │  │  │  │  ├─ Daily Progress (Calendar View)
 │  │  │  │  ├─ Cumulative Tracking
 │  │  │  │  └─ Material Consumption
@@ -174,7 +243,7 @@ Real-time monitoring material dengan **color coding**:
 │  │  │  └─ Daily Report
 │  │  │
 │  │  ├─ Sewing
-│  │  │  ├─ List SPK (Body & Baju Parallel)
+│  │  │  ├─ List WO/SPK (Body & Baju Parallel)
 │  │  │  │  ├─ Daily Progress per Stream
 │  │  │  │  ├─ Target vs Actual
 │  │  │  │  └─ Constraint Validation
@@ -206,7 +275,7 @@ Real-time monitoring material dengan **color coding**:
 │  │  │  └─ Daily Report (per Stage)
 │  │  │
 │  │  ├─ Packing
-│  │  │  ├─ List SPK (Urgency-Based Target)
+│  │  │  ├─ List WO/SPK (Urgency-Based Target)
 │  │  │  │  ├─ Constraint Check (Doll + Baju)
 │  │  │  │  ├─ Week/Destination Assignment
 │  │  │  │  └─ Packing Plan
@@ -357,15 +426,16 @@ Real-time monitoring material dengan **color coding**:
 │  │
 │  ├─ Warehouse Finished Goods
 │  │  ├─ Stock Finished Goods
-│  │  │  ├─ Real-time FG Level
+│  │  │  ├─ Real-time FG Level (qty from MO)
+│  │  │  ├─ Auto-display: Cartons, Pcs, Boxes (UOM conversion)
 │  │  │  ├─ By Article/Week/Destination
 │  │  │  ├─ Carton Tracking
 │  │  │  └─ Pallet Management
 │  │  ├─ Finished Goods In
-│  │  │  ├─ Receipt from Packing
+│  │  │  ├─ Receipt from Packing (qty sesuai MO)
 │  │  │  ├─ Barcode Scanning (🆕 Mobile)
-│  │  │  ├─ UOM Conversion (Box → Pcs)
-│  │  │  ├─ Auto-validation (<10% variance)
+│  │  │  ├─ Auto-display: Pcs, Cartons, Boxes (multi-UOM)
+│  │  │  ├─ Auto-validation (<10% variance vs MO target)
 │  │  │  └─ Pallet Stacking
 │  │  ├─ Finished Goods Out
 │  │  │  ├─ Pick List by DO
@@ -554,7 +624,7 @@ Real-time monitoring material dengan **color coding**:
 │  │  │  ├─ Superadmin (full access)
 │  │  │  ├─ Director (all read, approve MO)
 │  │  │  ├─ Manager (dept read, dept approve)
-│  │  │  ├─ PPIC (MO create/edit, SPK manage)
+│  │  │  ├─ PPIC (MO review/edit/approve, WO/SPK auto-explode)
 │  │  │  ├─ Purchasing (PO create/edit)
 │  │  │  ├─ Warehouse (stock manage, GRN, issue)
 │  │  │  ├─ Admin Produksi (input production per dept)
@@ -566,10 +636,10 @@ Real-time monitoring material dengan **color coding**:
 │  │
 │  ├─ Approval Workflow
 │  │  ├─ MO Approval
-│  │  │  ├─ Draft (PPIC create)
-│  │  │  ├─ Review (Supervisor review)
+│  │  │  ├─ Draft (System auto-generate from PO)
+│  │  │  ├─ Review (PPIC review & edit)
 │  │  │  ├─ Approve (Manager approve)
-│  │  │  └─ Released (Director final approve)
+│  │  │  └─ Released (Director final approve, trigger WO/SPK explosion)
 │  │  ├─ PO Approval
 │  │  │  ├─ Draft (Purchasing create)
 │  │  │  ├─ Review (Purchasing Manager)
@@ -617,7 +687,129 @@ Real-time monitoring material dengan **color coding**:
 <a name="purchasing-module"></a>
 ## 3. PURCHASING MODULE
 
-### 3.1 🔥 DUAL-MODE SYSTEM - Purchase Order (PO)
+### 3.1 Purchasing Department Structure & Workflow
+
+#### 🏢 Three Purchasing Specialists - Parallel Workflow
+
+PT Quty Karunia memiliki **3 Purchasing Specialist** yang bekerja secara **parallel** dengan spesialisasi berbeda:
+
+- **PURCHASING A** - Fabric Specialist (🔑 TRIGGER 1) - **MASTER PO REFERENCE**
+- **PURCHASING B** - Label Specialist (🔑 TRIGGER 2) - **MUST REFERENCE PO-FAB**
+- **PURCHASING C** - Accessories Specialist - **MUST REFERENCE PO-FAB**
+
+#### 🔗 PO Reference Chain (Parent-Child Relationship)
+
+**CRITICAL RULE**: Purchasing B dan C **WAJIB mencantumkan NO PO Purchasing A** sebagai reference untuk:
+- ✅ **Traceability**: Mudah tracking semua material terkait 1 artikel
+- ✅ **BOM Compliance**: Memastikan material sesuai dengan BOM yang sama
+- ✅ **Audit Trail**: Full 5W1H tracking dari fabric ke finished goods
+- ✅ **Cost Allocation**: Akumulasi cost per artikel lebih akurat
+
+**Contoh PO Reference**:
+```
+PO-FAB-2026-0456 (MASTER - Purchasing A)
+   ├─ PO-LBL-2026-0789 (Ref: PO-FAB-2026-0456)
+   └─ PO-ACC-2026-0890 (Ref: PO-FAB-2026-0456)
+```
+
+**Implementation di Form PO**:
+- Field "Reference PO" (mandatory untuk PO Label & Accessories)
+- Dropdown otomatis filter PO Fabric yang aktif
+- Validation: Tidak bisa submit PO-LBL/PO-ACC tanpa Reference PO-FAB
+- Auto-inherit: Article Code, BOM Version dari PO Master
+
+**Workflow Visualization** (Complete Process Flow):
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  PURCHASING DEPARTMENT - 3 PARALLEL STREAMS                             │
+└─────────────────────────────────────────────────────────────────────────┘
+
+CUSTOMER ORDER: 450 pcs AFTONSPARV for Week 05
+    │
+    ├─────────────────────────────────────────────────────────────────────┐
+    │                                                                      │
+    ▼                            ▼                         ▼              │
+┌──────────────┐        ┌──────────────┐        ┌──────────────┐        │
+│ PURCHASING A │        │ PURCHASING B │        │ PURCHASING C │        │
+│   (FABRIC)   │        │   (LABEL)    │        │ (ACCESSORIES)│        │
+└──────────────┘        └──────────────┘        └──────────────┘        │
+        │                       │                       │                │
+        ▼                       ▼                       ▼                │
+┌──────────────┐        ┌──────────────┐        ┌──────────────┐        │
+│ PO-FAB-2026  │        │ PO-LBL-2026  │        │ PO-ACC-2026  │        │
+│   -0456      │        │   -0789      │        │   -0890      │        │
+│              │        │              │        │              │        │
+│ • KOHAIR     │        │ • Hang Tag   │        │ • Thread     │        │
+│   70.4 YD    │        │   450 pcs    │        │   2500 CM    │        │
+│ • JS BOA     │        │ • Label EU   │        │ • Filling    │        │
+│   4.7 YD     │        │   450 pcs    │        │   24.3 kg    │        │
+│ • NYLEX      │        │ • Sticker    │        │ • Carton     │        │
+│   2.5 YD     │        │   900 pcs    │        │   8 pcs      │        │
+│ • Polyester  │        │              │        │              │        │
+│   85.3 YD    │        │              │        │              │        │
+│              │        │              │        │              │        │
+│ Lead Time:   │        │ Lead Time:   │        │ Lead Time:   │        │
+│ 3-5 days     │        │ 7-10 days ⚠️ │        │ 2-3 days     │        │
+│              │        │              │        │              │        │
+│ Status: ✅   │        │ Status: ⏳   │        │ Status: ✅   │        │
+│ Received     │        │ Waiting      │        │ Received     │        │
+└──────────────┘        └──────────────┘        └──────────────┘        │
+        │                       │                       │                │
+        │                       │                       │                │
+        ▼                       ▼                       ▼                │
+┌─────────────────────────────────────────────────────────────────────┐  │
+│  WAREHOUSE MAIN - MATERIAL RECEIVING                                │  │
+│                                                                     │  │
+│  ✅ Fabric Stock:                                                   │  │
+│     ├─ [IKHR504] KOHAIR: 125 YD (⚠️ Low stock)                     │  │
+│     ├─ [IJBR105] JS BOA: 15 YD (✅ OK)                             │  │
+│     └─ [IPR301] POLYESTER: 450 YD (✅ OK)                          │  │
+│                                                                     │  │
+│  ⏳ Label Stock:                                                    │  │
+│     └─ [ALB40011] Hang Tag: 0 pcs (🔴 OUT OF STOCK)               │  │
+│                                                                     │  │
+│  ✅ Accessories Stock:                                              │  │
+│     ├─ [IKP20157] Filling: 45 kg (✅ OK)                           │  │
+│     ├─ Thread assorted: 5,000 CM (✅ OK)                           │  │
+│     └─ [ACB30104] Carton: 18 pcs (⚠️ Low stock)                    │  │
+└─────────────────────────────────────────────────────────────────────┘  │
+                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+#### 🔑 Dual Trigger System Visualization
+
+```
+🔑 TRIGGER 1: PO KAIN RECEIVED ✅
+    │
+    ├─→ System Action:
+    │   ├─ Material Kain available di Warehouse Main
+    │   ├─ Notify PPIC: "Fabric ready for cutting"
+    │   └─ MO Status: Can upgrade to PARTIAL
+    │
+    └─→ PPIC Decision:
+        ├─ Create MO with MODE: PARTIAL
+        ├─ Cutting & Embroidery dapat start
+        └─ Sewing, Finishing, Packing: BLOCKED (tunggu PO Label)
+
+⏳ TRIGGER 2: PO LABEL RECEIVED (3-7 days later)
+    │
+    ├─→ System Action:
+    │   ├─ Label available di Warehouse Main
+    │   ├─ Auto-inherit: Week & Destination dari PO Label
+    │   └─ MO Status: Auto-upgrade to RELEASED
+    │
+    └─→ Production Impact:
+        ├─ Sewing dapat start (batch dari Embroidery sudah ready)
+        ├─ Finishing dapat start
+        ├─ Packing dapat start
+        └─ 🎯 FULL PRODUCTION MODE ACTIVE
+
+⚡ BENEFIT: Lead Time Reduction -3 to -5 days
+```
+
+### 3.2 🔥 DUAL-MODE SYSTEM - Purchase Order (PO)
 
 Purchasing memiliki **2 mode input** untuk membuat PO dengan fleksibilitas maksimal:
 
@@ -663,7 +855,7 @@ Purchasing memiliki **2 mode input** untuk membuat PO dengan fleksibilitas maksi
 │  ⏳ BOM Explosion Status:                                   │
 │  ┌──────────────────────────────────────────────────────┐  │
 │  │ ✅ BOM Explosion berhasil! 32 materials generated     │  │
-│  │ Silakan cek dan update harga/supplier per material.  │  │
+│  │ Silakan cek dan update harga/supplier per material.   │  │
 │  └──────────────────────────────────────────────────────┘  │
 │                                                              │
 │  📋 MATERIAL LIST (Auto-Generated from BOM)                 │
@@ -855,7 +1047,137 @@ Display lengkap dengan 2 sections:
 <a name="ppic-module"></a>
 ## 4. PPIC MODULE
 
-### 4.1 Manufacturing Order (MO) Management
+### 4.1 PPIC Workflow Visualization - Complete Process
+
+#### 📋 Manufacturing Order Creation & SPK Generation Flow
+
+```
+┌───────────────────────────────────────────────────────────────────────┐
+│  PPIC DASHBOARD - MANUFACTURING ORDER CREATION                        │
+└───────────────────────────────────────────────────────────────────────┘
+
+INPUT:
+├─ Customer Order: 450 pcs AFTONSPARV
+├─ Delivery: Week 05-2026
+├─ Destination: IKEA DC Belgium
+└─ Deadline: 10 Feb 2026
+
+SYSTEM AUTO-GENERATE MO (from PO Purchasing):
+┌──────────────────────────────────────┐
+│ MO-2026-00089 (AUTO-CREATED)        │
+│ Artikel: [40551542] AFTONSPARV       │
+│ Target: 450 pcs                      │
+│ Week: W05-2026 (auto from PO Label) │
+│ Destination: Belgium                 │
+│                                      │
+│ Status: PARTIAL ⚠️                   │
+│ (Auto-upgrade to RELEASED when PO Label received)  │
+│                                      │
+│ ⏳ PPIC REVIEW STATUS:               │
+│ [ ] Review Material Availability     │
+│ [ ] Edit if needed (target/date)     │
+│ [ ] ACCEPT → Trigger WO/SPK explosion│
+│                                      │
+│ BOM Manufacturing:                   │
+│ ├─ Fabric: 30+ SKU                  │
+│ ├─ Thread: 9 types                  │
+│ ├─ Filling: 24.3 kg                 │
+│ ├─ Label: 450 pcs (WAITING)         │
+│ └─ Carton: 8 pcs                    │
+│                                      │
+│ Material Availability:               │
+│ ├─ Fabric: ✅ 95% ready             │
+│ ├─ Thread: ✅ 100% ready            │
+│ ├─ Filling: ✅ 100% ready           │
+│ ├─ Label: 🔴 0% (PO-LBL pending)    │
+│ └─ Carton: ⚠️ 50% (need reorder)    │
+└──────────────────────────────────────┘
+        │
+        ▼ (After PPIC ACCEPT)
+┌──────────────────────────────────────┐
+│ AUTO WO/SPK EXPLOSION                │
+│ (Broadcast to Admin Dashboard)      │
+│ 📝 WO = Work Order = SPK = Surat Perintah Kerja │
+├──────────────────────────────────────┤
+│                                      │
+│ ✅ RELEASED (Active):                │
+│ ├─ WO/SPK-CUT-BODY-2026-00120       │
+│ │  Target: 495 pcs (450 + 10%)     │
+│ │  Access: ✅ GRANTED               │
+│ │                                   │
+│ └─ WO/SPK-CUT-BAJU-2026-00121       │
+│    Target: 495 pcs                  │
+│    Access: ✅ GRANTED                │
+│                                      │
+│ 🔒 LOCKED (Pending PO Label):       │
+│ ├─ WO/SPK-SEW-BODY-2026-00156       │
+│ ├─ WO/SPK-SEW-BAJU-2026-00157       │
+│ ├─ WO/SPK-FIN-STUFFING-2026-00089   │
+│ ├─ WO/SPK-FIN-CLOSING-2026-00090    │
+│ └─ WO/SPK-PCK-2026-00045            │
+│                                      │
+│ 📅 Auto-unlock when:                │
+│    PO-LBL-2026-0789 received        │
+└──────────────────────────────────────┘
+```
+
+#### 📊 Material Allocation Logic (BOM Calculation)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  BOM CALCULATION & MATERIAL ALLOCATION                          │
+└─────────────────────────────────────────────────────────────────┘
+
+MO Target: 450 pcs
+SPK Strategy: Flexible buffer per department
+
+CALCULATION CASCADE:
+
+[CUTTING] Buffer +10%
+├─ SPK Target: 495 pcs (450 × 1.10)
+├─ Material Allocated:
+│  ├─ KOHAIR: 49.75 YD (495 × 0.1005 YD/pcs)
+│  ├─ JS BOA: 4.65 YD (495 × 0.0094)
+│  ├─ NYLEX BLACK: 0.50 YD (495 × 0.0010)
+│  ├─ NYLEX WHITE: 2.18 YD (495 × 0.0044)
+│  ├─ POLYESTER Prints: 20.66 YD
+│  └─ POLYESTER Solid: 74.74 YD
+│
+└─ System Check:
+   ├─ Available: KOHAIR 125 YD ✅ (enough)
+   ├─ Available: POLYESTER 450 YD ✅
+   └─ Action: CREATE RESERVATION in Warehouse
+
+[SEWING] Buffer +15%
+├─ SPK Target: 517 pcs (450 × 1.15)
+├─ Constraint: ≤ Cutting Output
+├─ Material Allocated:
+│  ├─ Thread: 2,900 CM (variable per stitch)
+│  └─ Wait for: Cut pieces from Cutting dept
+│
+└─ System Note: Target > MO untuk antisipasi defect
+
+[FINISHING] Demand-Driven
+├─ SPK Target: 480 pcs (not rigid to MO)
+├─ Based on: Packing urgent need 465 pcs
+├─ Material Allocated:
+│  ├─ Filling: 25.92 kg (480 × 54 gram)
+│  ├─ Thread Closing: 288 meter
+│  └─ Hang Tag: 480 pcs (from PO Label)
+│
+└─ Flexibility: Adjust real-time to demand
+
+[PACKING] Exact Match
+├─ SPK Target: 465 pcs (urgent shipping)
+├─ Material Allocated:
+│  ├─ Carton: 8 pcs (60 pcs/CTN)
+│  ├─ Pallet: 1 pc (shared 8 CTN)
+│  └─ Pad: 1 pc
+│
+└─ Assembly: 1 Boneka + 1 Baju per set
+```
+
+### 4.2 Manufacturing Order (MO) Management
 
 #### 🔥 DUAL TRIGGER PRODUCTION SYSTEM
 
@@ -865,11 +1187,11 @@ Display lengkap dengan 2 sections:
 
 **Workflow**:
 ```
-[PO KAIN Created] → [PPIC Review] → [Create MO PARTIAL]
+[PO KAIN Created] → [System Auto-Generate MO PARTIAL] → [PPIC Review/Edit/Accept] → [Auto-Explode WO/SPK]
    ↓
-[Cutting dapat start]
+[Cutting dapat start (WO/SPK-CUT)]
    ↓
-[Embroidery dapat start]
+[Embroidery dapat start (WO/SPK-EMB)]
    ↓
 [Sewing, Finishing, Packing: HOLD - Waiting PO Label]
 ```
@@ -1060,7 +1382,702 @@ Example:
 
 ---
 
-### 4.4 PPIC - Multi-SPK Monitoring untuk 1 MO
+### 4.4 🔥 REAL-TIME WIP (Work In Progress) SYSTEM
+
+**Konsep Revolutionary**: Hasil produksi hari ini = Stok bahan baku dept berikutnya **instant** (tanpa tunggu SPK selesai semua).
+
+#### 4.4.1 Parsialitas & Incremental Production
+
+**Traditional System Problem**:
+```
+Cutting harus selesai 10,000 pcs dulu
+    ↓ (tunggu 5 hari)
+Baru Sewing bisa mulai
+    ↓
+Lead time panjang, WIP menumpuk
+```
+
+**ERP Quty Solution**:
+```
+Cutting Day 1: 500 pcs selesai
+    ↓ (instant transfer)
+Sewing Day 1: Langsung bisa mulai 500 pcs
+    ↓
+Cutting Day 2: 500 pcs lagi
+    ↓ (instant transfer)
+Sewing Day 2: Lanjut 500 pcs lagi
+    ↓
+Parallel production → Lead time -40%
+```
+
+#### 4.4.2 Admin Input Focus & Backend Process
+
+**Admin Dept A (Cutting) Daily Input**:
+```
+┌────────────────────────────────────────┐
+│  INPUT PRODUKSI HARIAN                 │
+│  SPK-CUT-2026-00120                    │
+│  Tanggal: 02 Feb 2026                  │
+├────────────────────────────────────────┤
+│  Qty Output Hari Ini: 500 pcs ✅       │
+│  Material Used:                        │
+│  ├─ KOHAIR: 50.25 YD                   │
+│  └─ JS BOA: 0.75 YD                    │
+│                                        │
+│  Status SPK: ONGOING (500/495 pcs)     │
+│  Status Batch: READY TO TRANSFER ✅    │
+│                                        │
+│  [SUBMIT & TRANSFER]                   │
+└────────────────────────────────────────┘
+```
+
+**System Behavior Behind the Scene (Invisible to Admin)**:
+```
+1. Admin klik [SUBMIT & TRANSFER]
+2. Backend Process:
+   ├─ Update SPK-CUT: Progress 500/495 (101%)
+   ├─ Generate DN-CUT-2026-00089:
+   │  └─ From: Warehouse Main (Cutting)
+   │      To: WIP Buffer (Embroidery/Sewing)
+   │      Qty: 500 pcs Cut Body
+   │      Status: AUTO-APPROVED (no manual signature)
+   ├─ Update Inventory:
+   │  ├─ WIP Cutting: -500 pcs
+   │  └─ WIP Embroidery: +500 pcs ✅
+   └─ Broadcast notification:
+      └─ Dashboard Embroidery/Sewing: "Material Baru: 500 pcs"
+```
+
+**Admin Dept B (Sewing) Dashboard Instantly Updated**:
+```
+┌────────────────────────────────────────┐
+│  BAHAN SIAP OLAH - REAL-TIME           │
+│  SPK-SEW-BODY-2026-00120               │
+├────────────────────────────────────────┤
+│  🔔 NEW: +500 pcs Cut Body Available   │
+│      (dari Cutting 02-Feb 14:30)      │
+│                                        │
+│  Total Stock Ready: 500 pcs            │
+│  SPK Target: 517 pcs                   │
+│                                        │
+│  ✅ CAN START PRODUCTION NOW           │
+│  [MULAI KERJA]                         │
+└────────────────────────────────────────┘
+```
+
+#### 4.4.3 Dinamika Over-Production & Saldo Minus
+
+**Case Study: Normal Flow**
+```
+Day 1:
+├─ Cutting output: 500 pcs → WIP Buffer +500
+└─ Sewing input: 200 pcs → WIP Buffer 300 (saldo)
+
+Day 2:
+├─ Cutting output: 500 pcs → WIP Buffer +500 (total 800)
+└─ Sewing input: 300 pcs → WIP Buffer 500 (saldo)
+
+Benefit: Sewing tidak pernah kehabisan material
+```
+
+**Case Study: Abnormal Flow (Minus)**
+```
+Day 1:
+├─ Cutting output: 0 pcs (machine breakdown)
+└─ Sewing input: 200 pcs → WIP Buffer -200 ⚠️
+
+System Alert Dashboard Supervisor:
+┌────────────────────────────────────────┐
+│  🚨 SALDO MATERIAL MINUS DETECTED      │
+├────────────────────────────────────────┤
+│  Dept: Sewing Body                      │
+│  Material: Cut Body AFTONSPARV         │
+│  Current Saldo: -200 pcs               │
+│                                        │
+│  Possible Causes:                      │
+│  ├─ Cutting belum input produksi      │
+│  ├─ Material "melompat" tanpa DN      │
+│  └─ Admin salah input qty              │
+│                                        │
+│  Action Required:                      │
+│  ├─ Verifikasi fisik stock di lantai  │
+│  ├─ Cek dengan Cutting apakah ada DN   │
+│  └─ Reconcile di akhir shift           │
+│                                        │
+│  [RECONCILE NOW] [REMIND CUTTING]      │
+└────────────────────────────────────────┘
+```
+
+**Reconciliation Process**:
+```
+Supervisor klik [RECONCILE NOW]:
+1. System pause production input Sewing
+2. Admin Cutting & Sewing physical count together
+3. Find discrepancy:
+   └─ Actual: Cutting ada output 150 pcs tapi lupa input
+4. Admin Cutting input 150 pcs retrospective (with approval)
+5. System adjust:
+   ├─ WIP Buffer: -200 + 150 = -50 (masih minus)
+   └─ Need 50 pcs lagi dari Cutting Day 2
+6. Production resume
+```
+
+#### 4.4.4 Status Differentiation
+
+**Status SPK vs Status Batch Produksi**:
+
+| Aspek | Status SPK | Status Batch Produksi |
+|-------|------------|----------------------|
+| **Scope** | Keseluruhan SPK (target total) | Per hari / per input |
+| **States** | PENDING, ONGOING, FINISHED | READY TO TRANSFER, TRANSFERRED, RECEIVED |
+| **Update** | Kumulatif (500+500+...=total) | Incremental (hari ini berapa) |
+| **Purpose** | Track completion vs target | Track material flow |
+
+**Contoh Real**:
+```
+SPK-CUT-BODY-2026-00120 (Target: 495 pcs)
+
+Status SPK: ONGOING
+├─ Day 1: 500 pcs (101%) → Status SPK tetap ONGOING
+└─ Progress: 500/495 pcs
+
+Batch Production Day 1:
+├─ Batch-001: 500 pcs
+│  └─ Status: TRANSFERRED ✅
+└─ Available for Next Dept: 500 pcs instant
+
+Admin Cutting masih bisa lanjut input Day 2 jika ada over-production
+(spare material tersedia)
+```
+
+#### 4.4.5 Keuntungan Business
+
+| Benefit | Impact | Value |
+|---------|--------|-------|
+| **Parallel Production** | Lead time -40% | Faster delivery |
+| **Zero Waiting Time** | Dept B start instant | Higher throughput |
+| **Real-Time Visibility** | Manager lihat WIP live | Better decision |
+| **Auto Material Flow** | No manual DN approval | Reduce admin time -60% |
+| **Early Problem Detection** | Minus alert instant | Prevent stock-out |
+| **Flexible Over-Production** | Use spare material optimal | Material efficiency +15% |
+
+---
+
+### 4.5 🔥 PULL SYSTEM & AUTO MATERIAL DEDUCTION
+
+**Konsep**: Saat Admin Dept B submit production, sistem **otomatis menarik (pull)** material dari WIP Buffer Dept A.
+
+#### 4.5.1 Pull Mechanism
+
+**Traditional System** (Manual Push):
+```
+Admin A: Selesai 500 pcs → Bikin DN manual → Kirim ke Warehouse
+Warehouse: Terima DN → Input ke system → Update stock
+Admin B: Cek stock → Ada 500 pcs → Ambil material → Bikin dokumen tarik
+Warehouse: Approve dokumen → Update stock lagi
+    ↓
+Total: 4 steps, 2-3 jam delay
+```
+
+**ERP Quty System** (Auto Pull):
+```
+Admin A: Submit 500 pcs ✅
+    ↓ (instant, backend process)
+System: Auto DN + Transfer + Update stock Dept A & B
+    ↓ (0 delay)
+Admin B: Lihat dashboard → 500 pcs available ✅
+Admin B: Submit production 200 pcs
+    ↓ (instant, backend auto-pull)
+System: Potong stock WIP Buffer: 500 - 200 = 300 pcs
+    ↓
+Total: 2 steps, 0 delay, 0 manual paperwork
+```
+
+#### 4.5.2 Backend Process Detail
+
+**Admin Sewing Submit Production**:
+```
+Input Form:
+├─ SPK: SPK-SEW-LINE05-2026-00120
+├─ Qty Output: 200 pcs
+├─ Material Used:
+│  ├─ Cut Body: 200 pcs (auto-calculated from BOM)
+│  ├─ Thread: 5000 CM (auto-calculated)
+│  └─ Label EU: 200 pcs (auto-calculated)
+└─ [SUBMIT]
+
+Backend Process (Invisible to Admin):
+1. Validate Material Availability:
+   ├─ WIP Buffer Cut Body: 500 pcs ≥ 200 pcs ✅
+   ├─ Warehouse Thread: 15,000 CM ≥ 5,000 CM ✅
+   └─ Warehouse Label: 350 pcs ≥ 200 pcs ✅
+
+2. Auto Material Deduction:
+   ├─ WIP Buffer Cut Body: 500 → 300 pcs
+   ├─ Warehouse Thread: 15,000 → 10,000 CM
+   └─ Warehouse Label: 350 → 150 pcs
+
+3. Generate Internal Transaction Log:
+   ├─ Trans-ID: TRX-SEW-2026-00345
+   ├─ Type: MATERIAL PULL
+   ├─ From: WIP Buffer (Cutting)
+   ├─ To: Production Floor (Sewing Body)
+   ├─ Qty: 200 pcs Cut Body
+   ├─ Timestamp: 02-Feb-2026 14:35:22
+   ├─ By User: admin_sewing_line05
+   └─ Status: COMPLETED ✅
+
+4. Update SPK Progress:
+   ├─ SPK-SEW-LINE05: Progress 200/200 pcs (100%)
+   └─ Status: COMPLETED ✅
+
+5. Generate Output to WIP Next Dept:
+   ├─ WIP Buffer Finishing: +195 pcs (200 - 5 defect)
+   └─ Notification: Dashboard Finishing gets alert
+```
+
+#### 4.5.3 Traceability & Audit Trail
+
+**Full Transparency** - Every transaction is logged dengan 5W1H:
+
+**Audit Log Structure**:
+```
+┌─────────────────────────────────────────────────────────┐
+│  AUDIT LOG - MATERIAL MOVEMENT TRACKING                 │
+├─────────────────────────────────────────────────────────┤
+│  Transaction ID: TRX-SEW-2026-00345                     │
+│                                                         │
+│  WHO:   admin_sewing (ID: USR-0089)                  │
+│  WHAT:  Material Pull - Cut Body AFTONSPARV            │
+│  WHEN:  02-Feb-2026 14:35:22 WIB                       │
+│  WHERE: From WIP Buffer (Cutting) → Sewing           │
+│  WHY:   Production SPK-SEW-BODY-2026-00120             │
+│  HOW:   Auto-deduction via system (backend process)    │
+│                                                         │
+│  Detail Movement:                                       │
+│  ├─ Material: [AFTONSPARV_CUT_BODY]                    │
+│  ├─ Qty: -200 pcs (deduction)                          │
+│  ├─ Before: 500 pcs                                    │
+│  ├─ After: 300 pcs                                     │
+│  └─ Variance: 0 pcs (match BOM)                        │
+│                                                         │
+│  Related Transactions:                                  │
+│  ├─ Previous: TRX-CUT-2026-00289 (Cutting output)      │
+│  └─ Next: TRX-SEW-2026-00346 (Sewing output to FIN)    │
+│                                                         │
+│  Approval Status: AUTO-APPROVED ✅                      │
+│  (No manual approval needed for normal flow)            │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Manager View - Transaction Chain**:
+```
+┌─────────────────────────────────────────────────────────┐
+│  MATERIAL FLOW TRACE: Cut Body AFTONSPARV              │
+│  Date Range: 01-Feb to 03-Feb 2026                     │
+├─────────────────────────────────────────────────────────┤
+│  
+│  [CUTTING] 01-Feb 10:00
+│  ├─ TRX-CUT-2026-00289
+│  ├─ Input: KOHAIR 50.25 YD
+│  └─ Output: 500 pcs Cut Body → WIP Buffer
+│      
+│  [SEWING BODY] 01-Feb 14:35
+│  ├─ TRX-SEW-2026-00345 ⬅️ YOU ARE HERE
+│  ├─ Pull: 200 pcs Cut Body ← WIP Buffer
+│  └─ Output: 195 pcs Skin → WIP Finishing
+│      
+│  [SEWING BODY] 02-Feb 08:15
+│  ├─ TRX-SEW-2026-00351
+│  ├─ Pull: 100 pcs Cut Body ← WIP Buffer
+│  └─ Output: 98 pcs Skin → WIP Finishing
+│      
+│  [WIP BUFFER STATUS]
+│  └─ Remaining: 200 pcs Cut Body (available)
+│
+└─────────────────────────────────────────────────────────┘
+```
+
+#### 4.5.4 Discrepancy Detection & Alert
+
+**Real-Time Monitoring**:
+
+**Case 1: Material Shortage**
+```
+Sewing tries to pull 200 pcs, but WIP Buffer only has 150 pcs:
+
+System Response:
+├─ BLOCK submission
+├─ Show alert:
+│  "⚠️ Material Insufficient!
+│   Required: 200 pcs Cut Body
+│   Available: 150 pcs
+│   Shortage: 50 pcs
+│   
+│   Action:
+│   ├─ Wait for Cutting to complete
+│   └─ OR reduce qty to 150 pcs"
+└─ Notify Supervisor & PPIC via WhatsApp
+```
+
+**Case 2: Material "Melompat" (Untracked Movement)**
+```
+Physical count shows 300 pcs di Sewing, but system shows 500 pcs:
+
+System Detect (Daily Reconciliation):
+├─ Expected (system): 500 pcs
+├─ Actual (physical): 300 pcs
+├─ Discrepancy: -200 pcs (missing)
+└─ Alert Supervisor:
+   "🚨 Material Discrepancy Detected!
+    Possible causes:
+    ├─ Material moved without system input
+    ├─ Theft/loss (investigate)
+    └─ Admin forgot to input production
+    
+    Please reconcile before end of day."
+```
+
+#### 4.5.5 End-of-Month Reconciliation
+
+**Auto vs Manual Reconciliation**:
+
+| Frequency | Trigger | Action |
+|-----------|---------|--------|
+| **Daily** | Auto at 23:00 | Soft warning if variance <5% |
+| **Weekly** | Auto every Friday | Email to SPV if variance >2% |
+| **Monthly** | Manual by Manager | Hard reconciliation + physical count |
+
+**Monthly Reconciliation Workflow**:
+```
+1. System generate report:
+   ├─ All negative balances
+   ├─ High variance locations (>10%)
+   └─ Suspicious transaction patterns
+
+2. Manager assign reconciliation team:
+   ├─ Admin Dept A + Admin Dept B
+   └─ Supervisor witness
+
+3. Physical count & adjust:
+   ├─ Count actual stock di lantai
+   ├─ Compare dengan system
+   └─ Input adjustment with approval
+
+4. System record:
+   ├─ Adjustment transaction
+   ├─ Reason for discrepancy
+   └─ Corrective action taken
+
+5. Lock period:
+   └─ No retroactive input allowed after lock
+```
+
+#### 4.5.6 Benefit Summary
+
+| Feature | Traditional | ERP Quty Pull System |
+|---------|-------------|----------------------|
+| **Material Request** | Manual form, 2-3 jam | Auto-pull, instant |
+| **Paperwork** | DN manual, sign, scan | Zero paperwork |
+| **Stock Update** | Manual input, delay | Real-time auto |
+| **Traceability** | Susah lacak | Full audit log 5W1H |
+| **Discrepancy** | Found at month-end | Alert instant |
+| **Reconciliation** | Manual, 2-3 hari | Semi-auto, 2-3 jam |
+
+---
+
+### 4.6 🔥 VALIDATION & TOLERANCE RULES
+
+**Konsep**: Sistem harus fleksibel untuk over-production (spare material), tapi tetap ada **kontrol ketat** untuk mencegah manipulasi data.
+
+#### 4.6.1 Over-Production Tolerance
+
+**Business Rule**: Produksi boleh melebihi SPK Target, tetapi harus dalam batas wajar (3-5%).
+
+**Tolerance Levels**:
+
+| Variance | Action | Approval Required |
+|----------|--------|-------------------|
+| **0-3%** | ✅ AUTO-APPROVE | No (normal operation) |
+| **3-5%** | ⚠️ WARNING | SPV review (soft) |
+| **5-10%** | ⚠️ REQUIRE REASON | SPV approval (mandatory) |
+| **>10%** | ❌ BLOCK | Manager approval (investigation) |
+
+**Example Flow**:
+
+**Case 1: Normal (2% over)**
+```
+SPK Target: 495 pcs
+Admin Input: 505 pcs (102%)
+Variance: +2%
+
+System Response:
+├─ Status: ✅ AUTO-APPROVED
+├─ Message: "Production completed successfully"
+└─ No additional action needed
+```
+
+**Case 2: Warning (4% over)**
+```
+SPK Target: 495 pcs
+Admin Input: 515 pcs (104%)
+Variance: +4%
+
+System Response:
+├─ Status: ⚠️ WARNING - Need SPV Review
+├─ Message: "Production exceeds target by 4%
+│           Please confirm with Supervisor"
+├─ Auto-notify: SPV via dashboard notification
+└─ SPV Action:
+   ├─ Review: Check if spare material memang ada
+   ├─ Decision: Approve / Adjust qty
+   └─ Submit with notes
+```
+
+**Case 3: Require Reason (7% over)**
+```
+SPK Target: 495 pcs
+Admin Input: 530 pcs (107%)
+Variance: +7%
+
+System Response:
+├─ Status: ⚠️ BLOCKED - Need Justification
+├─ Form Popup:
+│  ┌────────────────────────────────────┐
+│  │  OVER-PRODUCTION JUSTIFICATION     │
+│  ├────────────────────────────────────┤
+│  │  SPK: SPK-CUT-2026-00120           │
+│  │  Target: 495 pcs                   │
+│  │  Actual: 530 pcs (107%)            │
+│  │  Variance: +35 pcs (7%)            │
+│  │                                    │
+│  │  Reason (Required): ______________ │
+│  │  Contoh:                           │
+│  │  "Ada spare kain 3.5 YD sisa PO    │
+│  │   sebelumnya, daripada waste."     │
+│  │                                    │
+│  │  [SUBMIT FOR APPROVAL]             │
+│  └────────────────────────────────────┘
+└─ Workflow:
+   1. Admin submit reason
+   2. SPV review & approve
+   3. System record justification in audit log
+   4. Production accepted
+```
+
+**Case 4: Critical (12% over)**
+```
+SPK Target: 495 pcs
+Admin Input: 555 pcs (112%)
+Variance: +12%
+
+System Response:
+├─ Status: ❌ BLOCKED - Manager Approval Required
+├─ Alert Chain:
+│  ├─ Admin: "Cannot submit, variance too high"
+│  ├─ SPV: "High variance detected, investigate"
+│  └─ Manager: "Approval needed for SPK-CUT-2026-00120"
+├─ Investigation Required:
+│  ├─ Verify physical stock
+│  ├─ Check material source (PO mana)
+│  ├─ Interview admin & operator
+│  └─ Potential issue: Manipulasi data / material theft
+└─ Manager Decision:
+   ├─ APPROVE: If legitimate (with strong justification)
+   ├─ ADJUST: Reduce qty to actual verified amount
+   └─ REJECT: If cannot verify, start audit process
+```
+
+#### 4.6.2 Material Variance Tolerance
+
+**BOM vs Actual Usage**:
+
+| Variance | Material Type | Action |
+|----------|---------------|--------|
+| **0-5%** | Fabric, Thread | ✅ Normal (waste tolerance) |
+| **5-10%** | Fabric | ⚠️ Review (possible cutting error) |
+| **>10%** | Fabric | ❌ Block (investigate) |
+| **>2%** | Filling, Accessories | ⚠️ Review (count error likely) |
+
+**Example - Fabric Usage**:
+```
+BOM Standard: 0.1005 YD/pcs × 500 pcs = 50.25 YD
+Admin Input: 53.00 YD
+Variance: +5.5%
+
+System Response:
+├─ Status: ⚠️ WARNING - Above Normal Waste
+├─ Alert SPV: "Fabric usage variance 5.5%
+│              Normal waste: 3-5%
+│              Possible causes:
+│              ├─ Marker tidak optimal
+│              ├─ Kain cacat (must cut more)
+│              └─ Salah hitung input"
+└─ SPV Action:
+   ├─ Verify cutting layout
+   ├─ Check fabric quality report
+   └─ Approve with notes or adjust qty
+```
+
+#### 4.6.3 Minus Stock Tolerance
+
+**WIP Buffer Negative Balance**:
+
+| Minus Level | Action | Timeline |
+|-------------|--------|----------|
+| **-1 to -5%** | ⚠️ Soft alert | Reconcile within 24 hours |
+| **-5 to -10%** | ⚠️ Hard alert | Reconcile within 4 hours |
+| **>-10%** | ❌ Block next input | Reconcile immediately |
+
+**Example - Minor Minus**:
+```
+WIP Buffer Cut Body: 500 pcs
+Sewing pulls: 520 pcs (over-consumption)
+Balance: -20 pcs (-4%)
+
+System Response:
+├─ Status: ⚠️ Soft Alert
+├─ Allow: Sewing can continue (trust first)
+├─ Notify: SPV + PPIC via dashboard
+├─ Message: "WIP Buffer minus -20 pcs (-4%)
+│           Expected reconciliation:
+│           Cutting will input 520+ pcs today"
+└─ Timeline: Must reconcile within 24 hours
+            (likely Cutting forgot to input)
+```
+
+**Example - Critical Minus**:
+```
+WIP Buffer Cut Body: 500 pcs
+Sewing pulls: 600 pcs (massive over-consumption)
+Balance: -100 pcs (-20%)
+
+System Response:
+├─ Status: ❌ CRITICAL - Block Next Input
+├─ Block: Sewing cannot submit more production
+├─ Alert Chain:
+│  ├─ Sewing SPV: Production blocked
+│  ├─ Cutting SPV: Verify output urgently
+│  ├─ PPIC: Material flow disrupted
+│  └─ Manager: Investigation required
+├─ Mandatory Action:
+│  1. STOP all related production
+│  2. Physical count Cutting + Sewing
+│  3. Find 100 pcs discrepancy
+│  4. Submit incident report
+│  5. Manager approve reconciliation
+│  6. System unlock after verified
+└─ Timeline: Must reconcile immediately (max 2 hours)
+```
+
+#### 4.6.4 Time-Based Tolerance (Late Input)
+
+**Retroactive Input Rules**:
+
+| Time Gap | Action | Approval |
+|----------|--------|----------|
+| **Same day** | ✅ Allow | No approval |
+| **1-2 days** | ⚠️ Allow with reason | SPV approval |
+| **3-7 days** | ⚠️ Allow with reason | Manager approval |
+| **>7 days** | ❌ Block | Director approval only |
+
+**Example - Late Input**:
+```
+Today: 10-Feb-2026
+Admin tries to input production for: 03-Feb-2026
+Time Gap: 7 days
+
+System Response:
+├─ Status: ⚠️ LATE INPUT - Manager Approval Required
+├─ Form:
+│  ┌────────────────────────────────────┐
+│  │  RETROACTIVE INPUT REQUEST         │
+│  ├────────────────────────────────────┤
+│  │  Production Date: 03-Feb-2026      │
+│  │  Input Date: 10-Feb-2026           │
+│  │  Gap: 7 days ⚠️                    │
+│  │                                    │
+│  │  Reason (Mandatory): ____________  │
+│  │  "Admin sakit, baru masuk hari ini"│
+│  │                                    │
+│  │  Verified By: ________________     │
+│  │  (SPV signature)                   │
+│  │                                    │
+│  │  [SUBMIT FOR MANAGER APPROVAL]     │
+│  └────────────────────────────────────┘
+└─ Impact:
+   ├─ All subsequent calculations affected
+   ├─ WIP balance may show incorrect history
+   └─ Manager must verify cascade impact
+```
+
+#### 4.6.5 Fraud Prevention Patterns
+
+**System Auto-Detect Suspicious Patterns**:
+
+**Pattern 1: Frequent High Variance**
+```
+Admin A input history (last 7 days):
+├─ Day 1: +4% over target
+├─ Day 2: +6% over target
+├─ Day 3: +5% over target
+├─ Day 4: +7% over target
+└─ Pattern: Consistently high variance
+
+System Alert Manager:
+"⚠️ Suspicious Pattern Detected
+ Admin: admin_cutting_01
+ Pattern: Consistent over-production 4-7%
+ Possible issues:
+ ├─ Material hoarding untuk bonus
+ ├─ Manipulasi data
+ └─ Poor target setting (SPV review needed)
+ 
+ Recommended Action:
+ └─ Audit last week's production + material usage"
+```
+
+**Pattern 2: Minus-Plus Cycle**
+```
+WIP Buffer history:
+├─ Day 1: -50 pcs (Dept B over-pull)
+├─ Day 2: +60 pcs (Dept A over-produce)
+├─ Day 3: -50 pcs (Dept B over-pull again)
+├─ Day 4: +60 pcs (Dept A over-produce again)
+└─ Pattern: Coordinated manipulation?
+
+System Alert:
+"🚨 Coordinated Pattern Detected
+ Possible collusion between Dept A & B
+ └─ Director investigation required"
+```
+
+#### 4.6.6 Implementation Checklist
+
+**System Configuration**:
+```
+[ ] Set tolerance levels per dept (customizable)
+[ ] Configure approval workflow (SPV → Manager → Director)
+[ ] Setup alert thresholds & notification channels
+[ ] Define reconciliation frequency (daily/weekly/monthly)
+[ ] Create fraud detection rules & ML patterns
+[ ] Train all users on tolerance policies
+[ ] Document all validation rules in SOP
+```
+
+**Benefit Summary**:
+
+| Aspect | Without Tolerance | With Smart Tolerance |
+|--------|-------------------|----------------------|
+| **Flexibility** | Rigid, cannot use spare | Flexible 3-5% auto-approved |
+| **Control** | No control, easy manipulate | Multi-level approval >5% |
+| **Efficiency** | Everything needs approval | 95% auto-approved (normal) |
+| **Fraud Risk** | High (no detection) | Low (pattern detection) |
+| **Audit Trail** | Manual investigation | Auto-flagged suspicious |
+
+---
+
+### 4.7 PPIC - Multi-SPK Monitoring untuk 1 MO
 
 **Scenario**: 1 MO → Multiple parallel SPKs (Body & Baju)
 
@@ -1110,14 +2127,296 @@ Example:
 <a name="production-module"></a>
 ## 5. PRODUCTION MODULE
 
-### 5.1 Production Flow Overview
+### 5.1 Complete Production Flow - 6 Stages Visualization
+
+#### 🏭 End-to-End Production Stages (from Material to Finished Goods)
+
+```
+┌────────────────────────────────────────────────────────────────────────────┐
+│  PRODUCTION FLOW - 6 STAGES (Parallel & Sequential)                       │
+└────────────────────────────────────────────────────────────────────────────┘
+
+DAY 1-2: CUTTING (2 Parallel Streams)
+═══════════════════════════════════════════════════════════════════════════
+
+    WAREHOUSE MAIN
+         │
+         ├──────────────────┬──────────────────┐
+         ▼                  ▼                  ▼
+    [MATERIAL ISSUE]   [MATERIAL ISSUE]   [MATERIAL ISSUE]
+    Fabric for Body    Fabric for Baju   Thread & Acc
+         │                  │
+         ▼                  ▼
+    ┌─────────────┐    ┌─────────────┐
+    │  CUTTING A  │    │  CUTTING B  │
+    │   (BODY)    │    │   (BAJU)    │
+    │             │    │             │
+    │ SPK Target: │    │ SPK Target: │
+    │  495 pcs    │    │  495 pcs    │
+    │             │    │             │
+    │ Input Day 1:│    │ Input Day 1:│
+    │  250 pcs ✅ │    │  250 pcs ✅ │
+    │ Input Day 2:│    │ Input Day 2:│
+    │  250 pcs ✅ │    │  245 pcs ✅ │
+    │             │    │             │
+    │ Total: 500  │    │ Total: 495  │
+    │ Good: 495   │    │ Good: 495   │
+    │ Defect: 5→Q │    │ Defect: 0   │
+    └─────────────┘    └─────────────┘
+         │                  │
+         │ AUTO TRANSFER    │ HOLD FOR PACKING
+         ▼                  ▼
+    🔄 WIP BUFFER      📦 WAREHOUSE MAIN
+    (Cut Body 495)     (Cut Baju 495)
+
+
+DAY 3: EMBROIDERY (Optional, Body Only)
+═══════════════════════════════════════════════════════════════════════════
+
+    🔄 WIP BUFFER (Cut Body 495 pcs)
+         │
+         ▼
+    ┌──────────────────┐
+    │   EMBROIDERY     │
+    │                  │
+    │ SPK Target:      │
+    │  495 pcs         │
+    │                  │
+    │ Process:         │
+    │ ├─ Logo IKEA     │
+    │ ├─ Text detail   │
+    │ └─ QC check      │
+    │                  │
+    │ Input Day 3:     │
+    │  495 pcs ✅      │
+    │                  │
+    │ Good Output:     │
+    │  495 pcs (100%)  │
+    └──────────────────┘
+         │
+         │ AUTO TRANSFER
+         ▼
+    🔄 WIP BUFFER
+    (Embroidered Body 495)
+
+
+DAY 4-5: SEWING (2 Parallel Streams)
+═══════════════════════════════════════════════════════════════════════════
+
+    🔄 WIP BUFFER           📦 WAREHOUSE MAIN
+    (Embroidered 495)       (Cut Baju 495)
+         │                        │
+         ▼                        ▼
+    ┌─────────────┐         ┌─────────────┐
+    │  SEWING A   │         │  SEWING B   │
+    │   (BODY)    │         │   (BAJU)    │
+    │             │         │             │
+    │ 🔒 WAIT PO  │         │ 🔒 WAIT PO  │
+    │    LABEL    │         │    LABEL    │
+    │             │         │             │
+    │ Status:     │         │ Status:     │
+    │ RELEASED ✅ │         │ RELEASED ✅ │
+    │ (Day 4)     │         │ (Day 4)     │
+    │             │         │             │
+    │ SPK Target: │         │ SPK Target: │
+    │  517 pcs    │         │  495 pcs    │
+    │             │         │             │
+    │ Day 4: 260  │         │ Day 4: 250  │
+    │ Day 5: 260  │         │ Day 5: 250  │
+    │             │         │             │
+    │ Total: 520  │         │ Total: 500  │
+    │ Good: 508   │         │ Good: 495   │
+    │ Defect: 12→Q│         │ Defect: 5→Q │
+    │ Rework: +10 │         │ Rework: +5  │
+    │ Final: 518  │         │ Final: 500  │
+    └─────────────┘         └─────────────┘
+         │                        │
+         │ AUTO TRANSFER          │ HOLD
+         ▼                        ▼
+    📦 WAREHOUSE            📦 WAREHOUSE
+       FINISHING               MAIN
+    (Skin 518 pcs)         (Baju 500 pcs)
+
+
+DAY 6-7: WAREHOUSE FINISHING (2-Stage Process)
+═══════════════════════════════════════════════════════════════════════════
+
+STAGE 1: STUFFING (Internal Process)
+────────────────────────────────────────
+
+    📦 WAREHOUSE FINISHING
+       (Skin 518 pcs available)
+         │
+         ▼
+    ┌──────────────────────────┐
+    │  STAGE 1: STUFFING       │
+    │                          │
+    │  SPK Target: 480 pcs     │
+    │  (Demand-driven)         │
+    │                          │
+    │  Material Consume:       │
+    │  ├─ Skin: 480 pcs        │
+    │  ├─ Filling: 25.92 kg    │
+    │  │  (480 × 54 gram)      │
+    │  └─ Thread: 288 meter    │
+    │                          │
+    │  Day 6: 240 pcs ✅       │
+    │  Day 7: 243 pcs ✅       │
+    │                          │
+    │  Total: 483 pcs          │
+    │  Good: 473 pcs (97.9%)   │
+    │  Defect: 10 pcs → QC     │
+    │  Rework: +8 pcs          │
+    │  Final: 481 pcs          │
+    │                          │
+    │  Inventory Update:       │
+    │  ├─ Skin: 518→38 pcs    │
+    │  └─ Stuffed: 0→481 pcs  │
+    └──────────────────────────┘
+         │
+         ▼
+    📦 WAREHOUSE FINISHING
+       (Stuffed Body 481 pcs)
+
+
+STAGE 2: CLOSING (Final Touch)
+────────────────────────────────────────
+
+    📦 WAREHOUSE FINISHING
+       (Stuffed Body 481 pcs)
+         │
+         ▼
+    ┌──────────────────────────┐
+    │  STAGE 2: CLOSING        │
+    │                          │
+    │  SPK Target: 470 pcs     │
+    │  (Match packing need)    │
+    │                          │
+    │  Material Consume:       │
+    │  ├─ Stuffed: 470 pcs     │
+    │  └─ Hang Tag: 470 pcs    │
+    │                          │
+    │  Day 7: 235 pcs ✅       │
+    │  Day 8: 237 pcs ✅       │
+    │                          │
+    │  Total: 472 pcs          │
+    │  Good: 468 pcs (99.2%)   │
+    │  Defect: 4 pcs → QC      │
+    │  Rework: +3 pcs          │
+    │  Final: 471 pcs          │
+    │                          │
+    │  Inventory Update:       │
+    │  ├─ Stuffed: 481→11 pcs │
+    │  └─ Finished: 0→471 pcs │
+    └──────────────────────────┘
+         │
+         │ TRANSFER TO PACKING
+         ▼
+    📦 WAREHOUSE MAIN
+       (Finished Doll 471 pcs)
+
+
+DAY 8-9: PACKING (Assembly)
+═══════════════════════════════════════════════════════════════════════════
+
+    📦 WAREHOUSE MAIN
+         │
+         ├──────────────┬──────────────┐
+         ▼              ▼              ▼
+    Finished Doll   Cut Baju      Carton
+    471 pcs         500 pcs       8 pcs
+         │              │              │
+         └──────────────┴──────────────┘
+                     │
+                     ▼
+    ┌─────────────────────────────────┐
+    │  PACKING DEPARTMENT             │
+    │                                 │
+    │  SPK Target: 465 pcs            │
+    │  (Urgent shipping Week 05)      │
+    │                                 │
+    │  Assembly:                      │
+    │  ├─ 1 Finished Doll             │
+    │  ├─ 1 Baju                      │
+    │  ├─ 1 Carton (60 pcs/CTN)       │
+    │  └─ Label Week + Destination    │
+    │                                 │
+    │  Packing Schedule:              │
+    │  Day 8: 300 pcs (5 CTN) ✅      │
+    │  Day 9: 165 pcs (3 CTN) ✅      │
+    │                                 │
+    │  Total Packed: 465 pcs          │
+    │  ├─ CTN 001-007: 60 pcs each    │
+    │  └─ CTN 008: 45 pcs (partial)   │
+    │                                 │
+    │  Label Info:                    │
+    │  ├─ Week: W05-2026              │
+    │  ├─ Destination: Belgium        │
+    │  ├─ PO: PO-LBL-2026-0789        │
+    │  └─ Artikel: AFTONSPARV         │
+    │                                 │
+    │  Stock Remaining:               │
+    │  ├─ Finished Doll: 6 pcs        │
+    │  └─ Baju: 35 pcs                │
+    └─────────────────────────────────┘
+         │
+         │ TRANSFER TO FG
+         ▼
+    📦 WAREHOUSE FG
+       8 CTN (465 pcs)
+       READY TO SHIP ✅
+```
+
+#### 📊 Real-Time WIP Dashboard (Live Inventory Tracking)
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│  REAL-TIME WIP DASHBOARD - LIVE INVENTORY TRACKING                │
+└────────────────────────────────────────────────────────────────────┘
+
+ARTIKEL: [40551542] AFTONSPARV - MO-2026-00089
+Status: PRODUCTION ONGOING (Day 7 of 9)
+
+┌──────────────────┬──────────┬──────────┬──────────┬──────────────┐
+│ LOCATION         │ TYPE     │ QTY      │ STATUS   │ NEXT ACTION  │
+├──────────────────┼──────────┼──────────┼──────────┼──────────────┤
+│ Warehouse Main   │ Fabric   │ 25.5 YD  │ Reserved │ Hold buffer  │
+│ Warehouse Main   │ Thread   │ 1200 CM  │ Reserved │ Hold buffer  │
+│ Warehouse Main   │ Filling  │ 19.1 kg  │ Reserved │ For next MO  │
+│ Warehouse Main   │ Baju     │ 500 pcs  │ Ready    │ Wait Packing │
+├──────────────────┼──────────┼──────────┼──────────┼──────────────┤
+│ WIP Cutting      │ Cut Body │ 0 pcs    │ Complete │ -            │
+│ WIP Embroidery   │ Emb Body │ 0 pcs    │ Complete │ -            │
+│ WIP Sewing       │ Skin     │ 0 pcs    │ Complete │ -            │
+├──────────────────┼──────────┼──────────┼──────────┼──────────────┤
+│ WH Finishing     │ Skin     │ 38 pcs   │ Buffer   │ For next MO  │
+│ WH Finishing     │ Stuffed  │ 11 pcs   │ Buffer   │ Continue Day8│
+│ WH Finishing     │ Finished │ 471 pcs  │ Ready ✅ │ To Packing   │
+├──────────────────┼──────────┼──────────┼──────────┼──────────────┤
+│ Packing Line     │ Sets     │ 465 pcs  │ Packed ✅│ To FG        │
+│ Warehouse FG     │ Cartons  │ 8 CTN    │ Ready ✅ │ Ship Day 10  │
+└──────────────────┴──────────┴──────────┴──────────┴──────────────┘
+
+📊 PRODUCTION SUMMARY:
+├─ MO Target: 450 pcs
+├─ Actual Output: 465 pcs (103.3% ✅)
+├─ Overall Yield: 94.1%
+├─ Total Defects: 41 pcs (4.0%)
+├─ Rework Success: 34 pcs (82.9% recovery ✅)
+├─ Scrap Loss: 7 pcs (0.7%)
+└─ Status: ON-TIME for Week 05 deadline ✅
+```
+
+---
+
+### 5.2 Production Flow Overview
 
 ```
 CUTTING → EMBROIDERY* → SEWING → FINISHING (2-stage) → PACKING → FG
 (*optional)
 ```
 
-### 5.2 Universal UI Template untuk Semua Departemen
+### 5.3 Universal UI Template untuk Semua Departemen
 
 Setiap departemen memiliki **3 halaman utama** dengan struktur sama:
 
@@ -2138,7 +3437,156 @@ Defect Found → Rework Queue → Assign Operator → Repair → Re-QC
 <a name="warehouse-inventory"></a>
 ## 6. WAREHOUSE & INVENTORY MODULE
 
-### 6.1 Warehouse Structure
+### 6.1 Warehouse Structure - Complete Visualization
+
+#### 🏢 Three Warehouse Types - End-to-End Flow
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│  WAREHOUSE SYSTEM - 3 TYPES                                        │
+└────────────────────────────────────────────────────────────────────┘
+
+WAREHOUSE MAIN (Material & Components)
+════════════════════════════════════════════════════════════════════
+
+Function: Store raw materials + Cut components
+Location: Building A, Floor 1
+
+Inventory Types:
+├─ RAW MATERIAL - FABRIC
+│  ├─ [IKHR504] KOHAIR: 125 YD
+│  ├─ [IJBR105] JS BOA: 15 YD
+│  ├─ [INYR002] NYLEX BLACK: 2.5 YD
+│  └─ [IPR301] POLYESTER: 450 YD
+│
+├─ RAW MATERIAL - THREAD
+│  ├─ Thread Brown: 1,200 CM
+│  ├─ Thread White: 800 CM
+│  └─ Thread Black: 500 CM
+│
+├─ RAW MATERIAL - ACCESSORIES
+│  ├─ [IKP20157] Filling: 45 kg
+│  ├─ [ALB40011] Hang Tag: 0 pcs 🔴
+│  ├─ [ALL40030] Label EU: 450 pcs
+│  └─ [ACB30104] Carton: 18 pcs ⚠️
+│
+└─ SEMI-FINISHED (Cut Components)
+   ├─ Cut Baju (various designs): 1,250 pcs
+   └─ Cut Accessories: 850 pcs
+
+Material Issue Process:
+1. SPK-CUT requests material
+2. Warehouse staff scan barcode
+3. System deduct stock automatically
+4. Material delivered to Cutting dept
+5. Cutting input production daily
+
+
+WAREHOUSE FINISHING (2-Stage Internal Conversion)
+════════════════════════════════════════════════════════════════════
+
+Function: Special warehouse for Finishing process
+Location: Building A, Floor 2
+
+Inventory Types (2 Stages):
+├─ STAGE 1 INVENTORY: SKIN
+│  ├─ [AFTONSPARV_WIP_SKIN]: 38 pcs
+│  ├─ [VANDRING_WIP_SKIN]: 125 pcs
+│  └─ [GOSIG_WIP_SKIN]: 89 pcs
+│
+└─ STAGE 2 INVENTORY: STUFFED BODY
+   ├─ [AFTONSPARV_WIP_STUFFED]: 11 pcs
+   ├─ [VANDRING_WIP_STUFFED]: 67 pcs
+   └─ [GOSIG_WIP_STUFFED]: 34 pcs
+
+Internal Process Flow:
+┌─────────────────────────────────────┐
+│ RECEIVE from Sewing                 │
+│ ├─ Type: SKIN (sewing body, unstuff) │
+│ ├─ Scan barcode                     │
+│ └─ Update Stage 1 Inventory         │
+└─────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────┐
+│ STAGE 1: STUFFING                   │
+│ ├─ Issue: Skin + Filling + Thread  │
+│ ├─ Process: Stuff & close           │
+│ ├─ Duration: ~3 min/pcs             │
+│ └─ Output: Stuffed Body             │
+└─────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────┐
+│ INTERNAL TRANSFER (No paperwork)    │
+│ ├─ Deduct: Stage 1 (Skin)          │
+│ ├─ Add: Stage 2 (Stuffed Body)     │
+│ └─ System auto-update inventory     │
+└─────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────┐
+│ STAGE 2: CLOSING                    │
+│ ├─ Issue: Stuffed + Hang Tag       │
+│ ├─ Process: Attach tag + final QC  │
+│ ├─ Duration: ~2 min/pcs             │
+│ └─ Output: Finished Doll            │
+└─────────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────────┐
+│ TRANSFER to Packing                 │
+│ ├─ Deduct: Stage 2 (Stuffed)       │
+│ ├─ Add: Warehouse Main (FG ready)  │
+│ └─ Generate delivery note           │
+└─────────────────────────────────────┘
+
+Unique Features:
+✅ Dual inventory tracking (Skin vs Stuffed)
+✅ No manual paperwork for internal transfer
+✅ Real-time stock validation per stage
+✅ Material consumption auto-tracked
+✅ Demand-driven production (not rigid MO)
+
+
+WAREHOUSE FINISHED GOODS (Ready to Ship)
+════════════════════════════════════════════════════════════════════
+
+Function: Store packed finished goods
+Location: Building B, Floor 1 (near loading dock)
+
+Inventory Types:
+├─ PACKED SETS (Ready to ship)
+│  ├─ [40551542] AFTONSPARV: 8 CTN (465 pcs)
+│  │  Week: W05-2026, Dest: Belgium
+│  ├─ [00511543] VANDRING: 12 CTN (720 pcs)
+│  │  Week: W06-2026, Dest: Germany
+│  └─ [70401234] GOSIG: 5 CTN (300 pcs)
+│     Week: W07-2026, Dest: France
+│
+└─ PACKING MATERIALS
+   ├─ Carton 570×375: 150 pcs
+   ├─ Pallet: 8 pcs
+   └─ Plastic wrap: 20 rolls
+
+Shipping Process:
+1. Customer order confirmed
+2. FG Warehouse pull stock by Week + Dest
+3. Generate shipping document
+4. Load to truck with barcode scan
+5. Update stock real-time
+6. Customer notified (auto email)
+
+Storage Rules:
+├─ FIFO (First In First Out)
+├─ Segregate by Week & Destination
+├─ Max storage: 30 days
+└─ Temperature controlled: 20-25°C
+```
+
+---
+
+### 6.2 Traditional Warehouse View
 
 ```
 WAREHOUSE MAIN (Material Raw)
@@ -2153,7 +3601,7 @@ WAREHOUSE PRODUCTION (WIP per Dept)
 WAREHOUSE FINISHED GOODS (FG Ready to Ship)
 ```
 
-### 6.2 Material Warehouse - Stock Management
+### 6.3 Material Warehouse - Stock Management
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -2232,6 +3680,97 @@ WAREHOUSE FINISHED GOODS (FG Ready to Ship)
 - PO status updated (Partial/Complete)
 - PPIC notified (material ready for MO)
 
+#### 🖥️ Material Receipt - Step-by-Step UI
+
+**Step 1: Scan Barcode (Mobile/Desktop)**
+```
+┌─────────────────────────────────────────────────────────────┐
+│  📦 MATERIAL RECEIVING - SCAN BARCODE                       │
+├─────────────────────────────────────────────────────────────┤
+│  📱 Scan PO Barcode atau Input Manual:                     │
+│                                                              │
+│  ┌────────────────────────────────────────────────────┐    │
+│  │  [PO-K-2026-00012]  🔍 SCAN                       │    │
+│  └────────────────────────────────────────────────────┘    │
+│                                                              │
+│  ✅ PO Found!                                               │
+│  • Supplier: PT Kain Jaya                                   │
+│  • Expected: 3 Feb 2026                                     │
+│  • Status: SENT (Awaiting delivery)                         │
+│  • Total Items: 15 materials                                │
+│                                                              │
+│  [PROCEED TO RECEIVE] [CANCEL]                              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Step 2: Input Received Quantity**
+```
+┌─────────────────────────────────────────────────────────────┐
+│  📦 RECEIVING - PO-K-2026-00012                             │
+├─────────────────────────────────────────────────────────────┤
+│  Progress: Material 3 of 15                                 │
+│  [████████░░░░░░░░░░] 20%                                   │
+│                                                              │
+│  📋 Current Material:                                       │
+│  • Material: [IKHR504] KOHAIR 7MM D.BROWN                  │
+│  • PO Qty: 150 YARD                                         │
+│                                                              │
+│  ✍️ Received Quantity:                                      │
+│  ┌──────────────────────────────────────────────────┐      │
+│  │  [150.0] YARD                                     │      │
+│  └──────────────────────────────────────────────────┘      │
+│                                                              │
+│  ✅ Status: EXACT MATCH (0% variance)                      │
+│                                                              │
+│  📸 Photo Documentation (Optional):                         │
+│  [Upload Photo] 📷                                          │
+│                                                              │
+│  📝 Notes:                                                  │
+│  ┌──────────────────────────────────────────────────┐      │
+│  │ Quality checked OK, stored at Rack A3            │      │
+│  └──────────────────────────────────────────────────┘      │
+│                                                              │
+│  [NEXT MATERIAL →] [SKIP] [SAVE & EXIT]                    │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Validation Rules**:
+- ⚠️ Variance 0-5%: AUTO ACCEPT (log warning)
+- ⚠️ Variance 5-10%: REQUIRE SUPERVISOR APPROVAL
+- 🔴 Variance >10%: BLOCK + REQUIRE MANAGER APPROVAL + REASON
+- 🔴 Short delivery: Create backorder automatically
+- ✅ Over delivery: Accept + adjust PO quantity
+
+**Step 3: Confirmation & Stock Update**
+```
+┌─────────────────────────────────────────────────────────────┐
+│  ✅ RECEIVING COMPLETE - PO-K-2026-00012                   │
+├─────────────────────────────────────────────────────────────┤
+│  📊 Summary:                                                │
+│  • Total Materials: 15 items                                │
+│  • Exact Match: 13 items (86.7%) ✅                        │
+│  • Variance: 2 items (13.3%)                                │
+│    - IKHR504: +2 YD (1.3% over) ✅ Accepted               │
+│    - IKP20157: -5 KG (8.3% short) ⚠️ Backorder created   │
+│                                                              │
+│  💰 Total Value: $5,850.00                                 │
+│  📦 Storage Locations Assigned: 8 racks                    │
+│                                                              │
+│  🔄 System Actions (Auto):                                 │
+│  ✅ Stock updated in Warehouse Main                        │
+│  ✅ Material debt cleared: -12 KG → 0 KG                   │
+│  ✅ PO Status: SENT → PARTIAL RECEIVED                     │
+│  ✅ PPIC notified: Materials ready for MO-2026-00089       │
+│  ✅ Email sent to: Purchasing A, PPIC, Manager             │
+│                                                              │
+│  📄 Documents Generated:                                    │
+│  • GRN (Good Receipt Note): GRN-2026-00234                 │
+│  • Backorder: BO-2026-00045 (5 KG Filling)                │
+│                                                              │
+│  [PRINT GRN] [EMAIL TO SUPPLIER] [CLOSE]                   │
+└─────────────────────────────────────────────────────────────┘
+```
+
 ### 6.4 Warehouse Production (WIP Tracking)
 
 #### 🔥 Special Case: Warehouse Finishing (2-Stage Stock)
@@ -2279,6 +3818,26 @@ WAREHOUSE FINISHED GOODS (FG Ready to Ship)
 
 ### 6.5 Warehouse Finished Goods
 
+#### 🎯 FG Data Recording Logic
+
+**KEY CONCEPT**: 
+- **Input**: Qty sesuai dengan **MO final quantity** (dalam pcs)
+- **Display**: Auto-convert ke **multiple UOMs** untuk kemudahan:
+  - **Pcs** (unit dasar)
+  - **Cartons** (untuk packing/shipping)
+  - **Boxes** (jika applicable)
+  - **Pallets** (untuk logistics)
+
+**Example**:
+```
+MO-2026-00089 Final Qty: 465 pcs
+└─ System Auto-Display:
+   ├─ 465 pcs (primary UOM)
+   ├─ 8 Cartons (7 full + 1 partial of 45 pcs)
+   ├─ 0.5 Pallet (assuming 16 cartons per pallet)
+   └─ Weight: 186 kg (assuming 0.4 kg per pcs)
+```
+
 #### FG Stock Overview
 
 ```
@@ -2287,15 +3846,17 @@ WAREHOUSE FINISHED GOODS (FG Ready to Ship)
 ├─────────────────────────────────────────────────────────────────┤
 │  Filter: [All Article ▾] [All Week ▾] [All Destination ▾]     │
 │                                                                  │
-│  ┌────────────┬────────┬────────┬────────────┬───────────────┐ │
-│  │ Article    │ Qty    │ Carton │ Week/Dest  │ Status        │ │
-│  ├────────────┼────────┼────────┼────────────┼───────────────┤ │
-│  │ AFTONSPARV │ 465 pcs│ 8 CTN  │ W05 / IKEA │✅ Ready Ship │ │
-│  │ 40551542   │        │7×60+45 │ Dist Ctr   │               │ │
-│  ├────────────┼────────┼────────┼────────────┼───────────────┤ │
-│  │ KRAMIG     │ 380 pcs│ 7 CTN  │ W06 / TGT  │🔄 Partial    │ │
-│  │ 40499469   │        │6×60+20 │ Stockholm  │ (Target: 600) │ │
-│  └────────────┴────────┴────────┴────────────┴───────────────┘ │
+│  ┌────────────┬──────────────┬────────┬────────────┬──────────┐ │
+│  │ Article    │ Qty (Multi-UOM Display) │ Week/Dest  │ Status   │ │
+│  ├────────────┼──────────────┼────────┼────────────┼──────────┤ │
+│  │ AFTONSPARV │ 465 pcs      │ 8 CTN  │ W05 / IKEA │✅ Ready  │ │
+│  │ 40551542   │ (from MO)    │7×60+45 │ Dist Ctr   │   Ship   │ │
+│  │            │ = 186 kg     │0.5 PLT │            │          │ │
+│  ├────────────┼──────────────┼────────┼────────────┼──────────┤ │
+│  │ KRAMIG     │ 380 pcs      │ 7 CTN  │ W06 / TGT  │🔄 Partial│ │
+│  │ 40499469   │ (from MO)    │6×60+20 │ Stockholm  │(Target:  │ │
+│  │            │ = 152 kg     │0.4 PLT │            │600 pcs)  │ │
+│  └────────────┴──────────────┴────────┴────────────┴──────────┘ │
 │                                                                  │
 │  [SCAN BARCODE] [SHIPMENT OUT] [PRINT LABEL]                    │
 └─────────────────────────────────────────────────────────────────┘
@@ -2305,27 +3866,34 @@ WAREHOUSE FINISHED GOODS (FG Ready to Ship)
 
 **Problem**: Box → Pcs conversion sering salah (human error).
 
-**Solution**: Auto-validation dengan conversion factor.
+**Solution**: Auto-validation dengan conversion factor + **record qty match MO**.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │  FG RECEIVING - FROM PACKING                                    │
-│  SPK: PACK-2026-00078 | Article: AFTONSPARV                    │
+│  WO/SPK: PACK-2026-00078 | Article: AFTONSPARV                 │
+│  🎯 MO Target: 465 pcs (REFERENCE)                             │
 ├─────────────────────────────────────────────────────────────────┤
 │  📦 CARTON CONFIGURATION (from BOM):                            │
 │  • Standard: 60 pcs per carton                                  │
 │  • Last carton can be partial (any quantity)                    │
 │                                                                  │
-│  📝 INPUT:                                                      │
+│  📝 INPUT (Physical Count):                                     │
 │  • Full Cartons: [7] CTN                                        │
 │  • Partial Carton: [45] pcs                                     │
 │                                                                  │
 │  🔄 AUTO-CALCULATION:                                           │
-│  • Expected Total: (7 × 60) + 45 = 465 pcs ✅                  │
-│  • SPK Target: 465 pcs                                          │
+│  • Calculated Total: (7 × 60) + 45 = 465 pcs ✅                │
+│  • MO Final Qty: 465 pcs                                        │
 │  • Match: ✅ Perfect match!                                     │
 │                                                                  │
-│  ⚠️ VALIDATION RULES:                                           │
+│  💾 SYSTEM RECORDS:                                             │
+│  • Primary: 465 pcs (match MO)                                  │
+│  • Auto-display: 8 Cartons (7 full + 1 partial)                │
+│  • Auto-display: 0.5 Pallet                                     │
+│  • Auto-display: 186 kg weight                                  │
+│                                                                  │
+│  ⚠️ VALIDATION RULES (vs MO Target):                            │
 │  • If variance ≤ 10%: Yellow warning (allow with note)         │
 │  • If variance > 10% AND ≤ 15%: Orange alert (SPV approval)    │
 │  • If variance > 15%: 🔴 Block (recount required)              │
@@ -2362,8 +3930,363 @@ WAREHOUSE FINISHED GOODS (FG Ready to Ship)
 
 ---
 
+<a name="rework-qc"></a>
+## 7. REWORK & QUALITY CONTROL MODULE
+
+### 7.1 Quality Control - 4 Critical Checkpoints
+
+PT Quty Karunia menerapkan **4 QC Checkpoint** strategis untuk memastikan kualitas produk dari hulu ke hilir.
+
+#### 📋 QC 4-Checkpoint Complete Visualization
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│  QUALITY CONTROL - 4 CRITICAL CHECKPOINTS                          │
+└────────────────────────────────────────────────────────────────────┘
+
+CHECKPOINT 1: AFTER CUTTING
+════════════════════════════════════════════════════════════════════
+Location: Cutting Department Exit
+Inspector: QC Staff A (Random sampling 10%)
+
+Check Items:
+├─ Size accuracy (±2mm tolerance)
+├─ Edge cutting quality (no fray)
+├─ Pattern alignment (matching marks)
+└─ Quantity verification
+
+Input: 500 pcs Cut Body
+Sample: 50 pcs (10%)
+Result:
+├─ PASS: 48 pcs (96%) ✅
+├─ MINOR: 2 pcs (4%) → Mark for careful sewing
+└─ REJECT: 0 pcs
+
+Action: Release to Embroidery
+
+
+CHECKPOINT 2: AFTER SEWING
+════════════════════════════════════════════════════════════════════
+Location: Sewing Department Exit
+Inspector: QC Staff B (100% inline inspection)
+
+Check Items:
+├─ Stitch quality (no loose thread)
+├─ Stitch per inch (SPI) standard
+├─ Seam strength (pull test)
+├─ Assembly accuracy (all parts attached)
+└─ Appearance (no wrinkle)
+
+Input: 520 pcs Sewn Body
+Inspection Result:
+├─ PASS: 508 pcs (97.7%) ✅ → To Finishing
+├─ MINOR DEFECT: 10 pcs (1.9%) → Rework queue
+│  └─ Issues: Loose thread, misaligned stitch
+├─ MAJOR DEFECT: 2 pcs (0.4%) → Scrap
+│  └─ Issues: Broken seam, wrong assembly
+└─ REWORK SUCCESS: 10 → 10 recovered (100%) ✅
+
+Final Output: 518 pcs Good
+
+
+CHECKPOINT 3: AFTER FINISHING
+════════════════════════════════════════════════════════════════════
+Location: Warehouse Finishing Exit (Stage 2)
+Inspector: QC Staff C (100% inspection)
+
+Check Items:
+├─ Stuffing quality (firmness check)
+├─ Shape consistency (no deform)
+├─ Closing quality (hidden stitches)
+├─ Hang tag attachment (secure)
+├─ Cleanliness (no dust/stain)
+└─ Safety check (no sharp edges)
+
+Input: 472 pcs Finished Doll
+Inspection Result:
+├─ PASS: 468 pcs (99.2%) ✅ → To Packing
+├─ MINOR DEFECT: 4 pcs (0.8%) → Quick fix
+│  └─ Issues: Hang tag loose, minor stain
+├─ MAJOR DEFECT: 0 pcs
+└─ REWORK SUCCESS: 4 → 3 recovered (75%)
+
+Final Output: 471 pcs Good
+
+
+CHECKPOINT 4: PRE-PACKING FINAL
+════════════════════════════════════════════════════════════════════
+Location: Packing Department Entry
+Inspector: QC Staff D (Random + 100% visual)
+
+Check Items:
+├─ Final appearance (overall quality)
+├─ Baju fit test (boneka + baju assembly)
+├─ Label check (correct Week + Destination)
+├─ Compliance check (EU safety standards)
+└─ Metal detector test (no needle)
+
+Input: 471 Finished Doll + 500 Baju
+Inspection Result:
+├─ Finished Doll: 471 pcs PASS ✅
+├─ Baju: 500 pcs PASS ✅
+├─ Assembly Test: 20 samples - All OK ✅
+└─ Metal Detector: All PASS ✅
+
+Action: Release for Packing
+
+───────────────────────────────────────────────────────────────────
+
+📊 OVERALL QC PERFORMANCE:
+
+Total Inspection Points: 4 checkpoints
+Total Units Inspected: 1,963 pcs (sum of all stages)
+Overall Defect Rate: 4.0%
+Recovery Rate: 82.9% ✅ (Target: >80%)
+Scrap Rate: 0.7% (Target: <2%)
+
+Status: QUALITY STANDARD MET ✅
+```
+
+#### 🖥️ QC Checkpoint UI - Input Form
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  QC INSPECTION - CHECKPOINT 2 (AFTER SEWING)                    │
+│  SPK: SEW-BODY-2026-00120 | Artikel: AFTONSPARV                │
+├─────────────────────────────────────────────────────────────────┤
+│  👤 Inspector: [Dropdown] QC Staff B (Ibu Siti)                 │
+│  📅 Inspection Date: [Date] 5 Feb 2026                          │
+│  ⏰ Time: [Time] 14:30 WIB                                      │
+│                                                                  │
+│  📦 Batch Information:                                          │
+│  • Batch Date: 5 Feb 2026                                       │
+│  • Quantity to Inspect: [Input] 520 pcs                         │
+│  • Sampling Method: [Radio] ● 100% Inline ○ Random 10%         │
+│                                                                  │
+│  ✅ INSPECTION RESULT:                                          │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │ ✅ PASS (Good Quality):                                   │  │
+│  │    Quantity: [Input] 508 pcs                              │  │
+│  │    Action: → Transfer to Finishing                        │  │
+│  ├──────────────────────────────────────────────────────────┤  │
+│  │ ⚠️ MINOR DEFECT (Repairable):                            │  │
+│  │    Quantity: [Input] 10 pcs                               │  │
+│  │    Defect Type: [Multi-select]                            │  │
+│  │    ☑️ Loose thread                                        │  │
+│  │    ☑️ Misaligned stitch                                   │  │
+│  │    ☐ Puckering                                            │  │
+│  │    Action: → Send to Rework Station                       │  │
+│  │                                                            │  │
+│  │    Photos: [Upload] 📷 (3 photos attached)               │  │
+│  ├──────────────────────────────────────────────────────────┤  │
+│  │ 🔴 MAJOR DEFECT (Scrap):                                 │  │
+│  │    Quantity: [Input] 2 pcs                                │  │
+│  │    Defect Type: [Multi-select]                            │  │
+│  │    ☑️ Broken seam                                         │  │
+│  │    ☑️ Wrong assembly                                      │  │
+│  │    ☐ Fabric tear                                          │  │
+│  │    Action: → Scrap (cannot repair)                        │  │
+│  │                                                            │  │
+│  │    Root Cause: [Dropdown] Operator error                  │  │
+│  │    Operator ID: [Select] OP-SEW-023                       │  │
+│  │    Machine ID: [Select] SEW-LINE-02                       │  │
+│  │    Notes: [Text] Operator baru, perlu training            │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  📊 Summary:                                                    │
+│  • Total Inspected: 520 pcs (100%)                              │
+│  • Pass Rate: 97.7% ✅ (Target: >95%)                          │
+│  • Defect Rate: 2.3% (Target: <5%)                             │
+│  • To Rework: 10 pcs (1.9%)                                     │
+│  • To Scrap: 2 pcs (0.4%)                                       │
+│                                                                  │
+│  [SUBMIT INSPECTION] → Auto-create Rework Order for 10 pcs     │
+│  [SAVE DRAFT] [CANCEL]                                          │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 7.2 Rework/Repair Module - Complete Workflow
+
+#### 📋 Rework Module Visualization
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│  REWORK/REPAIR MODULE - DEFECT MANAGEMENT SYSTEM                   │
+└────────────────────────────────────────────────────────────────────┘
+
+DEFECT DETECTED → QC INSPECTION → REWORK QUEUE → RE-QC → PASS/SCRAP
+
+Example: Sewing Defects (12 pcs)
+
+Step 1: DEFECT CAPTURE (Auto by QC)
+────────────────────────────────────────
+┌──────────────────────────────────────┐
+│ DEFECT RECORD #D-2026-0156-001       │
+│                                      │
+│ SPK: SPK-SEW-BODY-2026-00156         │
+│ Batch Date: 05-Feb-2026              │
+│ QC Inspector: Staff B                │
+│                                      │
+│ Defect Details:                      │
+│ ├─ Qty: 12 pcs                      │
+│ ├─ Type: MINOR (10 pcs)             │
+│ │  └─ Issue: Loose thread, gap      │
+│ └─ Type: MAJOR (2 pcs)              │
+│    └─ Issue: Broken seam             │
+│                                      │
+│ Root Cause (Operator Input):        │
+│ ├─ Machine tension issue            │
+│ ├─ Operator: OP-SEW-023             │
+│ └─ Machine: SEW-LINE-02              │
+│                                      │
+│ Decision:                            │
+│ ├─ REWORK: 10 pcs → Queue #RW-001   │
+│ └─ SCRAP: 2 pcs → Waste bin         │
+└──────────────────────────────────────┘
+
+Step 2: REWORK QUEUE ASSIGNMENT
+────────────────────────────────────────
+┌──────────────────────────────────────┐
+│ REWORK QUEUE #RW-001                 │
+│                                      │
+│ Priority: HIGH (urgent MO)           │
+│ Assigned to: Rework Specialist A    │
+│ Est. Time: 2 hours (10 pcs)         │
+│                                      │
+│ Rework SOP:                          │
+│ ├─ 1. Unstitch defect area          │
+│ ├─ 2. Re-stitch dengan mesin khusus │
+│ ├─ 3. Trim loose threads             │
+│ └─ 4. Submit to Re-QC                │
+│                                      │
+│ Status: IN PROGRESS ⏳               │
+└──────────────────────────────────────┘
+
+Step 3: RE-QC INSPECTION
+────────────────────────────────────────
+┌──────────────────────────────────────┐
+│ RE-QC INSPECTION                     │
+│                                      │
+│ Rework Batch: #RW-001 (10 pcs)      │
+│ Inspector: QC Staff B                │
+│                                      │
+│ Re-inspection Result:                │
+│ ├─ PASS: 10 pcs (100%) ✅           │
+│ ├─ FAIL: 0 pcs                      │
+│ └─ Recovery Rate: 100%               │
+│                                      │
+│ Cost Analysis:                       │
+│ ├─ Rework Cost: $100 (10 × $10)    │
+│ ├─ vs Scrap Cost: $400 (10 × $40)  │
+│ └─ Savings: $300 💰                 │
+│                                      │
+│ Action: Add back to Good Output     │
+└──────────────────────────────────────┘
+
+Step 4: SYSTEM UPDATE (Auto)
+────────────────────────────────────────
+SPK-SEW-BODY-2026-00156 Updated:
+
+├─ Total Production: 520 pcs
+├─ Initial Good: 508 pcs
+├─ Defect: 12 pcs
+│  ├─ Rework Success: +10 pcs ✅
+│  └─ Scrap: -2 pcs
+└─ Final Good Output: 518 pcs (508 + 10)
+
+───────────────────────────────────────────────────────────────────
+
+📊 REWORK MODULE DASHBOARD (Monthly):
+
+Total Defects: 127 pcs
+├─ Reworked: 98 pcs
+├─ Recovery Success: 87 pcs (88.8%) ✅
+├─ Recovery Fail: 11 pcs → Scrap
+└─ Direct Scrap: 29 pcs
+
+COPQ (Cost of Poor Quality):
+├─ Rework Cost: $980
+├─ Scrap Cost: $1,600 (40 × $40)
+├─ Total COPQ: $2,580
+└─ Savings from Rework: $2,480 💰
+
+Top Defect Types:
+1. Loose thread (45 cases)
+2. Stitch misalignment (32 cases)
+3. Stuffing uneven (21 cases)
+
+Action Plan:
+├─ Retrain operators with high defect rate
+├─ Maintenance schedule for problematic machines
+└─ Update SOP for critical processes
+```
+
+#### 🖥️ Rework Station UI
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  REWORK STATION - DASHBOARD                                     │
+├─────────────────────────────────────────────────────────────────┤
+│  📊 Today's Rework Queue: 15 items                              │
+│  • HIGH Priority: 5 items (urgent MO) 🔴                        │
+│  • NORMAL Priority: 10 items                                     │
+│                                                                  │
+│  ┌──────────┬─────────┬────────┬──────────┬────────┬────────┐  │
+│  │ Rework # │ SPK     │ Defect │ Qty      │ Assign │ Status │  │
+│  ├──────────┼─────────┼────────┼──────────┼────────┼────────┤  │
+│  │ RW-001   │SEW-00120│ Loose  │ 10 pcs   │ Spec-A │🔄 PROG│  │
+│  │          │         │ thread │          │        │ 6/10   │  │
+│  ├──────────┼─────────┼────────┼──────────┼────────┼────────┤  │
+│  │ RW-002   │FIN-00089│ Uneven │ 4 pcs    │ Spec-B │⏳ WAIT│  │
+│  │          │         │ stuff  │          │        │        │  │
+│  └──────────┴─────────┴────────┴──────────┴────────┴────────┘  │
+│                                                                  │
+│  [INPUT REWORK RESULT] [VIEW HISTORY] [COPQ REPORT]            │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  INPUT REWORK RESULT - RW-001                                   │
+│  SPK: SEW-BODY-00120 | Defect: Loose thread | Qty: 10 pcs     │
+├─────────────────────────────────────────────────────────────────┤
+│  👤 Rework By: [Dropdown] Rework Specialist A                   │
+│  📅 Rework Date: [Date] 5 Feb 2026                              │
+│  ⏱️ Time Spent: [Number] 2.5 hours                             │
+│                                                                  │
+│  📝 Rework Process:                                             │
+│  [Checklist]                                                    │
+│  ☑️ Unstitch defect area                                        │
+│  ☑️ Re-stitch dengan mesin khusus                               │
+│  ☑️ Trim loose threads                                          │
+│  ☑️ Quality check before Re-QC                                  │
+│                                                                  │
+│  ✅ REWORK RESULT:                                              │
+│  • Success (Pass Re-QC): [Input] 10 pcs ✅                     │
+│  • Failed (Still defect): [Input] 0 pcs                         │
+│  • Recovery Rate: 100% (Target: >80%)                           │
+│                                                                  │
+│  💰 Cost Tracking:                                              │
+│  • Labor Cost: $10/pcs × 10 = $100                              │
+│  • Material Cost: $5 (thread, supplies)                         │
+│  • Total Rework Cost: $105                                      │
+│  • Avoided Scrap Cost: $400 (10 × $40)                          │
+│  • Net Savings: $295 💰                                         │
+│                                                                  │
+│  📸 Photos: [Upload] Before/After (Optional)                    │
+│  📝 Notes: [Text] All defects successfully repaired             │
+│                                                                  │
+│  [SUBMIT FOR RE-QC] → Auto-notify QC Staff                     │
+│  [SAVE DRAFT] [CANCEL]                                          │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
 <a name="masterdata"></a>
-## 7. MASTERDATA MODULE
+## 8. MASTERDATA MODULE
 
 ### 7.1 Material Master
 
@@ -3863,6 +5786,578 @@ ERP QUTY KARUNIA
 - [ ] Reports export correct (PDF, Excel)
 - [ ] Data backup & restore procedure ready
 - [ ] User training completed for all departments
+
+---
+
+<a name="material-flow-tracking"></a>
+## 13. 📦 MATERIAL FLOW TRACKING - END-TO-END VISIBILITY
+
+### 13.1 Complete Material Journey Visualization
+
+**Purpose**: Track setiap material dari PO → Production → Finished Goods dengan full traceability.
+
+#### Real-Time Material Flow Dashboard
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  📊 MATERIAL FLOW TRACKER - ARTICLE: AFTONSPARV (40551542)      │
+│  MO: MO-2026-00089 | Target: 450 pcs | Week: W05               │
+├─────────────────────────────────────────────────────────────────┤
+│  🔄 FLOW VISUALIZATION (Left to Right Timeline)                 │
+│                                                                  │
+│  [PO] → [WH Main] → [Cutting] → [Emb] → [Sewing] → [Fin] → [FG]│
+│   ✅      ✅         ✅        ✅      🔄        ⏳       ⏳    │
+│                                                                  │
+│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
+│                                                                  │
+│  📦 STAGE 1: PURCHASING (Material Procurement)                  │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │ • PO Kain (PO-K-2026-00012): ✅ Received 2 Jan 2026       │  │
+│  │   ├─ KOHAIR 70.4 YD → Stock: 125 YD (Surplus: +54.6 YD) │  │
+│  │   ├─ JS BOA 4.7 YD → Stock: 15 YD (Surplus: +10.3 YD)   │  │
+│  │   └─ POLYESTER 85.3 YD → Stock: 450 YD (✅ OK)           │  │
+│  │                                                            │  │
+│  │ • PO Label (PO-L-2026-00089): ✅ Received 3 Jan 2026      │  │
+│  │   ├─ Hang Tag: 450 pcs (🔑 TRIGGER 2 - MO RELEASED)      │  │
+│  │   ├─ Label EU: 450 pcs                                    │  │
+│  │   └─ Sticker: 900 pcs                                     │  │
+│  │                                                            │  │
+│  │ • PO Accessories (PO-A-2026-00090): ✅ Partial            │  │
+│  │   ├─ Thread: 2,500 CM (✅ OK)                             │  │
+│  │   ├─ Filling: 24.3 kg (✅ OK)                             │  │
+│  │   └─ Carton: 8 pcs (⚠️ Short 2 pcs - reorder)            │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  📦 STAGE 2: WAREHOUSE MAIN (Material Stock)                    │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │ Material Reserved for MO-00089:                            │  │
+│  │ ├─ KOHAIR: 70.4 YD (Reserved from 125 YD stock)           │  │
+│  │ ├─ Filling: 24.3 kg (Reserved from 45 kg stock)           │  │
+│  │ ├─ Thread: 2,500 CM (Reserved from 5,000 CM stock)        │  │
+│  │ └─ Status: ✅ All materials reserved                      │  │
+│  │                                                            │  │
+│  │ Material Issued to Production:                             │  │
+│  │ • To Cutting: 70.4 YD fabrics (3 Jan 2026)                │  │
+│  │ • To Sewing: 2,500 CM thread (4 Jan 2026)                 │  │
+│  │ • To Finishing: 24.3 kg filling (5 Jan 2026)              │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  🏭 STAGE 3: PRODUCTION (WIP Tracking)                          │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │ [CUTTING] SPK-CUT-00120 (3 Jan - COMPLETED)               │  │
+│  │ • Input: 70.4 YD fabrics                                   │  │
+│  │ • Output: 500 pcs Body Parts (Target: 495) ✅             │  │
+│  │ • Conversion: 70.4 YD → 500 pcs (0.1408 YD/pcs)           │  │
+│  │ • Variance: +5 pcs buffer (1.0%) ✅ Within tolerance      │  │
+│  │ • Waste: 0.8 YD fabric scrap (1.1%)                       │  │
+│  │ • Transfer to: Embroidery (500 pcs sent)                  │  │
+│  ├──────────────────────────────────────────────────────────┤  │
+│  │ [EMBROIDERY] SPK-EMB-00089 (4 Jan - COMPLETED)            │  │
+│  │ • Input: 500 pcs Body Parts from Cutting                  │  │
+│  │ • Process: Embroidery pattern applied                     │  │
+│  │ • Output: 495 pcs Embroidered Body (Target: 495) ✅       │  │
+│  │ • Defect: 5 pcs pattern error → Scrap                     │  │
+│  │ • Transfer to: Sewing (495 pcs sent)                      │  │
+│  ├──────────────────────────────────────────────────────────┤  │
+│  │ [SEWING] SPK-SEW-00120 (5-6 Jan - COMPLETED)              │  │
+│  │ • Input: 495 pcs Embroidered Body from Embroidery         │  │
+│  │ • Additional Material: 2,500 CM thread consumed           │  │
+│  │ • Output: 520 pcs Sewn Body (Target: 517) ✅              │  │
+│  │ • Good Output: 508 pcs (Yield: 97.7%)                     │  │
+│  │ • Defect: 12 pcs → Rework: 10 recovered ✅                │  │
+│  │ • Final Output: 518 pcs Skin Body                          │  │
+│  │ • Transfer to: Finishing (518 pcs sent)                    │  │
+│  ├──────────────────────────────────────────────────────────┤  │
+│  │ [FINISHING - STAGE 1] SPK-FIN-STUFF-00045 (6 Jan - DONE)  │  │
+│  │ • Input: 518 pcs Skin from Sewing                          │  │
+│  │ • Additional Material:                                     │  │
+│  │   ├─ Filling: 26.08 kg consumed (483 × 54g)               │  │
+│  │   └─ Thread: 290 meter (483 × 60cm)                       │  │
+│  │ • Target: 480 pcs (demand-driven)                          │  │
+│  │ • Actual: 483 pcs stuffed                                  │  │
+│  │ • Good Output: 473 pcs (97.9% yield)                      │  │
+│  │ • Defect: 10 pcs → Rework: 8 recovered                    │  │
+│  │ • Final: 481 pcs Stuffed Body                              │  │
+│  │ • Stock: Remaining 35 pcs Skin (hold for next MO)         │  │
+│  │ • Transfer to: Finishing Stage 2 (481 pcs)                │  │
+│  ├──────────────────────────────────────────────────────────┤  │
+│  │ [FINISHING - STAGE 2] SPK-FIN-CLOSE-00046 (7 Jan - DONE)  │  │
+│  │ • Input: 481 pcs Stuffed Body from Stage 1                │  │
+│  │ • Additional Material: 480 pcs Hang Tag                    │  │
+│  │ • Target: 470 pcs                                          │  │
+│  │ • Actual: 472 pcs closed                                   │  │
+│  │ • Good Output: 468 pcs (99.2% yield)                      │  │
+│  │ • Defect: 4 pcs → Rework: 3 recovered                     │  │
+│  │ • Final: 471 pcs Finished Doll                             │  │
+│  │ • Transfer to: Packing (471 pcs ready)                     │  │
+│  ├──────────────────────────────────────────────────────────┤  │
+│  │ [PACKING] SPK-PACK-00089 (7-8 Jan - IN PROGRESS 🔄)       │  │
+│  │ • Input Available:                                         │  │
+│  │   ├─ Finished Doll: 471 pcs (from Finishing)              │  │
+│  │   └─ Baju: 500 pcs (from Sewing Baju stream)              │  │
+│  │ • Constraint: MIN(471, 500) = 471 max sets                │  │
+│  │ • Target: 465 pcs (urgency-based, exact)                  │  │
+│  │ • Progress: 380/465 pcs (81.7%) 🔄                        │  │
+│  │ • Packed: 6 CTN + partial 20 pcs                          │  │
+│  │ • Expected completion: 8 Jan 2026                          │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  📦 STAGE 4: WAREHOUSE FG (Final Stock)                         │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │ Status: ⏳ Awaiting final completion from Packing          │  │
+│  │                                                            │  │
+│  │ Expected FG Stock:                                         │  │
+│  │ • Complete Sets: 465 pcs                                   │  │
+│  │ • Carton Configuration: 8 CTN (7×60 + 1×45 pcs)           │  │
+│  │ • Pallet: 1 pallet (8 CTN)                                │  │
+│  │ • Week: W05                                                │  │
+│  │ • Destination: IKEA Distribution Center                   │  │
+│  │ • Shipment Ready: 10 Feb 2026                              │  │
+│  │                                                            │  │
+│  │ Surplus Stock (Buffer):                                    │  │
+│  │ ├─ Finished Doll: +6 pcs (471 - 465)                      │  │
+│  │ └─ Baju: +35 pcs (500 - 465)                              │  │
+│  │    → Will be used for future orders/replacement           │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  📊 MATERIAL EFFICIENCY SUMMARY                                 │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │ Starting Material:                                         │  │
+│  │ • Fabric: 70.4 YD purchased → 500 pcs cut                 │  │
+│  │ • Filling: 24.3 kg purchased → 26.08 kg used              │  │
+│  │ • Thread: 2,500 CM purchased → 2,790 CM used              │  │
+│  │                                                            │  │
+│  │ Final Achievement:                                         │  │
+│  │ • MO Target: 450 pcs → Actual: 465 pcs ✅ (103.3%)        │  │
+│  │ • Overall Yield: 93.0% (465 from 500 initial)             │  │
+│  │ • Material Utilization:                                    │  │
+│  │   ├─ Fabric: 99.1% (waste: 0.9%)                          │  │
+│  │   ├─ Filling: 107% (variance due to manual stuffing)      │  │
+│  │   └─ Thread: 111.6% (higher usage from rework)            │  │
+│  │                                                            │  │
+│  │ Quality Metrics:                                           │  │
+│  │ • Total Defects Found: 41 pcs (4.0% of 1,018 total)       │  │
+│  │ • Rework Success: 34 pcs recovered (82.9%) ✅             │  │
+│  │ • Final Scrap: 7 pcs (0.7%) ✅ Excellent                  │  │
+│  │ • COPQ (Cost of Poor Quality): Rp 385,000 (0.3% of COGS) │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  🔍 TRACEABILITY ACTIONS                                        │
+│  [TRACE SPECIFIC BATCH] [VIEW MATERIAL DEBT] [PRINT REPORT]    │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Key Features**:
+- ✅ **End-to-End Visibility**: Dari PO sampai FG dalam satu view
+- ✅ **Real-Time Status**: Update otomatis setiap stage complete
+- ✅ **Material Balance**: Track input vs output per stage
+- ✅ **Variance Analysis**: Detect discrepancies immediately
+- ✅ **Traceability**: Link dari carton FG balik ke PO original
+
+---
+
+### 13.2 QC 4-CHECKPOINT DETAILED WORKFLOW
+
+**Complete Quality Control Flow** - As described in ILUSTRASI_WORKFLOW_LENGKAP.md:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  ✅ QUALITY CONTROL - 4 CRITICAL CHECKPOINTS                    │
+│  Article: AFTONSPARV | MO: MO-2026-00089                       │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  🔍 CHECKPOINT 1: AFTER CUTTING                                 │
+│  Location: Cutting Department Exit                              │
+│  Inspector: QC Staff A (Random Sampling 10%)                    │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │ Check Items:                                               │  │
+│  │ ├─ ☑️ Size accuracy (±2mm tolerance)                      │  │
+│  │ ├─ ☑️ Edge cutting quality (no fray)                      │  │
+│  │ ├─ ☑️ Pattern alignment (matching marks)                  │  │
+│  │ └─ ☑️ Quantity verification                               │  │
+│  │                                                            │  │
+│  │ Inspection Result: 3 Jan 2026                              │  │
+│  │ • Input Batch: 500 pcs Cut Body                            │  │
+│  │ • Sample Size: 50 pcs (10%)                                │  │
+│  │ • PASS: 48 pcs (96%) ✅                                    │  │
+│  │ • MINOR: 2 pcs (4%) → Mark for careful sewing             │  │
+│  │ • REJECT: 0 pcs                                            │  │
+│  │ • Action: ✅ Release to Embroidery                         │  │
+│  │ • QC Inspector Signature: _____________________            │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  🔍 CHECKPOINT 2: AFTER SEWING                                  │
+│  Location: Sewing Department Exit                               │
+│  Inspector: QC Staff B (100% Inline Inspection)                 │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │ Check Items:                                               │  │
+│  │ ├─ ☑️ Stitch quality (no loose thread)                    │  │
+│  │ ├─ ☑️ Stitch per inch (SPI) standard                      │  │
+│  │ ├─ ☑️ Seam strength (pull test)                           │  │
+│  │ ├─ ☑️ Assembly accuracy (all parts attached)              │  │
+│  │ └─ ☑️ Appearance (no wrinkle)                             │  │
+│  │                                                            │  │
+│  │ Inspection Result: 6 Jan 2026                              │  │
+│  │ • Input Batch: 520 pcs Sewn Body                           │  │
+│  │ • Inspection: 100% checked (inline during sewing)          │  │
+│  │                                                            │  │
+│  │ • PASS: 508 pcs (97.7%) ✅ → To Finishing                 │  │
+│  │                                                            │  │
+│  │ • MINOR DEFECT: 10 pcs (1.9%) → Rework Queue              │  │
+│  │   └─ Issues: Loose thread (6), Misaligned stitch (4)      │  │
+│  │                                                            │  │
+│  │ • MAJOR DEFECT: 2 pcs (0.4%) → Scrap                      │  │
+│  │   └─ Issues: Broken seam (1), Wrong assembly (1)          │  │
+│  │                                                            │  │
+│  │ • REWORK RESULT: 10 → 10 recovered (100%) ✅              │  │
+│  │   └─ All minor defects successfully repaired              │  │
+│  │                                                            │  │
+│  │ • Final Good Output: 518 pcs (508 + 10 rework)            │  │
+│  │ • Action: ✅ Release 518 pcs to Finishing                  │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  🔍 CHECKPOINT 3: AFTER FINISHING (Stage 2)                     │
+│  Location: Warehouse Finishing Exit                             │
+│  Inspector: QC Staff C (100% Final Inspection)                  │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │ Check Items:                                               │  │
+│  │ ├─ ☑️ Stuffing quality (firmness check)                   │  │
+│  │ ├─ ☑️ Shape consistency (no deform)                       │  │
+│  │ ├─ ☑️ Closing quality (hidden stitches)                   │  │
+│  │ ├─ ☑️ Hang tag attachment (secure)                        │  │
+│  │ ├─ ☑️ Cleanliness (no dust/stain)                         │  │
+│  │ └─ ☑️ Safety check (no sharp edges)                       │  │
+│  │                                                            │  │
+│  │ Inspection Result: 7 Jan 2026                              │  │
+│  │ • Input Batch: 472 pcs Finished Doll                       │  │
+│  │ • Inspection: 100% checked (mandatory final QC)            │  │
+│  │                                                            │  │
+│  │ • PASS: 468 pcs (99.2%) ✅ → To Packing                   │  │
+│  │                                                            │  │
+│  │ • MINOR DEFECT: 4 pcs (0.8%) → Quick Fix                  │  │
+│  │   └─ Issues: Hang tag loose (3), Minor stain (1)          │  │
+│  │                                                            │  │
+│  │ • MAJOR DEFECT: 0 pcs ✅                                   │  │
+│  │                                                            │  │
+│  │ • REWORK RESULT: 4 → 3 recovered (75%)                    │  │
+│  │   └─ 1 pcs stain tidak bisa dibersihkan → Scrap           │  │
+│  │                                                            │  │
+│  │ • Final Good Output: 471 pcs (468 + 3 rework)             │  │
+│  │ • Action: ✅ Release 471 pcs to Packing                    │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  🔍 CHECKPOINT 4: PRE-PACKING FINAL                             │
+│  Location: Packing Department Entry                             │
+│  Inspector: QC Staff D (Random + 100% Visual)                   │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │ Check Items:                                               │  │
+│  │ ├─ ☑️ Final appearance (overall quality)                  │  │
+│  │ ├─ ☑️ Baju fit test (boneka + baju assembly)              │  │
+│  │ ├─ ☑️ Label check (correct Week + Destination)            │  │
+│  │ ├─ ☑️ Compliance check (EU safety standards)              │  │
+│  │ └─ ☑️ Metal detector test (no needle left)                │  │
+│  │                                                            │  │
+│  │ Inspection Result: 7-8 Jan 2026                            │  │
+│  │ • Finished Doll Available: 471 pcs ✅                      │  │
+│  │ • Baju Available: 500 pcs ✅                               │  │
+│  │                                                            │  │
+│  │ • Assembly Test Sample: 20 sets (random)                   │  │
+│  │   └─ Result: All 20 PASS ✅ (Fit perfect, labels correct) │  │
+│  │                                                            │  │
+│  │ • Metal Detector Test: 471 pcs tested                      │  │
+│  │   └─ Result: All PASS ✅ (No metal detected)              │  │
+│  │                                                            │  │
+│  │ • EU Compliance Check:                                     │  │
+│  │   ├─ CE marking: ✅ Present                                │  │
+│  │   ├─ Age warning label: ✅ Correct (3+ years)             │  │
+│  │   └─ Material safety cert: ✅ Valid                        │  │
+│  │                                                            │  │
+│  │ • Action: ✅ RELEASE FOR PACKING                           │  │
+│  │   └─ Max sets to pack: 465 pcs (as per target)            │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
+│                                                                  │
+│  📊 OVERALL QC PERFORMANCE SUMMARY                              │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │ Total Inspection Points: 4 mandatory checkpoints           │  │
+│  │ Total Items Inspected: 1,963 pcs (cumulative)             │  │
+│  │                                                            │  │
+│  │ Defect Summary by Checkpoint:                              │  │
+│  │ ├─ CP1 (Cutting): 2 pcs minor (0.4% of 500)               │  │
+│  │ ├─ CP2 (Sewing): 12 pcs defect (2.3% of 520)              │  │
+│  │ ├─ CP3 (Finishing): 4 pcs defect (0.8% of 472)            │  │
+│  │ └─ CP4 (Packing): 0 pcs defect (0.0%) ✅                  │  │
+│  │                                                            │  │
+│  │ Total Defects: 18 pcs                                      │  │
+│  │ Defect Rate: 0.9% ✅ Excellent (target: <2%)              │  │
+│  │                                                            │  │
+│  │ Rework Performance:                                        │  │
+│  │ ├─ Total Sent to Rework: 14 pcs                           │  │
+│  │ ├─ Successfully Recovered: 13 pcs (92.9%) ✅              │  │
+│  │ └─ Final Scrap: 4 pcs (0.2% of total production)          │  │
+│  │                                                            │  │
+│  │ Compliance Status:                                         │  │
+│  │ • All checkpoints PASSED ✅                                │  │
+│  │ • Safety standards MET ✅                                  │  │
+│  │ • Ready for customer delivery ✅                           │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  [EXPORT QC REPORT] [PRINT CERTIFICATES] [SEND TO CUSTOMER]    │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Integration Notes**:
+- QC checkpoints auto-triggered saat department complete daily input
+- Defect auto-create rework ticket dengan full traceability
+- Failed items dapat di-track dari customer complaint balik ke specific batch
+- Metal detector integration untuk needle detection (safety critical)
+
+---
+
+<a name="timeline-gantt"></a>
+## 14. 📅 TIMELINE & GANTT CHART - PROJECT VIEW
+
+### 14.1 MO Timeline Visualization
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  📊 PRODUCTION TIMELINE - MO-2026-00089 (AFTONSPARV)            │
+│  Target: 450 pcs | Period: 1-10 Feb 2026                       │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  📅 GANTT CHART VIEW (Interactive)                              │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │          │ 1│ 2│ 3│ 4│ 5│ 6│ 7│ 8│ 9│10│               │  │
+│  │ Process  │Mo│Tu│We│Th│Fr│Sa│Su│Mo│Tu│We│ Progress      │  │
+│  ├──────────┼──┼──┼──┼──┼──┼──┼──┼──┼──┼──┼───────────────┤  │
+│  │PO Kain   │██│  │  │  │  │  │  │  │  │  │ ✅ RECEIVED   │  │
+│  │          │✅│  │  │  │  │  │  │  │  │  │ (2 Jan)       │  │
+│  ├──────────┼──┼──┼──┼──┼──┼──┼──┼──┼──┼──┼───────────────┤  │
+│  │PO Label  │  │██│  │  │  │  │  │  │  │  │ ✅ RECEIVED   │  │
+│  │🔑TRIGGER │  │✅│  │  │  │  │  │  │  │  │ (3 Jan)       │  │
+│  ├──────────┼──┼──┼──┼──┼──┼──┼──┼──┼──┼──┼───────────────┤  │
+│  │Cutting   │  │  │██│██│  │  │  │  │  │  │ ✅ DONE       │  │
+│  │(Body)    │  │  │✅│✅│  │  │  │  │  │  │ 500/495 pcs   │  │
+│  ├──────────┼──┼──┼──┼──┼──┼──┼──┼──┼──┼──┼───────────────┤  │
+│  │Embroider │  │  │  │██│██│  │  │  │  │  │ ✅ DONE       │  │
+│  │          │  │  │  │✅│✅│  │  │  │  │  │ 495/495 pcs   │  │
+│  ├──────────┼──┼──┼──┼──┼──┼──┼──┼──┼──┼──┼───────────────┤  │
+│  │Sewing    │  │  │  │  │██│██│  │  │  │  │ ✅ DONE       │  │
+│  │(Body)    │  │  │  │  │✅│✅│  │  │  │  │ 518/517 pcs   │  │
+│  ├──────────┼──┼──┼──┼──┼──┼──┼──┼──┼──┼──┼───────────────┤  │
+│  │Finishing │  │  │  │  │  │██│██│  │  │  │ ✅ DONE       │  │
+│  │(2-Stage) │  │  │  │  │  │✅│✅│  │  │  │ 471/470 pcs   │  │
+│  ├──────────┼──┼──┼──┼──┼──┼──┼──┼──┼──┼──┼───────────────┤  │
+│  │Packing   │  │  │  │  │  │  │██│██│  │  │ 🔄 PROGRESS   │  │
+│  │          │  │  │  │  │  │  │🔄│🔄│  │  │ 380/465 (82%) │  │
+│  ├──────────┼──┼──┼──┼──┼──┼──┼──┼──┼──┼──┼───────────────┤  │
+│  │FG Ready  │  │  │  │  │  │  │  │  │██│  │ ⏳ SCHEDULED  │  │
+│  │          │  │  │  │  │  │  │  │  │⏳│  │ (Expected 9th)│  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  🎯 Critical Path: PO Label → Release ALL depts (bottleneck)    │
+│  ⚡ Lead Time Saved: 3 days (Early cutting start with PO Kain)  │
+│                                                                  │
+│  📊 Progress Metrics:                                           │
+│  • Total Days: 10 days (Plan) vs 8.5 days (Actual) ✅          │
+│  • On-Time Delivery: 96% probability (1.5 days buffer)          │
+│  • Current Status: Day 8 of 10 (80% timeline elapsed)           │
+│  • Remaining Work: 85 pcs packing (1 day) + FG (0.5 day)        │
+│                                                                  │
+│  [ZOOM IN] [EXPORT GANTT] [PRINT] [SHARE WITH TEAM]            │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 14.2 Multi-MO Dashboard Timeline
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  📊 PRODUCTION MASTER TIMELINE - ALL ACTIVE MOs                 │
+│  Week: W05 2026 (27 Jan - 2 Feb)                               │
+├─────────────────────────────────────────────────────────────────┤
+│  Filter: [All Articles ▾] [All Depts ▾] [Show: Active ●]      │
+│                                                                  │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │ MO-00089 (AFTONSPARV - 450 pcs)                           │  │
+│  │ ████████████████████████████████░░ 80% ✅ On Track        │  │
+│  │ Start: 2 Jan | End: 10 Feb | Days Remaining: 2            │  │
+│  ├──────────────────────────────────────────────────────────┤  │
+│  │ MO-00090 (KRAMIG - 600 pcs)                               │  │
+│  │ ██████████████████░░░░░░░░░░░░░░ 60% 🔄 In Progress       │  │
+│  │ Start: 4 Jan | End: 14 Feb | Days Remaining: 6            │  │
+│  ├──────────────────────────────────────────────────────────┤  │
+│  │ MO-00091 (GOSIG GOLDEN - 800 pcs)                         │  │
+│  │ ████████░░░░░░░░░░░░░░░░░░░░░░░░ 25% ⚠️ Risk of Delay   │  │
+│  │ Start: 5 Jan | End: 18 Feb | Delayed by: 2 days          │  │
+│  │ Issue: Material shortage (KOHAIR -45 YD)                  │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  🎯 Weekly Overview:                                            │
+│  • Total Active MOs: 12                                         │
+│  • On Track: 8 MOs (66.7%) ✅                                  │
+│  • At Risk: 3 MOs (25.0%) ⚠️                                   │
+│  • Delayed: 1 MO (8.3%) 🔴                                     │
+│  • Average Completion: 68.5%                                    │
+│                                                                  │
+│  📅 Upcoming Deadlines (Next 7 Days):                           │
+│  • 8 Feb: MO-00089 (AFTONSPARV) - FG Ready ✅                  │
+│  • 10 Feb: MO-00087 (DJUNGELSKOG) - 350 pcs                    │
+│  • 12 Feb: MO-00088 (BLAHAJ) - 200 pcs                         │
+│                                                                  │
+│  [REFRESH] [EXPORT] [SEND REPORT TO MANAGEMENT]                │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+<a name="barcode-label"></a>
+## 15. 📱 BARCODE & LABEL SYSTEM - COMPREHENSIVE
+
+### 15.1 Barcode Standards & Format
+
+**Used Throughout System**:
+- **Material**: MAT-{Type}-{Code}-{BatchID}
+  - Example: MAT-RAW-IKHR504-20260102-001
+- **WIP**: WIP-{Dept}-{Article}-{SPKDate}-{SeqNo}
+  - Example: WIP-SEW-40551542-20260105-001
+- **Finished Goods**: FG-{Article}-{Week}-{BoxNo}-{Date}
+  - Example: FG-40551542-W05-001-20260208
+- **Carton Label**: CTN-{Article}-{Week}-{BoxNo}-{TotalBoxes}
+  - Example: CTN-40551542-W05-003-008 (Box 3 of 8)
+
+### 15.2 Mobile Barcode Scanner Integration
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  📱 MOBILE BARCODE SCANNER APP                                  │
+│  User: Warehouse Staff | Location: Packing Area                │
+├─────────────────────────────────────────────────────────────────┤
+│  🔍 SCAN MODE SELECTION                                         │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │ [📥 Material IN]  [📤 Material OUT]  [📦 FG Receiving]   │  │
+│  │                                                            │  │
+│  │ [🏷️ Label Print]  [✅ QC Check]  [📊 Stock Count]       │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  🎯 ACTIVE SCAN: FG Receiving Mode                              │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │ [CAMERA VIEWFINDER - ACTIVE]                               │  │
+│  │                                                            │  │
+│  │         ┌─────────────────┐                                │  │
+│  │         │  ▐║║║║║║║║║║║  │  ← Align barcode                 │  │
+│  │         │  ▐║║║║║║║║║║║  │                                  │  │
+│  │         └─────────────────┘                                │  │
+│  │                                                            │  │
+│  │  [TAP TO SCAN] or Auto-scan when detected                 │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  📋 SCANNED HISTORY (Last 5):                                   │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │ ✅ FG-40551542-W05-007-20260208 (Box 7 - 60 pcs)          │  │
+│  │ ✅ FG-40551542-W05-006-20260208 (Box 6 - 60 pcs)          │  │
+│  │ ✅ FG-40551542-W05-005-20260208 (Box 5 - 60 pcs)          │  │
+│  │ ✅ FG-40551542-W05-004-20260208 (Box 4 - 60 pcs)          │  │
+│  │ ✅ FG-40551542-W05-003-20260208 (Box 3 - 60 pcs)          │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  📊 SESSION SUMMARY:                                            │
+│  • Total Boxes Scanned: 7 boxes                                 │
+│  • Total Pcs: 420 pcs (7 × 60)                                  │
+│  • SPK: PACK-2026-00089                                         │
+│  • Expected Total: 465 pcs (8 boxes)                            │
+│  • Remaining: 1 box (45 pcs)                                    │
+│                                                                  │
+│  [🔄 SYNC TO SERVER] [📝 ADD NOTE] [✅ COMPLETE BATCH]         │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Auto-Actions After Scan**:
+1. FG stock updated real-time
+2. Carton location recorded (bin assignment)
+3. Shipment readiness calculated
+4. Notification sent to logistics when complete
+
+---
+
+<a name="security"></a>
+## 16. 🔒 SECURITY & FRAUD PREVENTION
+
+### 16.1 Critical Security Features
+
+**Multi-Layer Authentication**:
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  🔐 LOGIN SECURITY - MULTI-FACTOR AUTHENTICATION                │
+├─────────────────────────────────────────────────────────────────┤
+│  Step 1: Username & Password                                    │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │ Username: [agung_sewing]                                   │  │
+│  │ Password: [••••••••••]                                     │  │
+│  │ [LOGIN]                                                     │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  Step 2: OTP Verification (for sensitive roles)                 │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │ OTP Code sent to: +62 812-XXXX-7890                        │  │
+│  │ Enter 6-digit code: [______]                               │  │
+│  │ [VERIFY]                                                    │  │
+│  │ Code expires in: 2:45                                      │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  Step 3: Device Fingerprint (Auto-captured)                     │
+│  • Browser: Chrome 120.0 on Windows 11                          │
+│  • IP Address: 192.168.1.45 (Internal Network)                  │
+│  • Location: Tangerang, Indonesia                               │
+│  • Device ID: WIN-PROD-SRV-012                                  │
+│                                                                  │
+│  ✅ Login Successful - Session Active                           │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 16.2 Fraud Detection & Prevention
+
+**Automated Anomaly Detection**:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  🚨 FRAUD DETECTION ALERT                                       │
+│  Severity: ⚠️ MEDIUM - Requires Review                         │
+├─────────────────────────────────────────────────────────────────┤
+│  Anomaly Detected: Unusual Stock Adjustment                     │
+│                                                                  │
+│  Details:                                                        │
+│  • User: warehouse_staff_3                                      │
+│  • Action: Stock Adjustment (Manual)                            │
+│  • Material: [IKHR504] KOHAIR D.BROWN                           │
+│  • Adjustment: -85 YD (Large quantity)                           │
+│  • Reason Given: "Physical count discrepancy"                   │
+│  • Timestamp: 5 Feb 2026 18:45 (After working hours) ⚠️        │
+│  • Approver: None (pending) ⚠️                                  │
+│                                                                  │
+│  🔍 System Analysis:                                            │
+│  ├─ Average Adjustment: 5-10 YD (This: 85 YD) 🚨 17x higher    │
+│  ├─ Time Pattern: 93% adjustments during work hours 🚨         │
+│  ├─ User History: 2 similar large adjustments in last month    │
+│  └─ Material Value: Rp 1,062,500 (~$85) 🚨 High value          │
+│                                                                  │
+│  ⚡ Recommended Actions:                                         │
+│  1. Require Manager approval (mandatory)                        │
+│  2. Request supporting documentation (photo of physical count)  │
+│  3. Schedule follow-up physical audit                           │
+│  4. Escalate to Director if >Rp 1M                              │
+│                                                                  │
+│  [APPROVE WITH REVIEW] [REJECT & INVESTIGATE] [ESCALATE]        │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Key Security Controls**:
+1. **Segregation of Duties**: No single user can create & approve critical transactions
+2. **Approval Limits**: Tiered approval based on value (Supervisor < Manager < Director)
+3. **Dual Custody**: Material debt must be approved by 2 people (PPIC + Purchasing)
+4. **Time-Based Lock**: Cannot edit production data older than 48 hours without SPV approval
+5. **IP Whitelist**: Critical functions only accessible from factory network
+6. **Audit Log**: Every action logged with user, timestamp, IP, device, old/new value
 
 ---
 

@@ -12,7 +12,7 @@ import {
   StatusCard,
   FullScreenLayout,
   LargeDisplay,
-} from '../components/BigButtonMode';
+} from '@/components/BigButtonMode';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 

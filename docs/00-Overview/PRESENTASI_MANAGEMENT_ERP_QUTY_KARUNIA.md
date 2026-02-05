@@ -56,14 +56,20 @@
 - **Purchasing C** - Accessories Specialist  
   Membeli benang, box, filling, dan aksesoris lainnya
 
-**PPIC (Production Planning)**:
-- Membuat MO Manufacturing dengan 2 mode:
+**PPIC (Production Planning & Inventory Control)**:
+- **ROLE**: REVIEW & APPROVE MOs (NOT CREATE)
+- MO otomatis di-generate oleh sistem dari PO Purchasing
+- PPIC hanya melakukan **Review → Edit (if needed) → Accept/Reject**
+- Setelah Accept → System auto-explode **WO/SPK** ke semua departemen
+- **WO (Work Order)** = **SPK (Surat Perintah Kerja)** → TERMINOLOGY SAMA
+- 2 mode MO status:
   - **PARTIAL** (PO Kain only) → Cutting & Embroidery dapat start
   - **RELEASED** (PO Label ready) → Semua departemen dapat start
 
 **Warehouse**:
 - Warehouse Main → Menyediakan material untuk produksi
 - Warehouse Finishing → Khusus internal conversion (Skin → Stuffed Body → Finished Doll)
+- **Warehouse Finished Goods** → Mendata qty sesuai MO final, auto-display dalam Cartons, Pcs, Boxes
 
 **Produksi** (5 Departemen):
 ```
@@ -2915,19 +2921,19 @@ Container 10: kibana
 
 | No | Role | Department | Access Level |
 |----|------|------------|--------------|
-| 1 | **Admin PPIC** | PPIC | Create/Read MO, View all SPK |
-| 2 | **SPV PPIC** | PPIC | Approve MO changes |
+| 1 | **Admin PPIC** | PPIC | Review/Edit/Approve MO, View all WO/SPK |
+| 2 | **SPV PPIC** | PPIC | Approve MO changes & WO/SPK explosion |
 | 3 | **Manager PPIC** | PPIC | View-only + Reporting |
-| 4 | **Admin Cutting** | Cutting | Create/Read SPK Cutting |
-| 5 | **SPV Cutting** | Cutting | Approve SPK Cutting |
-| 6 | **Admin Embroidery** | Embroidery | Create/Read SPK Embroidery |
-| 7 | **SPV Embroidery** | Embroidery | Approve SPK Embroidery |
-| 8 | **Admin Sewing** | Sewing | Create/Read SPK Sewing |
-| 9 | **SPV Sewing** | Sewing | Approve SPK Sewing |
-| 10 | **Admin Finishing** | Finishing | Create/Read SPK Finishing |
-| 11 | **SPV Finishing** | Finishing | Approve SPK Finishing |
-| 12 | **Admin Packing** | Packing | Create/Read SPK Packing |
-| 13 | **SPV Packing** | Packing | Approve SPK Packing |
+| 4 | **Admin Cutting** | Cutting | Input production for WO/SPK Cutting |
+| 5 | **SPV Cutting** | Cutting | Approve WO/SPK Cutting results |
+| 6 | **Admin Embroidery** | Embroidery | Input production for WO/SPK Embroidery |
+| 7 | **SPV Embroidery** | Embroidery | Approve WO/SPK Embroidery results |
+| 8 | **Admin Sewing** | Sewing | Input production for WO/SPK Sewing |
+| 9 | **SPV Sewing** | Sewing | Approve WO/SPK Sewing results |
+| 10 | **Admin Finishing** | Finishing | Input production for WO/SPK Finishing |
+| 11 | **SPV Finishing** | Finishing | Approve WO/SPK Finishing results |
+| 12 | **Admin Packing** | Packing | Input production for WO/SPK Packing |
+| 13 | **SPV Packing** | Packing | Approve WO/SPK Packing results |
 | 14 | **Admin Warehouse** | Warehouse | Material movement |
 | 15 | **SPV Warehouse** | Warehouse | Approve stock adjustment |
 | 16 | **Purchasing Staff A** | Purchasing | Create PO Kain |

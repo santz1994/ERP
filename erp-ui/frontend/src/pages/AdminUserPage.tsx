@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { Lock } from 'lucide-react'
-import { apiClient } from '@/api/client'
+import { apiClient } from '@/api'
 import { usePermission } from '@/hooks/usePermission'
 
 interface User {

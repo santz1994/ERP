@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { Shield, Search, Users, Lock, X, Calendar, CheckCircle, AlertCircle } from 'lucide-react'
-import { apiClient } from '@/api/client'
+import { apiClient } from '@/api'
 import { usePermission } from '@/hooks/usePermission'
 
 interface User {

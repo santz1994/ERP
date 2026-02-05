@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { apiClient } from '@/api/client'
+import { apiClient } from '@/api'
 
 interface Product {
   id: number

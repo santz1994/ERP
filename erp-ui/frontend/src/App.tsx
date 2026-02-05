@@ -11,7 +11,15 @@ import { DashboardPage } from '@/pages/DashboardPage'
 import { UnauthorizedPage } from '@/pages/UnauthorizedPage'
 import { canAccessModule } from '@/utils/roleGuard'
 import PPICPage from '@/pages/PPICPage'
+import MOListPage from '@/pages/ppic/MOListPage'
+import CreateMOPage from '@/pages/ppic/CreateMOPage'
+import MODetailPage from '@/pages/ppic/MODetailPage'
+import SPKListPage from '@/pages/ppic/SPKListPage'
+import CreateSPKPage from '@/pages/ppic/CreateSPKPage'
 import DailyProductionPage from '@/pages/DailyProductionPage'
+import ProductionCalendarPage from '@/pages/production/ProductionCalendarPage'
+import CuttingInputPage from '@/pages/production/CuttingInputPage'
+import WIPDashboardPage from '@/pages/production/WIPDashboardPage'
 import CuttingPage from '@/pages/CuttingPage'
 import EmbroideryPage from '@/pages/EmbroideryPage'
 import SewingPage from '@/pages/SewingPage'
@@ -20,6 +28,18 @@ import PackingPage from '@/pages/PackingPage'
 import PurchasingPage from '@/pages/PurchasingPage'
 import FinishgoodsPage from '@/pages/FinishgoodsPage'
 import WarehousePage from '@/pages/WarehousePage'
+import MaterialStockPage from '@/pages/warehouse/MaterialStockPage'
+import MaterialReceiptPage from '@/pages/warehouse/MaterialReceiptPage'
+import FGStockPage from '@/pages/warehouse/FGStockPage'
+import FGReceiptPage from '@/pages/warehouse/FGReceiptPage'
+import MaterialIssuePage from '@/pages/warehouse/MaterialIssuePage'
+import FinishingWarehousePage from '@/pages/warehouse/FinishingWarehousePage'
+import StockOpnamePage from '@/pages/warehouse/StockOpnamePage'
+import MaterialAllocationPage from '@/pages/ppic/MaterialAllocationPage'
+import EmbroideryInputPage from '@/pages/production/EmbroideryInputPage'
+import SewingInputPage from '@/pages/production/SewingInputPage'
+import FinishingInputPage from '@/pages/production/FinishingInputPage'
+import PackingInputPage from '@/pages/production/PackingInputPage'
 import KanbanPage from '@/pages/KanbanPage'
 import ReportsPage from '@/pages/ReportsPage'
 import QCPage from '@/pages/QCPage'
@@ -163,6 +183,61 @@ function App() {
         />
 
         <Route
+          path="/ppic/mo"
+          element={
+            <PrivateRoute module="ppic">
+              <ProtectedLayout>
+                <MOListPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/ppic/mo/create"
+          element={
+            <PrivateRoute module="ppic">
+              <ProtectedLayout>
+                <CreateMOPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/ppic/mo/:id"
+          element={
+            <PrivateRoute module="ppic">
+              <ProtectedLayout>
+                <MODetailPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/ppic/spk"
+          element={
+            <PrivateRoute module="ppic">
+              <ProtectedLayout>
+                <SPKListPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/ppic/spk/create"
+          element={
+            <PrivateRoute module="ppic">
+              <ProtectedLayout>
+                <CreateSPKPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
           path="/daily-production"
           element={
             <PrivateRoute module="production">
@@ -223,6 +298,39 @@ function App() {
             <PrivateRoute module="packing">
               <ProtectedLayout>
                 <PackingPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/production/calendar"
+          element={
+            <PrivateRoute module="production">
+              <ProtectedLayout>
+                <ProductionCalendarPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/production/input/cutting"
+          element={
+            <PrivateRoute module="production">
+              <ProtectedLayout>
+                <CuttingInputPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/production/wip"
+          element={
+            <PrivateRoute module="production">
+              <ProtectedLayout>
+                <WIPDashboardPage />
               </ProtectedLayout>
             </PrivateRoute>
           }
@@ -300,6 +408,138 @@ function App() {
             <PrivateRoute module="warehouse">
               <ProtectedLayout>
                 <WarehousePage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/warehouse/material/stock"
+          element={
+            <PrivateRoute module="warehouse">
+              <ProtectedLayout>
+                <MaterialStockPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/warehouse/material/receipt"
+          element={
+            <PrivateRoute module="warehouse">
+              <ProtectedLayout>
+                <MaterialReceiptPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/warehouse/fg/stock"
+          element={
+            <PrivateRoute module="warehouse">
+              <ProtectedLayout>
+                <FGStockPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/warehouse/fg/receipt"
+          element={
+            <PrivateRoute module="warehouse">
+              <ProtectedLayout>
+                <FGReceiptPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/warehouse/material/issue"
+          element={
+            <PrivateRoute module="warehouse">
+              <ProtectedLayout>
+                <MaterialIssuePage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/warehouse/finishing-warehouse"
+          element={
+            <PrivateRoute module="warehouse">
+              <ProtectedLayout>
+                <FinishingWarehousePage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/warehouse/stock-opname"
+          element={
+            <PrivateRoute module="warehouse">
+              <ProtectedLayout>
+                <StockOpnamePage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/ppic/material-allocation"
+          element={
+            <PrivateRoute module="ppic">
+              <ProtectedLayout>
+                <MaterialAllocationPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/production/input/embroidery"
+          element={
+            <PrivateRoute module="production">
+              <ProtectedLayout>
+                <EmbroideryInputPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/production/input/sewing"
+          element={
+            <PrivateRoute module="production">
+              <ProtectedLayout>
+                <SewingInputPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/production/input/finishing"
+          element={
+            <PrivateRoute module="production">
+              <ProtectedLayout>
+                <FinishingInputPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/production/input/packing"
+          element={
+            <PrivateRoute module="production">
+              <ProtectedLayout>
+                <PackingInputPage />
               </ProtectedLayout>
             </PrivateRoute>
           }

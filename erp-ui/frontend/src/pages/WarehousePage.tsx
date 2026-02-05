@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '@/api/client';
-import BarcodeScanner from '../components/BarcodeScanner';
-import MaterialRequestModal, { MaterialRequestFormData } from '../components/warehouse/MaterialRequestModal';
-import MaterialRequestsList from '../components/warehouse/MaterialRequestsList';
+import { apiClient } from '@/api';
+import BarcodeScanner from '@/components/BarcodeScanner';
+import MaterialRequestModal, { MaterialRequestFormData } from '@/components/warehouse/MaterialRequestModal';
+import MaterialRequestsList from '@/components/warehouse/MaterialRequestsList';
 import { useUIStore } from '@/store';
 import { 
   StockManagement, 

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { AlertCircle, CheckCircle, Clock, TrendingUp, Plus, Filter, RefreshCw, Eye, Edit2 } from 'lucide-react';
-import { apiClient } from '../api/client';
-import { usePermission } from '../hooks/usePermission';
-import { useAuthStore } from '../store';
-import { UserRole } from '../types';
+import { apiClient } from '@/api';
+import { usePermission } from '@/hooks/usePermission';
+import { useAuthStore } from '@/store';
+import { UserRole } from '@/types';
 
 interface MaterialDebt {
   id: number;
