@@ -152,6 +152,8 @@ export const LoginPage: React.FC = () => {
               <p className="text-sm text-brand-200 font-medium">Multi-role<br/>Support</p>
             </div>
           </div>
+        </div>
+      </div>
 
       {/* Right Side: Login Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-surface-dim">
@@ -159,7 +161,7 @@ export const LoginPage: React.FC = () => {
           {/* Mobile Logo */}
           <div className="lg:hidden text-center mb-8">
             <Factory className="w-16 h-16 text-brand-500 mx-auto mb-2" />
-            <h1 className="text-2xl font-bold text-gray-900">Quty ERP System</h1>
+            <h1 className="text-2xl font-bold text-gray-900">QutyERP System</h1>
           </div>
 
           <div className="bg-white p-10 rounded-2xl shadow-elevated border border-gray-100">

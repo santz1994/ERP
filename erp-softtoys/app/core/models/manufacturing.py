@@ -401,3 +401,159 @@ class MaterialConsumption(Base):
 
     def __repr__(self):
         return f"<MaterialConsumption(wo_id={self.work_order_id}, product_id={self.product_id})>"
+
+
+# ============================================================================
+# Phase 2B: Rework & QC System
+# ============================================================================
+
+
+class DefectType(str, enum.Enum):
+    """Types of defects for categorization"""
+    STITCHING = "STITCHING"  # Broken/wrong stitches
+    MATERIAL = "MATERIAL"  # Material defects
+    FILLING = "FILLING"  # Filling/stuffing issues
+    ASSEMBLY = "ASSEMBLY"  # Assembly errors
+    PAINT = "PAINT"  # Paint/color issues
+    OTHER = "OTHER"  # Other defects
+
+
+class DefectSeverity(str, enum.Enum):
+    """Severity levels of defects"""
+    MINOR = "MINOR"  # Can be fixed easily
+    MAJOR = "MAJOR"  # Significant rework needed
+    CRITICAL = "CRITICAL"  # Severe, might discard
+
+
+class DefectCategory(Base):
+    """Categorization of defects for quality tracking
+    
+    Examples:
+    - DFC-001: Broken Stitch (STITCHING, MINOR, 1 hour to fix)
+    - DFC-002: Wrong Color (MATERIAL, CRITICAL, discard)
+    - DFC-003: Filling Leak (FILLING, MAJOR, 2 hours to fix)
+    """
+    __tablename__ = "defect_categories"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String(50), unique=True, nullable=False, index=True)  # DFC-001, DFC-002, etc.
+    name = Column(String(100), nullable=False)  # "Broken Stitch", "Wrong Color", etc.
+    defect_type = Column(Enum(DefectType), nullable=False)  # STITCHING, MATERIAL, etc.
+    description = Column(String(500))  # Detailed description
+    severity = Column(Enum(DefectSeverity), nullable=False)  # MINOR, MAJOR, CRITICAL
+    default_rework_hours = Column(Integer, default=1)  # Est. hours to rework
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    rework_requests = relationship("ReworkRequest", back_populates="defect_category")
+    
+    def __repr__(self):
+        return f"<DefectCategory(code={self.code}, name={self.name})>"
+
+
+class ReworkStatus(str, enum.Enum):
+    """Status of rework request through workflow"""
+    PENDING = "PENDING"  # Just created, awaiting QC review
+    QC_REVIEW = "QC_REVIEW"  # Being reviewed by QC manager
+    APPROVED = "APPROVED"  # QC approved, ready for rework
+    REJECTED = "REJECTED"  # QC rejected, discard instead
+    IN_PROGRESS = "IN_PROGRESS"  # Rework in progress
+    COMPLETED = "COMPLETED"  # Rework done, awaiting verification
+    VERIFIED = "VERIFIED"  # Final QC verified
+
+
+class ReworkRequest(Base):
+    """Request to rework defective units
+    
+    Workflow:
+    1. Create request (PENDING)
+    2. QC Review → APPROVED or REJECTED
+    3. If approved: Start rework → IN_PROGRESS
+    4. Operator completes → COMPLETED
+    5. Final QC verification → VERIFIED
+    """
+    __tablename__ = "rework_requests"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # Which SPK has defects
+    spk_id = Column(Integer, ForeignKey("spks.id"), nullable=False, index=True)
+    defect_qty = Column(DECIMAL(10, 2), nullable=False)  # How many defective units
+    
+    # Defect categorization
+    defect_category_id = Column(Integer, ForeignKey("defect_categories.id"), nullable=False)
+    defect_notes = Column(String(500))  # Details about the defect
+    
+    # Workflow status
+    status = Column(Enum(ReworkStatus), default=ReworkStatus.PENDING, nullable=False, index=True)
+    
+    # QC Review Phase
+    qc_reviewed_by_id = Column(Integer, ForeignKey("users.id"))  # QC manager who reviewed
+    qc_reviewed_at = Column(DateTime(timezone=True))
+    qc_approval_notes = Column(String(500))  # QC comments
+    
+    # Rework Execution Phase
+    rework_started_at = Column(DateTime(timezone=True))
+    rework_completed_at = Column(DateTime(timezone=True))
+    rework_operator_id = Column(Integer, ForeignKey("users.id"))  # Who did the rework
+    rework_notes = Column(String(500))  # What was done
+    
+    # Final QC Verification Phase
+    verified_by_id = Column(Integer, ForeignKey("users.id"))  # Final QC verifier
+    verified_at = Column(DateTime(timezone=True))
+    verified_good_qty = Column(DECIMAL(10, 2), default=0)  # Good after rework
+    verified_failed_qty = Column(DECIMAL(10, 2), default=0)  # Still bad, discard
+    
+    # Cost Tracking
+    material_cost = Column(DECIMAL(12, 2), default=0)  # Cost of materials used
+    labor_cost = Column(DECIMAL(12, 2), default=0)  # Cost of labor
+    total_cost = Column(DECIMAL(12, 2), default=0)  # Total rework cost
+    
+    # Audit fields
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    requested_by_id = Column(Integer, ForeignKey("users.id"), nullable=False)  # Who requested
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    spk = relationship("SPK", foreign_keys=[spk_id])
+    defect_category = relationship("DefectCategory", back_populates="rework_requests")
+    qc_reviewer = relationship("User", foreign_keys=[qc_reviewed_by_id])
+    rework_operator = relationship("User", foreign_keys=[rework_operator_id])
+    qc_verifier = relationship("User", foreign_keys=[verified_by_id])
+    requested_by = relationship("User", foreign_keys=[requested_by_id])
+    materials = relationship("ReworkMaterial", back_populates="rework_request")
+    
+    def __repr__(self):
+        return f"<ReworkRequest(id={self.id}, spk_id={self.spk_id}, status={self.status})>"
+
+
+class ReworkMaterial(Base):
+    """Materials consumed during rework process
+    
+    Tracks:
+    - Which material was used
+    - Quantity and cost
+    - For cost analysis and inventory tracking
+    """
+    __tablename__ = "rework_materials"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    rework_request_id = Column(Integer, ForeignKey("rework_requests.id"), nullable=False, index=True)
+    product_id = Column(Integer, ForeignKey("products.id"), nullable=False)  # Material/product used
+    
+    qty_used = Column(DECIMAL(10, 2), nullable=False)  # Quantity consumed
+    uom = Column(String(10), nullable=False)  # Unit: KG, PIECES, METERS, etc.
+    unit_cost = Column(DECIMAL(12, 2), nullable=False)  # Cost per unit
+    total_cost = Column(DECIMAL(12, 2), nullable=False)  # qty_used * unit_cost
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relationships
+    rework_request = relationship("ReworkRequest", back_populates="materials")
+    product = relationship("Product", foreign_keys=[product_id])
+    
+    def __repr__(self):
+        return f"<ReworkMaterial(rework_id={self.rework_request_id}, product_id={self.product_id})>"
