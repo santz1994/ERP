@@ -119,7 +119,7 @@ export const OperatorWorkflow: React.FC<OperatorWorkflowProps> = ({
             onClick={handleAction}
             disabled={loading}
           >
-            {loading ? '⏳ PROCESSING...' : '→ NEXT'}
+            {loading ? 'PROCESSING...' : 'NEXT'}
           </BigButton>
         </div>
 

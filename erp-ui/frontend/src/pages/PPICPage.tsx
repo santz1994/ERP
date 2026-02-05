@@ -340,7 +340,6 @@ const PPICPage: React.FC = () => {
             
             {mosLoading ? (
               <div className="p-12 text-center">
-                <div className="text-4xl mb-4">⏳</div>
                 <p className="text-gray-500">Loading manufacturing orders...</p>
               </div>
             ) : mosData && mosData.length > 0 ? (
@@ -508,7 +507,7 @@ const PPICPage: React.FC = () => {
             
             {wosLoading ? (
               <div className="p-12 text-center">
-                <div className="text-4xl mb-4">⏳</div>
+                <div className="text-4xl mb-4">[LOADING]</div>
                 <p className="text-gray-500">Loading work orders...</p>
               </div>
             ) : workOrdersData && workOrdersData.length > 0 ? (

@@ -158,7 +158,7 @@ export const MOCreateForm: React.FC<MOCreateFormProps> = ({ onClose, onSuccess }
                   <p className="text-xs text-gray-600 mt-1">
                     [Thread] PO Fabric only<br/>
                      Cutting & Embroidery can start<br/>
-                    ⏳ Other depts wait for PO Label
+                    Other depts wait for PO Label
                   </p>
                 </div>
               </div>

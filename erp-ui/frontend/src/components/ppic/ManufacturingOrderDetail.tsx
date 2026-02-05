@@ -184,7 +184,7 @@ export const ManufacturingOrderDetail: React.FC<ManufacturingOrderDetailProps> =
                 ) : (
                   <div className="flex items-center gap-2 text-amber-600">
                     <Clock className="w-5 h-5" />
-                    <span>⏳ Waiting...</span>
+                    <span>[WAITING] Waiting...</span>
                   </div>
                 )}
               </div>
@@ -199,7 +199,7 @@ export const ManufacturingOrderDetail: React.FC<ManufacturingOrderDetailProps> =
                 ) : (
                   <div className="flex items-center gap-2 text-amber-600">
                     <Clock className="w-5 h-5" />
-                    <span>⏳ Waiting...</span>
+                    <span>[WAITING] Waiting...</span>
                   </div>
                 )}
               </div>

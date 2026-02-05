@@ -98,7 +98,7 @@ export default function WarehouseBigButtonMode() {
       <FullScreenLayout title="WAREHOUSE - SELECT TRANSFER">
         {isLoading ? (
           <StatusCard status="processing" title="Loading Transfers...">
-            <p className="text-xl">⏳ Please wait...</p>
+            <p className="text-xl">Please wait...</p>
           </StatusCard>
         ) : pendingTransfers.length === 0 ? (
           <StatusCard status="warning" title="No Transfers Pending">
@@ -284,7 +284,7 @@ export default function WarehouseBigButtonMode() {
             disabled={transferMutation.isPending}
             icon=""
           >
-            {transferMutation.isPending ? '⏳ PROCESSING...' : 'CONFIRM SHIPMENT'}
+            {transferMutation.isPending ? '[LOADING] PROCESSING...' : 'CONFIRM SHIPMENT'}
           </BigButton>
 
           <BigButton

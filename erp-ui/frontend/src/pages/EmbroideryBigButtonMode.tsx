@@ -127,7 +127,7 @@ export default function EmbroideryBigButtonMode() {
       <FullScreenLayout title="EMBROIDERY - SELECT WORK ORDER">
         {isLoading ? (
           <StatusCard status="processing" title="Loading Work Orders...">
-            <p className="text-xl">⏳ Please wait...</p>
+            <p className="text-xl">Please wait...</p>
           </StatusCard>
         ) : workOrders.length === 0 ? (
           <StatusCard status="warning" title="No Work Orders Available">
@@ -181,7 +181,7 @@ export default function EmbroideryBigButtonMode() {
             disabled={startWOMutation.isPending}
             icon=""
           >
-            {startWOMutation.isPending ? '⏳ STARTING...' : 'START EMBROIDERY'}
+            {startWOMutation.isPending ? '[LOADING] STARTING...' : 'START EMBROIDERY'}
           </BigButton>
 
           <BigButton
@@ -279,7 +279,7 @@ export default function EmbroideryBigButtonMode() {
             disabled={embroideredQty === 0 || recordOutputMutation.isPending}
             icon=""
           >
-            {recordOutputMutation.isPending ? '⏳ SAVING...' : 'CONFIRM OUTPUT'}
+            {recordOutputMutation.isPending ? 'SAVING...' : 'CONFIRM OUTPUT'}
           </BigButton>
 
           <BigButton
@@ -320,7 +320,7 @@ export default function EmbroideryBigButtonMode() {
             disabled={transferMutation.isPending}
             icon="→"
           >
-            {transferMutation.isPending ? '⏳ TRANSFERRING...' : 'TRANSFER TO PACKING'}
+            {transferMutation.isPending ? 'TRANSFERRING...' : 'TRANSFER TO PACKING'}
           </BigButton>
 
           <BigButton

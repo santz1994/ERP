@@ -122,8 +122,9 @@ export const PurchaseOrderCreate: React.FC<PurchaseOrderCreateProps> = ({ onClos
   const fetchArticles = async () => {
     try {
       setLoadingArticles(true)
-      const response = await apiClient.get('/articles')
-      setArticles(response.data)
+      // Using admin products endpoint (needs proper products/articles endpoint in future)
+      const response = await apiClient.get('/admin/products')
+      setArticles(response.data?.products || [])
     } catch (error) {
       console.error('Failed to fetch articles:', error)
       addNotification({ type: 'error', message: 'Failed to load articles' })
@@ -134,8 +135,13 @@ export const PurchaseOrderCreate: React.FC<PurchaseOrderCreateProps> = ({ onClos
 
   const fetchSuppliers = async () => {
     try {
-      const response = await apiClient.get('/suppliers')
-      setSuppliers(response.data)
+      // TODO: Backend needs to implement /purchasing/suppliers endpoint
+      // For now, using mock data or empty array
+      setSuppliers([
+        { id: 1, name: 'Supplier A', code: 'SUP-001' },
+        { id: 2, name: 'Supplier B', code: 'SUP-002' },
+        { id: 3, name: 'Supplier C', code: 'SUP-003' }
+      ])
     } catch (error) {
       console.error('Failed to fetch suppliers:', error)
     }

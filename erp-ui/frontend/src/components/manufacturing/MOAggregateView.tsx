@@ -129,9 +129,9 @@ export const MOAggregateView: React.FC<MOAggregateViewProps> = ({ moId, onClose 
       case 'COMPLETED':
         return <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">Completed</span>;
       case 'IN_PROGRESS':
-        return <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">[Refresh] In Progress</span>;
+        return <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">In Progress</span>;
       case 'PENDING':
-        return <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">⏳ Pending</span>;
+        return <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">Pending</span>;
       case 'CANCELLED':
         return <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">Cancelled</span>;
       default:

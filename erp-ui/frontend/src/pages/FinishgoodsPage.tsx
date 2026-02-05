@@ -247,13 +247,13 @@ const FinishgoodsPage: React.FC = () => {
             onClick={() => setShowReceiveModal(true)}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
-            [Package] Receive from Packing
+            Receive from Packing
           </button>
           <button
             onClick={() => setShowShipmentModal(true)}
             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
           >
-            [Ship] Prepare Shipment
+            Prepare Shipment
           </button>
         </div>
       </div>
@@ -305,7 +305,7 @@ const FinishgoodsPage: React.FC = () => {
               : 'text-gray-600 hover:text-gray-800'
           }`}
         >
-          [Ship] Ready to Ship
+          Ready to Ship
         </button>
         <button
           onClick={() => setActiveTab('aging')}
@@ -325,7 +325,7 @@ const FinishgoodsPage: React.FC = () => {
               : 'text-gray-600 hover:text-gray-800'
           }`}
         >
-          [Scan] Barcode Scanner
+          Barcode Scanner
         </button>
       </div>
 
@@ -394,7 +394,6 @@ const FinishgoodsPage: React.FC = () => {
               </div>
             ) : (
               <div className="p-12 text-center">
-                <div className="text-6xl mb-4">[Package]</div>
                 <p className="text-gray-500 text-lg">No inventory data available</p>
                 <p className="text-gray-400 text-sm mt-2">Receive products from Packing department</p>
               </div>
@@ -450,7 +449,6 @@ const FinishgoodsPage: React.FC = () => {
               </div>
             ) : (
               <div className="p-12 text-center">
-                <div className="text-6xl mb-4">[Ship]</div>
                 <p className="text-gray-500 text-lg">No products ready for shipment</p>
               </div>
             )}
@@ -535,7 +533,7 @@ const FinishgoodsPage: React.FC = () => {
                           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >
-                      [Import] Receive Goods
+                      Receive Goods
                     </button>
                     <button
                       onClick={() => setBarcodeOperation('pick')}
@@ -545,7 +543,7 @@ const FinishgoodsPage: React.FC = () => {
                           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >
-                      [Export] Pick/Ship Goods
+                      Pick/Ship Goods
                     </button>
                   </div>
 
@@ -672,7 +670,6 @@ const FinishgoodsPage: React.FC = () => {
                       ))
                     ) : (
                       <div className="p-8 text-center">
-                        <div className="text-4xl mb-2">[List]</div>
                         <p className="text-gray-500 text-sm">No recent transactions</p>
                       </div>
                     )}
@@ -688,7 +685,7 @@ const FinishgoodsPage: React.FC = () => {
       {showReceiveModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4">[Package] Receive from Packing</h3>
+            <h3 className="text-xl font-bold mb-4">Receive from Packing</h3>
             
             <div className="space-y-4">
               <div>
@@ -780,7 +777,7 @@ const FinishgoodsPage: React.FC = () => {
       {showShipmentModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4">[Ship] Prepare Shipment</h3>
+            <h3 className="text-xl font-bold mb-4">Prepare Shipment</h3>
             
             <div className="space-y-4">
               <div>

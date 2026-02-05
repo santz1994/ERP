@@ -321,7 +321,7 @@ const WarehousePage: React.FC = () => {
           <button 
             onClick={() => setShowInternalTransferModal(true)}
             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-            [Refresh] Internal Transfer
+            Internal Transfer
           </button>
         </div>
       </div>
@@ -403,7 +403,7 @@ const WarehousePage: React.FC = () => {
               : 'text-gray-600 hover:text-gray-800'
           }`}
         >
-          [Refresh] Stock Movements
+          Stock Movements
         </button>
         <button
           onClick={() => setActiveTab('barcode')}
@@ -413,7 +413,7 @@ const WarehousePage: React.FC = () => {
               : 'text-gray-600 hover:text-gray-800'
           }`}
         >
-          [Scan] Barcode Scanner
+          Barcode Scanner
         </button>
         <button
           onClick={() => setActiveTab('material-requests')}
@@ -466,7 +466,7 @@ const WarehousePage: React.FC = () => {
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
-                    [Import] Receive Goods
+                    Receive Goods
                   </button>
                   <button
                     onClick={() => setBarcodeOperation('pick')}
@@ -476,7 +476,7 @@ const WarehousePage: React.FC = () => {
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
-                    [Export] Pick Goods
+                    Pick Goods
                   </button>
                 </div>
 
@@ -812,7 +812,7 @@ const WarehousePage: React.FC = () => {
       {showInternalTransferModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-xl font-bold mb-4">[Refresh] Internal Transfer</h3>
+            <h3 className="text-xl font-bold mb-4">Internal Transfer</h3>
             <form onSubmit={handleInternalTransferSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Product *</label>

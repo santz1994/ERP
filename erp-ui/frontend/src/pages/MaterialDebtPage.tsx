@@ -251,7 +251,7 @@ const MaterialDebtPage: React.FC = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">SPK</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Material</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Department</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase">Qty Owed</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase">Qty Owned</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Approval Status</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Debt Status</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Due Date</th>

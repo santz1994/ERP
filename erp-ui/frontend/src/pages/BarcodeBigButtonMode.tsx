@@ -149,7 +149,7 @@ export default function BarcodeBigButtonMode() {
             disabled={!scannedBarcode || validateBarcodeMutation.isPending}
             icon=""
           >
-            {validateBarcodeMutation.isPending ? '⏳ VALIDATING...' : 'SCAN'}
+            {validateBarcodeMutation.isPending ? 'VALIDATING...' : 'SCAN'}
           </BigButton>
 
           {validateBarcodeMutation.isError && (
@@ -237,7 +237,7 @@ export default function BarcodeBigButtonMode() {
             disabled={receiveItemsMutation.isPending}
             icon=""
           >
-            {receiveItemsMutation.isPending ? '⏳ CONFIRMING...' : 'CONFIRM RECEIPT'}
+            {receiveItemsMutation.isPending ? '[LOADING] CONFIRMING...' : 'CONFIRM RECEIPT'}
           </BigButton>
 
           <BigButton

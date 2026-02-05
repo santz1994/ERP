@@ -325,7 +325,7 @@ export const ManufacturingOrderList: React.FC = () => {
                     ) : (
                       <div className="flex items-center gap-2 text-amber-600">
                         <Clock className="w-4 h-4" />
-                        <span className="text-sm">⏳ Waiting...</span>
+                        <span className="text-sm">Waiting...</span>
                       </div>
                     )}
                   </div>
@@ -340,7 +340,7 @@ export const ManufacturingOrderList: React.FC = () => {
                     ) : (
                       <div className="flex items-center gap-2 text-amber-600">
                         <Clock className="w-4 h-4" />
-                        <span className="text-sm">⏳ Waiting...</span>
+                        <span className="text-sm">[WAITING] Waiting...</span>
                       </div>
                     )}
                   </div>
