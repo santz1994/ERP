@@ -59,7 +59,7 @@ export const NotificationsSettings: React.FC = () => {
       // Add small delay
       await new Promise(resolve => setTimeout(resolve, 500))
       
-      addNotification('success', '✓ Notification settings saved successfully!')
+      addNotification('success', 'Notification settings saved successfully!')
     } catch (error) {
       addNotification('error', 'Failed to save settings: ' + (error instanceof Error ? error.message : 'Unknown error'))
     } finally {

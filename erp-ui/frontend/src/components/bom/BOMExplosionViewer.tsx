@@ -114,9 +114,9 @@ export const BOMExplosionViewer: React.FC<BOMExplosionViewerProps> = ({
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'RAW': return '🧵';
-      case 'WIP': return '⚙️';
-      case 'Finish Good': return '📦';
+      case 'RAW': return '';
+      case 'WIP': return '';
+      case 'Finish Good': return '';
       default: return '📄';
     }
   };

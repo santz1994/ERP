@@ -208,7 +208,7 @@ const AdminImportExportPage: React.FC = () => {
               </div>
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="font-medium text-blue-900 mb-2">📋 Template Available</h3>
+                <h3 className="font-medium text-blue-900 mb-2">Template Available</h3>
                 <p className="text-sm text-blue-700 mb-3">
                   Download the template file to see the required format for importing {importType}
                 </p>
@@ -265,7 +265,7 @@ const AdminImportExportPage: React.FC = () => {
               </div>
 
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <h3 className="font-medium text-yellow-900 mb-2">⚠️ Important Notes</h3>
+                <h3 className="font-medium text-yellow-900 mb-2">Important Notes</h3>
                 <ul className="text-sm text-yellow-700 space-y-1 list-disc list-inside">
                   <li>Column names must match the template exactly</li>
                   <li>Required fields cannot be empty</li>
@@ -314,7 +314,7 @@ const AdminImportExportPage: React.FC = () => {
               </div>
 
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <h3 className="font-medium text-green-900 mb-2">📊 Export Info</h3>
+                <h3 className="font-medium text-green-900 mb-2">Export Info</h3>
                 <p className="text-sm text-green-700">
                   Export will include all data for the selected type. Large exports may take a few seconds to generate.
                 </p>
@@ -368,7 +368,7 @@ const AdminImportExportPage: React.FC = () => {
           <h3 className={`font-bold text-lg mb-2 ${
             results.success ? 'text-green-900' : 'text-red-900'
           }`}>
-            {results.success ? '✓ Success' : '✗ Error'}
+            {results.success ? 'Success' : 'Error'}
           </h3>
           <p className={`text-sm ${results.success ? 'text-green-700' : 'text-red-700'}`}>
             {results.message}

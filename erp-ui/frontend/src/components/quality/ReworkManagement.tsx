@@ -94,10 +94,10 @@ export const ReworkManagement: React.FC = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['defects'] });
-      alert('✅ Rework WO created successfully!');
+      alert('Rework WO created successfully!');
     },
     onError: (error: any) => {
-      alert(`❌ Failed to create rework: ${error.response?.data?.detail || error.message}`);
+      alert(`Failed to create rework: ${error.response?.data?.detail || error.message}`);
     }
   });
 
@@ -112,7 +112,7 @@ export const ReworkManagement: React.FC = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['defects'] });
       setShowDetailModal(false);
-      alert('✅ Rework completed successfully!');
+      alert('Rework completed successfully!');
     }
   });
 
@@ -488,7 +488,7 @@ export const ReworkManagement: React.FC = () => {
                     className="w-full py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"
                     disabled={completeReworkMutation.isPending}
                   >
-                    ✅ Complete Rework
+                    Complete Rework
                   </button>
                 </div>
               )}

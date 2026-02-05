@@ -100,7 +100,7 @@ export const OperatorWorkflow: React.FC<OperatorWorkflowProps> = ({
         {/* Error Message */}
         {error && (
           <div className="bg-red-50 border-4 border-red-300 rounded-lg p-6 mb-8 w-full max-w-2xl">
-            <p className="text-lg text-red-700 font-bold">❌ Error:</p>
+            <p className="text-lg text-red-700 font-bold">Error:</p>
             <p className="text-lg text-red-700">{error}</p>
           </div>
         )}

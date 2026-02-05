@@ -112,10 +112,10 @@ const PPICPage: React.FC = () => {
         batch_number: '',
         so_line_id: ''
       });
-      alert('✅ Manufacturing Order created successfully!');
+      alert('Manufacturing Order created successfully!');
     },
     onError: (error: any) => {
-      alert('❌ Error: ' + (error.response?.data?.detail || error.message));
+      alert('Error: ' + (error.response?.data?.detail || error.message));
     }
   });
 
@@ -127,10 +127,10 @@ const PPICPage: React.FC = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['manufacturing-orders'] });
-      alert('✅ Manufacturing Order started!');
+      alert('Manufacturing Order started!');
     },
     onError: (error: any) => {
-      alert('❌ Error: ' + (error.response?.data?.detail || error.message));
+      alert('Error: ' + (error.response?.data?.detail || error.message));
     }
   });
 
@@ -142,10 +142,10 @@ const PPICPage: React.FC = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['manufacturing-orders'] });
-      alert('✅ Manufacturing Order completed!');
+      alert('Manufacturing Order completed!');
     },
     onError: (error: any) => {
-      alert('❌ Error: ' + (error.response?.data?.detail || error.message));
+      alert('Error: ' + (error.response?.data?.detail || error.message));
     }
   });
 
@@ -157,11 +157,11 @@ const PPICPage: React.FC = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['manufacturing-orders'] });
-      alert(`✅ Successfully generated ${data.work_orders_created} Work Orders!`);
+      alert(`Successfully generated ${data.work_orders_created} Work Orders!`);
     },
     onError: (error: any) => {
       const errorMsg = error.response?.data?.detail || error.message;
-      alert('❌ Error generating Work Orders: ' + errorMsg);
+      alert('Error generating Work Orders: ' + errorMsg);
     }
   });
 
@@ -213,17 +213,17 @@ const PPICPage: React.FC = () => {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">📋 PPIC - Production Planning</h1>
+          <h1 className="text-3xl font-bold text-gray-800">PPIC - Production Planning</h1>
           <p className="text-gray-600 mt-1">Manufacturing Order Management (Admin Only)</p>
           <p className="text-sm text-orange-600 mt-1">
-            ⚠️ Note: Planning done by each department based on capacity. PPIC only tracks & approves.
+            Note: Planning done by each department based on capacity. PPIC only tracks & approves.
           </p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
-          ➕ Create MO
+          Create MO
         </button>
       </div>
 
@@ -264,7 +264,7 @@ const PPICPage: React.FC = () => {
               : 'text-gray-600 hover:text-gray-800'
           }`}
         >
-          📦 Manufacturing Orders
+          Manufacturing Orders
         </button>
         <button
           onClick={() => setActiveTab('mo-monitoring')}
@@ -274,7 +274,7 @@ const PPICPage: React.FC = () => {
               : 'text-gray-600 hover:text-gray-800'
           }`}
         >
-          📊 MO Monitoring
+          MO Monitoring
         </button>
         <button
           onClick={() => setActiveTab('workorders')}
@@ -284,7 +284,7 @@ const PPICPage: React.FC = () => {
               : 'text-gray-600 hover:text-gray-800'
           }`}
         >
-          🏭 Work Orders
+          Work Orders
         </button>
         <button
           onClick={() => setActiveTab('bom-explorer')}
@@ -294,7 +294,7 @@ const PPICPage: React.FC = () => {
               : 'text-gray-600 hover:text-gray-800'
           }`}
         >
-          🌲 BOM Explorer
+          BOM Explorer
         </button>
         <button
           onClick={() => setActiveTab('bom')}
@@ -304,7 +304,7 @@ const PPICPage: React.FC = () => {
               : 'text-gray-600 hover:text-gray-800'
           }`}
         >
-          🔧 BOM Management
+          BOM Management
         </button>
         <button
           onClick={() => setActiveTab('planning')}
@@ -314,7 +314,7 @@ const PPICPage: React.FC = () => {
               : 'text-gray-600 hover:text-gray-800'
           }`}
         >
-          📊 Production Planning
+          Production Planning
         </button>
       </div>
 
@@ -401,13 +401,13 @@ const PPICPage: React.FC = () => {
                                   className="px-3 py-1 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
                                   title="Generate Work Orders from BOM"
                                 >
-                                  🏭 Generate WOs
+                                  Generate WOs
                                 </button>
                                 <button
                                   onClick={() => startMOMutation.mutate(mo.id)}
                                   className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
                                 >
-                                  ▶️ Start
+                                  Start
                                 </button>
                               </>
                             )}
@@ -416,7 +416,7 @@ const PPICPage: React.FC = () => {
                                 onClick={() => completeMOMutation.mutate(mo.id)}
                                 className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
                               >
-                                ✅ Complete
+                                Complete
                               </button>
                             )}
                             {mo.state === 'Done' && (
@@ -431,7 +431,7 @@ const PPICPage: React.FC = () => {
               </div>
             ) : (
               <div className="p-12 text-center">
-                <div className="text-6xl mb-4">📋</div>
+                <div className="text-6xl mb-4"></div>
                 <p className="text-gray-500 text-lg">No manufacturing orders found</p>
                 <p className="text-gray-400 text-sm mt-2">Create your first MO to start production</p>
               </div>
@@ -464,7 +464,7 @@ const PPICPage: React.FC = () => {
               <MOAggregateView moId={selectedMOForMonitoring} />
             ) : (
               <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-12 text-center">
-                <div className="text-6xl mb-4">📊</div>
+                <div className="text-6xl mb-4"></div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
                   MO Aggregate Monitoring
                 </h3>
@@ -574,7 +574,7 @@ const PPICPage: React.FC = () => {
               </div>
             ) : (
               <div className="p-12 text-center">
-                <div className="text-6xl mb-4">🏭</div>
+                <div className="text-6xl mb-4"></div>
                 <p className="text-gray-500 text-lg">No work orders found</p>
                 <p className="text-gray-400 text-sm mt-2">Generate WOs from a Manufacturing Order first</p>
               </div>
@@ -586,13 +586,13 @@ const PPICPage: React.FC = () => {
         {activeTab === 'bom' && (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-800">📦 BOM Management</h2>
+              <h2 className="text-2xl font-bold text-gray-800">BOM Management</h2>
               <div className="flex gap-2">
                 <button
                   onClick={() => setShowBOMForm(!showBOMForm)}
                   className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
                 >
-                  ➕ Add BOM Manually
+                  Add BOM Manually
                 </button>
                 <a 
                   href="/admin/import-export" 
@@ -612,7 +612,7 @@ const PPICPage: React.FC = () => {
             {/* BOM Manual Entry Form */}
             {showBOMForm && (
               <div className="bg-white rounded-lg shadow p-6 border-2 border-purple-300">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">➕ Add BOM Manually</h3>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Add BOM Manually</h3>
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Product Name *</label>
@@ -708,7 +708,7 @@ const PPICPage: React.FC = () => {
                     Cancel
                   </button>
                   <button className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
-                    ✅ Save BOM
+                    Save BOM
                   </button>
                 </div>
               </div>
@@ -737,7 +737,7 @@ const PPICPage: React.FC = () => {
               </div>
 
               <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                <div className="text-lg font-semibold text-purple-900 mb-2">✏️ Manual BOM Entry</div>
+                <div className="text-lg font-semibold text-purple-900 mb-2">Manual BOM Entry</div>
                 <ol className="text-sm text-purple-700 space-y-1">
                   <li>1. Click "Add BOM Manually" button</li>
                   <li>2. Fill in product and material details</li>
@@ -749,44 +749,44 @@ const PPICPage: React.FC = () => {
 
             {/* BOM Info Card */}
             <div className="bg-white rounded-lg shadow p-6 border-l-4 border-orange-500">
-              <h3 className="text-lg font-semibold text-gray-800 mb-3">📝 BOM Management Info</h3>
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">BOM Management Info</h3>
               <ul className="text-gray-700 space-y-2 text-sm">
-                <li>✅ <strong>Current Status:</strong> All BOM operations available via Import/Export & Manual Entry</li>
-                <li>✅ <strong>Supported Formats:</strong> CSV, Excel (.xlsx), and Manual Entry Form</li>
-                <li>✅ <strong>BOM Features:</strong> Create, Edit, Delete, Import, Export</li>
-                <li>✅ <strong>Integration:</strong> BOMs linked to Products automatically</li>
-                <li>✅ <strong>Usage:</strong> Used in all production modules (Cutting, Sewing, Finishing, etc.)</li>
-                <li>ℹ️ <strong>Tip:</strong> For large BOM management, use CSV/Excel import for batch operations</li>
+                <li><strong>Current Status:</strong> All BOM operations available via Import/Export & Manual Entry</li>
+                <li><strong>Supported Formats:</strong> CSV, Excel (.xlsx), and Manual Entry Form</li>
+                <li><strong>BOM Features:</strong> Create, Edit, Delete, Import, Export</li>
+                <li><strong>Integration:</strong> BOMs linked to Products automatically</li>
+                <li><strong>Usage:</strong> Used in all production modules (Cutting, Sewing, Finishing, etc.)</li>
+                <li><strong>Tip:</strong> For large BOM management, use CSV/Excel import for batch operations</li>
               </ul>
             </div>
 
             {/* Production Modules using BOM */}
             <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">🏭 Modules Using BOM</h3>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Modules Using BOM</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded">
-                  <span className="text-2xl">✂️</span>
+                  <span className="text-2xl"></span>
                   <div>
                     <div className="font-semibold text-gray-800">Cutting Module</div>
                     <div className="text-sm text-gray-600">Validates material vs BOM</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded">
-                  <span className="text-2xl">🧵</span>
+                  <span className="text-2xl"></span>
                   <div>
                     <div className="font-semibold text-gray-800">Sewing Module</div>
                     <div className="text-sm text-gray-600">Input validation vs BOM</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded">
-                  <span className="text-2xl">✨</span>
+                  <span className="text-2xl"></span>
                   <div>
                     <div className="font-semibold text-gray-800">Finishing Module</div>
                     <div className="text-sm text-gray-600">Material tracking</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-3 bg-gray-50 rounded">
-                  <span className="text-2xl">📦</span>
+                  <span className="text-2xl"></span>
                   <div>
                     <div className="font-semibold text-gray-800">Packing Module</div>
                     <div className="text-sm text-gray-600">Final BOM verification</div>
@@ -797,7 +797,7 @@ const PPICPage: React.FC = () => {
 
             {/* BOM List - View & Edit */}
             <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">📋 BOM List - View & Edit</h3>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">BOM List - View & Edit</h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -822,8 +822,8 @@ const PPICPage: React.FC = () => {
                         <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">Active</span>
                       </td>
                       <td className="text-center py-3 px-4 space-x-2">
-                        <button className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition text-xs">✏️ Edit</button>
-                        <button className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition text-xs">🗑️ Delete</button>
+                        <button className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition text-xs">Edit</button>
+                        <button className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition text-xs">Delete</button>
                       </td>
                     </tr>
                     <tr className="border-b border-gray-200 hover:bg-gray-50">
@@ -836,8 +836,8 @@ const PPICPage: React.FC = () => {
                         <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">Active</span>
                       </td>
                       <td className="text-center py-3 px-4 space-x-2">
-                        <button className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition text-xs">✏️ Edit</button>
-                        <button className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition text-xs">🗑️ Delete</button>
+                        <button className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition text-xs">Edit</button>
+                        <button className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition text-xs">Delete</button>
                       </td>
                     </tr>
                     <tr className="border-b border-gray-200 hover:bg-gray-50">
@@ -850,8 +850,8 @@ const PPICPage: React.FC = () => {
                         <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">Active</span>
                       </td>
                       <td className="text-center py-3 px-4 space-x-2">
-                        <button className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition text-xs">✏️ Edit</button>
-                        <button className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition text-xs">🗑️ Delete</button>
+                        <button className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition text-xs">Edit</button>
+                        <button className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition text-xs">Delete</button>
                       </td>
                     </tr>
                   </tbody>
@@ -877,7 +877,7 @@ const PPICPage: React.FC = () => {
         {/* Production Planning Tab */}
         {activeTab === 'planning' && (
           <div className="p-12 text-center">
-            <div className="text-6xl mb-4">📊</div>
+            <div className="text-6xl mb-4"></div>
             <p className="text-gray-500 text-lg">Production Planning</p>
             <p className="text-gray-400 text-sm mt-2">
               Planning is done by each department based on machine capacity
@@ -892,7 +892,7 @@ const PPICPage: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-white z-10">
-              <h3 className="text-xl font-bold">🌲 BOM Explosion - MO #{selectedMOForExplosion}</h3>
+              <h3 className="text-xl font-bold">BOM Explosion - MO #{selectedMOForExplosion}</h3>
               <button 
                 onClick={() => setSelectedMOForExplosion(null)}
                 className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
@@ -922,7 +922,7 @@ const PPICPage: React.FC = () => {
       {false && showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4">➕ Create Manufacturing Order (OLD)</h3>
+            <h3 className="text-xl font-bold mb-4">Create Manufacturing Order (OLD)</h3>
             
             <div className="space-y-4">
               <div>

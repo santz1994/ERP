@@ -94,7 +94,7 @@ export const WorkOrdersDashboard: React.FC<WorkOrdersDashboardProps> = ({
       queryClient.invalidateQueries({ queryKey: ['work-orders'] });
     },
     onError: (error: any) => {
-      alert('❌ ' + (error.response?.data?.detail || 'Failed to start Work Order'));
+      alert((error.response?.data?.detail || 'Failed to start Work Order'));
     }
   });
 
@@ -108,7 +108,7 @@ export const WorkOrdersDashboard: React.FC<WorkOrdersDashboardProps> = ({
       queryClient.invalidateQueries({ queryKey: ['work-orders'] });
     },
     onError: (error: any) => {
-      alert('❌ ' + (error.response?.data?.detail || 'Failed to pause Work Order'));
+      alert((error.response?.data?.detail || 'Failed to pause Work Order'));
     }
   });
 
@@ -122,7 +122,7 @@ export const WorkOrdersDashboard: React.FC<WorkOrdersDashboardProps> = ({
       queryClient.invalidateQueries({ queryKey: ['work-orders'] });
     },
     onError: (error: any) => {
-      alert('❌ ' + (error.response?.data?.detail || 'Failed to complete Work Order'));
+      alert((error.response?.data?.detail || 'Failed to complete Work Order'));
     }
   });
 
@@ -268,10 +268,10 @@ export const WorkOrdersDashboard: React.FC<WorkOrdersDashboardProps> = ({
                     </p>
                     
                     <div className="flex items-center gap-4 text-sm text-gray-500">
-                      <span>📦 {wo.product_code}</span>
-                      <span>🎯 Target: {wo.qty_target} pcs</span>
-                      <span>✅ Good: {wo.qty_good} pcs</span>
-                      {wo.qty_defect > 0 && <span className="text-red-600">❌ Defect: {wo.qty_defect} pcs</span>}
+                      <span>{wo.product_code}</span>
+                      <span>Target: {wo.qty_target} pcs</span>
+                      <span>Good: {wo.qty_good} pcs</span>
+                      {wo.qty_defect > 0 && <span className="text-red-600">Defect: {wo.qty_defect} pcs</span>}
                     </div>
                   </div>
 

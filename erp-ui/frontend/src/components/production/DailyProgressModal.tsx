@@ -143,7 +143,7 @@ export const DailyProgressModal: React.FC<DailyProgressModalProps> = ({
         <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">
-              📝 Input Daily Progress
+              Input Daily Progress
             </h2>
             <p className="text-sm text-gray-600 mt-1">
               {departmentName} - {format(date, 'EEEE, dd MMMM yyyy')}
@@ -261,7 +261,7 @@ export const DailyProgressModal: React.FC<DailyProgressModalProps> = ({
 
           {/* Summary */}
           <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-            <h4 className="font-semibold text-gray-900 mb-2">📊 Summary</h4>
+            <h4 className="font-semibold text-gray-900 mb-2">Summary</h4>
             <div className="grid grid-cols-3 gap-4 text-sm">
               <div>
                 <div className="text-gray-600">Total Production</div>

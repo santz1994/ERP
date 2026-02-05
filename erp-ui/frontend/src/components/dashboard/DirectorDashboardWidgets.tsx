@@ -107,7 +107,7 @@ export const DirectorDashboardWidgets: React.FC = () => {
           <div className="flex items-start gap-2">
             <AlertCircle className="text-rose-600 flex-shrink-0 mt-0.5" size={16} />
             <div className="text-xs text-rose-700">
-              <p className="font-semibold mb-1">⚠️ Urgent Action Required:</p>
+              <p className="font-semibold mb-1">Urgent Action Required:</p>
               <p>{materialDebtCost.urgent_purchases_needed} critical items need immediate purchase to prevent production delays</p>
             </div>
           </div>

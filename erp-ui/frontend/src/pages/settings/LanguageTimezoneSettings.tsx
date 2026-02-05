@@ -92,7 +92,7 @@ export const LanguageTimezoneSettings: React.FC = () => {
       // Add small delay to show button state
       await new Promise(resolve => setTimeout(resolve, 500))
       
-      addNotification('success', '✓ Language and timezone settings saved successfully!')
+      addNotification('success', 'Language and timezone settings saved successfully!')
       console.log('[LanguageTimezone] Settings saved:', { language: settings.language, timezone: settings.timezone })
     } catch (error) {
       addNotification('error', 'Failed to save settings: ' + (error instanceof Error ? error.message : 'Unknown error'))

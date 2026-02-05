@@ -215,7 +215,7 @@ export const ManagerDashboard: React.FC = () => {
           <COPQItem label="Downtime Cost" value={data.copq_this_month * 0.1} />
         </div>
         <p className="text-xs text-slate-500 mt-4 bg-rose-50 px-3 py-2 rounded border border-rose-100">
-          💡 <strong>Focus:</strong> Reduce rework cost through root cause analysis and preventive actions
+          <strong>Focus:</strong> Reduce rework cost through root cause analysis and preventive actions
         </p>
       </div>
     </div>

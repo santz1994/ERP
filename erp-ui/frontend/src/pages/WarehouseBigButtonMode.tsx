@@ -95,7 +95,7 @@ export default function WarehouseBigButtonMode() {
   // ==================== PHASE 1: SELECT TRANSFER ====================
   if (phase === 'select') {
     return (
-      <FullScreenLayout title="📦 WAREHOUSE - SELECT TRANSFER">
+      <FullScreenLayout title="WAREHOUSE - SELECT TRANSFER">
         {isLoading ? (
           <StatusCard status="processing" title="Loading Transfers...">
             <p className="text-xl">⏳ Please wait...</p>
@@ -199,7 +199,7 @@ export default function WarehouseBigButtonMode() {
   // ==================== PHASE 3: PACK ====================
   if (phase === 'pack' && selectedTransfer) {
     return (
-      <FullScreenLayout title="📦 PACK ITEMS" showBackButton onBack={() => setPhase('pick')}>
+      <FullScreenLayout title="PACK ITEMS" showBackButton onBack={() => setPhase('pick')}>
         <StatusCard
           status="processing"
           title="Packing Items"
@@ -260,7 +260,7 @@ export default function WarehouseBigButtonMode() {
   // ==================== PHASE 4: SHIP ====================
   if (phase === 'ship' && selectedTransfer) {
     return (
-      <FullScreenLayout title="🚚 READY TO SHIP" showBackButton onBack={() => setPhase('pack')}>
+      <FullScreenLayout title="READY TO SHIP" showBackButton onBack={() => setPhase('pack')}>
         <StatusCard
           status="ready"
           title="Ready for Shipment"

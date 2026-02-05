@@ -309,14 +309,14 @@ const WarehousePage: React.FC = () => {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">🏭 Warehouse Management</h1>
+          <h1 className="text-3xl font-bold text-gray-800">Warehouse Management</h1>
           <p className="text-gray-600 mt-1">Stock inventory, movements, and transfers</p>
         </div>
         <div className="flex gap-3">
           <button 
             onClick={() => setShowStockAdjustmentModal(true)}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-            📦 Stock Adjustment
+            Stock Adjustment
           </button>
           <button 
             onClick={() => setShowInternalTransferModal(true)}
@@ -363,7 +363,7 @@ const WarehousePage: React.FC = () => {
               : 'text-gray-600 hover:text-gray-800'
           }`}
         >
-          📋 Stock Management
+          Stock Management
         </button>
         <button
           onClick={() => setActiveTab('material-reservation')}
@@ -373,7 +373,7 @@ const WarehousePage: React.FC = () => {
               : 'text-gray-600 hover:text-gray-800'
           }`}
         >
-          🔒 Material Reservation
+          Material Reservation
         </button>
         <button
           onClick={() => setActiveTab('stock-deduction')}
@@ -393,7 +393,7 @@ const WarehousePage: React.FC = () => {
               : 'text-gray-600 hover:text-gray-800'
           }`}
         >
-          📦 Stock Inventory
+          Stock Inventory
         </button>
         <button
           onClick={() => setActiveTab('movements')}
@@ -423,7 +423,7 @@ const WarehousePage: React.FC = () => {
               : 'text-gray-600 hover:text-gray-800'
           }`}
         >
-          📋 Material Requests
+          Material Requests
         </button>
       </div>
 
@@ -539,7 +539,7 @@ const WarehousePage: React.FC = () => {
                 {/* Success Message */}
                 {transactionSuccess && (
                   <div className="mt-6 bg-green-50 border border-green-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-green-800 mb-2">✓ Transaction Successful!</h4>
+                    <h4 className="font-semibold text-green-800 mb-2">Transaction Successful!</h4>
                     <p className="text-sm text-green-700">{transactionSuccess.message}</p>
                     <p className="text-xs text-green-600 mt-2">
                       Lot: {transactionSuccess.lot_number || transactionSuccess.picked_lots?.[0]?.lot_number}
@@ -550,7 +550,7 @@ const WarehousePage: React.FC = () => {
 
               {/* Right: Recent Scans History */}
               <div>
-                <h3 className="text-xl font-bold mb-4">📋 Recent Scans</h3>
+                <h3 className="text-xl font-bold mb-4">Recent Scans</h3>
                 <div className="space-y-3">
                   {barcodeHistory?.map((item: any) => (
                     <div key={item.id} className="border rounded-lg p-4 hover:bg-gray-50 transition">
@@ -644,11 +644,11 @@ const WarehousePage: React.FC = () => {
                       <td className="px-6 py-4 text-center">
                         {item.qty_available < item.qty_on_hand * 0.3 ? (
                           <span className="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                            ⚠️ Low Stock
+                            Low Stock
                           </span>
                         ) : (
                           <span className="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                            ✅ Normal
+                            Normal
                           </span>
                         )}
                       </td>
@@ -713,7 +713,7 @@ const WarehousePage: React.FC = () => {
         {/* Inter-Dept Transfers Tab */}
         {activeTab === 'transfers' && (
           <div className="p-12 text-center">
-            <div className="text-6xl mb-4">🚚</div>
+            <div className="text-6xl mb-4"></div>
             <p className="text-gray-500 text-lg">Inter-Department Transfers</p>
             <p className="text-gray-400 text-sm mt-2">
               View transfers between departments with QT-09 handshake protocol
@@ -726,7 +726,7 @@ const WarehousePage: React.FC = () => {
       {/* Note about mock data */}
       <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
         <p className="text-sm text-yellow-800">
-          ℹ️ <strong>Note:</strong> Currently displaying mock data. Full warehouse integration coming soon with inventory endpoints.
+          <strong>Note:</strong> Currently displaying mock data. Full warehouse integration coming soon with inventory endpoints.
         </p>
       </div>
 
@@ -734,7 +734,7 @@ const WarehousePage: React.FC = () => {
       {showStockAdjustmentModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-xl font-bold mb-4">📦 Stock Adjustment</h3>
+            <h3 className="text-xl font-bold mb-4">Stock Adjustment</h3>
             <form onSubmit={handleStockAdjustmentSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Product *</label>

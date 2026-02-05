@@ -83,13 +83,13 @@ export const MOCreateForm: React.FC<MOCreateFormProps> = ({ onClose, onSuccess }
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['manufacturing-orders'] });
-      alert(`✅ Manufacturing Order ${data.id} created successfully!\n🔥 Mode: ${triggerMode}\n📦 Product: ${data.product_name}\n🎯 Qty: ${data.qty_planned} pcs`);
+      alert(`Manufacturing Order ${data.id} created successfully!\nMode: ${triggerMode}\nProduct: ${data.product_name}\nQty: ${data.qty_planned} pcs`);
       onSuccess?.();
       onClose();
     },
     onError: (error: any) => {
       const message = error.response?.data?.detail || error.message;
-      alert(`❌ Failed to create MO: ${message}`);
+      alert(`Failed to create MO: ${message}`);
     }
   });
 
@@ -98,17 +98,17 @@ export const MOCreateForm: React.FC<MOCreateFormProps> = ({ onClose, onSuccess }
     
     // Validation
     if (!formData.product_id || !formData.qty_planned) {
-      alert('⚠️ Product and Quantity are required!');
+      alert('Product and Quantity are required!');
       return;
     }
 
-    if (triggerMode === 'PARTIAL' && !formData.po_fabric_id) {
-      alert('⚠️ PARTIAL mode requires PO Fabric!');
+    if (triggerMode === 'PARTIAL' && !formData.po_kain_id) {
+      alert('PARTIAL mode requires PO Fabric!');
       return;
     }
 
-    if (triggerMode === 'RELEASED' && (!formData.po_fabric_id || !formData.po_label_id)) {
-      alert('⚠️ RELEASED mode requires both PO Fabric and PO Label!');
+    if (triggerMode === 'RELEASED' && (!formData.po_kain_id || !formData.po_label_id)) {
+      alert('RELEASED mode requires both PO Fabric and PO Label!');
       return;
     }
 
@@ -233,7 +233,7 @@ export const MOCreateForm: React.FC<MOCreateFormProps> = ({ onClose, onSuccess }
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                🧵 PO Fabric {triggerMode === 'PARTIAL' && <span className="text-red-500">*</span>}
+                PO Fabric {triggerMode === 'PARTIAL' && <span className="text-red-500">*</span>}
               </label>
               <select
                 value={formData.po_fabric_id}
@@ -250,14 +250,14 @@ export const MOCreateForm: React.FC<MOCreateFormProps> = ({ onClose, onSuccess }
               </select>
               {triggerMode === 'PARTIAL' && (
                 <p className="text-xs text-orange-600 mt-1">
-                  ⚠️ Required for PARTIAL mode
+                  Required for PARTIAL mode
                 </p>
               )}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                🏷️ PO Label {triggerMode === 'RELEASED' && <span className="text-red-500">*</span>}
+                PO Label {triggerMode === 'RELEASED' && <span className="text-red-500">*</span>}
               </label>
               <select
                 value={formData.po_label_id}
@@ -274,7 +274,7 @@ export const MOCreateForm: React.FC<MOCreateFormProps> = ({ onClose, onSuccess }
               </select>
               {triggerMode === 'RELEASED' && (
                 <p className="text-xs text-green-600 mt-1">
-                  ✅ Required for full RELEASED mode
+                  Required for full RELEASED mode
                 </p>
               )}
             </div>

@@ -505,7 +505,7 @@ const DebtDetailModal: React.FC<{
           {/* Approval Section */}
           {debt.approval_status === 'PENDING_APPROVAL' && canApproveDebt && (
             <div className="border-t pt-4 bg-yellow-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-gray-900 mb-3">⚠️ Pending Your Approval</h3>
+              <h3 className="font-semibold text-gray-900 mb-3">Pending Your Approval</h3>
               <textarea
                 value={approvalNotes}
                 onChange={(e) => setApprovalNotes(e.target.value)}
@@ -519,14 +519,14 @@ const DebtDetailModal: React.FC<{
                   disabled={loading}
                   className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 transition"
                 >
-                  ✓ Approve
+                  Approve
                 </button>
                 <button
                   onClick={() => handleApproval('REJECT')}
                   disabled={loading}
                   className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 transition"
                 >
-                  ✕ Reject
+                  Reject
                 </button>
               </div>
             </div>
@@ -535,7 +535,7 @@ const DebtDetailModal: React.FC<{
           {debt.approved_by && (
             <div className="border-t pt-4 bg-green-50 p-4 rounded-lg">
               <p className="text-sm text-gray-700">
-                <span className="font-semibold">✓ Approved by:</span> {debt.approved_by}
+                <span className="font-semibold">Approved by:</span> {debt.approved_by}
               </p>
               <p className="text-sm text-gray-600 mt-1">
                 {new Date(debt.approved_at || '').toLocaleDateString('id-ID')}

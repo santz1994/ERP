@@ -117,7 +117,7 @@ const FinishgoodsPage: React.FC = () => {
         notes: receiveForm.notes
       });
       
-      alert('✅ Successfully received from Packing!');
+      alert('Successfully received from Packing!');
       setShowReceiveModal(false);
       setReceiveForm({
         transfer_slip_number: '',
@@ -129,7 +129,7 @@ const FinishgoodsPage: React.FC = () => {
       refetchInventory();
       refetchReady();
     } catch (error: any) {
-      alert('❌ Error: ' + (error.response?.data?.detail || error.message));
+      alert('Error: ' + (error.response?.data?.detail || error.message));
     }
   };
 
@@ -143,7 +143,7 @@ const FinishgoodsPage: React.FC = () => {
         products: shipmentForm.products
       });
       
-      alert('✅ Shipment prepared successfully!');
+      alert('Shipment prepared successfully!');
       setShowShipmentModal(false);
       setShipmentForm({
         shipment_number: '',
@@ -153,7 +153,7 @@ const FinishgoodsPage: React.FC = () => {
       });
       refetchInventory();
     } catch (error: any) {
-      alert('❌ Error: ' + (error.response?.data?.detail || error.message));
+      alert('Error: ' + (error.response?.data?.detail || error.message));
     }
   };
 
@@ -165,7 +165,7 @@ const FinishgoodsPage: React.FC = () => {
 
   const handleTransactionSubmit = async () => {
     if (!scannedBarcode || !transactionQty) {
-      alert('⚠️ Please scan barcode and enter quantity');
+      alert('Please scan barcode and enter quantity');
       return;
     }
 
@@ -186,8 +186,8 @@ const FinishgoodsPage: React.FC = () => {
 
       setTransactionSuccess(
         barcodeOperation === 'receive'
-          ? `✅ Received ${transactionQty} units successfully!`
-          : `✅ Picked ${transactionQty} units successfully!`
+          ? `Received ${transactionQty} units successfully!`
+          : `Picked ${transactionQty} units successfully!`
       );
 
       // Reset form
@@ -199,7 +199,7 @@ const FinishgoodsPage: React.FC = () => {
       refetchInventory();
       fetchBarcodeHistory();
     } catch (error: any) {
-      alert('❌ Error: ' + (error.response?.data?.detail || error.message));
+      alert('Error: ' + (error.response?.data?.detail || error.message));
     } finally {
       setTransactionLoading(false);
     }
@@ -239,7 +239,7 @@ const FinishgoodsPage: React.FC = () => {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">🏭 Finish Goods Warehouse</h1>
+          <h1 className="text-3xl font-bold text-gray-800">Finish Goods Warehouse</h1>
           <p className="text-gray-600 mt-1">Final product storage before shipment</p>
         </div>
         <div className="flex gap-3">
@@ -295,7 +295,7 @@ const FinishgoodsPage: React.FC = () => {
               : 'text-gray-600 hover:text-gray-800'
           }`}
         >
-          📊 Inventory
+          Inventory
         </button>
         <button
           onClick={() => setActiveTab('ready')}
@@ -315,7 +315,7 @@ const FinishgoodsPage: React.FC = () => {
               : 'text-gray-600 hover:text-gray-800'
           }`}
         >
-          ⏱️ Stock Aging
+          Stock Aging
         </button>
         <button
           onClick={() => setActiveTab('barcode')}
@@ -504,7 +504,7 @@ const FinishgoodsPage: React.FC = () => {
               </div>
             ) : (
               <div className="p-12 text-center">
-                <div className="text-6xl mb-4">⏱️</div>
+                <div className="text-6xl mb-4"></div>
                 <p className="text-gray-500 text-lg">No aging data available</p>
               </div>
             )}
@@ -630,7 +630,7 @@ const FinishgoodsPage: React.FC = () => {
 
                 {/* Right: Recent History */}
                 <div>
-                  <h4 className="font-semibold text-gray-800 mb-3">📋 Recent Transactions</h4>
+                  <h4 className="font-semibold text-gray-800 mb-3">Recent Transactions</h4>
                   <div className="space-y-2 max-h-[600px] overflow-y-auto">
                     {barcodeHistory.length > 0 ? (
                       barcodeHistory.map((item: any, index: number) => (
@@ -824,7 +824,7 @@ const FinishgoodsPage: React.FC = () => {
               
               <div className="p-3 bg-blue-50 rounded-lg">
                 <p className="text-sm text-blue-800">
-                  ℹ️ Product selection will be added in next enhancement
+                  Product selection will be added in next enhancement
                 </p>
               </div>
             </div>

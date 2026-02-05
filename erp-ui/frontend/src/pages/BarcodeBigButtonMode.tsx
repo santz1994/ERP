@@ -93,7 +93,7 @@ export default function BarcodeBigButtonMode() {
   // ==================== PHASE 1: SCAN BARCODE ====================
   if (phase === 'scan') {
     return (
-      <FullScreenLayout title="📦 SCAN BARCODE">
+      <FullScreenLayout title="SCAN BARCODE">
         <StatusCard
           status="ready"
           title="Ready to Scan"
@@ -165,7 +165,7 @@ export default function BarcodeBigButtonMode() {
   // ==================== PHASE 2: VALIDATE ====================
   if (phase === 'validate' && barcodeData) {
     return (
-      <FullScreenLayout title="✅ VALIDATE ITEM" showBackButton onBack={() => setPhase('scan')}>
+      <FullScreenLayout title="VALIDATE ITEM" showBackButton onBack={() => setPhase('scan')}>
         <StatusCard
           status="ready"
           title="Item Details"
@@ -214,7 +214,7 @@ export default function BarcodeBigButtonMode() {
   if (phase === 'confirm' && barcodeData) {
     return (
       <FullScreenLayout
-        title="📊 CONFIRM RECEIPT"
+        title="CONFIRM RECEIPT"
         showBackButton
         onBack={() => setPhase('validate')}
       >

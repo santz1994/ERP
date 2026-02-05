@@ -167,7 +167,7 @@ export const BOMEditor: React.FC<BOMEditorProps> = ({ bomDetailId, onUpdate }) =
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            {bomDetail.has_variants ? '✓ Multi-Material' : 'Single Material'}
+            {bomDetail.has_variants ? 'Multi-Material' : 'Single Material'}
           </button>
         </div>
 

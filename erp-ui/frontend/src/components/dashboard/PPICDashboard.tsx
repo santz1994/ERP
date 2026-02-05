@@ -91,10 +91,10 @@ export const PPICDashboard: React.FC = () => {
   // Material status color coding (Spec Lines 55-75)
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'safe': return '🟢 text-emerald-600 bg-emerald-50 border-emerald-200'
-      case 'warning': return '🟡 text-amber-600 bg-amber-50 border-amber-200'
-      case 'critical': return '🔴 text-rose-600 bg-rose-50 border-rose-200'
-      case 'debt': return '⚫ text-slate-900 bg-slate-100 border-slate-300'
+      case 'safe': return 'text-emerald-600 bg-emerald-50 border-emerald-200'
+      case 'warning': return 'text-amber-600 bg-amber-50 border-amber-200'
+      case 'critical': return 'text-rose-600 bg-rose-50 border-rose-200'
+      case 'debt': return 'text-slate-900 bg-slate-100 border-slate-300'
       default: return 'text-slate-600 bg-slate-50 border-slate-200'
     }
   }
@@ -179,21 +179,21 @@ export const PPICDashboard: React.FC = () => {
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <StatusBadge label="Draft" count={data.mo_status_count.draft} color="slate" />
-          <StatusBadge label="PARTIAL 🟡" count={data.mo_status_count.partial} color="amber" pulse />
-          <StatusBadge label="RELEASED 🟢" count={data.mo_status_count.released} color="emerald" pulse />
+          <StatusBadge label="PARTIAL" count={data.mo_status_count.partial} color="amber" pulse />
+          <StatusBadge label="RELEASED" count={data.mo_status_count.released} color="emerald" pulse />
           <StatusBadge label="In Progress" count={data.mo_status_count.in_progress} color="blue" />
           <StatusBadge label="Completed" count={data.mo_status_count.completed} color="green" />
         </div>
         <p className="text-xs text-slate-500 mt-4 bg-blue-50 px-3 py-2 rounded border border-blue-100">
-          💡 <strong>PARTIAL:</strong> PO Kain ready - Cutting can start | <strong>RELEASED:</strong> PO Label ready - Full production unlocked
+          <strong>PARTIAL:</strong> PO Kain ready - Cutting can start | <strong>RELEASED:</strong> PO Label ready - Full production unlocked
         </p>
       </div>
 
-      {/* Material Stock Alert (Spec Lines 55-75) - Color-coded with ⚫ Black for Debt */}
+      {/* Material Stock Alert (Spec Lines 55-75) - Color-coded with Black for Debt */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
         <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
           <AlertTriangle className="w-5 h-5 text-amber-600" />
-          📦 Material Stock Critical (Top 5)
+          Material Stock Critical (Top 5)
         </h2>
         {data.material_critical.length === 0 ? (
           <div className="text-center py-8 text-slate-400">
@@ -218,7 +218,7 @@ export const PPICDashboard: React.FC = () => {
                 </div>
                 {material.status === 'debt' && (
                   <div className="mt-2 pt-2 border-t border-slate-200">
-                    <p className="text-xs font-medium">⚠️ Negative Stock - Material Debt Active</p>
+                    <p className="text-xs font-medium">Negative Stock - Material Debt Active</p>
                     <p className="text-xs text-slate-600">Production continues with debt tracking</p>
                   </div>
                 )}
@@ -233,7 +233,7 @@ export const PPICDashboard: React.FC = () => {
         <div className="bg-rose-50 border border-rose-200 rounded-xl p-6">
           <h2 className="text-lg font-bold text-rose-900 mb-4 flex items-center gap-2">
             <Clock className="w-5 h-5" />
-            ⏱️ SPK Terlambat
+            SPK Terlambat
           </h2>
           <div className="space-y-2">
             {data.spk_delayed.map((spk, idx) => (

@@ -143,7 +143,7 @@ export const WarehouseDashboardWidgets: React.FC = () => {
                 </div>
                 {isUrgent && (
                   <div className="text-[10px] font-semibold text-red-600">
-                    ⚠️ URGENT: Dispose or use immediately
+                    URGENT: Dispose or use immediately
                   </div>
                 )}
               </div>

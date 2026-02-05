@@ -42,7 +42,7 @@ export const AccessControlSettings: React.FC = () => {
       }
       localStorage.setItem('accessSettings', JSON.stringify(settingsToSave))
       await new Promise(resolve => setTimeout(resolve, 500))
-      addNotification('success', '✓ Access control settings saved successfully!')
+      addNotification('success', 'Access control settings saved successfully!')
     } catch (error) {
       addNotification('error', 'Failed to save settings')
     } finally {

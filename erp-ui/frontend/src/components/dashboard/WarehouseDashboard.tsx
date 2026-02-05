@@ -268,7 +268,7 @@ export const WarehouseDashboard: React.FC = () => {
       {data.expired_materials.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-rose-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-rose-800">🚨 Expired Materials</h3>
+            <h3 className="text-lg font-semibold text-rose-800">Expired Materials</h3>
             <span className="px-3 py-1 bg-rose-100 text-rose-700 text-sm font-medium rounded-full">
               {data.expired_materials_count} Items
             </span>
@@ -431,9 +431,9 @@ interface StatusBadgeProps {
 
 const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
   const statusConfig = {
-    warning: { label: '🟡 Low', bg: 'bg-amber-100', text: 'text-amber-700' },
-    critical: { label: '🔴 Critical', bg: 'bg-rose-100', text: 'text-rose-700' },
-    debt: { label: '⚫ DEBT', bg: 'bg-gray-900', text: 'text-white' }
+    warning: { label: 'Low', bg: 'bg-amber-100', text: 'text-amber-700' },
+    critical: { label: 'Critical', bg: 'bg-rose-100', text: 'text-rose-700' },
+    debt: { label: 'DEBT', bg: 'bg-gray-900', text: 'text-white' }
   }
 
   const config = statusConfig[status]

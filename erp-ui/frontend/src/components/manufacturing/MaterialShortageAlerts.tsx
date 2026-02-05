@@ -24,6 +24,11 @@ interface MaterialShortage {
   department: string;
   severity: 'CRITICAL' | 'HIGH' | 'MEDIUM';
   created_at: string;
+  // Material Debt fields (Spec Lines 55-75)
+  current_stock?: number;
+  minimum_stock?: number;
+  status?: 'safe' | 'warning' | 'critical' | 'debt';
+  status_percentage?: number;
 }
 
 interface MaterialShortageAlertsProps {
@@ -56,6 +61,43 @@ export const MaterialShortageAlerts: React.FC<MaterialShortageAlertsProps> = ({
     ? shortages 
     : shortages?.slice(0, maxItems);
 
+  /**
+   * Material Status Color Coding (Spec Lines 55-75)
+   * Green (>50%): Stock aman
+   * Yellow (15-50%): Warning - perlu reorder
+   * Red (<15%): Critical - urgent action
+   * Black (Negative): Material Debt - produksi berjalan dengan hutang
+   */
+  const getStockStatusColor = (status?: string) => {
+    switch (status) {
+      case 'safe': return 'bg-emerald-50 text-emerald-800 border-emerald-300';
+      case 'warning': return 'bg-amber-50 text-amber-800 border-amber-300';
+      case 'critical': return 'bg-rose-50 text-rose-800 border-rose-300';
+      case 'debt': return 'bg-slate-900 text-white border-slate-900'; // Black for DEBT
+      default: return 'bg-gray-100 text-gray-800 border-gray-300';
+    }
+  };
+
+  const getStockStatusIcon = (status?: string) => {
+    switch (status) {
+      case 'safe': return '';
+      case 'warning': return '';
+      case 'critical': return '';
+      case 'debt': return ''; // Material Debt indicator
+      default: return '';
+    }
+  };
+
+  const getStockStatusLabel = (status?: string, percentage?: number) => {
+    switch (status) {
+      case 'safe': return `Stock Aman (${percentage?.toFixed(1)}%)`;
+      case 'warning': return `Low (${percentage?.toFixed(1)}%) - Reorder`;
+      case 'critical': return 'Critical! - Urgent Purchase';
+      case 'debt': return 'DEBT! - Production at risk';
+      default: return 'Unknown';
+    }
+  };
+
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'CRITICAL': return 'bg-red-100 text-red-800 border-red-300';
@@ -67,10 +109,10 @@ export const MaterialShortageAlerts: React.FC<MaterialShortageAlertsProps> = ({
 
   const getSeverityIcon = (severity: string) => {
     switch (severity) {
-      case 'CRITICAL': return '🚨';
-      case 'HIGH': return '⚠️';
-      case 'MEDIUM': return '⚡';
-      default: return '📦';
+      case 'CRITICAL': return '';
+      case 'HIGH': return '';
+      case 'MEDIUM': return '';
+      default: return '';
     }
   };
 
@@ -141,66 +183,118 @@ export const MaterialShortageAlerts: React.FC<MaterialShortageAlertsProps> = ({
           </div>
         ) : (
           <div className="space-y-3">
-            {displayedShortages?.map((shortage) => (
-              <div
-                key={shortage.id}
-                className={`border-2 rounded-lg p-4 transition-all hover:shadow-md ${getSeverityColor(shortage.severity)}`}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-2xl">{getSeverityIcon(shortage.severity)}</span>
-                      <h4 className="font-bold text-gray-900">
-                        {shortage.material_code}
-                      </h4>
-                      <span className={`px-2 py-1 text-xs font-semibold rounded ${
-                        shortage.severity === 'CRITICAL' ? 'bg-red-200 text-red-800' :
-                        shortage.severity === 'HIGH' ? 'bg-orange-200 text-orange-800' :
-                        'bg-yellow-200 text-yellow-800'
-                      }`}>
-                        {shortage.severity}
-                      </span>
-                    </div>
-                    
-                    <p className="text-sm text-gray-700 mb-2">{shortage.material_name}</p>
-                    
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div>
-                        <span className="text-gray-600">Required:</span>
-                        <span className="font-semibold ml-1">
-                          {shortage.required_qty.toFixed(2)} {shortage.uom}
+            {displayedShortages?.map((shortage) => {
+              // Use stock status if available, otherwise fallback to severity
+              const displayStatus = shortage.status || shortage.severity.toLowerCase();
+              const cardColor = shortage.status 
+                ? getStockStatusColor(shortage.status)
+                : getSeverityColor(shortage.severity);
+              const statusIcon = shortage.status 
+                ? getStockStatusIcon(shortage.status)
+                : getSeverityIcon(shortage.severity);
+              const statusLabel = shortage.status
+                ? getStockStatusLabel(shortage.status, shortage.status_percentage)
+                : shortage.severity;
+
+              return (
+                <div
+                  key={shortage.id}
+                  className={`border-2 rounded-lg p-4 transition-all hover:shadow-md ${cardColor}`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-2xl">{statusIcon}</span>
+                        <h4 className="font-bold text-gray-900">
+                          {shortage.material_code}
+                        </h4>
+                        <span className={`px-2 py-1 text-xs font-semibold rounded ${
+                          shortage.status === 'debt' 
+                            ? 'bg-slate-900 text-white' 
+                            : shortage.status === 'critical'
+                            ? 'bg-red-200 text-red-800'
+                            : shortage.status === 'warning'
+                            ? 'bg-amber-200 text-amber-800'
+                            : shortage.status === 'safe'
+                            ? 'bg-emerald-200 text-emerald-800'
+                            : shortage.severity === 'CRITICAL' 
+                            ? 'bg-red-200 text-red-800' 
+                            : shortage.severity === 'HIGH' 
+                            ? 'bg-orange-200 text-orange-800' 
+                            : 'bg-yellow-200 text-yellow-800'
+                        }`}>
+                          {statusLabel}
                         </span>
                       </div>
-                      <div>
-                        <span className="text-gray-600">Available:</span>
-                        <span className="font-semibold ml-1">
-                          {shortage.available_qty.toFixed(2)} {shortage.uom}
-                        </span>
+                      
+                      <p className="text-sm text-gray-700 mb-2">{shortage.material_name}</p>
+                      
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        {/* Show stock status if available (Spec Lines 63-75) */}
+                        {shortage.current_stock !== undefined && shortage.minimum_stock !== undefined ? (
+                          <>
+                            <div>
+                              <span className="text-gray-600">Current Stock:</span>
+                              <span className={`font-semibold ml-1 ${
+                                shortage.current_stock < 0 ? 'text-slate-900' : 'text-gray-900'
+                              }`}>
+                                {shortage.current_stock.toFixed(2)} {shortage.uom}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Min Stock:</span>
+                              <span className="font-semibold ml-1">
+                                {shortage.minimum_stock.toFixed(2)} {shortage.uom}
+                              </span>
+                            </div>
+                            {shortage.status === 'debt' && (
+                              <div className="col-span-2 bg-slate-900 text-white p-2 rounded">
+                                <span className="font-bold">DEBT!</span>
+                                <span className="ml-2">Production running with material debt</span>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <div>
+                              <span className="text-gray-600">Required:</span>
+                              <span className="font-semibold ml-1">
+                                {shortage.required_qty.toFixed(2)} {shortage.uom}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Available:</span>
+                              <span className="font-semibold ml-1">
+                                {shortage.available_qty.toFixed(2)} {shortage.uom}
+                              </span>
+                            </div>
+                            <div className="col-span-2">
+                              <span className="text-gray-600">Shortage:</span>
+                              <span className="font-bold text-red-700 ml-1">
+                                -{shortage.shortage_qty.toFixed(2)} {shortage.uom}
+                              </span>
+                            </div>
+                          </>
+                        )}
                       </div>
-                      <div className="col-span-2">
-                        <span className="text-gray-600">Shortage:</span>
-                        <span className="font-bold text-red-700 ml-1">
-                          -{shortage.shortage_qty.toFixed(2)} {shortage.uom}
-                        </span>
+
+                      <div className="mt-2 pt-2 border-t border-gray-300 flex items-center gap-4 text-xs text-gray-600">
+                        <span>{shortage.department}</span>
+                        <span>{shortage.wo_code}</span>
                       </div>
                     </div>
 
-                    <div className="mt-2 pt-2 border-t border-gray-300 flex items-center gap-4 text-xs text-gray-600">
-                      <span>🏭 {shortage.department}</span>
-                      <span>📋 {shortage.wo_code}</span>
-                    </div>
+                    <button
+                      onClick={() => navigate(`/warehouse?material=${shortage.material_id}`)}
+                      className="flex-shrink-0 p-2 hover:bg-white/50 rounded-lg transition-colors"
+                      title="View in Warehouse"
+                    >
+                      <ExternalLink size={18} />
+                    </button>
                   </div>
-
-                  <button
-                    onClick={() => navigate(`/warehouse?material=${shortage.material_id}`)}
-                    className="flex-shrink-0 p-2 hover:bg-white/50 rounded-lg transition-colors"
-                    title="View in Warehouse"
-                  >
-                    <ExternalLink size={18} />
-                  </button>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             {/* Show More/Less Button */}
             {!showAll && shortages && shortages.length > maxItems && (

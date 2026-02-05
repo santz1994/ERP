@@ -46,7 +46,7 @@ export const ProductionStatistics: React.FC<ProductionStatisticsProps> = ({
   return (
     <div className={`bg-white rounded-lg shadow-sm border border-gray-200 p-6 ${className}`}>
       <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-        📊 Production Statistics & Performance
+        Production Statistics & Performance
       </h3>
 
       {/* KPI Cards */}
@@ -212,7 +212,7 @@ export const ProductionStatistics: React.FC<ProductionStatisticsProps> = ({
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-blue-600">Will Meet Target?</span>
                   <span className={`text-sm font-bold ${willMeetTarget ? 'text-green-600' : 'text-red-600'}`}>
-                    {willMeetTarget ? '✅ YES' : '❌ NO'}
+                    {willMeetTarget ? 'YES' : 'NO'}
                   </span>
                 </div>
               </div>
@@ -248,7 +248,7 @@ export const ProductionStatistics: React.FC<ProductionStatisticsProps> = ({
                   <li>• Improve yield rate - currently below 95% target</li>
                 )}
                 {isAheadOfSchedule && defectRate <= 5 && yieldRate >= 95 && (
-                  <li>• ✅ Excellent performance - maintain current pace!</li>
+                  <li>• Excellent performance - maintain current pace!</li>
                 )}
               </ul>
             </div>

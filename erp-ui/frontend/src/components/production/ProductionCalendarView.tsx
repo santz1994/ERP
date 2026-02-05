@@ -175,9 +175,9 @@ export const ProductionCalendarView: React.FC<ProductionCalendarViewProps> = ({
                   {progress && (
                     <div className="mt-auto text-[10px] leading-tight">
                       <div className="font-bold">{progress.production_qty}</div>
-                      <div className="text-[9px]">✓{progress.good_qty}</div>
+                      <div className="text-[9px]">{progress.good_qty}</div>
                       {progress.defect_qty > 0 && (
-                        <div className="text-[9px]">✗{progress.defect_qty}</div>
+                        <div className="text-[9px]">{progress.defect_qty}</div>
                       )}
                     </div>
                   )}

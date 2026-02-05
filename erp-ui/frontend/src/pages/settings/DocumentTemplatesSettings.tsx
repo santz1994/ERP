@@ -52,7 +52,7 @@ export const DocumentTemplatesSettings: React.FC = () => {
       }
       localStorage.setItem('documentTemplates', JSON.stringify(settingsToSave))
       await new Promise(resolve => setTimeout(resolve, 500))
-      addNotification('success', '✓ Document templates saved successfully!')
+      addNotification('success', 'Document templates saved successfully!')
     } catch (error) {
       addNotification('error', 'Failed to save templates')
     } finally {
@@ -189,7 +189,7 @@ export const DocumentTemplatesSettings: React.FC = () => {
                 <div>
                   <h3 className="font-bold text-lg text-gray-900">{template.name}</h3>
                   <p className="text-sm text-gray-600 mt-1">Type: <span className="font-medium">{template.type.replace('_', ' ')}</span></p>
-                  <p className="text-sm text-gray-600">QR Code: {template.includeQRCode ? '✓ Enabled' : '✗ Disabled'}</p>
+                  <p className="text-sm text-gray-600">QR Code: {template.includeQRCode ? 'Enabled' : 'Disabled'}</p>
                 </div>
                 <button 
                   onClick={() => handleEditStart(template)}

@@ -127,13 +127,13 @@ export const MOAggregateView: React.FC<MOAggregateViewProps> = ({ moId, onClose 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'COMPLETED':
-        return <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">✅ Completed</span>;
+        return <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">Completed</span>;
       case 'IN_PROGRESS':
         return <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">🔄 In Progress</span>;
       case 'PENDING':
         return <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">⏳ Pending</span>;
       case 'CANCELLED':
-        return <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">❌ Cancelled</span>;
+        return <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">Cancelled</span>;
       default:
         return <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">{status}</span>;
     }
@@ -178,7 +178,7 @@ export const MOAggregateView: React.FC<MOAggregateViewProps> = ({ moId, onClose 
         <div className="mb-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <Activity className="w-5 h-5 text-blue-600" />
-            📊 Progress by SPK
+            Progress by SPK
           </h3>
           <div className="space-y-3">
             {spks.map((spk) => (
@@ -226,8 +226,8 @@ export const MOAggregateView: React.FC<MOAggregateViewProps> = ({ moId, onClose 
                     ({spk.completion_pct.toFixed(1)}%)
                   </p>
                   <div className="flex items-center gap-3 mt-1 text-xs text-gray-600">
-                    <span className="text-green-600">✓ {spk.good_qty}</span>
-                    <span className="text-red-600">✗ {spk.defect_qty}</span>
+                    <span className="text-green-600">{spk.good_qty}</span>
+                    <span className="text-red-600">{spk.defect_qty}</span>
                     <span className="text-yellow-600">🔧 {spk.rework_qty}</span>
                   </div>
                 </div>
@@ -240,7 +240,7 @@ export const MOAggregateView: React.FC<MOAggregateViewProps> = ({ moId, onClose 
         <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 border-2 border-blue-300">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <Award className="w-5 h-5 text-purple-600" />
-            🎯 Aggregate Total
+            Aggregate Total
           </h3>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
@@ -283,7 +283,7 @@ export const MOAggregateView: React.FC<MOAggregateViewProps> = ({ moId, onClose 
                   aggregate.mo_coverage_pct >= 100 ? 'text-green-600' : 'text-yellow-600'
                 }`}>
                   {aggregate.mo_coverage_pct.toFixed(1)}%
-                  {aggregate.mo_coverage_pct >= 100 ? ' ✅ surplus' : ' ⏳ pending'}
+                  {aggregate.mo_coverage_pct >= 100 ? ' surplus' : ' pending'}
                 </p>
               </div>
               <Package className="w-12 h-12 text-blue-300" />

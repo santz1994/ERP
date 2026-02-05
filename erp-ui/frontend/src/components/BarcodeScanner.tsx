@@ -163,7 +163,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, operation, loca
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div className="flex-1">
-              <h4 className="font-semibold text-green-800 mb-2">✓ Barcode Valid</h4>
+              <h4 className="font-semibold text-green-800 mb-2">Barcode Valid</h4>
               <div className="text-sm space-y-1">
                 <p><strong>Product:</strong> {validationResult.product_name}</p>
                 <p><strong>Code:</strong> {validationResult.product_code}</p>

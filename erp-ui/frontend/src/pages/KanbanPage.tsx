@@ -308,7 +308,7 @@ export default function KanbanPage() {
 
                         {card.status === 'Received' && (
                           <div className="w-full text-center text-xs text-green-600 font-medium">
-                            ✓ Completed
+                            Completed
                           </div>
                         )}
                       </div>

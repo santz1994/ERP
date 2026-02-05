@@ -185,7 +185,7 @@ export const FlexibleTargetDisplay: React.FC<FlexibleTargetDisplayProps> = ({
             <div className="flex justify-between">
               <span className="text-gray-600">Max Allowed:</span>
               <span className={`font-semibold ${hasConstraintViolation ? 'text-red-600' : 'text-gray-800'}`}>
-                {maxConstraint} pcs {hasConstraintViolation && '⚠️'}
+                {maxConstraint} pcs {hasConstraintViolation && ''}
               </span>
             </div>
           )}
@@ -202,17 +202,17 @@ export const FlexibleTargetDisplay: React.FC<FlexibleTargetDisplayProps> = ({
           {percentage >= 100 && (
             <div className="flex items-center gap-2 text-blue-700">
               <TrendingUp className="w-4 h-4" />
-              <span className="text-xs font-semibold">✅ Exceeded target by {(percentage - 100).toFixed(1)}%!</span>
+              <span className="text-xs font-semibold">Exceeded target by {(percentage - 100).toFixed(1)}%!</span>
             </div>
           )}
           {percentage >= 95 && percentage < 100 && (
             <div className="flex items-center gap-2 text-green-700">
-              <span className="text-xs font-semibold">✅ Excellent progress!</span>
+              <span className="text-xs font-semibold">Excellent progress!</span>
             </div>
           )}
           {percentage >= 80 && percentage < 95 && (
             <div className="flex items-center gap-2 text-yellow-700">
-              <span className="text-xs font-semibold">⚠️ Need {spkTarget - actual} more to reach target</span>
+              <span className="text-xs font-semibold">Need {spkTarget - actual} more to reach target</span>
             </div>
           )}
           {percentage < 80 && (

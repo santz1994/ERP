@@ -183,7 +183,7 @@ export const ManufacturingOrderCreate: React.FC<ManufacturingOrderCreateProps> =
 
       addNotification({ 
         type: 'success', 
-        message: `✅ MO created successfully with status: ${initialStatus === 'PARTIAL' ? '🟡 PARTIAL' : '🟢 RELEASED'}` 
+        message: `MO created successfully with status: ${initialStatus === 'PARTIAL' ? 'PARTIAL' : 'RELEASED'}` 
       })
       onSuccess()
       onClose()
@@ -199,8 +199,8 @@ export const ManufacturingOrderCreate: React.FC<ManufacturingOrderCreateProps> =
 
   // Determine MO status based on linked POs
   const determineMOStatus = () => {
-    if (formData.po_label_id) return '🟢 RELEASED (Full Production)'
-    if (formData.po_kain_id) return '🟡 PARTIAL (Cutting/Embroidery Only)'
+    if (formData.po_label_id) return 'RELEASED (Full Production)'
+    if (formData.po_kain_id) return 'PARTIAL (Cutting/Embroidery Only)'
     return 'DRAFT'
   }
 
@@ -245,7 +245,7 @@ export const ManufacturingOrderCreate: React.FC<ManufacturingOrderCreateProps> =
               <option value="">Select Article...</option>
               {articles.map(article => (
                 <option key={article.id} value={article.id}>
-                  [{article.code}] {article.name} {article.bom_available ? '✅' : '⚠️ No BOM'}
+                  [{article.code}] {article.name} {article.bom_available ? 'BOM Available' : 'No BOM'}
                 </option>
               ))}
             </select>
@@ -346,15 +346,15 @@ export const ManufacturingOrderCreate: React.FC<ManufacturingOrderCreateProps> =
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
                       <span className="text-gray-600">Week:</span>
-                      <span className="ml-2 font-semibold">{selectedPoLabel.week || 'N/A'} 🔒</span>
+                      <span className="ml-2 font-semibold">{selectedPoLabel.week || 'N/A'}</span>
                     </div>
                     <div>
                       <span className="text-gray-600">Destination:</span>
-                      <span className="ml-2 font-semibold">{selectedPoLabel.destination || 'N/A'} 🔒</span>
+                      <span className="ml-2 font-semibold">{selectedPoLabel.destination || 'N/A'}</span>
                     </div>
                   </div>
                   <p className="text-xs text-gray-600">
-                    ℹ️ Week & Destination will be locked and cannot be edited after MO creation
+                    Week & Destination will be locked and cannot be edited after MO creation
                   </p>
                 </div>
               )}
@@ -376,14 +376,14 @@ export const ManufacturingOrderCreate: React.FC<ManufacturingOrderCreateProps> =
               <div className="mt-3 space-y-1 text-sm text-gray-700">
                 {formData.po_label_id ? (
                   <>
-                    <p className="font-semibold text-green-700">✅ All Departments RELEASED:</p>
+                    <p className="font-semibold text-green-700">All Departments RELEASED:</p>
                     <p>• Cutting, Embroidery, Sewing, Finishing, Packing can start</p>
                   </>
                 ) : (
                   <>
-                    <p className="font-semibold text-yellow-700">🟡 Partial Release:</p>
-                    <p>• ✅ Cutting & Embroidery can start (3-5 days earlier!)</p>
-                    <p>• 🔒 Sewing, Finishing, Packing: HOLD (waiting PO Label)</p>
+                    <p className="font-semibold text-yellow-700">Partial Release:</p>
+                    <p>• Cutting & Embroidery can start (3-5 days earlier!)</p>
+                    <p>• Sewing, Finishing, Packing: HOLD (waiting PO Label)</p>
                   </>
                 )}
               </div>

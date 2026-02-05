@@ -179,7 +179,7 @@ export const PurchaseOrderCreate: React.FC<PurchaseOrderCreateProps> = ({ onClos
       
       addNotification({ 
         type: 'success', 
-        message: `✅ BOM Explosion successful! ${explosion.materials.length} materials generated` 
+        message: `BOM Explosion successful! ${explosion.materials.length} materials generated` 
       })
     } catch (error: any) {
       console.error('BOM Explosion failed:', error)
@@ -281,7 +281,7 @@ export const PurchaseOrderCreate: React.FC<PurchaseOrderCreateProps> = ({ onClos
       
       addNotification({ 
         type: 'success', 
-        message: `✅ Purchase Order created successfully (${formData.mode} mode)` 
+        message: `Purchase Order created successfully (${formData.mode} mode)` 
       })
       onSuccess()
       onClose()
@@ -306,7 +306,7 @@ export const PurchaseOrderCreate: React.FC<PurchaseOrderCreateProps> = ({ onClos
           <div>
             <h2 className="text-2xl font-bold">Create Purchase Order</h2>
             <p className="text-sm text-blue-100 mt-1">
-              {mode === 'AUTO_BOM' ? '🤖 AUTO Mode: BOM Explosion' : '✍️ MANUAL Mode: Custom Entry'}
+              {mode === 'AUTO_BOM' ? 'AUTO Mode: BOM Explosion' : 'MANUAL Mode: Custom Entry'}
             </p>
           </div>
           <button onClick={onClose} className="text-white hover:bg-white/20 p-2 rounded-lg transition-colors">
@@ -346,9 +346,9 @@ export const PurchaseOrderCreate: React.FC<PurchaseOrderCreateProps> = ({ onClos
                   onChange={(e) => setFormData(prev => ({ ...prev, po_type: e.target.value as POType }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="KAIN">🧵 KAIN (Fabric)</option>
-                  <option value="LABEL">🏷️ LABEL</option>
-                  <option value="ACCESSORIES">📦 ACCESSORIES</option>
+                  <option value="KAIN">KAIN (Fabric)</option>
+                  <option value="LABEL">LABEL</option>
+                  <option value="ACCESSORIES">ACCESSORIES</option>
                 </select>
               </div>
 
@@ -390,7 +390,7 @@ export const PurchaseOrderCreate: React.FC<PurchaseOrderCreateProps> = ({ onClos
                       placeholder="e.g. W05, W06"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
-                    <p className="text-xs text-gray-500 mt-1">🔑 Inherited to MO (locked after approval)</p>
+                    <p className="text-xs text-gray-500 mt-1">Inherited to MO (locked after approval)</p>
                   </div>
 
                   <div>
@@ -404,7 +404,7 @@ export const PurchaseOrderCreate: React.FC<PurchaseOrderCreateProps> = ({ onClos
                       placeholder="e.g. IKEA DC, IKEA Store"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
-                    <p className="text-xs text-gray-500 mt-1">🔑 Inherited to MO (locked after approval)</p>
+                    <p className="text-xs text-gray-500 mt-1">Inherited to MO (locked after approval)</p>
                   </div>
                 </>
               )}
@@ -413,7 +413,7 @@ export const PurchaseOrderCreate: React.FC<PurchaseOrderCreateProps> = ({ onClos
 
           {/* Mode Selection (Lines 640-655) */}
           <div className="bg-white border-2 border-gray-200 rounded-lg p-4">
-            <h3 className="font-semibold text-gray-800 mb-3">🤖 Input Mode Selection</h3>
+            <h3 className="font-semibold text-gray-800 mb-3">Input Mode Selection</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <button
                 onClick={() => handleModeSwitch('AUTO_BOM')}
@@ -425,7 +425,7 @@ export const PurchaseOrderCreate: React.FC<PurchaseOrderCreateProps> = ({ onClos
               >
                 <div className="flex items-center gap-3 mb-2">
                   <Bot className={`w-6 h-6 ${mode === 'AUTO_BOM' ? 'text-purple-600' : 'text-gray-400'}`} />
-                  <span className="font-semibold text-gray-800">🤖 AUTO from ARTICLE</span>
+                  <span className="font-semibold text-gray-800">AUTO from ARTICLE</span>
                 </div>
                 <p className="text-sm text-gray-600">BOM Explosion: 30+ materials auto-generated</p>
                 {mode === 'AUTO_BOM' && (
@@ -445,7 +445,7 @@ export const PurchaseOrderCreate: React.FC<PurchaseOrderCreateProps> = ({ onClos
               >
                 <div className="flex items-center gap-3 mb-2">
                   <Edit3 className={`w-6 h-6 ${mode === 'MANUAL' ? 'text-blue-600' : 'text-gray-400'}`} />
-                  <span className="font-semibold text-gray-800">✍️ MANUAL INPUT</span>
+                  <span className="font-semibold text-gray-800">MANUAL INPUT</span>
                 </div>
                 <p className="text-sm text-gray-600">Add materials one by one (custom orders)</p>
                 {mode === 'MANUAL' && (
@@ -462,7 +462,7 @@ export const PurchaseOrderCreate: React.FC<PurchaseOrderCreateProps> = ({ onClos
             <div className="bg-purple-50 border-2 border-purple-200 rounded-lg p-5 space-y-4">
               <h3 className="font-semibold text-purple-800 flex items-center gap-2">
                 <Bot className="w-5 h-5" />
-                📦 Article Selection (BOM Explosion Trigger)
+                Article Selection (BOM Explosion Trigger)
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -486,7 +486,7 @@ export const PurchaseOrderCreate: React.FC<PurchaseOrderCreateProps> = ({ onClos
                     <option value="">Select Article...</option>
                     {articles.map(article => (
                       <option key={article.id} value={article.id}>
-                        {article.code} - {article.name} {article.bom_available ? '✅' : '⚠️ No BOM'}
+                        {article.code} - {article.name} {article.bom_available ? '[BOM Available]' : '[No BOM]'}
                       </option>
                     ))}
                   </select>
@@ -529,7 +529,7 @@ export const PurchaseOrderCreate: React.FC<PurchaseOrderCreateProps> = ({ onClos
                 <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                   <div className="flex items-center gap-2 text-green-700 font-semibold">
                     <CheckCircle className="w-5 h-5" />
-                    ✅ BOM Explosion berhasil! {bomExplosion.materials.length} materials generated
+                    BOM Explosion successful! {bomExplosion.materials.length} materials generated
                   </div>
                   <p className="text-sm text-gray-600 mt-1">
                     Silakan cek dan update harga/supplier per material.
@@ -543,7 +543,7 @@ export const PurchaseOrderCreate: React.FC<PurchaseOrderCreateProps> = ({ onClos
           <div className="space-y-4">
             <div className="flex justify-between items-center">
               <h3 className="font-semibold text-gray-800">
-                📋 Material List ({formData.materials.length} items)
+                Material List ({formData.materials.length} items)
               </h3>
               {mode === 'MANUAL' && (
                 <button
@@ -582,7 +582,7 @@ export const PurchaseOrderCreate: React.FC<PurchaseOrderCreateProps> = ({ onClos
                         <span className="font-semibold text-gray-700">MATERIAL #{index + 1}</span>
                         {material.is_auto_generated && (
                           <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-semibold rounded">
-                            🤖 Auto-generated from BOM
+                            Auto-generated from BOM
                           </span>
                         )}
                       </div>
@@ -625,7 +625,7 @@ export const PurchaseOrderCreate: React.FC<PurchaseOrderCreateProps> = ({ onClos
 
                       <div>
                         <label className="block text-xs font-medium text-gray-600 mb-1">
-                          🏭 Supplier <span className="text-red-500">*</span>
+                          Supplier <span className="text-red-500">*</span>
                         </label>
                         <select
                           value={material.supplier_id || ''}
@@ -696,13 +696,13 @@ export const PurchaseOrderCreate: React.FC<PurchaseOrderCreateProps> = ({ onClos
           {formData.materials.length > 0 && (
             <div className="bg-gradient-to-r from-emerald-50 to-green-50 border-2 border-emerald-200 rounded-lg p-4">
               <div className="flex justify-between items-center">
-                <span className="text-lg font-semibold text-gray-800">💰 TOTAL PO VALUE</span>
+                <span className="text-lg font-semibold text-gray-800">TOTAL PO VALUE</span>
                 <span className="text-2xl font-bold text-emerald-700">
                   Rp {totalPOValue.toLocaleString('id-ID')}
                 </span>
               </div>
               <p className="text-sm text-gray-600 mt-1">
-                {formData.materials.length} materials • {mode === 'AUTO_BOM' ? '🤖 AUTO Mode' : '✍️ MANUAL Mode'}
+                {formData.materials.length} materials • {mode === 'AUTO_BOM' ? 'AUTO Mode' : 'MANUAL Mode'}
               </p>
             </div>
           )}
@@ -713,7 +713,7 @@ export const PurchaseOrderCreate: React.FC<PurchaseOrderCreateProps> = ({ onClos
               <div className="flex gap-3">
                 <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                 <div className="text-sm text-gray-700">
-                  <p className="font-semibold text-amber-800 mb-1">⚠️ NOTE (AUTO Mode):</p>
+                  <p className="font-semibold text-amber-800 mb-1">NOTE (AUTO Mode):</p>
                   <ul className="space-y-1 list-disc list-inside">
                     <li>Material names & codes CANNOT be edited (from BOM)</li>
                     <li>You MUST fill: Supplier & Unit Price for each material</li>

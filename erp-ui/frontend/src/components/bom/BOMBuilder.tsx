@@ -115,7 +115,7 @@ export const BOMBuilder: React.FC<BOMBuilderProps> = ({ productId, onSave }) => 
       return await Promise.all(promises)
     },
     onSuccess: (results) => {
-      addNotification('success', `✅ Added ${results.length} BOM detail${results.length > 1 ? 's' : ''}`)
+      addNotification('success', `Added ${results.length} BOM detail${results.length > 1 ? 's' : ''}`)
       setBulkDetails([{
         id: Date.now(),
         component_id: 0,
@@ -209,7 +209,7 @@ export const BOMBuilder: React.FC<BOMBuilderProps> = ({ productId, onSave }) => 
                   : 'bg-gray-100 text-gray-700'
               }`}
             >
-              {bom.is_active ? '✓ Active' : '⊘ Inactive'}
+              {bom.is_active ? 'Active' : 'Inactive'}
             </button>
             <button
               className={`px-3 py-1 rounded text-sm font-medium ${
@@ -218,7 +218,7 @@ export const BOMBuilder: React.FC<BOMBuilderProps> = ({ productId, onSave }) => 
                   : 'bg-gray-100 text-gray-700'
               }`}
             >
-              {bom.supports_multi_material ? 'Multi-Material ✓' : 'Single Material'}
+              {bom.supports_multi_material ? 'Multi-Material' : 'Single Material'}
             </button>
           </div>
         </div>
@@ -228,7 +228,7 @@ export const BOMBuilder: React.FC<BOMBuilderProps> = ({ productId, onSave }) => 
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div className="p-4 bg-gray-50 border-b flex justify-between items-center">
           <h3 className="font-semibold text-gray-900">
-            📦 BOM Details ({bom.details.length})
+            BOM Details ({bom.details.length})
           </h3>
           <button
             onClick={() => setShowNewDetail(!showNewDetail)}
@@ -355,7 +355,7 @@ export const BOMBuilder: React.FC<BOMBuilderProps> = ({ productId, onSave }) => 
 
                   {detail.component_id > 0 && detail.qty_needed > 0 && (
                     <div className="mt-2 text-sm text-green-600 font-medium">
-                      ✓ Valid - {detail.qty_needed} units {detail.wastage_percent > 0 ? `+ ${detail.wastage_percent}% wastage` : ''}
+                      Valid - {detail.qty_needed} units {detail.wastage_percent > 0 ? `+ ${detail.wastage_percent}% wastage` : ''}
                     </div>
                   )}
                 </div>
@@ -409,7 +409,7 @@ export const BOMBuilder: React.FC<BOMBuilderProps> = ({ productId, onSave }) => 
                     </p>
                     {detail.has_variants && (
                       <span className="inline-block mt-2 px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded">
-                        Multi-Material ✓
+                        Multi-Material
                       </span>
                     )}
                   </div>

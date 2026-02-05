@@ -325,7 +325,7 @@ export default function PurchasingPage() {
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-2xl font-bold text-gray-900">Create Purchase Order</h3>
-                <span className="text-sm text-gray-500">📦 Multi-Item Support</span>
+                <span className="text-sm text-gray-500">Multi-Item Support</span>
               </div>
               
               <form onSubmit={(e) => {
@@ -338,7 +338,7 @@ export default function PurchasingPage() {
                 );
 
                 if (validItems.length === 0) {
-                  alert('⚠️ Please add at least one product item!');
+                  alert('Please add at least one product item!');
                   return;
                 }
 
@@ -362,11 +362,11 @@ export default function PurchasingPage() {
                   queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
                   setShowCreateModal(false);
                   setPOItems([{ id: Date.now(), product_id: '', quantity: '', unit_price: '' }]);
-                  alert(`✅ Purchase Order created!\n📦 ${validItems.length} items added`);
+                  alert(`Purchase Order created!\n${validItems.length} items added`);
                 })
                 .catch(err => {
                   console.error('Failed to create PO:', err);
-                  alert('❌ Failed: ' + (err.response?.data?.detail || err.message));
+                  alert('Failed: ' + (err.response?.data?.detail || err.message));
                 });
               }}>
                 <div className="space-y-4">
@@ -415,7 +415,7 @@ export default function PurchasingPage() {
                   <div className="border-t pt-4 mt-4">
                     <div className="flex items-center justify-between mb-4">
                       <h4 className="text-lg font-semibold text-gray-900">
-                        📦 Product Items ({poItems.length})
+                        Product Items ({poItems.length})
                       </h4>
                       <button
                         type="button"

@@ -125,8 +125,8 @@ const DEPT_ICONS: Record<Department, React.ElementType> = {
 const MOStatusBadge: React.FC<{ status: MOStatus }> = ({ status }) => {
   const statusConfig = {
     DRAFT: { color: 'bg-gray-100 text-gray-700 border-gray-300', icon: AlertCircle, label: 'DRAFT' },
-    PARTIAL: { color: 'bg-yellow-100 text-yellow-700 border-yellow-300', icon: Clock, label: '🟡 PARTIAL' },
-    RELEASED: { color: 'bg-green-100 text-green-700 border-green-300', icon: CheckCircle, label: '🟢 RELEASED' },
+    PARTIAL: { color: 'bg-yellow-100 text-yellow-700 border-yellow-300', icon: Clock, label: 'PARTIAL' },
+    RELEASED: { color: 'bg-green-100 text-green-700 border-green-300', icon: CheckCircle, label: 'RELEASED' },
     IN_PROGRESS: { color: 'bg-blue-100 text-blue-700 border-blue-300', icon: TrendingUp, label: 'IN PROGRESS' },
     COMPLETED: { color: 'bg-emerald-100 text-emerald-700 border-emerald-300', icon: CheckCircle, label: 'COMPLETED' },
     CANCELLED: { color: 'bg-red-100 text-red-700 border-red-300', icon: XCircle, label: 'CANCELLED' }
@@ -158,13 +158,13 @@ const DepartmentStatusBadge: React.FC<{ dept: DepartmentStatus; moStatus: MOStat
     statusText = '🔒 HOLD'
   } else if (dept.status === 'RELEASED' || dept.can_start) {
     colorClass = 'bg-green-100 text-green-700 border-green-300'
-    statusText = '✅ RELEASED'
+    statusText = 'RELEASED'
   } else if (dept.status === 'IN_PROGRESS') {
     colorClass = 'bg-blue-100 text-blue-700 border-blue-300'
-    statusText = `✅ ${dept.actual_qty}/${dept.target_qty} pcs`
+    statusText = `${dept.actual_qty}/${dept.target_qty} pcs`
   } else if (dept.status === 'COMPLETED') {
     colorClass = 'bg-emerald-100 text-emerald-700 border-emerald-300'
-    statusText = '✅ COMPLETED'
+    statusText = 'COMPLETED'
   } else {
     colorClass = 'bg-gray-100 text-gray-600 border-gray-300'
     statusText = '🔒 HOLD'
@@ -206,7 +206,7 @@ export const ManufacturingOrderList: React.FC = () => {
   const handleCreateSuccess = () => {
     refetch()
     setShowCreateModal(false)
-    addNotification({ type: 'success', message: '✅ Manufacturing Order created successfully' })
+    addNotification({ type: 'success', message: 'Manufacturing Order created successfully' })
   }
 
   return (
@@ -256,8 +256,8 @@ export const ManufacturingOrderList: React.FC = () => {
             >
               <option value="ALL">All Status</option>
               <option value="DRAFT">DRAFT</option>
-              <option value="PARTIAL">🟡 PARTIAL (PO Kain Only)</option>
-              <option value="RELEASED">🟢 RELEASED (Full Production)</option>
+              <option value="PARTIAL">PARTIAL (PO Kain Only)</option>
+              <option value="RELEASED">RELEASED (Full Production)</option>
               <option value="IN_PROGRESS">IN PROGRESS</option>
               <option value="COMPLETED">COMPLETED</option>
               <option value="CANCELLED">CANCELLED</option>
@@ -297,7 +297,7 @@ export const ManufacturingOrderList: React.FC = () => {
                       [{mo.article_code}] {mo.article_name}
                     </p>
                     <p className="text-sm text-gray-500 mt-1">
-                      🎯 Target: <span className="font-semibold">{mo.target_qty} pcs</span>
+                      Target: <span className="font-semibold">{mo.target_qty} pcs</span>
                     </p>
                   </div>
                   <button
@@ -353,7 +353,7 @@ export const ManufacturingOrderList: React.FC = () => {
                     <span className="text-sm text-gray-600">Week:</span>
                     {mo.week ? (
                       <span className="font-semibold text-gray-800">
-                        {mo.week} {mo.week_locked && '🔒'}
+                        {mo.week} {mo.week_locked && ''}
                       </span>
                     ) : (
                       <span className="text-gray-400 text-sm">[Waiting PO Label]</span>
@@ -365,7 +365,7 @@ export const ManufacturingOrderList: React.FC = () => {
                     <span className="text-sm text-gray-600">Destination:</span>
                     {mo.destination ? (
                       <span className="font-semibold text-gray-800">
-                        {mo.destination} {mo.destination_locked && '🔒'}
+                        {mo.destination} {mo.destination_locked && ''}
                       </span>
                     ) : (
                       <span className="text-gray-400 text-sm">[Waiting PO Label]</span>
@@ -396,7 +396,7 @@ export const ManufacturingOrderList: React.FC = () => {
                       <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5" />
                       <div className="text-sm text-gray-700">
                         <p className="font-semibold text-yellow-800 mb-1">
-                          🟡 PARTIAL Status (PO Kain Ready)
+                          PARTIAL Status (PO Kain Ready)
                         </p>
                         <p>
                           • Cutting & Embroidery can start <span className="font-semibold">(3-5 days earlier!)</span><br />
@@ -414,11 +414,11 @@ export const ManufacturingOrderList: React.FC = () => {
                       <CheckCircle className="w-4 h-4 text-green-600 mt-0.5" />
                       <div className="text-sm text-gray-700">
                         <p className="font-semibold text-green-800 mb-1">
-                          🟢 RELEASED Status (Full Production Ready)
+                          RELEASED Status (Full Production Ready)
                         </p>
                         <p>
                           • All departments unlocked instantly<br />
-                          • Week & Destination auto-inherited from PO Label 🔒<br />
+                          • Week & Destination auto-inherited from PO Label <br />
                           • Upgraded at: {new Date(mo.upgraded_at).toLocaleString('id-ID')}
                         </p>
                       </div>

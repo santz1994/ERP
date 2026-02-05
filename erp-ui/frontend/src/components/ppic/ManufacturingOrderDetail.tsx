@@ -97,7 +97,7 @@ export const ManufacturingOrderDetail: React.FC<ManufacturingOrderDetailProps> =
       
       addNotification({ 
         type: 'success', 
-        message: '✅ MO upgraded to RELEASED successfully! All departments unlocked.' 
+        message: 'MO upgraded to RELEASED successfully! All departments unlocked.' 
       })
       onUpdate()
       onClose()
@@ -139,12 +139,12 @@ export const ManufacturingOrderDetail: React.FC<ManufacturingOrderDetailProps> =
               <div className="flex items-center gap-2">
                 {mo.status === 'PARTIAL' && (
                   <span className="px-4 py-2 bg-yellow-100 text-yellow-700 border border-yellow-300 rounded-full text-lg font-semibold">
-                    🟡 PARTIAL
+                    PARTIAL
                   </span>
                 )}
                 {mo.status === 'RELEASED' && (
                   <span className="px-4 py-2 bg-green-100 text-green-700 border border-green-300 rounded-full text-lg font-semibold">
-                    🟢 RELEASED
+                    RELEASED
                   </span>
                 )}
                 {mo.status === 'IN_PROGRESS' && (
@@ -290,24 +290,24 @@ export const ManufacturingOrderDetail: React.FC<ManufacturingOrderDetailProps> =
                       {isHold ? (
                         <span className="px-3 py-1 bg-gray-200 text-gray-600 rounded-full text-sm font-semibold flex items-center gap-1">
                           <Lock className="w-3 h-3" />
-                          🔒 HOLD
+                          HOLD
                         </span>
                       ) : dept.status === 'COMPLETED' ? (
                         <span className="px-3 py-1 bg-emerald-200 text-emerald-700 rounded-full text-sm font-semibold flex items-center gap-1">
                           <CheckCircle className="w-3 h-3" />
-                          ✅ COMPLETED
+                          COMPLETED
                         </span>
                       ) : dept.status === 'IN_PROGRESS' ? (
                         <div>
                           <span className="px-3 py-1 bg-blue-200 text-blue-700 rounded-full text-sm font-semibold">
-                            ✅ {dept.actual_qty}/{dept.target_qty} pcs
+                            {dept.actual_qty}/{dept.target_qty} pcs
                           </span>
                           <p className="text-xs text-gray-600 mt-1">In Progress</p>
                         </div>
                       ) : dept.can_start ? (
                         <span className="px-3 py-1 bg-green-200 text-green-700 rounded-full text-sm font-semibold flex items-center gap-1">
                           <CheckCircle className="w-3 h-3" />
-                          ✅ RELEASED
+                          RELEASED
                         </span>
                       ) : (
                         <span className="px-3 py-1 bg-gray-200 text-gray-600 rounded-full text-sm font-semibold">
@@ -327,11 +327,11 @@ export const ManufacturingOrderDetail: React.FC<ManufacturingOrderDetailProps> =
               <div className="flex items-start gap-3">
                 <AlertCircle className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-semibold text-yellow-800 mb-2">🟡 PARTIAL Status Explanation (Lines 871-906)</h4>
+                  <h4 className="font-semibold text-yellow-800 mb-2">PARTIAL Status Explanation (Lines 871-906)</h4>
                   <ul className="space-y-1 text-sm text-gray-700">
-                    <li>• PO Kain is ready ✅</li>
+                    <li>• PO Kain is ready</li>
                     <li>• Cutting & Embroidery can start production <span className="font-semibold text-yellow-800">(3-5 days earlier!)</span></li>
-                    <li>• Sewing, Finishing, Packing are HOLD 🔒 (waiting for PO Label)</li>
+                    <li>• Sewing, Finishing, Packing are HOLD (waiting for PO Label)</li>
                     <li>• Week & Destination will auto-inherit when PO Label is created</li>
                     <li>• MO will auto-upgrade to RELEASED when PO Label is linked</li>
                   </ul>
@@ -345,10 +345,10 @@ export const ManufacturingOrderDetail: React.FC<ManufacturingOrderDetailProps> =
               <div className="flex items-start gap-3">
                 <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-semibold text-green-800 mb-2">🟢 RELEASED Status (Full Production Ready)</h4>
+                  <h4 className="font-semibold text-green-800 mb-2">RELEASED Status (Full Production Ready)</h4>
                   <ul className="space-y-1 text-sm text-gray-700">
-                    <li>• All departments are now RELEASED ✅</li>
-                    <li>• Week & Destination auto-inherited from PO Label 🔒</li>
+                    <li>• All departments are now RELEASED</li>
+                    <li>• Week & Destination auto-inherited from PO Label</li>
                     <li>• Full production can proceed without delays</li>
                     <li>• Upgraded at: <span className="font-semibold">{new Date(mo.upgraded_at).toLocaleString('id-ID')}</span></li>
                   </ul>

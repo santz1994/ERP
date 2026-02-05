@@ -62,7 +62,7 @@ export const CompanySettings: React.FC = () => {
       }
       localStorage.setItem('companySettings', JSON.stringify(settingsToSave))
       await new Promise(resolve => setTimeout(resolve, 500))
-      addNotification('success', '✓ Company settings saved successfully!')
+      addNotification('success', 'Company settings saved successfully!')
     } catch (error) {
       addNotification('error', 'Failed to save settings')
     } finally {

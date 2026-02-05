@@ -124,7 +124,7 @@ export default function EmbroideryBigButtonMode() {
   // ==================== PHASE 1: SELECT WORK ORDER ====================
   if (phase === 'select') {
     return (
-      <FullScreenLayout title="🧵 EMBROIDERY - SELECT WORK ORDER">
+      <FullScreenLayout title="EMBROIDERY - SELECT WORK ORDER">
         {isLoading ? (
           <StatusCard status="processing" title="Loading Work Orders...">
             <p className="text-xl">⏳ Please wait...</p>
@@ -162,7 +162,7 @@ export default function EmbroideryBigButtonMode() {
   // ==================== PHASE 2: READY TO START ====================
   if (phase === 'ready' && selectedWO) {
     return (
-      <FullScreenLayout title="🧵 READY TO START?" showBackButton onBack={() => setPhase('select')}>
+      <FullScreenLayout title="READY TO START?" showBackButton onBack={() => setPhase('select')}>
         <StatusCard
           status="ready"
           title="Work Order Ready"
@@ -200,7 +200,7 @@ export default function EmbroideryBigButtonMode() {
   // ==================== PHASE 3: WORKING ====================
   if (phase === 'working' && selectedWO) {
     return (
-      <FullScreenLayout title="🧵 EMBROIDERY IN PROGRESS">
+      <FullScreenLayout title="EMBROIDERY IN PROGRESS">
         <StatusCard
           status="processing"
           title="Currently Processing"
@@ -237,7 +237,7 @@ export default function EmbroideryBigButtonMode() {
   if (phase === 'complete' && selectedWO) {
     return (
       <FullScreenLayout
-        title="📊 RECORD OUTPUT"
+        title="RECORD OUTPUT"
         showBackButton
         onBack={() => setPhase('working')}
       >
@@ -297,7 +297,7 @@ export default function EmbroideryBigButtonMode() {
   // ==================== PHASE 5: COMPLETE ====================
   if (phase === 'complete' && selectedWO) {
     return (
-      <FullScreenLayout title="✅ WORK ORDER COMPLETED">
+      <FullScreenLayout title="WORK ORDER COMPLETED">
         <StatusCard
           status="completed"
           title="Complete!"

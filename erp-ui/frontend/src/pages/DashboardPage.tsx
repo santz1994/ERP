@@ -129,12 +129,12 @@ export const DashboardPage: React.FC = () => {
       return <ManagerDashboard />
     }
     
-    // Director Dashboard (Spec Lines 111-115) ✅ COMPLETE
+    // Director Dashboard (Spec Lines 111-115) COMPLETE
     if (user.role === UserRole.SUPERADMIN || user.role === UserRole.DEVELOPER) {
       return <DirectorDashboard />
     }
     
-    // Warehouse Dashboard (Spec Lines 117-122) ✅ COMPLETE
+    // Warehouse Dashboard (Spec Lines 117-122) COMPLETE
     if (user.role === UserRole.WAREHOUSE_ADMIN || user.role === UserRole.WAREHOUSE_OP) {
       return <WarehouseDashboard />
     }

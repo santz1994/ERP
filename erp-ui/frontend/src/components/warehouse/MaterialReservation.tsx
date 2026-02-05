@@ -76,10 +76,10 @@ export const MaterialReservation: React.FC<MaterialReservationProps> = ({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['material-reservations'] });
       queryClient.invalidateQueries({ queryKey: ['stock-quants'] });
-      alert('✅ Materials reserved successfully!');
+      alert('Materials reserved successfully!');
     },
     onError: (error: any) => {
-      alert('❌ ' + (error.response?.data?.detail || 'Failed to reserve materials'));
+      alert('Error: ' + (error.response?.data?.detail || 'Failed to reserve materials'));
     }
   });
 
@@ -92,10 +92,10 @@ export const MaterialReservation: React.FC<MaterialReservationProps> = ({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['material-reservations'] });
       queryClient.invalidateQueries({ queryKey: ['stock-quants'] });
-      alert('✅ Reservation released!');
+      alert('Reservation released!');
     },
     onError: (error: any) => {
-      alert('❌ ' + (error.response?.data?.detail || 'Failed to release reservation'));
+      alert('Error: ' + (error.response?.data?.detail || 'Failed to release reservation'));
     }
   });
 
@@ -302,7 +302,7 @@ export const MaterialReservation: React.FC<MaterialReservationProps> = ({
                         </button>
                       )}
                       {reservation.state === 'CONSUMED' && (
-                        <span className="text-xs text-green-600 font-medium">✓ Used</span>
+                        <span className="text-xs text-green-600 font-medium">Used</span>
                       )}
                       {reservation.state === 'RELEASED' && (
                         <span className="text-xs text-gray-500">Released</span>

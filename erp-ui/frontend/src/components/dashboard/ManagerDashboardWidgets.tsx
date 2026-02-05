@@ -53,7 +53,7 @@ export const ManagerDashboardWidgets: React.FC = () => {
             <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">Overall OEE</span>
           </div>
           <div className="text-xs text-slate-600">
-            Target: 80% | Status: <span className="text-green-600 font-semibold">Above Target ✅</span>
+            Target: 80% | Status: <span className="text-green-600 font-semibold">Above Target</span>
           </div>
         </div>
         

@@ -87,7 +87,7 @@ export const DatabaseManagementSettings: React.FC = () => {
       }
       localStorage.setItem('databaseSettings', JSON.stringify(settingsToSave))
       await new Promise(resolve => setTimeout(resolve, 500))
-      addNotification('success', '✓ Database settings saved successfully!')
+      addNotification('success', 'Database settings saved successfully!')
     } catch (error) {
       addNotification('error', 'Failed to save settings')
     } finally {
@@ -113,7 +113,7 @@ export const DatabaseManagementSettings: React.FC = () => {
       setLoading(true)
       await new Promise(resolve => setTimeout(resolve, 2000))
       setDatabases([...databases, newDb])
-      addNotification('success', `✓ Database duplicated as "${cloneName}"`)
+      addNotification('success', `Database duplicated as "${cloneName}"`)
     } catch (error) {
       addNotification('error', 'Failed to duplicate database')
     } finally {
@@ -134,7 +134,7 @@ export const DatabaseManagementSettings: React.FC = () => {
       setLoading(true)
       await new Promise(resolve => setTimeout(resolve, 1000))
       setDatabases(databases.filter(d => d.id !== dbId))
-      addNotification('success', `✓ Database "${db.name}" deleted`)
+      addNotification('success', `Database "${db.name}" deleted`)
     } catch (error) {
       addNotification('error', 'Failed to delete database')
     } finally {
@@ -162,7 +162,7 @@ export const DatabaseManagementSettings: React.FC = () => {
       setDatabases([...databases, newDb])
       setNewDatabaseName('')
       setShowCreateModal(false)
-      addNotification('success', `✓ Database "${newDatabaseName}" created`)
+      addNotification('success', `Database "${newDatabaseName}" created`)
     } catch (error) {
       addNotification('error', 'Failed to create database')
     } finally {
@@ -176,7 +176,7 @@ export const DatabaseManagementSettings: React.FC = () => {
       await new Promise(resolve => setTimeout(resolve, 1000))
       setSelectedDatabase(dbId)
       const dbName = databases.find(d => d.id === dbId)?.name
-      addNotification('success', `✓ Switched to database "${dbName}"`)
+      addNotification('success', `Switched to database "${dbName}"`)
     } catch (error) {
       addNotification('error', 'Failed to switch database')
     } finally {
@@ -398,7 +398,7 @@ export const DatabaseManagementSettings: React.FC = () => {
         {/* Information Box */}
         <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
           <p className="text-sm text-yellow-800">
-            <strong>⚠️ Warning:</strong> Database operations are developer-only features. Changes may require system restart. Always backup before making critical changes.
+            <strong>Warning:</strong> Database operations are developer-only features. Changes may require system restart. Always backup before making critical changes.
           </p>
         </div>
       </div>

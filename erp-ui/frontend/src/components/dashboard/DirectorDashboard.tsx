@@ -264,7 +264,7 @@ export const DirectorDashboard: React.FC = () => {
             <div className="flex justify-between items-center p-2 bg-amber-50 rounded">
               <span className="text-gray-700">Target: &lt;3% of Revenue</span>
               <span className="font-semibold text-amber-600">
-                {((data.copq_total / data.total_revenue_this_month) * 100) < 3 ? '✅ On Target' : '⚠️ Above Target'}
+                {((data.copq_total / data.total_revenue_this_month) * 100) < 3 ? 'On Target' : 'Above Target'}
               </span>
             </div>
           </div>
@@ -361,7 +361,7 @@ const ComparisonMetric: React.FC<ComparisonMetricProps> = ({ label, value, forma
       <div className={`mt-2 inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${
         isGood ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
       }`}>
-        {isGood ? '✅' : '⚠️'} {isGood ? 'Good' : 'Needs Attention'}
+        {isGood ? '[Good]' : '[Needs Attention]'} {isGood ? 'Good' : 'Needs Attention'}
       </div>
     </div>
   )
@@ -444,7 +444,7 @@ const MetricCircle: React.FC<MetricCircleProps> = ({ label, value, target, color
       </div>
       <p className="font-medium text-gray-800">{label}</p>
       <p className="text-sm text-gray-500 mt-1">
-        Target: {target}% • {value >= target ? '✅' : '⚠️'}
+        Target: {target}% • {value >= target ? 'On Target' : 'Below Target'}
       </p>
     </div>
   )
