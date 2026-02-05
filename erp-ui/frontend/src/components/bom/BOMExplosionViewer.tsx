@@ -117,7 +117,7 @@ export const BOMExplosionViewer: React.FC<BOMExplosionViewerProps> = ({
       case 'RAW': return '';
       case 'WIP': return '';
       case 'Finish Good': return '';
-      default: return '📄';
+      default: return '[File]';
     }
   };
 

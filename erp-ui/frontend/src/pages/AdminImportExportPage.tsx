@@ -346,7 +346,7 @@ const AdminImportExportPage: React.FC = () => {
             </div>
 
             <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="font-medium text-blue-900 mb-2">💡 Export Tips</h3>
+              <h3 className="font-medium text-blue-900 mb-2">[Tip] Export Tips</h3>
               <ul className="text-sm text-blue-700 space-y-1 list-disc list-inside">
                 <li>CSV format is best for re-importing</li>
                 <li>Excel format preserves formatting</li>

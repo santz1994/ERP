@@ -9,14 +9,14 @@
  * **REVOLUTIONARY CONCEPT**: MO dapat dimulai dengan 2 stages untuk reduce lead time
  * 
  * STAGE 1: MO PARTIAL (PO Kain only)
- * - Status: 🟡 PARTIAL
+ * - Status:  PARTIAL
  * - Trigger: PO Kain created + approved
  * - Release: Cutting & Embroidery departments ONLY
  * - Hold: Sewing, Finishing, Packing (waiting PO Label)
  * - Benefit: 3-5 days earlier production start (fabric is longest lead time)
  * 
  * STAGE 2: MO RELEASED (PO Label ready)
- * - Status: 🟢 RELEASED
+ * - Status:  RELEASED
  * - Trigger: PO Label created → Auto-upgrade PARTIAL MO
  * - Auto-inherit: Week & Destination from PO Label (locked after approval)
  * - Release: ALL departments unlocked instantly
@@ -155,7 +155,7 @@ const DepartmentStatusBadge: React.FC<{ dept: DepartmentStatus; moStatus: MOStat
   if (moStatus === 'PARTIAL' && !['CUTTING', 'EMBROIDERY'].includes(dept.department)) {
     // Sewing, Finishing, Packing HOLD in PARTIAL mode (Lines 895-897)
     colorClass = 'bg-gray-100 text-gray-600 border-gray-300'
-    statusText = '🔒 HOLD'
+    statusText = '[Hold] HOLD'
   } else if (dept.status === 'RELEASED' || dept.can_start) {
     colorClass = 'bg-green-100 text-green-700 border-green-300'
     statusText = 'RELEASED'
@@ -167,7 +167,7 @@ const DepartmentStatusBadge: React.FC<{ dept: DepartmentStatus; moStatus: MOStat
     statusText = 'COMPLETED'
   } else {
     colorClass = 'bg-gray-100 text-gray-600 border-gray-300'
-    statusText = '🔒 HOLD'
+    statusText = '[Hold] HOLD'
   }
 
   return (
@@ -219,7 +219,7 @@ export const ManufacturingOrderList: React.FC = () => {
             Manufacturing Order Management
           </h1>
           <p className="text-gray-600 mt-1">
-            🚀 Dual-Stage System: PARTIAL (Kain only) → RELEASED (Full production)
+            [Launch] Dual-Stage System: PARTIAL (Kain only) → RELEASED (Full production)
           </p>
         </div>
         <button
@@ -376,7 +376,7 @@ export const ManufacturingOrderList: React.FC = () => {
                 {/* Department Release Status (Lines 890-900) */}
                 <div>
                   <h4 className="text-sm font-semibold text-gray-700 mb-2">
-                    🚦 Department Release Status:
+                    [Status] Department Release Status:
                   </h4>
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                     {mo.department_statuses.map((dept) => (

@@ -129,7 +129,7 @@ export const MOAggregateView: React.FC<MOAggregateViewProps> = ({ moId, onClose 
       case 'COMPLETED':
         return <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">Completed</span>;
       case 'IN_PROGRESS':
-        return <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">🔄 In Progress</span>;
+        return <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">[Refresh] In Progress</span>;
       case 'PENDING':
         return <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">⏳ Pending</span>;
       case 'CANCELLED':
@@ -228,7 +228,7 @@ export const MOAggregateView: React.FC<MOAggregateViewProps> = ({ moId, onClose 
                   <div className="flex items-center gap-3 mt-1 text-xs text-gray-600">
                     <span className="text-green-600">{spk.good_qty}</span>
                     <span className="text-red-600">{spk.defect_qty}</span>
-                    <span className="text-yellow-600">🔧 {spk.rework_qty}</span>
+                    <span className="text-yellow-600">[Fix] {spk.rework_qty}</span>
                   </div>
                 </div>
               </div>
@@ -296,7 +296,7 @@ export const MOAggregateView: React.FC<MOAggregateViewProps> = ({ moId, onClose 
           {aggregate.all_spks_completed ? (
             <div className="inline-flex items-center gap-3 px-6 py-3 bg-green-100 text-green-800 rounded-full border-2 border-green-500">
               <CheckCircle className="w-6 h-6" />
-              <span className="font-semibold text-lg">All SPKs Completed - Ready for Next Stage! 🎉</span>
+              <span className="font-semibold text-lg">All SPKs Completed - Ready for Next Stage! [Success]</span>
             </div>
           ) : (
             <div className="inline-flex items-center gap-3 px-6 py-3 bg-yellow-100 text-yellow-800 rounded-full border-2 border-yellow-500">

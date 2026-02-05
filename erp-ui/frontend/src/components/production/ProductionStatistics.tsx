@@ -199,7 +199,7 @@ export const ProductionStatistics: React.FC<ProductionStatisticsProps> = ({
 
           {daysRemaining !== undefined && daysRemaining > 0 && (
             <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-              <div className="text-xs text-blue-700 font-medium mb-2">📈 Forecast</div>
+              <div className="text-xs text-blue-700 font-medium mb-2">[Trend] Forecast</div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-blue-600">Days Remaining</span>
@@ -236,7 +236,7 @@ export const ProductionStatistics: React.FC<ProductionStatisticsProps> = ({
 
             {/* Recommendations */}
             <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-              <div className="text-xs text-yellow-700 font-medium mb-2">💡 Recommendations</div>
+              <div className="text-xs text-yellow-700 font-medium mb-2">[Tip] Recommendations</div>
               <ul className="text-[10px] text-yellow-800 space-y-1">
                 {!isAheadOfSchedule && (
                   <li>• Increase daily output by {Math.abs(Math.round(dailyAverage - targetDailyAverage))} pcs</li>

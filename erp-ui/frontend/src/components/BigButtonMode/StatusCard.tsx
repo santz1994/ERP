@@ -13,31 +13,31 @@ const statusConfig = {
     bg: 'bg-green-50',
     border: 'border-green-300',
     textColor: 'text-green-700',
-    icon: '🟢',
+    icon: '',
   },
   processing: {
     bg: 'bg-blue-50',
     border: 'border-blue-300',
     textColor: 'text-blue-700',
-    icon: '🔵',
+    icon: '',
   },
   warning: {
     bg: 'bg-yellow-50',
     border: 'border-yellow-300',
     textColor: 'text-yellow-700',
-    icon: '🟡',
+    icon: '',
   },
   error: {
     bg: 'bg-red-50',
     border: 'border-red-300',
     textColor: 'text-red-700',
-    icon: '🔴',
+    icon: '',
   },
   completed: {
     bg: 'bg-green-50',
     border: 'border-green-300',
     textColor: 'text-green-700',
-    icon: '✅',
+    icon: '',
   },
 };
 

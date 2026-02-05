@@ -138,7 +138,7 @@ export const MOCreateForm: React.FC<MOCreateFormProps> = ({ onClose, onSuccess }
 
         {/* Dual Trigger Mode Selector */}
         <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-purple-50 border-b">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">🔑 Production Trigger Mode</h3>
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">[Key] Production Trigger Mode</h3>
           <div className="grid grid-cols-2 gap-4">
             <button
               type="button"
@@ -156,8 +156,8 @@ export const MOCreateForm: React.FC<MOCreateFormProps> = ({ onClose, onSuccess }
                 <div className="text-left">
                   <h4 className="font-bold text-gray-900">PARTIAL</h4>
                   <p className="text-xs text-gray-600 mt-1">
-                    🧵 PO Fabric only<br/>
-                    ✂️ Cutting & Embroidery can start<br/>
+                    [Thread] PO Fabric only<br/>
+                     Cutting & Embroidery can start<br/>
                     ⏳ Other depts wait for PO Label
                   </p>
                 </div>
@@ -180,9 +180,9 @@ export const MOCreateForm: React.FC<MOCreateFormProps> = ({ onClose, onSuccess }
                 <div className="text-left">
                   <h4 className="font-bold text-gray-900">RELEASED</h4>
                   <p className="text-xs text-gray-600 mt-1">
-                    🧵 PO Fabric + 🏷️ PO Label ready<br/>
-                    🚀 All departments can start<br/>
-                    ✅ Full production release
+                    [Thread] PO Fabric + [Label] PO Label ready<br/>
+                    [Launch] All departments can start<br/>
+                    [OK] Full production release
                   </p>
                 </div>
               </div>

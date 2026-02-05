@@ -152,7 +152,7 @@ export const BOMExplorer: React.FC<BOMExplorerProps> = ({
         case 'RAW': return '';
         case 'WIP': return '';
         case 'Finish Good': return '';
-        default: return '📄';
+        default: return '[File]';
       }
     };
 

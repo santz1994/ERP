@@ -310,7 +310,7 @@ export const ReworkManagement: React.FC = () => {
                   <tr>
                     <td colSpan={10} className="px-4 py-8 text-center text-gray-500">
                       <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-2" />
-                      <p>No defects found. Quality is excellent! 🎉</p>
+                      <p>No defects found. Quality is excellent! [Success]</p>
                     </td>
                   </tr>
                 ) : (
@@ -389,7 +389,7 @@ export const ReworkManagement: React.FC = () => {
         <div className="mt-8 bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <DollarSign className="w-5 h-5 text-purple-600" />
-            💰 COPQ Analysis (Cost of Poor Quality)
+            [Cost] COPQ Analysis (Cost of Poor Quality)
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-yellow-50 rounded-lg p-6 border border-yellow-200">

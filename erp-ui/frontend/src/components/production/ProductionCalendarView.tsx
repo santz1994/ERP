@@ -70,14 +70,14 @@ export const ProductionCalendarView: React.FC<ProductionCalendarViewProps> = ({
     const completionRate = targetQty > 0 ? (progress.production_qty / (targetQty / 30)) * 100 : 0; // Assume 30 working days
     
     if (completionRate >= 100) {
-      return 'bg-green-100 text-green-800 border-green-300'; // ✅ Completed
+      return 'bg-green-100 text-green-800 border-green-300'; // [OK] Completed
     } else if (completionRate >= 50) {
-      return 'bg-yellow-100 text-yellow-800 border-yellow-300'; // 🟡 Partial
+      return 'bg-yellow-100 text-yellow-800 border-yellow-300'; //  Partial
     } else if (completionRate > 0) {
       return 'bg-orange-100 text-orange-800 border-orange-300'; // 🟠 Low output
     }
     
-    return 'bg-red-100 text-red-800 border-red-300'; // 🔴 Problem
+    return 'bg-red-100 text-red-800 border-red-300'; //  Problem
   };
 
   const totalProduced = dailyProgress.reduce((sum, p) => sum + p.production_qty, 0);
@@ -95,7 +95,7 @@ export const ProductionCalendarView: React.FC<ProductionCalendarViewProps> = ({
         <div className="flex items-center gap-3">
           <Calendar className="w-6 h-6 text-blue-600" />
           <h3 className="text-xl font-bold text-gray-900">
-            📅 Daily Progress - {format(currentMonth, 'MMMM yyyy')}
+            [Calendar] Daily Progress - {format(currentMonth, 'MMMM yyyy')}
           </h3>
         </div>
         <div className="flex items-center gap-2">

@@ -119,7 +119,7 @@ export default function BarcodeBigButtonMode() {
         />
 
         <div className="bg-blue-50 border-4 border-blue-300 rounded-lg p-8 mb-8 text-center">
-          <p className="text-3xl font-bold text-blue-700 mb-4">📱 SCANNER READY</p>
+          <p className="text-3xl font-bold text-blue-700 mb-4">[Mobile] SCANNER READY</p>
           <p className="text-2xl text-blue-600">
             Point scanner at barcode or type barcode:
           </p>
@@ -147,7 +147,7 @@ export default function BarcodeBigButtonMode() {
             size="xlarge"
             onClick={() => handleScan(scannedBarcode)}
             disabled={!scannedBarcode || validateBarcodeMutation.isPending}
-            icon="✓"
+            icon=""
           >
             {validateBarcodeMutation.isPending ? '⏳ VALIDATING...' : 'SCAN'}
           </BigButton>
@@ -178,7 +178,7 @@ export default function BarcodeBigButtonMode() {
 
         <div className="bg-yellow-50 border-4 border-yellow-300 rounded-lg p-6 mb-8">
           <p className="text-2xl font-bold text-yellow-700 text-center">
-            ❓ Is this correct?
+             Is this correct?
           </p>
         </div>
 
@@ -189,7 +189,7 @@ export default function BarcodeBigButtonMode() {
             variant="success"
             size="xlarge"
             onClick={() => setPhase('confirm')}
-            icon="✓"
+            icon=""
           >
             CONFIRM & RECEIVE
           </BigButton>
@@ -201,7 +201,7 @@ export default function BarcodeBigButtonMode() {
               setBarcodeData(null);
               setPhase('scan');
             }}
-            icon="✗"
+            icon=""
           >
             NOT CORRECT - SCAN AGAIN
           </BigButton>
@@ -235,7 +235,7 @@ export default function BarcodeBigButtonMode() {
             size="xlarge"
             onClick={() => receiveItemsMutation.mutate()}
             disabled={receiveItemsMutation.isPending}
-            icon="✓"
+            icon=""
           >
             {receiveItemsMutation.isPending ? '⏳ CONFIRMING...' : 'CONFIRM RECEIPT'}
           </BigButton>
@@ -255,7 +255,7 @@ export default function BarcodeBigButtonMode() {
   // ==================== PHASE 4: SUCCESS ====================
   if (phase === 'success' && barcodeData) {
     return (
-      <FullScreenLayout title="🎉 SUCCESS!">
+      <FullScreenLayout title="[Success] SUCCESS!">
         <StatusCard
           status="completed"
           title="Item Received"
@@ -280,7 +280,7 @@ export default function BarcodeBigButtonMode() {
               setScannedCount(0);
               setPhase('scan');
             }}
-            icon="🔄"
+            icon="[Refresh]"
           >
             SCAN NEXT ITEM
           </BigButton>

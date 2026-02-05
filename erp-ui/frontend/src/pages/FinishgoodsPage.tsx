@@ -247,13 +247,13 @@ const FinishgoodsPage: React.FC = () => {
             onClick={() => setShowReceiveModal(true)}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
-            📦 Receive from Packing
+            [Package] Receive from Packing
           </button>
           <button
             onClick={() => setShowShipmentModal(true)}
             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
           >
-            🚢 Prepare Shipment
+            [Ship] Prepare Shipment
           </button>
         </div>
       </div>
@@ -305,7 +305,7 @@ const FinishgoodsPage: React.FC = () => {
               : 'text-gray-600 hover:text-gray-800'
           }`}
         >
-          🚢 Ready to Ship
+          [Ship] Ready to Ship
         </button>
         <button
           onClick={() => setActiveTab('aging')}
@@ -325,7 +325,7 @@ const FinishgoodsPage: React.FC = () => {
               : 'text-gray-600 hover:text-gray-800'
           }`}
         >
-          📷 Barcode Scanner
+          [Scan] Barcode Scanner
         </button>
       </div>
 
@@ -379,11 +379,11 @@ const FinishgoodsPage: React.FC = () => {
                         <td className="px-6 py-4 text-center">
                           {item.low_stock ? (
                             <span className="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                              ⚠️ Low Stock
+                              [Warning] Low Stock
                             </span>
                           ) : (
                             <span className="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                              ✅ Normal
+                              [OK] Normal
                             </span>
                           )}
                         </td>
@@ -394,7 +394,7 @@ const FinishgoodsPage: React.FC = () => {
               </div>
             ) : (
               <div className="p-12 text-center">
-                <div className="text-6xl mb-4">📦</div>
+                <div className="text-6xl mb-4">[Package]</div>
                 <p className="text-gray-500 text-lg">No inventory data available</p>
                 <p className="text-gray-400 text-sm mt-2">Receive products from Packing department</p>
               </div>
@@ -450,7 +450,7 @@ const FinishgoodsPage: React.FC = () => {
               </div>
             ) : (
               <div className="p-12 text-center">
-                <div className="text-6xl mb-4">🚢</div>
+                <div className="text-6xl mb-4">[Ship]</div>
                 <p className="text-gray-500 text-lg">No products ready for shipment</p>
               </div>
             )}
@@ -515,7 +515,7 @@ const FinishgoodsPage: React.FC = () => {
         {activeTab === 'barcode' && (
           <div>
             <div className="p-4 border-b">
-              <h3 className="font-semibold text-lg">📷 Barcode Scanner - Finishgoods</h3>
+              <h3 className="font-semibold text-lg">[Scan] Barcode Scanner - Finishgoods</h3>
               <p className="text-sm text-gray-600 mt-1">
                 Scan or enter barcode to receive or pick goods
               </p>
@@ -535,7 +535,7 @@ const FinishgoodsPage: React.FC = () => {
                           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >
-                      📥 Receive Goods
+                      [Import] Receive Goods
                     </button>
                     <button
                       onClick={() => setBarcodeOperation('pick')}
@@ -545,7 +545,7 @@ const FinishgoodsPage: React.FC = () => {
                           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >
-                      📤 Pick/Ship Goods
+                      [Export] Pick/Ship Goods
                     </button>
                   </div>
 
@@ -615,8 +615,8 @@ const FinishgoodsPage: React.FC = () => {
                         {transactionLoading
                           ? 'Processing...'
                           : barcodeOperation === 'receive'
-                          ? '📥 Confirm Receive'
-                          : '📤 Confirm Pick'}
+                          ? '[Import] Confirm Receive'
+                          : '[Export] Confirm Pick'}
                       </button>
 
                       {transactionSuccess && (
@@ -644,7 +644,7 @@ const FinishgoodsPage: React.FC = () => {
                                 ? 'bg-blue-100 text-blue-800'
                                 : 'bg-green-100 text-green-800'
                             }`}>
-                              {item.operation === 'receive' ? '📥 Receive' : '📤 Pick'}
+                              {item.operation === 'receive' ? '[Import] Receive' : '[Export] Pick'}
                             </span>
                           </div>
                           <div className="text-sm text-gray-600 space-y-1">
@@ -672,7 +672,7 @@ const FinishgoodsPage: React.FC = () => {
                       ))
                     ) : (
                       <div className="p-8 text-center">
-                        <div className="text-4xl mb-2">📋</div>
+                        <div className="text-4xl mb-2">[List]</div>
                         <p className="text-gray-500 text-sm">No recent transactions</p>
                       </div>
                     )}
@@ -688,7 +688,7 @@ const FinishgoodsPage: React.FC = () => {
       {showReceiveModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4">📦 Receive from Packing</h3>
+            <h3 className="text-xl font-bold mb-4">[Package] Receive from Packing</h3>
             
             <div className="space-y-4">
               <div>
@@ -780,7 +780,7 @@ const FinishgoodsPage: React.FC = () => {
       {showShipmentModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4">🚢 Prepare Shipment</h3>
+            <h3 className="text-xl font-bold mb-4">[Ship] Prepare Shipment</h3>
             
             <div className="space-y-4">
               <div>

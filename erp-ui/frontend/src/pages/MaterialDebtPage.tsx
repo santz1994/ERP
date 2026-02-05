@@ -407,7 +407,7 @@ const DebtDetailModal: React.FC<{
         <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white flex justify-between items-center">
           <h2 className="text-xl font-bold">Material Debt Details</h2>
           <button onClick={onClose} className="text-white hover:bg-white hover:bg-opacity-20 rounded p-1">
-            ✕
+            
           </button>
         </div>
 
@@ -597,7 +597,7 @@ const CreateDebtModal: React.FC<{
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white flex justify-between items-center">
           <h2 className="text-xl font-bold">Create Material Debt</h2>
           <button onClick={onClose} className="text-white hover:bg-white hover:bg-opacity-20 rounded p-1">
-            ✕
+            
           </button>
         </div>
 
@@ -755,7 +755,7 @@ const AdjustmentModal: React.FC<{
         <div className="bg-gradient-to-r from-green-600 to-green-700 p-6 text-white flex justify-between items-center">
           <h2 className="text-xl font-bold">Record Material Settlement</h2>
           <button onClick={onClose} className="text-white hover:bg-white hover:bg-opacity-20 rounded p-1">
-            ✕
+            
           </button>
         </div>
 

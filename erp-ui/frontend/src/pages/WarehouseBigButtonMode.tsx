@@ -138,7 +138,7 @@ export default function WarehouseBigButtonMode() {
   // ==================== PHASE 2: PICK ====================
   if (phase === 'pick' && selectedTransfer) {
     return (
-      <FullScreenLayout title="📍 PICK ITEMS" showBackButton onBack={() => setPhase('select')}>
+      <FullScreenLayout title="[Location] PICK ITEMS" showBackButton onBack={() => setPhase('select')}>
         <StatusCard
           status="processing"
           title="Picking Items"
@@ -178,7 +178,7 @@ export default function WarehouseBigButtonMode() {
             size="xlarge"
             onClick={() => setPhase('pack')}
             disabled={pickedQty !== selectedTransfer.quantity}
-            icon="✓"
+            icon=""
           >
             {pickedQty === selectedTransfer.quantity
               ? 'ALL PICKED - NEXT STEP'
@@ -239,7 +239,7 @@ export default function WarehouseBigButtonMode() {
             size="xlarge"
             onClick={() => setPhase('ship')}
             disabled={packedQty !== selectedTransfer.quantity}
-            icon="✓"
+            icon=""
           >
             {packedQty === selectedTransfer.quantity
               ? 'ALL PACKED - SHIP IT'
@@ -282,7 +282,7 @@ export default function WarehouseBigButtonMode() {
             size="xlarge"
             onClick={() => transferMutation.mutate()}
             disabled={transferMutation.isPending}
-            icon="✓"
+            icon=""
           >
             {transferMutation.isPending ? '⏳ PROCESSING...' : 'CONFIRM SHIPMENT'}
           </BigButton>
@@ -302,7 +302,7 @@ export default function WarehouseBigButtonMode() {
   // ==================== PHASE 5: SUCCESS ====================
   if (phase === 'success' && selectedTransfer) {
     return (
-      <FullScreenLayout title="🎉 SUCCESS!">
+      <FullScreenLayout title="[Success] SUCCESS!">
         <StatusCard
           status="completed"
           title="Transfer Complete"
@@ -329,7 +329,7 @@ export default function WarehouseBigButtonMode() {
               setPackedQty(0);
               setPhase('select');
             }}
-            icon="🔄"
+            icon="[Refresh]"
           >
             NEXT TRANSFER
           </BigButton>

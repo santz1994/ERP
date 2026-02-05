@@ -179,7 +179,7 @@ export default function EmbroideryBigButtonMode() {
             size="xlarge"
             onClick={() => startWOMutation.mutate(selectedWO.id)}
             disabled={startWOMutation.isPending}
-            icon="▶️"
+            icon=""
           >
             {startWOMutation.isPending ? '⏳ STARTING...' : 'START EMBROIDERY'}
           </BigButton>
@@ -225,7 +225,7 @@ export default function EmbroideryBigButtonMode() {
           variant="success"
           size="xlarge"
           onClick={() => setPhase('complete')}
-          icon="✓"
+          icon=""
         >
           DONE - RECORD OUTPUT
         </BigButton>
@@ -277,7 +277,7 @@ export default function EmbroideryBigButtonMode() {
             size="xlarge"
             onClick={() => recordOutputMutation.mutate()}
             disabled={embroideredQty === 0 || recordOutputMutation.isPending}
-            icon="✓"
+            icon=""
           >
             {recordOutputMutation.isPending ? '⏳ SAVING...' : 'CONFIRM OUTPUT'}
           </BigButton>
@@ -338,7 +338,7 @@ export default function EmbroideryBigButtonMode() {
   // ==================== PHASE 6: TRANSFER ====================
   if (phase === 'transfer' && selectedWO) {
     return (
-      <FullScreenLayout title="🎉 SUCCESS!">
+      <FullScreenLayout title="[Success] SUCCESS!">
         <StatusCard
           status="completed"
           title="Transferred Successfully"
@@ -357,7 +357,7 @@ export default function EmbroideryBigButtonMode() {
           variant="primary"
           size="xlarge"
           onClick={() => setPhase('select')}
-          icon="🔄"
+          icon="[Refresh]"
         >
           START NEXT WORK ORDER
         </BigButton>

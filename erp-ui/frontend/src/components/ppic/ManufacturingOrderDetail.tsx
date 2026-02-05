@@ -253,7 +253,7 @@ export const ManufacturingOrderDetail: React.FC<ManufacturingOrderDetailProps> =
           <div className="bg-white border-2 border-gray-200 rounded-lg p-5">
             <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-blue-600" />
-              🚦 Department Release Status
+              [Status] Department Release Status
             </h3>
 
             <div className="space-y-3">

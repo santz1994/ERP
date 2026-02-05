@@ -218,14 +218,14 @@ export const FlexibleTargetDisplay: React.FC<FlexibleTargetDisplayProps> = ({
           {percentage < 80 && (
             <div className="flex items-center gap-2 text-red-700">
               <TrendingDown className="w-4 h-4" />
-              <span className="text-xs font-semibold">🚨 Behind target! Need {spkTarget - actual} pcs</span>
+              <span className="text-xs font-semibold">[Alert] Behind target! Need {spkTarget - actual} pcs</span>
             </div>
           )}
           {hasConstraintViolation && (
             <div className="flex items-center gap-2 text-red-700 mt-2">
               <AlertCircle className="w-4 h-4" />
               <span className="text-xs font-semibold">
-                🚫 Target exceeds constraint! Reduce to {maxConstraint} pcs
+                [Stop] Target exceeds constraint! Reduce to {maxConstraint} pcs
               </span>
             </div>
           )}

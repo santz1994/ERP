@@ -598,13 +598,13 @@ const PPICPage: React.FC = () => {
                   href="/admin/import-export" 
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
                 >
-                  📥 Import BOM
+                  [Import] Import BOM
                 </a>
                 <a 
                   href="/admin/import-export" 
                   className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
                 >
-                  📤 Export BOM
+                  [Export] Export BOM
                 </a>
               </div>
             </div>
@@ -717,7 +717,7 @@ const PPICPage: React.FC = () => {
             {/* Quick Instructions */}
             <div className="grid grid-cols-3 gap-4">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="text-lg font-semibold text-blue-900 mb-2">📥 Import BOM</div>
+                <div className="text-lg font-semibold text-blue-900 mb-2">[Import] Import BOM</div>
                 <ol className="text-sm text-blue-700 space-y-1">
                   <li>1. Go to Admin → Import/Export</li>
                   <li>2. Select "Bill of Materials"</li>
@@ -727,7 +727,7 @@ const PPICPage: React.FC = () => {
               </div>
 
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <div className="text-lg font-semibold text-green-900 mb-2">📤 Export BOM</div>
+                <div className="text-lg font-semibold text-green-900 mb-2">[Export] Export BOM</div>
                 <ol className="text-sm text-green-700 space-y-1">
                   <li>1. Go to Admin → Import/Export</li>
                   <li>2. Select "Bill of Materials"</li>

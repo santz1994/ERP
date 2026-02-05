@@ -216,7 +216,7 @@ export const DatabaseManagementSettings: React.FC = () => {
           <Database className="w-8 h-8 text-indigo-600" />
           <h1 className="text-3xl font-bold text-gray-900">Database Management</h1>
         </div>
-        <p className="text-gray-600">⚠️ DEVELOPER ONLY - Manage database selection, cloning, and maintenance</p>
+        <p className="text-gray-600">[Warning] DEVELOPER ONLY - Manage database selection, cloning, and maintenance</p>
       </div>
 
       <div className="space-y-6">

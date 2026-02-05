@@ -194,7 +194,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, operation, loca
 
       {/* Instructions */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
-        <h4 className="font-semibold text-blue-800 mb-2">📱 How to Use</h4>
+        <h4 className="font-semibold text-blue-800 mb-2">[Mobile] How to Use</h4>
         <ul className="text-sm text-blue-700 space-y-1 list-disc list-inside">
           <li>Click "Start Camera Scanner" and point camera at barcode</li>
           <li>Or enter barcode manually in the text field</li>

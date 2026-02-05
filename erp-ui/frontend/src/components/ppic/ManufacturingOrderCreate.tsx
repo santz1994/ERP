@@ -213,7 +213,7 @@ export const ManufacturingOrderCreate: React.FC<ManufacturingOrderCreateProps> =
           <div>
             <h2 className="text-2xl font-bold">Create Manufacturing Order</h2>
             <p className="text-sm text-blue-100 mt-1">
-              🚀 Dual-Stage System: PARTIAL → RELEASED
+              [Launch] Dual-Stage System: PARTIAL → RELEASED
             </p>
           </div>
           <button onClick={onClose} className="text-white hover:bg-white/20 p-2 rounded-lg transition-colors">
