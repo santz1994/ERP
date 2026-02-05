@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import { BarChart3, TrendingUp, AlertCircle, CheckCircle, RefreshCw, Layers, Factory } from 'lucide-react'
-import { useUIStore } from '@/store'
+import { useAuthStore, useUIStore } from '@/store'
 import { EnvironmentBanner } from '@/components/EnvironmentBanner'
 import { apiClient } from '@/api/client'
 import { MaterialShortageAlerts, WorkOrdersDashboard } from '@/components/manufacturing'
+import { PPICDashboard } from '@/components/dashboard/PPICDashboard'
+import { ManagerDashboard } from '@/components/dashboard/ManagerDashboard'
+import { UserRole } from '@/types'
 
 // Tipe data tetap sama
 interface DashboardStats {
@@ -107,6 +110,47 @@ const DeptProgressRow: React.FC<ProductionStatus> = ({ dept, progress, status, t
 // --- MAIN COMPONENT ---
 
 export const DashboardPage: React.FC = () => {
+  const { addNotification } = useUIStore()
+  const user = useAuthStore(state => state.user)
+  
+  // Role-based Dashboard Selection (Spec Lines 97-122)
+  const renderDashboardByRole = () => {
+    if (!user) return <GenericDashboard />
+    
+    // PPIC Dashboard (Spec Lines 97-103)
+    if (user.role === UserRole.PPIC_MANAGER || user.role === UserRole.PPIC_ADMIN) {
+      return <PPICDashboard />
+    }
+    
+    // Manager Dashboard (Spec Lines 105-109)
+    if (user.role === UserRole.MANAGER || user.role === UserRole.FINANCE_MANAGER) {
+      return <ManagerDashboard />
+    }
+    
+    // Director Dashboard (Spec Lines 111-115) - TODO: Create DirectorDashboard component
+    if (user.role === UserRole.SUPERADMIN || user.role === UserRole.DEVELOPER) {
+      return <ManagerDashboard /> // Temporary, will create DirectorDashboard
+    }
+    
+    // Warehouse Dashboard (Spec Lines 117-122) - TODO: Create WarehouseDashboard component
+    if (user.role === UserRole.WAREHOUSE_ADMIN || user.role === UserRole.WAREHOUSE_OP) {
+      return <GenericDashboard /> // Temporary, will create WarehouseDashboard
+    }
+    
+    // Default: Generic Dashboard
+    return <GenericDashboard />
+  }
+
+  return (
+    <div className="space-y-6">
+      <EnvironmentBanner />
+      {renderDashboardByRole()}
+    </div>
+  )
+}
+
+// Generic Dashboard Component (Original implementation)
+const GenericDashboard: React.FC = () => {
   const { addNotification } = useUIStore()
   const [stats, setStats] = useState<DashboardStats>({
     total_mos: 0, completed_today: 0, pending_qc: 0, critical_alerts: 0, refreshed_at: null
