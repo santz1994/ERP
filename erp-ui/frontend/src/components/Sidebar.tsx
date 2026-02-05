@@ -71,7 +71,7 @@ const menuItems: MenuItem[] = [
     icon: <FileEdit />, 
     label: 'Rework Station', 
     path: '/rework-management',
-    roles: [UserRole.QC_INSPECTOR, UserRole.SPV]
+    roles: [UserRole.QC_INSPECTOR, UserRole.SPV_CUTTING, UserRole.SPV_SEWING, UserRole.SPV_FINISHING]
   },
 
   // --- SECTION: INVENTORY & LOGISTICS ---
@@ -92,7 +92,7 @@ const menuItems: MenuItem[] = [
     icon: <AlertCircle />, 
     label: 'Material Debt', 
     path: '/material-debt', 
-    roles: [UserRole.WAREHOUSE_ADMIN, UserRole.SPV] 
+    roles: [UserRole.WAREHOUSE_ADMIN, UserRole.SPV_CUTTING, UserRole.SPV_SEWING, UserRole.SPV_FINISHING, UserRole.PPIC_MANAGER] 
   },
   { 
     icon: <TruckIcon />, 
@@ -166,7 +166,7 @@ export const Sidebar: React.FC = () => {
   const renderMenuItem = (item: MenuItem, index: number) => {
     if (!hasAccess(item)) return null
 
-    const isActive = item.path === location.pathname || item.submenu?.some(sub => sub.path === location.pathname)
+    const isActive = item.path === location.pathname || (item.submenu?.some(sub => sub.path === location.pathname) ?? false)
     const isDropdownOpen = openDropdowns.includes(item.label) || isActive // Auto open if active
     const showSectionLabel = item.section && sidebarOpen && (index === 0 || menuItems[index - 1].section !== item.section)
 

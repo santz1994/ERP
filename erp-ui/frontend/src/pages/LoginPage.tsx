@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore, useUIStore } from '@/store'
-import { LogIn, Factory, ShieldCheck, ArrowRight } from 'lucide-react'
+import { LogIn, Factory, ShieldCheck, ArrowRight, TrendingUp, Shield, Users } from 'lucide-react'
 
 export const LoginPage: React.FC = () => {
   const [username, setUsername] = useState('')
@@ -48,6 +48,27 @@ export const LoginPage: React.FC = () => {
           <p className="text-brand-100 max-w-md text-lg leading-relaxed">
             Sistem terintegrasi untuk manajemen PPIC, Produksi, Gudang, dan Distribusi yang efisien dan real-time.
           </p>
+          
+          <div className="grid grid-cols-3 gap-6 mt-12">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-brand-500/20 rounded-full flex items-center justify-center mx-auto mb-2">
+                <TrendingUp className="w-6 h-6 text-brand-300" />
+              </div>
+              <p className="text-sm text-brand-200 font-medium">Real-time<br/>Monitoring</p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 bg-brand-500/20 rounded-full flex items-center justify-center mx-auto mb-2">
+                <Shield className="w-6 h-6 text-brand-300" />
+              </div>
+              <p className="text-sm text-brand-200 font-medium">Secure<br/>Access</p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 bg-brand-500/20 rounded-full flex items-center justify-center mx-auto mb-2">
+                <Users className="w-6 h-6 text-brand-300" />
+              </div>
+              <p className="text-sm text-brand-200 font-medium">Multi-role<br/>Support</p>
+            </div>
+          </div>
         </div>
 
         <div className="relative z-10 flex gap-8 text-sm text-brand-200">
@@ -127,119 +148,6 @@ export const LoginPage: React.FC = () => {
               <code className="bg-slate-100 px-2 py-1 rounded">operator_cut</code>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-          <div className="grid grid-cols-3 gap-6 mt-12">
-            <div className="text-center">
-              <div className="w-12 h-12 bg-brand-500/20 rounded-full flex items-center justify-center mx-auto mb-2">
-                <TrendingUp className="w-6 h-6 text-brand-300" />
-              </div>
-              <p className="text-sm text-brand-200 font-medium">Real-time<br/>Monitoring</p>
-            </div>
-            <div className="text-center">
-              <div className="w-12 h-12 bg-brand-500/20 rounded-full flex items-center justify-center mx-auto mb-2">
-                <Shield className="w-6 h-6 text-brand-300" />
-              </div>
-              <p className="text-sm text-brand-200 font-medium">Secure<br/>Access</p>
-            </div>
-            <div className="text-center">
-              <div className="w-12 h-12 bg-brand-500/20 rounded-full flex items-center justify-center mx-auto mb-2">
-                <Users className="w-6 h-6 text-brand-300" />
-              </div>
-              <p className="text-sm text-brand-200 font-medium">Multi-role<br/>Support</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Right Side: Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-surface-dim">
-        <div className="w-full max-w-md">
-          {/* Mobile Logo */}
-          <div className="lg:hidden text-center mb-8">
-            <Factory className="w-16 h-16 text-brand-500 mx-auto mb-2" />
-            <h1 className="text-2xl font-bold text-gray-900">QutyERP System</h1>
-          </div>
-
-          <div className="bg-white p-10 rounded-2xl shadow-elevated border border-gray-100">
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Selamat Datang</h2>
-              <p className="text-gray-500">Silakan masuk untuk memulai shift Anda</p>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Username
-                </label>
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-50 border-0 rounded-lg focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all"
-                  placeholder="Masukkan username Anda"
-                  autoComplete="username"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-50 border-0 rounded-lg focus:ring-2 focus:ring-brand-500 focus:bg-white transition-all"
-                  placeholder="Masukkan password Anda"
-                  autoComplete="current-password"
-                  required
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-brand-500 hover:bg-brand-600 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 shadow-sm hover:shadow-md"
-              >
-                <LogIn size={20} />
-                {loading ? 'Memproses...' : 'Masuk'}
-              </button>
-            </form>
-
-            {/* Demo Credentials */}
-            <div className="mt-8 p-4 bg-blue-50/50 rounded-lg border border-blue-100">
-              <p className="text-xs text-gray-700 font-medium mb-2">
-                🧪 Demo Credentials (password: password123):
-              </p>
-              <ul className="text-xs text-gray-600 space-y-1">
-                <li className="flex items-center gap-2">
-                  <code className="bg-white px-2 py-0.5 rounded text-brand-600 font-mono">developer</code>
-                  <span className="text-gray-400">|</span>
-                  <span>Full Access</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <code className="bg-white px-2 py-0.5 rounded text-brand-600 font-mono">admin</code>
-                  <span className="text-gray-400">|</span>
-                  <span>Administrator</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <code className="bg-white px-2 py-0.5 rounded text-brand-600 font-mono">operator_cut</code>
-                  <span className="text-gray-400">|</span>
-                  <span>Operator</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <p className="text-center text-sm text-gray-500 mt-8">
-            © 2026 PT Quty Karunia. All rights reserved.
-          </p>
         </div>
       </div>
     </div>

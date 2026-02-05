@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { AlertCircle, CheckCircle, Clock, TrendingUp, Plus, Filter, RefreshCw, Eye, Edit2 } from 'lucide-react';
 import { apiClient } from '../api/client';
 import { usePermission } from '../hooks/usePermission';
+import { useAuthStore } from '../store';
+import { UserRole } from '../types';
 
 interface MaterialDebt {
   id: number;
@@ -376,7 +378,8 @@ const DebtDetailModal: React.FC<{
   onClose: () => void;
   onApprove: () => void;
 }> = ({ debt, onClose, onApprove }) => {
-  const { hasPermission, userRole } = usePermission();
+  const user = useAuthStore(state => state.user);
+  const canApproveDebt = usePermission('warehouse.approve_debt');
   const [loading, setLoading] = useState(false);
   const [approvalNotes, setApprovalNotes] = useState('');
   const [approvalDecision, setApprovalDecision] = useState('APPROVE');
@@ -384,7 +387,7 @@ const DebtDetailModal: React.FC<{
   const handleApproval = async (decision: string) => {
     setLoading(true);
     try {
-      const approverRole = userRole === 'MANAGER' ? 'MANAGER' : 'SPV';
+      const approverRole = user?.role === UserRole.MANAGER || user?.role === UserRole.FINANCE_MANAGER ? 'MANAGER' : 'SPV';
       await apiClient.post(`/api/v1/warehouse/material-debt/${debt.id}/approve`, {
         approval_decision: decision,
         approver_role: approverRole,
@@ -500,7 +503,7 @@ const DebtDetailModal: React.FC<{
           )}
 
           {/* Approval Section */}
-          {debt.approval_status === 'PENDING_APPROVAL' && hasPermission('warehouse.write_debt') && (
+          {debt.approval_status === 'PENDING_APPROVAL' && canApproveDebt && (
             <div className="border-t pt-4 bg-yellow-50 p-4 rounded-lg">
               <h3 className="font-semibold text-gray-900 mb-3">⚠️ Pending Your Approval</h3>
               <textarea
