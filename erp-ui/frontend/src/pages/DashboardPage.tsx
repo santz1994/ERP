@@ -6,6 +6,8 @@ import { apiClient } from '@/api/client'
 import { MaterialShortageAlerts, WorkOrdersDashboard } from '@/components/manufacturing'
 import { PPICDashboard } from '@/components/dashboard/PPICDashboard'
 import { ManagerDashboard } from '@/components/dashboard/ManagerDashboard'
+import { DirectorDashboard } from '@/components/dashboard/DirectorDashboard'
+import { WarehouseDashboard } from '@/components/dashboard/WarehouseDashboard'
 import { UserRole } from '@/types'
 
 // Tipe data tetap sama
@@ -127,14 +129,14 @@ export const DashboardPage: React.FC = () => {
       return <ManagerDashboard />
     }
     
-    // Director Dashboard (Spec Lines 111-115) - TODO: Create DirectorDashboard component
+    // Director Dashboard (Spec Lines 111-115) ✅ COMPLETE
     if (user.role === UserRole.SUPERADMIN || user.role === UserRole.DEVELOPER) {
-      return <ManagerDashboard /> // Temporary, will create DirectorDashboard
+      return <DirectorDashboard />
     }
     
-    // Warehouse Dashboard (Spec Lines 117-122) - TODO: Create WarehouseDashboard component
+    // Warehouse Dashboard (Spec Lines 117-122) ✅ COMPLETE
     if (user.role === UserRole.WAREHOUSE_ADMIN || user.role === UserRole.WAREHOUSE_OP) {
-      return <GenericDashboard /> // Temporary, will create WarehouseDashboard
+      return <WarehouseDashboard />
     }
     
     // Default: Generic Dashboard
