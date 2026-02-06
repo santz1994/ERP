@@ -259,6 +259,49 @@ Row 3 onwards (User fills this):
 
 ---
 
+
+## 🔄 DUAL-BOM SYSTEM (February 6, 2026)
+
+**TWO SEPARATE BOM TYPES: Production (Process) + Purchasing (Materials)**
+
+### Core Concept
+
+**BOM PRODUCTION** (Process-Oriented):
+- Split by department: Cutting → Embo → Sewing → Finishing → Packing
+- Shows WIP flow with inputs/outputs per stage
+- Used by: PPIC (MO/SPK explosion), Production (routing)
+- Data: 5,845 lines from 6 Excel files
+
+**BOM PURCHASING** (Material-Oriented):
+- RAW materials ONLY (filters out WIP components)
+- Auto-generated from BOM Production (aggregates quantities)
+- Used by: Purchasing (PO calculation), Inventory (MRP)
+- Data: Auto-calculated from production BOMs
+
+### Database Tables
+
+```sql
+-- Production BOM (process view)
+bom_production_headers (article_id, department_id, routing_sequence)
+bom_production_details (header_id, material_id, material_type, quantity)
+
+-- Purchasing BOM (material view)
+bom_purchasing_headers (article_id, auto_generated, last_sync_date)
+bom_purchasing_details (header_id, material_id [RAW only], quantity_aggregated)
+```
+
+### Business Flow
+
+1. **Import**: Upload 6 dept Excel files → `bom_production_*` tables
+2. **Auto-Sync**: System filters RAW materials → generates `bom_purchasing_*`
+3. **PPIC Usage**: Create MO → explode by dept → use Production BOM
+4. **Purchasing Usage**: Calculate material needs → use Purchasing BOM (clean list)
+
+**Reference**: See [DUAL_BOM_SYSTEM_IMPLEMENTATION.md](../DUAL_BOM_SYSTEM_IMPLEMENTATION.md) for complete 1,200-line guide.
+
+---
+
+
 ## �📋 CONTEXT & BACKGROUND
 
 ### Project Overview

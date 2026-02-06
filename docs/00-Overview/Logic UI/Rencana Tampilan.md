@@ -4286,6 +4286,197 @@ Action Plan:
 ---
 
 <a name="masterdata"></a>
+
+
+<a name="bom-dual-system"></a>
+## 🔄 SISTEM DUAL-BOM (BOM Produksi + BOM Purchasing)
+
+### Konsep Baru (February 6, 2026)
+
+PT Quty Karunia menggunakan **2 jenis BOM yang terpisah** untuk 2 keperluan berbeda:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  ARTIKEL (Finished Good - IKEA Soft Toys)               │
+│  Contoh: AFTONSPARV Bear (40551542)                     │
+└──────┬───────────────────────┬──────────────────────────┘
+       │                       │
+       ▼                       ▼
+┌──────────────────┐    ┌─────────────────────┐
+│ BOM PRODUKSI     │    │ BOM PURCHASING      │
+│ (Proses)         │    │ (Material)          │
+├──────────────────┤    ├─────────────────────┤
+│ Per Departemen:  │    │ Total Material RAW: │
+│ - Cutting        │    │ - KOHAIR 0.15 YD    │
+│ - Embo           │    │ - BOA 0.0015 YD     │
+│ - Sewing         │    │ - Filling 54 GRAM   │
+│ - Finishing      │    │ - Thread 60 CM      │
+│ - Packing        │    │ - Label 1 PCE       │
+│                  │    │ - Carton 0.0167 PCE │
+│ Termasuk WIP     │    │                     │
+│ (internal flow)  │    │ TANPA WIP!          │
+└──────────────────┘    └─────────────────────┘
+       │                       │
+       ▼                       ▼
+   PPIC/PRODUKSI           PURCHASING
+   - Edit MO/SPK            - Create PO
+   - Alokasi Material       - Calculate Needs
+   - Tracking WIP           - Supplier Sourcing
+```
+
+### BOM PRODUKSI (Process-Oriented)
+
+**Tujuan**: Menunjukkan alur manufaktur step-by-step per departemen
+
+**Contoh Flow AFTONSPARV Bear**:
+
+```
+STAGE 1 - CUTTING:
+Input:  [IKHR504] KOHAIR 0.15 YARD
+        [IJBR105] BOA 0.0015 YARD
+Output: AFTONSPARV_WIP_CUTTING (potongan kain)
+
+↓
+
+STAGE 2 - SEWING:
+Input:  AFTONSPARV_WIP_CUTTING (dari stage 1)
+        [ATR10400] Thread 60 CM
+        [ALL40030] Label 1 PCE
+Output: AFTONSPARV_WIP_SKIN (kulit jahit, belum isi)
+
+↓
+
+STAGE 3 - FINISHING (Stuffing):
+Input:  AFTONSPARV_WIP_SKIN (dari stage 2)
+        [IKP20157] Filling 54 GRAM
+Output: AFTONSPARV_WIP_BONEKA (boneka isi kapas)
+
+↓
+
+STAGE 4 - PACKING:
+Input:  AFTONSPARV_WIP_BONEKA 60 PCS
+        [ACB30104] Carton 1 PCE
+Output: [40551542] AFTONSPARV Bear FINISHED GOODS
+```
+
+**Digunakan oleh**:
+- **PPIC**: Explosion MO ke SPK per departemen
+- **Departemen Produksi**: Material request sesuai stage mereka
+- **Warehouse**: Tracking WIP antar departemen
+- **Costing**: Hitung biaya per departemen
+
+**Database**: `bom_production_headers` + `bom_production_details`
+
+**Data**: 5,845 baris BOM dari 6 file Excel (Cutting, Embo, Sewing, Finishing, FG, Packing)
+
+---
+
+### BOM PURCHASING (Material-Oriented)
+
+**Tujuan**: Menunjukkan HANYA material RAW yang perlu dibeli (tanpa WIP internal)
+
+**Contoh untuk AFTONSPARV Bear** (per 1 PCE):
+
+```
+Material RAW yang harus dibeli:
+├─ [IKHR504] KOHAIR Fabric: 0.15 YARD
+├─ [IJBR105] BOA Fabric: 0.0015 YARD
+├─ [IKP20157] Filling HCS: 54 GRAM
+├─ [ATR10400] Thread Nilon: 60 CM
+├─ [ALL40030] Label RPI: 1 PCE
+├─ [ALB40011] Hang Tag: 1 PCE
+└─ [ACB30104] Carton: 0.0167 PCE
+
+Total: 7 material RAW (TIDAK ada WIP_CUTTING, WIP_SKIN, dll)
+```
+
+**Digunakan oleh**:
+- **Purchasing**: Kalkulasi kebutuhan material untuk PO
+- **Inventory Planning**: Material Requirement Planning (MRP)
+- **Procurement**: Sourcing supplier, lead time planning
+
+**Database**: `bom_purchasing_headers` + `bom_purchasing_details`
+
+**Data**: AUTO-GENERATED dari BOM Produksi (filter `material_type = 'RAW_MATERIAL'`)
+
+---
+
+### Navigasi & UI
+
+**PPIC Module** - Tambahkan menu baru:
+```
+PPIC Dashboard
+├─ Manufacturing Orders
+├─ ⭐ BOM Produksi (BARU) ← View by department
+│  ├─ Filter by Article
+│  ├─ Filter by Department
+│  └─ Explode untuk generate SPK
+├─ Work Orders (SPK)
+└─ Material Allocation
+```
+
+**Purchasing Module** - Tambahkan menu baru:
+```
+Purchasing Dashboard
+├─ Purchase Orders
+├─ ⭐ BOM Purchasing (BARU) ← Material view only
+│  ├─ Filter by Article
+│  ├─ Calculate Material Needs (qty × BOM)
+│  └─ Generate PO from calculation
+├─ Supplier Management
+└─ Material Request
+```
+
+**Masterdata Module** - Update:
+```
+Masterdata
+├─ Products & Materials
+├─ BOM Management
+│  ├─ BOM Produksi (by dept) ← Can edit
+│  ├─ BOM Purchasing (aggregated) ← Auto-generated, read-only
+│  └─ Sync BOM (trigger re-generation)
+└─ Bulk Import
+   └─ Upload BOM Production Excel (6 files)
+```
+
+---
+
+### API Endpoints
+
+**BOM Production**:
+```
+GET  /api/v1/bom-production?article_id=X&department_id=Y
+POST /api/v1/bom-production
+PUT  /api/v1/bom-production/{id}
+GET  /api/v1/bom-production/explode/{article_id}
+
+POST /api/v1/imports/bom-production?department=cutting
+```
+
+**BOM Purchasing**:
+```
+GET  /api/v1/bom-purchasing?article_id=X
+POST /api/v1/bom-purchasing/generate-from-production
+GET  /api/v1/bom-purchasing/calculate-needs/{article_id}?qty=500
+```
+
+---
+
+### Keuntungan Sistem Dual-BOM
+
+| Aspek | Sebelum (Single BOM) | Sesudah (Dual-BOM) |
+|-------|----------------------|---------------------|
+| **Purchasing View** | Lihat WIP components (bingung) | Hanya RAW materials (jelas!) |
+| **PPIC Explosion** | Susah filter per dept | Otomatis per dept |
+| **Material Calculation** | Manual filter RAW | Auto-aggregated |
+| **Akurasi** | 80-85% (human error) | 99%+ (system-calculated) |
+| **Waktu Explosion** | 15-20 menit | 5 menit (-70%) |
+
+**Referensi Lengkap**: [DUAL_BOM_SYSTEM_IMPLEMENTATION.md](../DUAL_BOM_SYSTEM_IMPLEMENTATION.md)
+
+---
+
+
 ## 8. MASTERDATA MODULE
 
 ### 7.1 Material Master
