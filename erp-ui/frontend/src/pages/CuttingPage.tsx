@@ -1,166 +1,96 @@
 /**
- * Copyright (c) 2026 PT Quty Karunia / Daniel Rizaldy - All Rights Reserved
- * File: CuttingPage.tsx | Author: Daniel Rizaldy | Date: 2026-01-19
- * Updated: 2026-01-21 | Phase 16 Week 4 | PBAC Integration
+ * Copyright (c) 2026 PT Quty Karunia - All Rights Reserved
+ * File: CuttingPage.tsx | Date: 2026-02-06
+ * Purpose: Cutting Department Landing Dashboard (REFACTORED)
+ * Architecture: Level 2 - Module Landing Page (Dashboard → Landing → Detail)
  */
 
-import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { format } from 'date-fns';
+import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import { format } from 'date-fns'
 import { 
   Scissors, 
-  AlertCircle, 
   CheckCircle, 
   Clock, 
   Package,
   TrendingUp,
-  TrendingDown,
-  ArrowRight,
-  Lock
-} from 'lucide-react';
-import axios from 'axios';
-import { usePermission } from '@/hooks/usePermission';
+  Calendar,
+  LayoutDashboard,
+  Edit3
+} from 'lucide-react'
+import axios from 'axios'
+import { NavigationCard } from '@/components/ui/NavigationCard'
+import { Card } from '@/components/ui/card'
+import { WorkOrder, CuttingStats } from '@/types'
+import { getWorkOrderStatusBadgeClass } from '@/utils'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
-
-interface WorkOrder {
-  id: number;
-  mo_id: number;
-  department: string;
-  status: string;
-  input_qty: number;
-  output_qty: number;
-  reject_qty: number;
-  start_time: string | null;
-  end_time: string | null;
-}
-
-interface LineStatus {
-  line_id: string;
-  current_article: string | null;
-  is_occupied: boolean;
-  destination: string | null;
-}
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
 
 export default function CuttingPage() {
-  const [selectedWO, setSelectedWO] = useState<WorkOrder | null>(null);
-  const [outputQty, setOutputQty] = useState<number>(0);
-  const [rejectQty, setRejectQty] = useState<number>(0);
-  const queryClient = useQueryClient();
+  const navigate = useNavigate()
+  const [loading, setLoading] = useState(false)
 
-  // Permission checks (PBAC - Phase 16 Week 4)
-  const canViewStatus = usePermission('cutting.view_status');
-  const canAllocateMaterial = usePermission('cutting.allocate_material');
-  const canCompleteOperation = usePermission('cutting.complete_operation');
-  const canHandleVariance = usePermission('cutting.handle_variance');
-  const canLineClearance = usePermission('cutting.line_clearance');
-  const canCreateTransfer = usePermission('cutting.create_transfer');
+  useEffect(() => {
+    fetchData()
+    const interval = setInterval(fetchData, 30000) // Poll every 30 seconds
+    return () => clearInterval(interval)
+  }, [])
 
-  // Fetch active work orders
-  const { data: workOrders, isLoading } = useQuery({
+  const fetchData = async () => {
+    setLoading(true)
+    try {
+      // Placeholder - will be implemented with actual API
+      await new Promise(resolve => setTimeout(resolve, 500))
+    } catch (error) {
+      console.error('Failed to fetch cutting data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Fetch work orders for recent activity
+  const { data: workOrders = [] } = useQuery({
     queryKey: ['cutting-work-orders'],
     queryFn: async () => {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('access_token')
       const response = await axios.get(`${API_BASE}/production/cutting/pending`, {
         headers: { Authorization: `Bearer ${token}` }
-      });
-      return response.data;
+      })
+      return response.data
     },
-    refetchInterval: 5000 // Refresh every 5 seconds
-  });
+    refetchInterval: 30000
+  })
 
-  // Fetch line status
-  const { data: lineStatus } = useQuery({
-    queryKey: ['line-status', 'cutting'],
-    queryFn: async () => {
-      const token = localStorage.getItem('access_token');
-      const response = await axios.get(`${API_BASE}/production/cutting/line-status`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      return response.data;
-    },
-    refetchInterval: 3000
-  });
+  // Calculate stats
+  const stats: CuttingStats = {
+    today_output: workOrders.reduce((sum: number, wo: WorkOrder) => sum + wo.output_qty, 0),
+    active_wos: workOrders.filter((wo: WorkOrder) => wo.status === 'Running').length,
+    completed_today: workOrders.filter((wo: WorkOrder) => wo.status === 'Finished').length,
+    efficiency_rate: workOrders.length > 0 
+      ? (workOrders.reduce((sum: number, wo: WorkOrder) => sum + wo.output_qty, 0) / 
+         workOrders.reduce((sum: number, wo: WorkOrder) => sum + wo.input_qty, 0) * 100) 
+      : 0,
+    defect_rate: workOrders.length > 0
+      ? (workOrders.reduce((sum: number, wo: WorkOrder) => sum + wo.reject_qty, 0) /
+         workOrders.reduce((sum: number, wo: WorkOrder) => sum + wo.output_qty, 0) * 100)
+      : 0
+  }
 
-  // Start work order mutation
-  const startWO = useMutation({
-    mutationFn: async (woId: number) => {
-      const token = localStorage.getItem('access_token');
-      return axios.post(`${API_BASE}/production/cutting/work-order/${woId}/start`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cutting-work-orders'] });
-    }
-  });
+  const recentWOs = workOrders.slice(0, 10)
 
-  // Complete work order mutation
-  const completeWO = useMutation({
-    mutationFn: async (data: { woId: number; output_qty: number; reject_qty: number }) => {
-      const token = localStorage.getItem('access_token');
-      return axios.post(`${API_BASE}/production/cutting/work-order/${data.woId}/complete`, {
-        output_qty: data.output_qty,
-        reject_qty: data.reject_qty
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cutting-work-orders'] });
-      setSelectedWO(null);
-      setOutputQty(0);
-      setRejectQty(0);
-    }
-  });
-
-  // Transfer to next department
-  const transferToNext = useMutation({
-    mutationFn: async (woId: number) => {
-      const token = localStorage.getItem('access_token');
-      return axios.post(`${API_BASE}/production/cutting/work-order/${woId}/transfer`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cutting-work-orders'] });
-    }
-  });
-
-  const getStatusBadge = (status: string) => {
-    const badges: Record<string, { color: string; icon: any }> = {
-      'Pending': { color: 'bg-gray-100 text-gray-800', icon: Clock },
-      'Running': { color: 'bg-blue-100 text-blue-800', icon: Scissors },
-      'Finished': { color: 'bg-green-100 text-green-800', icon: CheckCircle },
-    };
-    const badge = badges[status] || badges['Pending'];
-    const Icon = badge.icon;
-    return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.color}`}>
-        <Icon className="w-3 h-3 mr-1" />
-        {status}
-      </span>
-    );
-  };
-
-  const calculateVariance = (target: number, actual: number) => {
-    const variance = actual - target;
-    const percentageVariance = target > 0 ? (variance / target) * 100 : 0;
-    return { variance, percentageVariance };
-  };
-
-  if (isLoading) {
+  if (loading && workOrders.length === 0) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
-    );
+    )
   }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 flex items-center">
@@ -168,239 +98,255 @@ export default function CuttingPage() {
               Cutting Department
             </h1>
             <p className="text-gray-500 mt-1">
-              {format(new Date(), 'EEEE, dd MMMM yyyy • HH:mm')} WIB
+              {new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} • {new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
+            </p>
+            <p className="text-sm text-gray-400 mt-1">
+              📍 Department Landing Page • Material ↔ Pieces Conversion
             </p>
           </div>
-          {lineStatus && (
-            <div className="bg-white rounded-lg shadow p-4">
-              <div className="flex items-center">
-                <div className={`w-3 h-3 rounded-full mr-2 ${lineStatus.is_occupied ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                <span className="text-sm font-medium">
-                  Line Status: {lineStatus.is_occupied ? 'Occupied' : 'Clear'}
-                </span>
-              </div>
-              {lineStatus.current_article && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Current: {lineStatus.current_article}
-                </p>
-              )}
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Work Orders Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {workOrders?.map((wo: WorkOrder) => {
-          const { variance, percentageVariance } = calculateVariance(wo.input_qty, wo.output_qty);
-          
-          return (
-            <div key={wo.id} className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-              {/* Card Header */}
-              <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 text-white">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold">WO #{wo.id}</h3>
-                    <p className="text-sm opacity-90">MO #{wo.mo_id}</p>
-                  </div>
-                  {getStatusBadge(wo.status)}
-                </div>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <Card className="bg-white shadow-lg border-l-4 border-blue-500">
+          <div className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Today's Output</p>
+                <p className="text-3xl font-bold text-blue-600">{stats.today_output}</p>
+                <p className="text-xs text-gray-400 mt-1">pieces cut</p>
               </div>
-
-              {/* Card Body */}
-              <div className="p-4 space-y-4">
-                {/* Quantities */}
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="text-center">
-                    <p className="text-xs text-gray-500 mb-1">Target</p>
-                    <p className="text-2xl font-bold text-gray-900">{wo.input_qty}</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-xs text-gray-500 mb-1">Output</p>
-                    <p className="text-2xl font-bold text-blue-600">{wo.output_qty}</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-xs text-gray-500 mb-1">Reject</p>
-                    <p className="text-2xl font-bold text-red-600">{wo.reject_qty}</p>
-                  </div>
-                </div>
-
-                {/* Variance Indicator */}
-                {wo.output_qty > 0 && (
-                  <div className={`flex items-center justify-center p-2 rounded ${
-                    variance > 0 ? 'bg-green-50' : variance < 0 ? 'bg-red-50' : 'bg-gray-50'
-                  }`}>
-                    {variance > 0 ? (
-                      <TrendingUp className="w-4 h-4 text-green-600 mr-2" />
-                    ) : variance < 0 ? (
-                      <TrendingDown className="w-4 h-4 text-red-600 mr-2" />
-                    ) : null}
-                    <span className={`text-sm font-medium ${
-                      variance > 0 ? 'text-green-600' : variance < 0 ? 'text-red-600' : 'text-gray-600'
-                    }`}>
-                      {variance > 0 ? 'Surplus' : variance < 0 ? 'Shortage' : 'On Target'}: {Math.abs(variance)} units ({Math.abs(percentageVariance).toFixed(1)}%)
-                    </span>
-                  </div>
-                )}
-
-                {/* Time Info */}
-                <div className="text-xs text-gray-500 space-y-1">
-                  {wo.start_time && (
-                    <div className="flex items-center">
-                      <Clock className="w-3 h-3 mr-1" />
-                      Started: {format(new Date(wo.start_time), 'HH:mm')}
-                    </div>
-                  )}
-                  {wo.end_time && (
-                    <div className="flex items-center">
-                      <CheckCircle className="w-3 h-3 mr-1" />
-                      Completed: {format(new Date(wo.end_time), 'HH:mm')}
-                    </div>
-                  )}
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-2">
-                  {wo.status === 'Pending' && canAllocateMaterial && (
-                    <button
-                      onClick={() => startWO.mutate(wo.id)}
-                      disabled={startWO.isPending}
-                      className="flex-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition disabled:opacity-50 text-sm font-medium"
-                    >
-                      Start Cutting
-                    </button>
-                  )}
-                  {wo.status === 'Pending' && !canAllocateMaterial && (
-                    <div className="flex-1 bg-gray-100 text-gray-500 px-4 py-2 rounded text-sm font-medium flex items-center justify-center">
-                      <Lock className="w-4 h-4 mr-2" />
-                      No Permission
-                    </div>
-                  )}
-
-                  {wo.status === 'Running' && canCompleteOperation && (
-                    <button
-                      onClick={() => setSelectedWO(wo)}
-                      className="flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition text-sm font-medium"
-                    >
-                      Complete
-                    </button>
-                  )}
-                  {wo.status === 'Running' && !canCompleteOperation && (
-                    <div className="flex-1 bg-gray-100 text-gray-500 px-4 py-2 rounded text-sm font-medium flex items-center justify-center">
-                      <Lock className="w-4 h-4 mr-2" />
-                      No Permission
-                    </div>
-                  )}
-
-                  {wo.status === 'Finished' && canCreateTransfer && (
-                    <button
-                      onClick={() => transferToNext.mutate(wo.id)}
-                      disabled={transferToNext.isPending}
-                      className="flex-1 bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition disabled:opacity-50 flex items-center justify-center text-sm font-medium"
-                    >
-                      Transfer to Next
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </button>
-                  )}
-                  {wo.status === 'Finished' && !canCreateTransfer && (
-                    <div className="flex-1 bg-gray-100 text-gray-500 px-4 py-2 rounded text-sm font-medium flex items-center justify-center">
-                      <Lock className="w-4 h-4 mr-2" />
-                      No Permission
-                    </div>
-                  )}
-                </div>
-              </div>
+              <Scissors className="w-12 h-12 text-blue-400" />
             </div>
-          );
-        })}
+          </div>
+        </Card>
+
+        <Card className="bg-white shadow-lg border-l-4 border-green-500">
+          <div className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Efficiency Rate</p>
+                <p className="text-3xl font-bold text-green-600">{stats.efficiency_rate.toFixed(1)}%</p>
+                <p className="text-xs text-gray-400 mt-1">output vs target</p>
+              </div>
+              <TrendingUp className="w-12 h-12 text-green-400" />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="bg-white shadow-lg border-l-4 border-red-500">
+          <div className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Defect Rate</p>
+                <p className="text-3xl font-bold text-red-600">{stats.defect_rate.toFixed(1)}%</p>
+                <p className="text-xs text-gray-400 mt-1">reject vs output</p>
+              </div>
+              <Package className="w-12 h-12 text-red-400" />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="bg-white shadow-lg border-l-4 border-purple-500">
+          <div className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Active Work Orders</p>
+                <p className="text-3xl font-bold text-purple-600">{stats.active_wos}</p>
+                <p className="text-xs text-gray-400 mt-1">{stats.completed_today} completed</p>
+              </div>
+              <Clock className="w-12 h-12 text-purple-400" />
+            </div>
+          </div>
+        </Card>
       </div>
 
-      {/* Complete Work Order Modal */}
-      {selectedWO && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-            <div className="p-6">
-              <h3 className="text-xl font-bold mb-4">Complete Work Order #{selectedWO.id}</h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Output Quantity
-                  </label>
-                  <input
-                    type="number"
-                    value={outputQty}
-                    onChange={(e) => setOutputQty(Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter actual output"
-                  />
-                </div>
+      {/* Navigation Cards - CRITICAL for 3-Tier Architecture */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <NavigationCard
+            title="Input Production"
+            description="Record daily cutting production: input fabric yards, output pieces, material consumption tracking."
+            icon={Edit3}
+            link="/production/cutting/input"
+            color="blue"
+            badge="Daily Entry"
+          />
+          
+          <NavigationCard
+            title="Production Calendar"
+            description="View production schedule, track progress by date, monitor cumulative achievement vs target."
+            icon={Calendar}
+            link="/production/calendar"
+            color="green"
+            badge="Timeline"
+          />
+          
+          <NavigationCard
+            title="WIP Dashboard"
+            description="Real-time Work-In-Progress tracking across all departments. Monitor material flow and bottlenecks."
+            icon={LayoutDashboard}
+            link="/production/wip"
+            color="purple"
+            badge="Real-time"
+          />
+        </div>
+      </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Reject Quantity
-                  </label>
-                  <input
-                    type="number"
-                    value={rejectQty}
-                    onChange={(e) => setRejectQty(Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter reject quantity"
-                  />
-                </div>
-
-                {/* Variance Preview */}
-                {outputQty > 0 && (
-                  <div className="bg-gray-50 p-3 rounded">
-                    <p className="text-sm text-gray-700">
-                      <span className="font-medium">Target:</span> {selectedWO.input_qty} units
-                    </p>
-                    <p className="text-sm text-gray-700 mt-1">
-                      <span className="font-medium">Variance:</span>{' '}
-                      <span className={outputQty > selectedWO.input_qty ? 'text-green-600' : outputQty < selectedWO.input_qty ? 'text-red-600' : 'text-gray-600'}>
-                        {outputQty - selectedWO.input_qty > 0 ? '+' : ''}{outputQty - selectedWO.input_qty} units
-                      </span>
-                    </p>
-                  </div>
-                )}
+      {/* Production Performance */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Department Performance</h2>
+        <Card className="bg-white shadow-lg">
+          <div className="p-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="text-center">
+                <CheckCircle className="w-10 h-10 text-green-400 mx-auto mb-2" />
+                <p className="text-3xl font-bold text-green-600">{stats.completed_today}</p>
+                <p className="text-sm text-gray-500">Completed WOs</p>
               </div>
-
-              <div className="flex gap-3 mt-6">
-                <button
-                  onClick={() => {
-                    setSelectedWO(null);
-                    setOutputQty(0);
-                    setRejectQty(0);
-                  }}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => completeWO.mutate({ 
-                    woId: selectedWO.id, 
-                    output_qty: outputQty, 
-                    reject_qty: rejectQty 
-                  })}
-                  disabled={completeWO.isPending || outputQty === 0}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-50"
-                >
-                  {completeWO.isPending ? 'Saving...' : 'Complete WO'}
-                </button>
+              <div className="text-center">
+                <Clock className="w-10 h-10 text-blue-400 mx-auto mb-2" />
+                <p className="text-3xl font-bold text-blue-600">{stats.active_wos}</p>
+                <p className="text-sm text-gray-500">Active WOs</p>
+              </div>
+              <div className="text-center">
+                <TrendingUp className="w-10 h-10 text-purple-400 mx-auto mb-2" />
+                <p className="text-3xl font-bold text-purple-600">{stats.efficiency_rate.toFixed(0)}%</p>
+                <p className="text-sm text-gray-500">Efficiency</p>
+              </div>
+              <div className="text-center">
+                <Package className="w-10 h-10 text-orange-400 mx-auto mb-2" />
+                <p className="text-3xl font-bold text-orange-600">{stats.today_output}</p>
+                <p className="text-sm text-gray-500">Total Output</p>
+              </div>
+            </div>
+            
+            {/* Efficiency Progress Bar */}
+            <div className="mt-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-700">Overall Efficiency</span>
+                <span className="text-sm font-medium text-gray-900">{stats.efficiency_rate.toFixed(1)}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-3">
+                <div 
+                  className={`h-3 rounded-full transition-all ${
+                    stats.efficiency_rate >= 95 ? 'bg-green-500' :
+                    stats.efficiency_rate >= 85 ? 'bg-yellow-500' :
+                    'bg-red-500'
+                  }`}
+                  style={{ width: `${Math.min(stats.efficiency_rate, 100)}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>Target: 95%</span>
+                <span className={stats.efficiency_rate >= 95 ? 'text-green-600 font-medium' : ''}>
+                  {stats.efficiency_rate >= 95 ? '✓ Target achieved!' : `${(95 - stats.efficiency_rate).toFixed(1)}% to target`}
+                </span>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        </Card>
+      </div>
 
-      {/* Empty State */}
-      {workOrders?.length === 0 && (
-        <div className="text-center py-12">
-          <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No Work Orders</h3>
-          <p className="text-gray-500">There are no active work orders for cutting department.</p>
+      {/* Recent Work Orders Table */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">Recent Work Orders</h2>
         </div>
-      )}
+        
+        <Card className="bg-white shadow-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    WO ID
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    MO ID
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Target
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Output
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Reject
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Started
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {recentWOs.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-12 text-center">
+                      <Scissors className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                      <p className="text-gray-500">No work orders yet</p>
+                      <button
+                        onClick={() => navigate('/production/cutting/input')}
+                        className="mt-4 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                      >
+                        Start Production Input →
+                      </button>
+                    </td>
+                  </tr>
+                ) : (
+                  recentWOs.map((wo: WorkOrder) => (
+                    <tr key={wo.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">WO #{wo.id}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">MO #{wo.mo_id}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full ${getWorkOrderStatusBadgeClass(wo.status)}`}>
+                          {wo.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{wo.input_qty} pcs</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-blue-600">{wo.output_qty} pcs</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-red-600">{wo.reject_qty} pcs</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">
+                          {wo.start_time ? format(new Date(wo.start_time), 'dd MMM HH:mm') : '-'}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      </div>
+
+      {/* Help Section */}
+      <Card className="bg-blue-50 border-blue-200">
+        <div className="p-6">
+          <h3 className="text-lg font-semibold text-blue-900 mb-2">💡 Cutting Department Guide</h3>
+          <div className="text-sm text-blue-800 space-y-1">
+            <p>• <strong>Material Conversion</strong>: System auto-converts fabric yards → pieces using BOM marker data</p>
+            <p>• <strong>Buffer System</strong>: +10% cutting target for waste anticipation (configured in BOM)</p>
+            <p>• <strong>Daily Input</strong>: Record production daily via calendar view, cumulative tracking automatic</p>
+            <p>• <strong>Quality Tracking</strong>: Classify rejects as Fixable ( → Rework) or Scrap immediately</p>
+          </div>
+        </div>
+      </Card>
     </div>
-  );
+  )
 }

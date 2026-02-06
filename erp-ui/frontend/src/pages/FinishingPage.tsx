@@ -1,401 +1,302 @@
 /**
- * Copyright (c) 2026 PT Quty Karunia / Daniel Rizaldy - All Rights Reserved
- * File: FinishingPage.tsx | Author: Daniel Rizaldy | Date: 2026-01-19
- * Updated: 2026-01-21 | Phase 16 Week 4 | PBAC Integration
+ * Copyright (c) 2026 PT Quty Karunia - All Rights Reserved
+ * File: FinishingPage.tsx | Date: 2026-02-06
+ * Purpose: Finishing Department Landing Dashboard (REFACTORED)
+ * Architecture: Level 2 - Module Landing Page (Dashboard → Landing → Detail)
  */
 
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { format } from 'date-fns';
+import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import { format } from 'date-fns'
 import { 
   Package2, 
-  CheckCircle, 
-  XOctagon, 
   Sparkles,
-  ArrowRight,
-  Lock
-} from 'lucide-react';
-import axios from 'axios';
-import { usePermission } from '@/hooks/usePermission';
+  TrendingUp,
+  CheckCircle,
+  Calendar,
+  LayoutDashboard,
+  Edit3
+} from 'lucide-react'
+import axios from 'axios'
+import { NavigationCard } from '@/components/ui/NavigationCard'
+import { Card } from '@/components/ui/card'
+import { WorkOrder, FinishingStats } from '@/types'
+import { getWorkOrderStatusBadgeClass } from '@/utils'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
-
-interface WorkOrder {
-  id: number;
-  mo_id: number;
-  department: string;
-  status: string;
-  input_qty: number;
-  output_qty: number;
-  reject_qty: number;
-}
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
 
 export default function FinishingPage() {
-  const [selectedWO, setSelectedWO] = useState<number | null>(null);
-  const [stuffedQty, setStuffedQty] = useState<number>(0);
-  const [defectQty, setDefectQty] = useState<number>(0);
-  const queryClient = useQueryClient();
+  const navigate = useNavigate()
+  const [loading, setLoading] = useState(false)
 
-  // Permission checks (PBAC - Phase 16 Week 4)
-  const canViewStatus = usePermission('finishing.view_status');
-  const canAcceptTransfer = usePermission('finishing.accept_transfer');
-  const canLineClearance = usePermission('finishing.line_clearance');
-  const canPerformStuffing = usePermission('finishing.perform_stuffing');
-  const canPerformClosing = usePermission('finishing.perform_closing');
-  const canMetalDetectorQC = usePermission('finishing.metal_detector_qc');
-  const canFinalQC = usePermission('finishing.final_qc');
-  const canConvertToFG = usePermission('finishing.convert_to_fg');
+  useEffect(() => {
+    fetchData()
+    const interval = setInterval(fetchData, 30000)
+    return () => clearInterval(interval)
+  }, [])
 
-  const { data: workOrders, isLoading } = useQuery({
+  const fetchData = async () => {
+    setLoading(true)
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500))
+    } catch (error) {
+      console.error('Failed to fetch finishing data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const { data: workOrders = [] } = useQuery({
     queryKey: ['finishing-work-orders'],
     queryFn: async () => {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('access_token')
       const response = await axios.get(`${API_BASE}/production/finishing/pending`, {
         headers: { Authorization: `Bearer ${token}` }
-      });
-      return response.data;
+      })
+      return response.data
     },
-    refetchInterval: 5000
-  });
+    refetchInterval: 30000
+  })
 
-  const startWO = useMutation({
-    mutationFn: async (woId: number) => {
-      const token = localStorage.getItem('access_token');
-      return axios.post(`${API_BASE}/production/finishing/work-order/${woId}/start`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['finishing-work-orders'] });
+  const stats: FinishingStats = {
+    today_stuffed: workOrders.reduce((sum: number, wo: WorkOrder) => sum + wo.output_qty, 0),
+    today_closed: workOrders.filter((wo: WorkOrder) => wo.status === 'Finished').length * 100,
+    active_wos: workOrders.filter((wo: WorkOrder) => wo.status === 'Running').length,
+    filling_consumption_kg: workOrders.reduce((sum: number, wo: WorkOrder) => sum + (wo.output_qty * 0.054), 0)
+  }
+
+  const recentWOs = workOrders.slice(0, 10)
+
+  const getStatusBadgeClass = (status: string) => {
+    switch (status) {
+      case 'Pending': return 'bg-yellow-100 text-yellow-800'
+      case 'Running': return 'bg-blue-100 text-blue-800'
+      case 'Finished': return 'bg-green-100 text-green-800'
+      default: return 'bg-gray-100 text-gray-800'
     }
-  });
+  }
 
-  const recordStuffing = useMutation({
-    mutationFn: async (data: { woId: number; stuffed_qty: number }) => {
-      const token = localStorage.getItem('access_token');
-      return axios.post(`${API_BASE}/production/finishing/work-order/${data.woId}/stuffing`, {
-        stuffed_qty: data.stuffed_qty
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['finishing-work-orders'] });
-      setSelectedWO(null);
-      setStuffedQty(0);
-    }
-  });
-
-  const finalQC = useMutation({
-    mutationFn: async (data: { woId: number; pass_qty: number; defect_qty: number }) => {
-      const token = localStorage.getItem('access_token');
-      return axios.post(`${API_BASE}/production/finishing/work-order/${data.woId}/final-qc`, {
-        pass_qty: data.pass_qty,
-        defect_qty: data.defect_qty
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['finishing-work-orders'] });
-      setSelectedWO(null);
-      setDefectQty(0);
-    }
-  });
-
-  const completeFinishing = useMutation({
-    mutationFn: async (woId: number) => {
-      const token = localStorage.getItem('access_token');
-      return axios.post(`${API_BASE}/production/finishing/work-order/${woId}/complete`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['finishing-work-orders'] });
-    }
-  });
-
-  if (isLoading) {
+  if (loading && workOrders.length === 0) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
       </div>
-    );
+    )
   }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-          <Sparkles className="w-8 h-8 mr-3 text-green-600" />
-          Finishing Department
-        </h1>
-        <p className="text-gray-500 mt-1">
-          {format(new Date(), 'EEEE, dd MMMM yyyy • HH:mm')} WIB
-        </p>
+      <div className="mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+            <Package2 className="w-8 h-8 mr-3 text-purple-600" />
+            Finishing Department
+          </h1>
+          <p className="text-gray-500 mt-1">
+            {new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} • {new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
+          </p>
+          <p className="text-sm text-gray-400 mt-1">
+            📍 Department Landing Page • 2-Stage Process (Stuffing + Closing)
+          </p>
+        </div>
       </div>
 
-      {/* Work Orders Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {workOrders?.map((wo: WorkOrder) => (
-          <div key={wo.id} className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-            {/* Card Header */}
-            <div className="bg-gradient-to-r from-green-600 to-green-700 p-4 text-white">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold">WO #{wo.id}</h3>
-                  <p className="text-sm opacity-90">MO #{wo.mo_id}</p>
-                </div>
-                <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${
-                  wo.status === 'Running' ? 'bg-blue-100 text-blue-800' :
-                  wo.status === 'Finished' ? 'bg-green-100 text-green-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>
-                  {wo.status}
-                </span>
-              </div>
-            </div>
-
-            {/* Card Body */}
-            <div className="p-4 space-y-4">
-              {/* Progress Bar */}
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <Card className="bg-white shadow-lg border-l-4 border-purple-500">
+          <div className="p-6">
+            <div className="flex items-center justify-between">
               <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-600">Progress</span>
-                  <span className="font-medium text-gray-900">
-                    {wo.output_qty} / {wo.input_qty}
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-green-600 h-2 rounded-full transition-all"
-                    style={{ width: `${(wo.output_qty / wo.input_qty) * 100}%` }}
-                  ></div>
-                </div>
+                <p className="text-sm text-gray-500 mb-1">Stuffed Today</p>
+                <p className="text-3xl font-bold text-purple-600">{stats.today_stuffed}</p>
+                <p className="text-xs text-gray-400 mt-1">bodies stuffed</p>
               </div>
-
-              {/* Stats */}
-              <div className="grid grid-cols-2 gap-3 text-center">
-                <div className="bg-green-50 p-3 rounded">
-                  <p className="text-xs text-green-700 mb-1">Output</p>
-                  <p className="text-xl font-bold text-green-600">{wo.output_qty}</p>
-                </div>
-                <div className="bg-red-50 p-3 rounded">
-                  <p className="text-xs text-red-700 mb-1">Defects</p>
-                  <p className="text-xl font-bold text-red-600">{wo.reject_qty}</p>
-                </div>
-              </div>
-
-              {/* Quality Rate */}
-              <div className="bg-blue-50 p-3 rounded">
-                <p className="text-xs text-blue-700 mb-1">Quality Rate</p>
-                <p className="text-lg font-bold text-blue-600">
-                  {wo.output_qty > 0 
-                    ? ((wo.output_qty - wo.reject_qty) / wo.output_qty * 100).toFixed(1)
-                    : '0.0'}%
-                </p>
-              </div>
-
-              {/* Actions */}
-              <div className="space-y-2">
-                {wo.status === 'Pending' && (
-                  <button
-                    onClick={() => startWO.mutate(wo.id)}
-                    disabled={startWO.isPending}
-                    className="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition disabled:opacity-50 text-sm font-medium"
-                  >
-                    Start Finishing
-                  </button>
-                )}
-
-                {wo.status === 'Running' && (
-                  <>
-                    <button
-                      onClick={() => setSelectedWO(wo.id)}
-                      className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition text-sm font-medium flex items-center justify-center"
-                    >
-                      <Package2 className="w-4 h-4 mr-2" />
-                      Record Stuffing
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setSelectedWO(wo.id);
-                        setDefectQty(0);
-                      }}
-                      className="w-full bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition text-sm font-medium flex items-center justify-center"
-                    >
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Final QC
-                    </button>
-
-                    <button
-                      onClick={() => completeFinishing.mutate(wo.id)}
-                      disabled={completeFinishing.isPending}
-                      className="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition disabled:opacity-50 text-sm font-medium flex items-center justify-center"
-                    >
-                      <ArrowRight className="w-4 h-4 mr-2" />
-                      Complete Finishing
-                    </button>
-                  </>
-                )}
-              </div>
+              <Package2 className="w-12 h-12 text-purple-400" />
             </div>
           </div>
-        ))}
+        </Card>
+
+        <Card className="bg-white shadow-lg border-l-4 border-green-500">
+          <div className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Closed Today</p>
+                <p className="text-3xl font-bold text-green-600">{stats.today_closed}</p>
+                <p className="text-xs text-gray-400 mt-1">dolls finished</p>
+              </div>
+              <CheckCircle className="w-12 h-12 text-green-400" />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="bg-white shadow-lg border-l-4 border-blue-500">
+          <div className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Filling Used</p>
+                <p className="text-3xl font-bold text-blue-600">{stats.filling_consumption_kg.toFixed(1)}</p>
+                <p className="text-xs text-gray-400 mt-1">kg kapas</p>
+              </div>
+              <Sparkles className="w-12 h-12 text-blue-400" />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="bg-white shadow-lg border-l-4 border-orange-500">
+          <div className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Active Lines</p>
+                <p className="text-3xl font-bold text-orange-600">{stats.active_wos}</p>
+                <p className="text-xs text-gray-400 mt-1">in process</p>
+              </div>
+              <TrendingUp className="w-12 h-12 text-orange-400" />
+            </div>
+          </div>
+        </Card>
       </div>
 
-      {/* Stuffing Modal */}
-      {selectedWO && stuffedQty === 0 && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-            <div className="p-6">
-              <h3 className="text-xl font-bold mb-4 flex items-center">
-                <Package2 className="w-6 h-6 mr-2 text-blue-600" />
-                Record Stuffing - WO #{selectedWO}
-              </h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Stuffed Quantity
-                  </label>
-                  <input
-                    type="number"
-                    value={stuffedQty}
-                    onChange={(e) => setStuffedQty(Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter stuffed quantity"
-                  />
-                </div>
+      {/* Navigation Cards */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <NavigationCard
+            title="Input Production"
+            description="Stage 1 (Stuffing): Skin → Stuffed Body. Stage 2 (Closing): Hang tag → Finished Doll."
+            icon={Edit3}
+            link="/production/finishing/input"
+            color="purple"
+            badge="2-Stage"
+          />
+          
+          <NavigationCard
+            title="Production Calendar"
+            description="Track daily progress per stage, monitor filling consumption, cumulative output."
+            icon={Calendar}
+            link="/production/calendar"
+            color="green"
+            badge="Timeline"
+          />
+          
+          <NavigationCard
+            title="WIP Dashboard"
+            description="3 stock levels: Skin, Stuffed Body, Finished Doll. Demand-driven allocation."
+            icon={LayoutDashboard}
+            link="/production/wip"
+            color="blue"
+            badge="3 Stocks"
+          />
+        </div>
+      </div>
 
-                <div className="bg-blue-50 p-3 rounded text-sm text-blue-700">
-                  <p>Process: Stuffing with filling material</p>
-                  <p className="mt-1">Ensure proper filling density</p>
-                </div>
+      {/* Production Performance */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Department Performance</h2>
+        <Card className="bg-white shadow-lg">
+          <div className="p-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+              <div className="text-center">
+                <Package2 className="w-10 h-10 text-purple-400 mx-auto mb-2" />
+                <p className="text-3xl font-bold text-purple-600">{stats.today_stuffed}</p>
+                <p className="text-sm text-gray-500">Stuffed Bodies</p>
+                <p className="text-xs text-gray-400 mt-1">Stage 1 Output</p>
               </div>
-
-              <div className="flex gap-3 mt-6">
-                <button
-                  onClick={() => {
-                    setSelectedWO(null);
-                    setStuffedQty(0);
-                  }}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => recordStuffing.mutate({ 
-                    woId: selectedWO, 
-                    stuffed_qty: stuffedQty 
-                  })}
-                  disabled={recordStuffing.isPending || stuffedQty === 0}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-50"
-                >
-                  {recordStuffing.isPending ? 'Recording...' : 'Record Stuffing'}
-                </button>
+              <div className="text-center">
+                <CheckCircle className="w-10 h-10 text-green-400 mx-auto mb-2" />
+                <p className="text-3xl font-bold text-green-600">{stats.today_closed}</p>
+                <p className="text-sm text-gray-500">Finished Dolls</p>
+                <p className="text-xs text-gray-400 mt-1">Stage 2 Output</p>
+              </div>
+              <div className="text-center">
+                <Sparkles className="w-10 h-10 text-blue-400 mx-auto mb-2" />
+                <p className="text-3xl font-bold text-blue-600">{stats.filling_consumption_kg.toFixed(1)}</p>
+                <p className="text-sm text-gray-500">Filling (kg)</p>
+                <p className="text-xs text-gray-400 mt-1">Material Consumption</p>
               </div>
             </div>
           </div>
+        </Card>
+      </div>
+
+      {/* Recent Work Orders Table */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">Recent Work Orders</h2>
         </div>
-      )}
-
-      {/* Final QC Modal */}
-      {selectedWO && defectQty >= 0 && stuffedQty === 0 && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-            <div className="p-6">
-              <h3 className="text-xl font-bold mb-4 flex items-center">
-                <CheckCircle className="w-6 h-6 mr-2 text-purple-600" />
-                Final QC - WO #{selectedWO}
-              </h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Total Inspected
-                  </label>
-                  <input
-                    type="number"
-                    value={stuffedQty}
-                    onChange={(e) => {
-                      const val = Number(e.target.value);
-                      setStuffedQty(val);
-                      if (defectQty > val) setDefectQty(0);
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    placeholder="Enter total inspected"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Defect Quantity
-                  </label>
-                  <input
-                    type="number"
-                    value={defectQty}
-                    onChange={(e) => setDefectQty(Number(e.target.value))}
-                    max={stuffedQty}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                    placeholder="Enter defect quantity"
-                  />
-                </div>
-
-                {stuffedQty > 0 && (
-                  <div className="bg-green-50 p-3 rounded">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-green-700">Pass Quantity:</span>
-                      <span className="font-bold text-green-800">{stuffedQty - defectQty}</span>
-                    </div>
-                    <div className="flex justify-between text-sm mt-1">
-                      <span className="text-green-700">Pass Rate:</span>
-                      <span className="font-bold text-green-800">
-                        {((stuffedQty - defectQty) / stuffedQty * 100).toFixed(1)}%
-                      </span>
-                    </div>
-                  </div>
+        
+        <Card className="bg-white shadow-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">WO ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">MO ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Target</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Output</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reject</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {recentWOs.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center">
+                      <Package2 className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                      <p className="text-gray-500">No work orders yet</p>
+                      <button
+                        onClick={() => navigate('/production/finishing/input')}
+                        className="mt-4 text-purple-600 hover:text-purple-700 text-sm font-medium"
+                      >
+                        Start Production Input →
+                      </button>
+                    </td>
+                  </tr>
+                ) : (
+                  recentWOs.map((wo: WorkOrder) => (
+                    <tr key={wo.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">WO #{wo.id}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">MO #{wo.mo_id}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full ${getStatusBadgeClass(wo.status)}`}>
+                          {wo.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{wo.input_qty} pcs</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-purple-600">{wo.output_qty} pcs</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-red-600">{wo.reject_qty} pcs</div>
+                      </td>
+                    </tr>
+                  ))
                 )}
-              </div>
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      </div>
 
-              <div className="flex gap-3 mt-6">
-                <button
-                  onClick={() => {
-                    setSelectedWO(null);
-                    setStuffedQty(0);
-                    setDefectQty(0);
-                  }}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => finalQC.mutate({ 
-                    woId: selectedWO, 
-                    pass_qty: stuffedQty - defectQty,
-                    defect_qty: defectQty 
-                  })}
-                  disabled={finalQC.isPending || stuffedQty === 0}
-                  className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition disabled:opacity-50"
-                >
-                  {finalQC.isPending ? 'Submitting...' : 'Submit QC'}
-                </button>
-              </div>
-            </div>
+      {/* Help Section */}
+      <Card className="bg-purple-50 border-purple-200">
+        <div className="p-6">
+          <h3 className="text-lg font-semibold text-purple-900 mb-2">💡 Finishing Department Guide</h3>
+          <div className="text-sm text-purple-800 space-y-1">
+            <p>• <strong>Stage 1 - Stuffing</strong>: Input Skin + Filling → Output Stuffed Body (track filling gram/pcs)</p>
+            <p>• <strong>Stage 2 - Closing</strong>: Input Stuffed Body + Hang Tag → Output Finished Doll</p>
+            <p>• <strong>Warehouse Finishing</strong>: Internal stock tracking (no surat jalan), demand-driven production</p>
+            <p>• <strong>Final QC</strong>: Metal detector check + visual inspection before transfer to Warehouse FG</p>
           </div>
         </div>
-      )}
-
-      {/* Empty State */}
-      {workOrders?.length === 0 && (
-        <div className="text-center py-12">
-          <Sparkles className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No Work Orders</h3>
-          <p className="text-gray-500">There are no active work orders for finishing department.</p>
-        </div>
-      )}
+      </Card>
     </div>
-  );
+  )
 }

@@ -1,10 +1,13 @@
 /**
  * Copyright (c) 2026 PT Quty Karunia / Daniel Rizaldy - All Rights Reserved
- * File: PurchasingPage.tsx | Author: Daniel Rizaldy | Date: 2026-01-19
+ * File: PurchasingPage.tsx | Author: Daniel Rizaldy | Date: 2026-02-06
+ * Purpose: Purchasing Module Landing Dashboard (REFACTORED)
+ * Architecture: Level 2 - Module Landing Page (Dashboard → Landing → Detail)
  */
 
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { 
   ShoppingCart, 
@@ -15,10 +18,12 @@ import {
   TrendingUp,
   FileText,
   Plus,
-  Trash2
+  Users,
+  BarChart3
 } from 'lucide-react';
 import axios from 'axios';
-import { PurchaseOrderCreate } from '@/components/purchasing/PurchaseOrderCreate';
+import { NavigationCard } from '@/components/ui/NavigationCard';
+import { Card } from '@/components/ui/card';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
@@ -31,6 +36,7 @@ interface PurchaseOrder {
   status: string;
   total_amount: number;
   currency: string;
+  po_type?: string;
   metadata?: {
     items?: Array<{
       product_id: number;
@@ -41,16 +47,7 @@ interface PurchaseOrder {
 }
 
 export default function PurchasingPage() {
-  const [selectedPO, setSelectedPO] = useState<PurchaseOrder | null>(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showReceiveModal, setShowReceiveModal] = useState(false);
-  const [poItems, setPOItems] = useState([{
-    id: Date.now(),
-    product_id: '',
-    quantity: '',
-    unit_price: ''
-  }]);
-  const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   // Fetch purchase orders
   const { data: purchaseOrders, isLoading } = useQuery({
@@ -62,53 +59,21 @@ export default function PurchasingPage() {
       });
       return response.data;
     },
-    refetchInterval: 5000
+    refetchInterval: 30000 // Refresh every 30 seconds
   });
 
-  // Approve PO mutation
-  const approvePO = useMutation({
-    mutationFn: async (poId: number) => {
-      const token = localStorage.getItem('access_token');
-      return axios.post(`${API_BASE}/purchasing/purchase-order/${poId}/approve`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
-    }
-  });
+  // Calculate statistics
+  const stats = {
+    total: purchaseOrders?.length || 0,
+    draft: purchaseOrders?.filter((po: PurchaseOrder) => po.status === 'Draft').length || 0,
+    sent: purchaseOrders?.filter((po: PurchaseOrder) => po.status === 'Sent').length || 0,
+    received: purchaseOrders?.filter((po: PurchaseOrder) => po.status === 'Received').length || 0,
+    done: purchaseOrders?.filter((po: PurchaseOrder) => po.status === 'Done').length || 0,
+    totalSpend: purchaseOrders?.reduce((sum: number, po: PurchaseOrder) => sum + (po.total_amount || 0), 0) || 0,
+  };
 
-  // Receive PO mutation
-  const receivePO = useMutation({
-    mutationFn: async (data: { poId: number; received_items: any[] }) => {
-      const token = localStorage.getItem('access_token');
-      return axios.post(
-        `${API_BASE}/purchasing/purchase-order/${data.poId}/receive`,
-        { received_items: data.received_items, location_id: 1 },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
-      setShowReceiveModal(false);
-      setSelectedPO(null);
-    }
-  });
-
-  // Cancel PO mutation
-  const cancelPO = useMutation({
-    mutationFn: async (data: { poId: number; reason: string }) => {
-      const token = localStorage.getItem('access_token');
-      return axios.post(
-        `${API_BASE}/purchasing/purchase-order/${data.poId}/cancel`,
-        { reason: data.reason },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
-    }
-  });
+  // Get recent POs (last 10)
+  const recentPOs = purchaseOrders?.slice(0, 10) || [];
 
   const getStatusBadge = (status: string) => {
     const badges: Record<string, { color: string; icon: any }> = {
@@ -147,7 +112,7 @@ export default function PurchasingPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 flex items-center">
@@ -157,220 +122,242 @@ export default function PurchasingPage() {
             <p className="text-gray-500 mt-1">
               {format(new Date(), 'EEEE, dd MMMM yyyy • HH:mm')} WIB
             </p>
+            <p className="text-sm text-gray-400 mt-1">
+              📍 Module Landing Page • 3 Specialists: Fabric, Label, Accessories
+            </p>
           </div>
+        </div>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <Card className="bg-white shadow-lg border-l-4 border-blue-500">
+          <div className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Total POs</p>
+                <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
+                <p className="text-xs text-gray-400 mt-1">All time</p>
+              </div>
+              <FileText className="w-12 h-12 text-blue-400" />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="bg-white shadow-lg border-l-4 border-orange-500">
+          <div className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Pending Approval</p>
+                <p className="text-3xl font-bold text-orange-600">{stats.draft}</p>
+                <p className="text-xs text-gray-400 mt-1">Draft status</p>
+              </div>
+              <Clock className="w-12 h-12 text-orange-400" />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="bg-white shadow-lg border-l-4 border-purple-500">
+          <div className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500 mb-1">This Month Spend</p>
+                <p className="text-2xl font-bold text-purple-600">{formatCurrency(stats.totalSpend)}</p>
+                <p className="text-xs text-gray-400 mt-1">Total purchase value</p>
+              </div>
+              <TrendingUp className="w-12 h-12 text-purple-400" />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="bg-white shadow-lg border-l-4 border-green-500">
+          <div className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Completed</p>
+                <p className="text-3xl font-bold text-green-600">{stats.done}</p>
+                <p className="text-xs text-gray-400 mt-1">Done status</p>
+              </div>
+              <CheckCircle className="w-12 h-12 text-green-400" />
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Navigation Cards - CRITICAL for 3-Tier Architecture */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <NavigationCard
+            title="Create New PO"
+            description="Create purchase order with AUTO (BOM explosion) or MANUAL mode. Supports Dual Trigger System (PO Kain + PO Label)."
+            icon={Plus}
+            link="/purchasing/po/create"
+            color="purple"
+            badge="Dual Mode"
+          />
+          
+          <NavigationCard
+            title="PO List & Tracking"
+            description="View all purchase orders with advanced filters. Track PO status from Draft → Sent → Received → Done."
+            icon={BarChart3}
+            link="/purchasing/po"
+            color="blue"
+            badge="Real-time"
+            disabled={true}
+          />
+          
+          <NavigationCard
+            title="Supplier Management"
+            description="Manage supplier database, performance tracking, and payment terms. Multi-supplier per material support."
+            icon={Users}
+            link="/purchasing/suppliers"
+            color="green"
+            disabled={true}
+          />
+        </div>
+      </div>
+
+      {/* PO Status Breakdown */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">PO Status Overview</h2>
+        <Card className="bg-white shadow-lg">
+          <div className="p-6">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div className="text-center">
+                <FileText className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                <p className="text-2xl font-bold text-gray-900">{stats.draft}</p>
+                <p className="text-sm text-gray-500">Draft</p>
+              </div>
+              <div className="text-center">
+                <Clock className="w-8 h-8 text-blue-400 mx-auto mb-2" />
+                <p className="text-2xl font-bold text-blue-600">{stats.sent}</p>
+                <p className="text-sm text-gray-500">Sent</p>
+              </div>
+              <div className="text-center">
+                <PackageCheck className="w-8 h-8 text-orange-400 mx-auto mb-2" />
+                <p className="text-2xl font-bold text-orange-600">{stats.received}</p>
+                <p className="text-sm text-gray-500">Received</p>
+              </div>
+              <div className="text-center">
+                <CheckCircle className="w-8 h-8 text-green-400 mx-auto mb-2" />
+                <p className="text-2xl font-bold text-green-600">{stats.done}</p>
+                <p className="text-sm text-gray-500">Done</p>
+              </div>
+              <div className="text-center">
+                <TrendingUp className="w-8 h-8 text-purple-400 mx-auto mb-2" />
+                <p className="text-2xl font-bold text-purple-600">{stats.total}</p>
+                <p className="text-sm text-gray-500">Total</p>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Recent Purchase Orders Table */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">Recent Purchase Orders</h2>
           <button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition flex items-center shadow-lg"
+            onClick={() => navigate('/purchasing/po')}
+            className="text-blue-600 hover:text-blue-700 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={true}
           >
-            <ShoppingCart className="w-5 h-5 mr-2" />
-            Create Purchase Order
+            View All →
           </button>
         </div>
+        
+        <Card className="bg-white shadow-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    PO Number
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Type
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Supplier
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Order Date
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Amount
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {recentPOs.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-12 text-center">
+                      <ShoppingCart className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                      <p className="text-gray-500">No purchase orders yet</p>
+                      <button
+                        onClick={() => navigate('/purchasing/po/create')}
+                        className="mt-4 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                      >
+                        Create your first PO →
+                      </button>
+                    </td>
+                  </tr>
+                ) : (
+                  recentPOs.map((po: PurchaseOrder) => (
+                    <tr key={po.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{po.po_number}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          po.po_type === 'KAIN' ? 'bg-purple-100 text-purple-800' :
+                          po.po_type === 'LABEL' ? 'bg-blue-100 text-blue-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {po.po_type || 'N/A'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">Supplier #{po.supplier_id}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">
+                          {format(new Date(po.order_date), 'dd MMM yyyy')}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">
+                          {formatCurrency(po.total_amount)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {getStatusBadge(po.status)}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Total POs</p>
-              <p className="text-2xl font-bold text-gray-900">{purchaseOrders?.length || 0}</p>
-            </div>
-            <FileText className="w-10 h-10 text-gray-400" />
+      {/* Help Section */}
+      <Card className="bg-blue-50 border-blue-200">
+        <div className="p-6">
+          <h3 className="text-lg font-semibold text-blue-900 mb-2">💡 Purchasing Module Guide</h3>
+          <div className="text-sm text-blue-800 space-y-1">
+            <p>• <strong>Dual Mode PO</strong>: AUTO mode uses BOM explosion, MANUAL mode for line-by-line entry</p>
+            <p>• <strong>Dual Trigger System</strong>: PO Kain (TRIGGER 1) starts Cutting, PO Label (TRIGGER 2) releases full production</p>
+            <p>• <strong>Multi-Supplier</strong>: Each material can have different supplier in the same PO</p>
+            <p>• <strong>3 Specialists</strong>: Fabric, Label, and Accessories purchasing handled separately</p>
           </div>
         </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Pending Approval</p>
-              <p className="text-2xl font-bold text-blue-600">
-                {purchaseOrders?.filter((po: PurchaseOrder) => po.status === 'Draft').length || 0}
-              </p>
-            </div>
-            <Clock className="w-10 h-10 text-blue-400" />
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500 mb-1">In Transit</p>
-              <p className="text-2xl font-bold text-orange-600">
-                {purchaseOrders?.filter((po: PurchaseOrder) => po.status === 'Sent').length || 0}
-              </p>
-            </div>
-            <PackageCheck className="w-10 h-10 text-orange-400" />
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Received</p>
-              <p className="text-2xl font-bold text-green-600">
-                {purchaseOrders?.filter((po: PurchaseOrder) => po.status === 'Received').length || 0}
-              </p>
-            </div>
-            <CheckCircle className="w-10 h-10 text-green-400" />
-          </div>
-        </div>
-      </div>
-
-      {/* Purchase Orders Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {purchaseOrders?.map((po: PurchaseOrder) => (
-          <div key={po.id} className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-            {/* Card Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 text-white">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold">{po.po_number}</h3>
-                  <p className="text-sm opacity-90">Supplier ID: {po.supplier_id}</p>
-                </div>
-                {getStatusBadge(po.status)}
-              </div>
-            </div>
-
-            {/* Card Body */}
-            <div className="p-4 space-y-4">
-              {/* Dates */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">Order Date</p>
-                  <p className="text-sm font-medium">{format(new Date(po.order_date), 'dd MMM yyyy')}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">Expected Date</p>
-                  <p className="text-sm font-medium">{format(new Date(po.expected_date), 'dd MMM yyyy')}</p>
-                </div>
-              </div>
-
-              {/* Amount */}
-              <div className="bg-blue-50 p-3 rounded">
-                <p className="text-xs text-gray-600 mb-1">Total Amount</p>
-                <p className="text-xl font-bold text-blue-600">{formatCurrency(po.total_amount)}</p>
-              </div>
-
-              {/* Items Count */}
-              {po.metadata?.items && (
-                <div className="text-sm text-gray-600">
-                  <TrendingUp className="w-4 h-4 inline mr-1" />
-                  {po.metadata.items.length} items in this PO
-                </div>
-              )}
-
-              {/* Actions */}
-              <div className="flex gap-2">
-                {po.status === 'Draft' && (
-                  <button
-                    onClick={() => approvePO.mutate(po.id)}
-                    disabled={approvePO.isPending}
-                    className="flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition disabled:opacity-50 text-sm font-medium"
-                  >
-                    Approve
-                  </button>
-                )}
-
-                {po.status === 'Sent' && (
-                  <button
-                    onClick={() => {
-                      setSelectedPO(po);
-                      setShowReceiveModal(true);
-                    }}
-                    className="flex-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition text-sm font-medium"
-                  >
-                    Receive Materials
-                  </button>
-                )}
-
-                {(po.status === 'Draft' || po.status === 'Sent') && (
-                  <button
-                    onClick={() => {
-                      const reason = prompt('Reason for cancellation:');
-                      if (reason) {
-                        cancelPO.mutate({ poId: po.id, reason });
-                      }
-                    }}
-                    disabled={cancelPO.isPending}
-                    className="flex-1 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition disabled:opacity-50 text-sm font-medium"
-                  >
-                    Cancel
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Empty State */}
-      {purchaseOrders?.length === 0 && (
-        <div className="text-center py-12">
-          <ShoppingCart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No Purchase Orders</h3>
-          <p className="text-gray-500 mb-4">Create your first purchase order to get started.</p>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition"
-          >
-            Create Purchase Order
-          </button>
-        </div>
-      )}
-
-      {/* Create PO Modal - DUAL-MODE SYSTEM (AUTO-BOM + MANUAL) */}
-      {showCreateModal && (
-        <PurchaseOrderCreate
-          onClose={() => setShowCreateModal(false)}
-          onSuccess={() => {
-            queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
-          }}
-        />
-      )}
-
-      {/* Receive Materials Modal */}
-      {showReceiveModal && selectedPO && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-            <div className="p-6">
-              <h3 className="text-xl font-bold mb-4">Receive Materials - {selectedPO.po_number}</h3>
-              <p className="text-gray-600 mb-4">
-                Confirm material receipt for PO {selectedPO.po_number}. 
-                This will update inventory and create stock lots for traceability.
-              </p>
-
-              <div className="flex gap-3 mt-6">
-                <button
-                  onClick={() => {
-                    setShowReceiveModal(false);
-                    setSelectedPO(null);
-                  }}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    if (selectedPO.metadata?.items) {
-                      const receivedItems = selectedPO.metadata.items.map(item => ({
-                        product_id: item.product_id,
-                        quantity: item.quantity,
-                        lot_number: `LOT-${selectedPO.po_number}-${item.product_id}`
-                      }));
-                      receivePO.mutate({ poId: selectedPO.id, received_items: receivedItems });
-                    }
-                  }}
-                  disabled={receivePO.isPending}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-50"
-                >
-                  {receivePO.isPending ? 'Receiving...' : 'Confirm Receipt'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      </Card>
     </div>
   );
 }

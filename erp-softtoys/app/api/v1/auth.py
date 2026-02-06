@@ -110,10 +110,19 @@ async def login(credentials: UserLogin, db: Session = Depends(get_db)):
     - Use `access_token` for API requests (Authorization: Bearer <token>)
     - Use `refresh_token` to get new access token when expired (24 hours validity)
     """
-    # Find user by username or email
-    user = db.query(User).filter(
-        (User.username == credentials.username) | (User.email == credentials.username)
-    ).first()
+    try:
+        # Find user by username or email
+        user = db.query(User).filter(
+            (User.username == credentials.username) | (User.email == credentials.username)
+        ).first()
+    except Exception as e:
+        print(f"❌ Error querying user: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error: {str(e)}"
+        )
 
     if not user:
         raise HTTPException(
@@ -139,7 +148,18 @@ async def login(credentials: UserLogin, db: Session = Depends(get_db)):
         )
 
     # Verify password
-    if not PasswordUtils.verify_password(credentials.password, user.hashed_password):
+    try:
+        password_valid = PasswordUtils.verify_password(credentials.password, user.hashed_password)
+    except Exception as e:
+        print(f"❌ Error verifying password: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Password verification error: {str(e)}"
+        )
+    
+    if not password_valid:
         # Increment failed attempts
         user.login_attempts += 1
 
@@ -164,38 +184,56 @@ async def login(credentials: UserLogin, db: Session = Depends(get_db)):
     user.last_login = datetime.utcnow()
 
     # Generate tokens with single role (not list)
-    role_name = user.role.value  # Get the actual role value
+    try:
+        role_name = user.role.value  # Get the actual role value
 
-    access_token = TokenUtils.create_access_token(
-        user_id=user.id,
-        username=user.username,
-        email=user.email,
-        roles=[role_name]
-    )
+        access_token = TokenUtils.create_access_token(
+            user_id=user.id,
+            username=user.username,
+            email=user.email,
+            roles=[role_name]
+        )
 
-    refresh_token = TokenUtils.create_refresh_token(
-        user_id=user.id,
-        username=user.username
-    )
+        refresh_token = TokenUtils.create_refresh_token(
+            user_id=user.id,
+            username=user.username
+        )
+    except Exception as e:
+        print(f"❌ Error generating tokens: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Token generation error: {str(e)}"
+        )
 
     db.commit()
 
     # Return tokens with user data
-    return AuthResponse(
-        access_token=access_token,
-        refresh_token=refresh_token,
-        token_type="bearer",
-        expires_in=24 * 3600,  # 24 hours in seconds
-        user=UserResponse(
-            id=user.id,
-            username=user.username,
-            email=user.email,
-            full_name=user.full_name,
-            role=user.role.value,
-            is_active=user.is_active,
-            created_at=user.created_at
+    try:
+        return AuthResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            token_type="bearer",
+            expires_in=24 * 3600,  # 24 hours in seconds
+            user=UserResponse(
+                id=user.id,
+                username=user.username,
+                email=user.email,
+                full_name=user.full_name,
+                role=user.role.value,
+                is_active=user.is_active,
+                created_at=user.created_at
+            )
         )
-    )
+    except Exception as e:
+        print(f"❌ Error creating response: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Response serialization error: {str(e)}"
+        )
 
 
 @router.post("/refresh", response_model=TokenResponse)

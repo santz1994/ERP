@@ -52,8 +52,8 @@ const MATERIAL_TYPES = [
 export default function MaterialStockPage() {
   const navigate = useNavigate();
   const [filters, setFilters] = useState<{
-    type?: string;
-    status?: string;
+    material_type?: string;
+    low_stock?: boolean;
     search?: string;
   }>({});
 
@@ -187,8 +187,8 @@ export default function MaterialStockPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Material Type</label>
               <select
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={filters.type || ''}
-                onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value || undefined }))}
+                value={filters.material_type || ''}
+                onChange={(e) => setFilters(prev => ({ ...prev, material_type: e.target.value || undefined }))}
               >
                 <option value="">All Types</option>
                 {MATERIAL_TYPES.map(type => (
@@ -204,15 +204,12 @@ export default function MaterialStockPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Stock Status</label>
               <select
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={filters.status || ''}
-                onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value || undefined }))}
+                value={filters.low_stock === true ? 'LOW' : filters.low_stock === false ? 'OK' : ''}
+                onChange={(e) => setFilters(prev => ({ ...prev, low_stock: e.target.value === 'LOW' ? true : e.target.value === 'OK' ? false : undefined }))}
               >
                 <option value="">All Status</option>
-                <option value="ABUNDANT">✅ Abundant</option>
-                <option value="SUFFICIENT">🟢 Sufficient</option>
+                <option value="OK">✅ Stock OK</option>
                 <option value="LOW">🟡 Low Stock</option>
-                <option value="CRITICAL">🔴 Critical</option>
-                <option value="DEBT">⚫ DEBT</option>
               </select>
             </div>
 

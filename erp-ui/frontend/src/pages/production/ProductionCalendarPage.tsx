@@ -61,11 +61,10 @@ export default function ProductionCalendarPage() {
   // Fetch calendar data
   const { data: calendarData, isLoading } = useQuery<CalendarData>({
     queryKey: ['production-calendar', selectedDept, selectedMonth.getMonth(), selectedMonth.getFullYear()],
-    queryFn: () => api.production.getCalendar(
-      selectedDept,
-      selectedMonth.getFullYear(),
-      selectedMonth.getMonth() + 1
-    ),
+    queryFn: () => api.production.getCalendar({
+      department: selectedDept,
+      month: `${selectedMonth.getFullYear()}-${String(selectedMonth.getMonth() + 1).padStart(2, '0')}`
+    }),
     refetchInterval: 60000, // Refresh every minute
   });
 
@@ -216,9 +215,6 @@ export default function ProductionCalendarPage() {
                     modifiersClassNames={{
                       produced: 'has-production',
                     }}
-                    components={{
-                      DayContent: ({ date }) => renderDayContent(date),
-                    }}
                     className="w-full"
                   />
                   
@@ -316,7 +312,7 @@ export default function ProductionCalendarPage() {
 
                     <Button
                       variant="primary"
-                      fullWidth
+                      className="w-full"
                       onClick={() => navigate(`/production/input/${selectedDept.toLowerCase()}?date=${selectedDateStr}`)}
                     >
                       ✏️ Edit Production

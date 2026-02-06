@@ -27,7 +27,7 @@ import { formatNumber, formatDate, cn } from '@/lib/utils'
 // QC Checkpoint Schema
 const qcCheckpointSchema = z.object({
   spk_id: z.number().min(1, 'SPK is required'),
-  checkpoint: z.enum(['CUTTING', 'EMBROIDERY', 'SEWING', 'FINISHING', 'PACKING']),
+  checkpoint: z.enum(['AFTER_CUTTING', 'AFTER_SEWING', 'AFTER_FINISHING', 'PRE_PACKING']),
   inspection_date: z.string(),
   inspected_qty: z.number().min(1, 'Inspected quantity must be at least 1'),
   pass_qty: z.number().min(0),
@@ -45,7 +45,7 @@ type QCCheckpointForm = z.infer<typeof qcCheckpointSchema>
 
 const QCCheckpointPage: React.FC = () => {
   const [selectedSPK, setSelectedSPK] = useState<number | null>(null)
-  const [selectedCheckpoint, setSelectedCheckpoint] = useState<'CUTTING' | 'EMBROIDERY' | 'SEWING' | 'FINISHING' | 'PACKING'>('CUTTING')
+  const [selectedCheckpoint, setSelectedCheckpoint] = useState<'AFTER_CUTTING' | 'AFTER_SEWING' | 'AFTER_FINISHING' | 'PRE_PACKING'>('AFTER_CUTTING')
   
   const queryClient = useQueryClient()
 
@@ -86,7 +86,7 @@ const QCCheckpointPage: React.FC = () => {
   } = useForm<QCCheckpointForm>({
     resolver: zodResolver(qcCheckpointSchema),
     defaultValues: {
-      checkpoint: 'CUTTING',
+      checkpoint: 'AFTER_CUTTING',
       inspection_date: new Date().toISOString().split('T')[0]
     }
   })
@@ -155,22 +155,20 @@ const QCCheckpointPage: React.FC = () => {
   // Checkpoint colors
   const getCheckpointColor = (checkpoint: string) => {
     const colors: Record<string, string> = {
-      CUTTING: 'blue',
-      EMBROIDERY: 'purple',
-      SEWING: 'green',
-      FINISHING: 'yellow',
-      PACKING: 'red'
+      AFTER_CUTTING: 'blue',
+      AFTER_SEWING: 'green',
+      AFTER_FINISHING: 'yellow',
+      PRE_PACKING: 'red'
     }
     return colors[checkpoint] || 'gray'
   }
 
   // Defect types by checkpoint
   const defectTypes = {
-    CUTTING: ['Measurement Error', 'Fabric Damage', 'Wrong Pattern', 'Incomplete Cut'],
-    EMBROIDERY: ['Thread Break', 'Design Misalignment', 'Color Error', 'Incomplete Embroidery'],
-    SEWING: ['Loose Thread', 'Broken Seam', 'Uneven Stitch', 'Wrong Attachment'],
-    FINISHING: ['Stuffing Insufficient', 'Closing Defect', 'Tag Missing', 'Shape Deformed'],
-    PACKING: ['Label Missing', 'Barcode Error', 'Box Damage', 'Incomplete Set']
+    AFTER_CUTTING: ['Measurement Error', 'Fabric Damage', 'Wrong Pattern', 'Incomplete Cut'],
+    AFTER_SEWING: ['Loose Thread', 'Broken Seam', 'Uneven Stitch', 'Wrong Attachment'],
+    AFTER_FINISHING: ['Stuffing Insufficient', 'Closing Defect', 'Tag Missing', 'Shape Deformed'],
+    PRE_PACKING: ['Label Missing', 'Barcode Error', 'Box Damage', 'Incomplete Set']
   }
 
   return (
@@ -342,8 +340,8 @@ const QCCheckpointPage: React.FC = () => {
               {/* Checkpoint Selection */}
               <Card className="p-6">
                 <h3 className="text-lg font-semibold mb-4">Select Checkpoint</h3>
-                <div className="grid grid-cols-5 gap-3">
-                  {['CUTTING', 'EMBROIDERY', 'SEWING', 'FINISHING', 'PACKING'].map((checkpoint) => (
+                <div className="grid grid-cols-4 gap-3">
+                  {['AFTER_CUTTING', 'AFTER_SEWING', 'AFTER_FINISHING', 'PRE_PACKING'].map((checkpoint) => (
                     <button
                       key={checkpoint}
                       onClick={() => handleCheckpointChange(checkpoint as typeof selectedCheckpoint)}
@@ -360,7 +358,7 @@ const QCCheckpointPage: React.FC = () => {
                           ? `text-${getCheckpointColor(checkpoint)}-600`
                           : 'text-gray-400'
                       )} />
-                      <p className="text-sm font-semibold">{checkpoint}</p>
+                      <p className="text-sm font-semibold">{checkpoint.replace('_', ' ')}</p>
                     </button>
                   ))}
                 </div>
@@ -447,15 +445,16 @@ const QCCheckpointPage: React.FC = () => {
                     <>
                       <div>
                         <Label htmlFor="defect_type">Defect Type</Label>
-                        <Select
+                        <select
                           id="defect_type"
                           {...register('defect_type')}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                           <option value="">Select defect type...</option>
                           {defectTypes[selectedCheckpoint].map(type => (
                             <option key={type} value={type}>{type}</option>
                           ))}
-                        </Select>
+                        </select>
                       </div>
 
                       <div>

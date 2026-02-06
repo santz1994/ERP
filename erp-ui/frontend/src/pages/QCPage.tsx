@@ -1,5 +1,24 @@
+/**
+ * Copyright (c) 2026 PT Quty Karunia - All Rights Reserved
+ * File: QCPage.tsx | Date: 2026-02-06
+ * Purpose: QC Module Landing Dashboard (REFACTORED)
+ * Architecture: Level 2 - Module Landing Page (Dashboard → Landing → Detail)
+ */
+
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { 
+  CheckCircle, 
+  XCircle, 
+  BarChart3, 
+  TrendingUp,
+  AlertTriangle,
+  Award,
+  RefreshCw
+} from 'lucide-react'
 import { apiClient } from '@/api'
+import { NavigationCard } from '@/components/ui/NavigationCard'
+import { Card } from '@/components/ui/card'
 
 interface QCInspection {
   id: number
@@ -12,18 +31,6 @@ interface QCInspection {
   created_at: string
 }
 
-interface QCLabTest {
-  id: number
-  batch_number: string
-  test_type: string
-  test_result: string
-  measured_value?: number
-  inspector_id: number
-  inspector_name?: string
-  evidence_photo?: string
-  created_at: string
-}
-
 interface QCStats {
   total_inspections: number
   passed: number
@@ -33,36 +40,16 @@ interface QCStats {
 }
 
 const QCPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'inspections' | 'lab-tests'>('inspections')
+  const navigate = useNavigate()
   const [inspections, setInspections] = useState<QCInspection[]>([])
-  const [labTests, setLabTests] = useState<QCLabTest[]>([])
   const [stats, setStats] = useState<QCStats | null>(null)
   const [loading, setLoading] = useState(false)
-  
-  // Modal states
-  const [showInspectionModal, setShowInspectionModal] = useState(false)
-  const [showLabTestModal, setShowLabTestModal] = useState(false)
-  
-  // Form states
-  const [inspectionForm, setInspectionForm] = useState({
-    work_order_id: '',
-    type: 'Inline Sewing',
-    status: 'Pass',
-    defect_reason: ''
-  })
-  
-  const [labTestForm, setLabTestForm] = useState({
-    batch_number: '',
-    test_type: 'Drop Test',
-    test_result: 'Pass',
-    measured_value: ''
-  })
 
   useEffect(() => {
     fetchData()
-    const interval = setInterval(fetchData, 5000) // Poll every 5 seconds
+    const interval = setInterval(fetchData, 30000) // Poll every 30 seconds
     return () => clearInterval(interval)
-  }, [activeTab])
+  }, [])
 
   const fetchData = async () => {
     setLoading(true)
@@ -71,79 +58,13 @@ const QCPage: React.FC = () => {
       const statsRes = await apiClient.get('/quality/stats')
       setStats(statsRes.data)
       
-      if (activeTab === 'inspections') {
-        // Fetch inspections
-        const inspRes = await apiClient.get('/quality/inspections')
-        // Ensure data is an array, handle paginated response
-        const inspData = Array.isArray(inspRes.data) ? inspRes.data : (inspRes.data?.data || [])
-        setInspections(inspData)
-      } else {
-        // Fetch lab tests
-        const labRes = await apiClient.get('/quality/lab-tests')
-        // Ensure data is an array, handle paginated response
-        const labData = Array.isArray(labRes.data) ? labRes.data : (labRes.data?.data || [])
-        setLabTests(labData)
-      }
+      // Fetch recent inspections (last 10)
+      const inspRes = await apiClient.get('/quality/inspections?limit=10')
+      const inspData = Array.isArray(inspRes.data) ? inspRes.data : (inspRes.data?.data || [])
+      setInspections(inspData)
     } catch (error) {
       console.error('Failed to fetch QC data:', error)
-      // Set empty arrays on error to prevent .map errors
-      if (activeTab === 'inspections') {
-        setInspections([])
-      } else {
-        setLabTests([])
-      }
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleCreateInspection = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    try {
-      await apiClient.post('/quality/inspection', {
-        work_order_id: parseInt(inspectionForm.work_order_id),
-        type: inspectionForm.type,
-        status: inspectionForm.status,
-        defect_reason: inspectionForm.status === 'Fail' ? inspectionForm.defect_reason : null
-      })
-      
-      setShowInspectionModal(false)
-      setInspectionForm({
-        work_order_id: '',
-        type: 'Inline Sewing',
-        status: 'Pass',
-        defect_reason: ''
-      })
-      fetchData()
-    } catch (error: any) {
-      alert('Failed to create inspection: ' + error.response?.data?.detail)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleCreateLabTest = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    try {
-      await apiClient.post('/quality/lab-test', {
-        batch_number: labTestForm.batch_number,
-        test_type: labTestForm.test_type,
-        test_result: labTestForm.test_result,
-        measured_value: labTestForm.measured_value ? parseFloat(labTestForm.measured_value) : null
-      })
-      
-      setShowLabTestModal(false)
-      setLabTestForm({
-        batch_number: '',
-        test_type: 'Drop Test',
-        test_result: 'Pass',
-        measured_value: ''
-      })
-      fetchData()
-    } catch (error: any) {
-      alert('Failed to create lab test: ' + error.response?.data?.detail)
+      setInspections([])
     } finally {
       setLoading(false)
     }
@@ -155,166 +76,278 @@ const QCPage: React.FC = () => {
       : 'bg-red-100 text-red-800'
   }
 
+  if (loading && !stats) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    )
+  }
+
+  // Calculate FPY (First Pass Yield)
+  const fpy = stats ? stats.pass_rate : 0
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="min-h-screen bg-gray-50 p-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">Quality Control</h1>
-        <div className="flex gap-2">
-          {activeTab === 'inspections' && (
-            <button
-              onClick={() => setShowInspectionModal(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-            >
-              + New Inspection
-            </button>
-          )}
-          {activeTab === 'lab-tests' && (
-            <button
-              onClick={() => setShowLabTestModal(true)}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
-            >
-              + New Lab Test
-            </button>
-          )}
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+              <CheckCircle className="w-8 h-8 mr-3 text-green-600" />
+              Quality Control
+            </h1>
+            <p className="text-gray-500 mt-1">
+              {new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} • {new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
+            </p>
+            <p className="text-sm text-gray-400 mt-1">
+              📍 Module Landing Page • 4-Checkpoint QC System
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Statistics Cards */}
+      {/* KPI Cards */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg">
-            <div className="text-sm opacity-90">Total Inspections</div>
-            <div className="text-3xl font-bold mt-2">{stats.total_inspections}</div>
-          </div>
-          <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white shadow-lg">
-            <div className="text-sm opacity-90">Passed</div>
-            <div className="text-3xl font-bold mt-2">{stats.passed}</div>
-          </div>
-          <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-6 text-white shadow-lg">
-            <div className="text-sm opacity-90">Failed</div>
-            <div className="text-3xl font-bold mt-2">{stats.failed}</div>
-          </div>
-          <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white shadow-lg">
-            <div className="text-sm opacity-90">Pass Rate</div>
-            <div className="text-3xl font-bold mt-2">{stats.pass_rate.toFixed(1)}%</div>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="bg-white shadow-lg border-l-4 border-blue-500">
+            <div className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Today's Inspections</p>
+                  <p className="text-3xl font-bold text-gray-900">{stats.today_inspections}</p>
+                  <p className="text-xs text-gray-400 mt-1">Active checks</p>
+                </div>
+                <CheckCircle className="w-12 h-12 text-blue-400" />
+              </div>
+            </div>
+          </Card>
+
+          <Card className="bg-white shadow-lg border-l-4 border-green-500">
+            <div className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Pass Rate</p>
+                  <p className="text-3xl font-bold text-green-600">{stats.pass_rate.toFixed(1)}%</p>
+                  <p className="text-xs text-gray-400 mt-1">{stats.passed} passed</p>
+                </div>
+                <Award className="w-12 h-12 text-green-400" />
+              </div>
+            </div>
+          </Card>
+
+          <Card className="bg-white shadow-lg border-l-4 border-red-500">
+            <div className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Defects This Week</p>
+                  <p className="text-3xl font-bold text-red-600">{stats.failed}</p>
+                  <p className="text-xs text-gray-400 mt-1">Requires attention</p>
+                </div>
+                <AlertTriangle className="w-12 h-12 text-red-400" />
+              </div>
+            </div>
+          </Card>
+
+          <Card className="bg-white shadow-lg border-l-4 border-purple-500">
+            <div className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">First Pass Yield</p>
+                  <p className="text-3xl font-bold text-purple-600">{fpy.toFixed(1)}%</p>
+                  <p className="text-xs text-gray-400 mt-1">Quality metric</p>
+                </div>
+                <TrendingUp className="w-12 h-12 text-purple-400" />
+              </div>
+            </div>
+          </Card>
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          <button
-            onClick={() => setActiveTab('inspections')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'inspections'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            Inspections
-          </button>
-          <button
-            onClick={() => setActiveTab('lab-tests')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'lab-tests'
-                ? 'border-purple-500 text-purple-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            Lab Tests
-          </button>
-        </nav>
+      {/* Navigation Cards - CRITICAL for 3-Tier Architecture */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <NavigationCard
+            title="QC Checkpoint Input"
+            description="4-Checkpoint QC system: Cutting → Sewing → Finishing → Pre-Packing. Real-time defect tracking with classification."
+            icon={CheckCircle}
+            link="/qc/checkpoint"
+            color="green"
+            badge="4 Checkpoints"
+          />
+          
+          <NavigationCard
+            title="Defect Analysis"
+            description="Pareto chart, root cause analysis, defect trends. Identify quality improvement opportunities."
+            icon={BarChart3}
+            link="/qc/defect-analysis"
+            color="orange"
+            badge="Analytics"
+            disabled={true}
+          />
+          
+          <NavigationCard
+            title="Rework Management"
+            description="Rework queue, recovery tracking, COPQ analysis. Minimize waste and improve quality."
+            icon={RefreshCw}
+            link="/rework/dashboard"
+            color="red"
+            badge="COPQ"
+            disabled={false}
+          />
+        </div>
       </div>
 
-      {/* Content */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        {activeTab === 'inspections' ? (
+      {/* Pass/Fail Trend (7 Days) */}
+      {stats && (
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Quality Performance</h2>
+          <Card className="bg-white shadow-lg">
+            <div className="p-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                <div className="text-center">
+                  <CheckCircle className="w-10 h-10 text-green-400 mx-auto mb-2" />
+                  <p className="text-3xl font-bold text-green-600">{stats.passed}</p>
+                  <p className="text-sm text-gray-500">Passed</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {stats.total_inspections > 0 ? ((stats.passed / stats.total_inspections) * 100).toFixed(1) : 0}% of total
+                  </p>
+                </div>
+                <div className="text-center">
+                  <XCircle className="w-10 h-10 text-red-400 mx-auto mb-2" />
+                  <p className="text-3xl font-bold text-red-600">{stats.failed}</p>
+                  <p className="text-sm text-gray-500">Failed</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {stats.total_inspections > 0 ? ((stats.failed / stats.total_inspections) * 100).toFixed(1) : 0}% of total
+                  </p>
+                </div>
+                <div className="text-center">
+                  <BarChart3 className="w-10 h-10 text-blue-400 mx-auto mb-2" />
+                  <p className="text-3xl font-bold text-blue-600">{stats.total_inspections}</p>
+                  <p className="text-sm text-gray-500">Total</p>
+                  <p className="text-xs text-gray-400 mt-1">All inspections</p>
+                </div>
+              </div>
+              
+              {/* Pass Rate Progress Bar */}
+              <div className="mt-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">Overall Pass Rate</span>
+                  <span className="text-sm font-medium text-gray-900">{stats.pass_rate.toFixed(1)}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div 
+                    className={`h-3 rounded-full transition-all ${
+                      stats.pass_rate >= 95 ? 'bg-green-500' :
+                      stats.pass_rate >= 85 ? 'bg-yellow-500' :
+                      'bg-red-500'
+                    }`}
+                    style={{ width: `${stats.pass_rate}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>Target: 95%</span>
+                  <span className={stats.pass_rate >= 95 ? 'text-green-600 font-medium' : ''}>
+                    {stats.pass_rate >= 95 ? '✓ Target achieved!' : `${(95 - stats.pass_rate).toFixed(1)}% to target`}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Recent Inspections Table */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">Recent Inspections</h2>
+          <button
+            onClick={fetchData}
+            className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Refresh
+          </button>
+        </div>
+        
+        <Card className="bg-white shadow-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">WO ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Defect Reason</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Inspector</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    ID
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Work Order
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Type
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Defect Reason
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Inspector
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Date
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {inspections.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
-                      No inspections found. Create your first inspection to get started.
+                    <td colSpan={7} className="px-6 py-12 text-center">
+                      <CheckCircle className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                      <p className="text-gray-500">No inspections yet</p>
+                      <button
+                        onClick={() => navigate('/qc/checkpoint')}
+                        className="mt-4 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                      >
+                        Start QC Checkpoint →
+                      </button>
                     </td>
                   </tr>
                 ) : (
                   inspections.map((inspection) => (
-                    <tr key={inspection.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{inspection.id}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{inspection.work_order_id}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{inspection.type}</td>
+                    <tr key={inspection.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeClass(inspection.status)}`}>
+                        <div className="text-sm font-medium text-gray-900">{inspection.id}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">WO #{inspection.work_order_id}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{inspection.type}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full ${getStatusBadgeClass(inspection.status)}`}>
                           {inspection.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{inspection.defect_reason || '-'}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {inspection.inspector_name || `ID: ${inspection.inspected_by}`}
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900 max-w-xs truncate">
+                          {inspection.defect_reason || '-'}
+                        </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(inspection.created_at).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Batch</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Test Type</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Result</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Measured Value</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Inspector</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {labTests.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
-                      No lab tests found. Create your first lab test to get started.
-                    </td>
-                  </tr>
-                ) : (
-                  labTests.map((test) => (
-                    <tr key={test.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{test.id}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{test.batch_number}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{test.test_type}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeClass(test.test_result)}`}>
-                          {test.test_result}
-                        </span>
+                        <div className="text-sm text-gray-900">
+                          {inspection.inspector_name || `ID: ${inspection.inspected_by}`}
+                        </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {test.measured_value ? test.measured_value.toFixed(2) : '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {test.inspector_name || `ID: ${test.inspector_id}`}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(test.created_at).toLocaleDateString()}
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">
+                          {new Date(inspection.created_at).toLocaleDateString('id-ID', { 
+                            day: '2-digit', 
+                            month: 'short', 
+                            year: 'numeric' 
+                          })}
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -322,162 +355,21 @@ const QCPage: React.FC = () => {
               </tbody>
             </table>
           </div>
-        )}
+        </Card>
       </div>
 
-      {/* Inspection Modal */}
-      {showInspectionModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-2xl font-bold mb-4">New Inspection</h2>
-            <form onSubmit={handleCreateInspection} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Work Order ID</label>
-                <input
-                  type="number"
-                  value={inspectionForm.work_order_id}
-                  onChange={(e) => setInspectionForm({...inspectionForm, work_order_id: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                <select
-                  value={inspectionForm.type}
-                  onChange={(e) => setInspectionForm({...inspectionForm, type: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option>Inline Sewing</option>
-                  <option>Final Metal Detector</option>
-                  <option>Incoming</option>
-                  <option>Fabric Inspection</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <select
-                  value={inspectionForm.status}
-                  onChange={(e) => setInspectionForm({...inspectionForm, status: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option>Pass</option>
-                  <option>Fail</option>
-                </select>
-              </div>
-              
-              {inspectionForm.status === 'Fail' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Defect Reason</label>
-                  <textarea
-                    value={inspectionForm.defect_reason}
-                    onChange={(e) => setInspectionForm({...inspectionForm, defect_reason: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    rows={3}
-                    required
-                  />
-                </div>
-              )}
-              
-              <div className="flex justify-end gap-2 mt-6">
-                <button
-                  type="button"
-                  onClick={() => setShowInspectionModal(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
-                >
-                  {loading ? 'Creating...' : 'Create Inspection'}
-                </button>
-              </div>
-            </form>
+      {/* Help Section */}
+      <Card className="bg-green-50 border-green-200">
+        <div className="p-6">
+          <h3 className="text-lg font-semibold text-green-900 mb-2">💡 QC Module Guide</h3>
+          <div className="text-sm text-green-800 space-y-1">
+            <p>• <strong>4-Checkpoint System</strong>: Cutting → Sewing → Finishing → Pre-Packing for comprehensive quality control</p>
+            <p>• <strong>Defect Classification</strong>: Classify defects as Fixable (send to Rework) or Scrap</p>
+            <p>• <strong>Real-time Tracking</strong>: Monitor pass/fail rates and FPY (First Pass Yield) in real-time</p>
+            <p>• <strong>Rework Integration</strong>: Defects automatically create rework requests for recovery tracking</p>
           </div>
         </div>
-      )}
-
-      {/* Lab Test Modal */}
-      {showLabTestModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-2xl font-bold mb-4">New Lab Test</h2>
-            <form onSubmit={handleCreateLabTest} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Batch Number</label>
-                <input
-                  type="text"
-                  value={labTestForm.batch_number}
-                  onChange={(e) => setLabTestForm({...labTestForm, batch_number: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Test Type</label>
-                <select
-                  value={labTestForm.test_type}
-                  onChange={(e) => setLabTestForm({...labTestForm, test_type: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <option>Drop Test</option>
-                  <option>Stability 10</option>
-                  <option>Stability 27</option>
-                  <option>Seam Strength</option>
-                  <option>Color Fastness</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Test Result</label>
-                <select
-                  value={labTestForm.test_result}
-                  onChange={(e) => setLabTestForm({...labTestForm, test_result: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <option>Pass</option>
-                  <option>Fail</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Measured Value (Optional)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={labTestForm.measured_value}
-                  onChange={(e) => setLabTestForm({...labTestForm, measured_value: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  placeholder="e.g., 12.5"
-                />
-              </div>
-              
-              <div className="flex justify-end gap-2 mt-6">
-                <button
-                  type="button"
-                  onClick={() => setShowLabTestModal(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-50"
-                >
-                  {loading ? 'Creating...' : 'Create Lab Test'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      </Card>
     </div>
   )
 }

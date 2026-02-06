@@ -169,12 +169,16 @@ const GenericDashboard: React.FC = () => {
         apiClient.get('/dashboard/production-status'),
         apiClient.get('/dashboard/alerts')
       ])
-      setStats(statsRes.data)
-      setProductionStatus(prodRes.data)
-      setAlerts(alertsRes.data)
+      // Ensure stats always has a valid value with fallback
+      setStats(statsRes.data || {
+        total_mos: 0, completed_today: 0, pending_qc: 0, critical_alerts: 0, refreshed_at: null
+      })
+      setProductionStatus(prodRes.data || [])
+      setAlerts(alertsRes.data || [])
     } catch (error) {
       console.error('Failed to load dashboard data:', error)
       addNotification('error', 'Gagal memuat data dashboard')
+      // Keep default stats on error
     } finally {
       setLoading(false)
     }
@@ -204,7 +208,7 @@ const GenericDashboard: React.FC = () => {
           </div>
           <div className="flex items-center gap-2 text-xs text-slate-400 bg-white px-3 py-1.5 rounded-full shadow-sm border border-slate-200">
             <RefreshCw size={12} />
-            <span>Last updated: {stats.refreshed_at ? new Date(stats.refreshed_at).toLocaleTimeString() : '-'}</span>
+            <span>Last updated: {stats?.refreshed_at ? new Date(stats.refreshed_at).toLocaleTimeString() : '-'}</span>
           </div>
         </div>
 
@@ -212,30 +216,30 @@ const GenericDashboard: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatCard
             title="Active MOs"
-            value={stats.total_mos}
+            value={stats?.total_mos || 0}
             icon={<Layers />}
             variant="blue"
             trend="On Track"
           />
           <StatCard
             title="Output Today"
-            value={stats.completed_today}
+            value={stats?.completed_today || 0}
             icon={<CheckCircle />}
             variant="green"
             trend="+12% vs yest."
           />
           <StatCard
             title="Waiting QC"
-            value={stats.pending_qc}
+            value={stats?.pending_qc || 0}
             icon={<BarChart3 />}
             variant="amber"
           />
           <StatCard
             title="System Alerts"
-            value={stats.critical_alerts}
+            value={stats?.critical_alerts || 0}
             icon={<AlertCircle />}
             variant="rose"
-            trend={stats.critical_alerts > 0 ? "Action Needed" : "All Good"}
+            trend={(stats?.critical_alerts || 0) > 0 ? "Action Needed" : "All Good"}
           />
         </div>
 

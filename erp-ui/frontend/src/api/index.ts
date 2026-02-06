@@ -191,7 +191,13 @@ export const purchasingApi = {
   }) =>
     apiClient.get('/purchasing/po', { params }),
   
+  getPOList: (params?: { status?: string }) =>
+    apiClient.get('/purchasing/po', { params }),
+  
   getPOById: (id: number) =>
+    apiClient.get(`/purchasing/po/${id}`),
+  
+  getPODetail: (id: number) =>
     apiClient.get(`/purchasing/po/${id}`),
   
   createPO: (data: POFormData) =>
@@ -233,7 +239,16 @@ export const ppicApi = {
   }) =>
     apiClient.get('/ppic/mo', { params }),
   
+  getMOList: (params?: { status?: string; has_fg_receipt?: boolean; has_finishing?: boolean }) =>
+    apiClient.get('/ppic/mo', { params }),
+  
+  getMO: (id: number) =>
+    apiClient.get(`/ppic/mo/${id}`),
+  
   getMOById: (id: number) =>
+    apiClient.get(`/ppic/mo/${id}`),
+  
+  getMODetail: (id: number) =>
     apiClient.get(`/ppic/mo/${id}`),
   
   createMO: (data: MOFormData) =>
@@ -264,7 +279,17 @@ export const ppicApi = {
   }) =>
     apiClient.get('/ppic/spk', { params }),
   
+  getSPKList: (params?: {
+    mo_id?: number
+    department?: string
+    status?: string
+  }) =>
+    apiClient.get('/ppic/spk', { params }),
+  
   getSPKById: (id: number) =>
+    apiClient.get(`/ppic/spk/${id}`),
+  
+  getSPKDetail: (id: number) =>
     apiClient.get(`/ppic/spk/${id}`),
   
   createSPK: (data: SPKFormData) =>
@@ -283,6 +308,9 @@ export const ppicApi = {
   // Material Allocation
   getMaterialAllocation: (mo_id: number) =>
     apiClient.get(`/ppic/material-allocation/${mo_id}`),
+  
+  getMaterialAllocations: (params?: { mo_id?: number; status?: string }) =>
+    apiClient.get('/ppic/material-allocation', { params }),
   
   reserveMaterials: (spk_id: number) =>
     apiClient.post(`/ppic/material-allocation/reserve`, { spk_id }),
@@ -303,16 +331,40 @@ export const productionApi = {
   getProductionHistory: (spk_id: number) =>
     apiClient.get(`/production/history/${spk_id}`),
   
+  // Query SPKs by department
+  getSPKs: (department: string, params?: { status?: string }) =>
+    apiClient.get('/ppic/spk', { params: { department, ...params } }),
+  
   // Calendar view data
+  getCalendar: (params: { 
+    department: string
+    month: string // YYYY-MM
+  }) =>
+    apiClient.get('/production/calendar', { params }),
+  
   getProductionCalendar: (params: { 
     department: string
     month: string // YYYY-MM
   }) =>
     apiClient.get('/production/calendar', { params }),
   
+  // Daily progress tracking
+  getDailyProgress: (spk_id: number) =>
+    apiClient.get(`/production/progress/${spk_id}`),
+  
   // Real-time WIP Dashboard
+  getWIP: (params?: { articleCode?: string }) =>
+    apiClient.get('/production/wip', { params }),
+  
   getWIPDashboard: (department?: string) =>
     apiClient.get('/production/wip-dashboard', { params: { department } }),
+  
+  getWIPStatus: (mo_id: number) =>
+    apiClient.get(`/production/wip/${mo_id}`),
+  
+  // Material flow tracking
+  getMaterialFlow: () =>
+    apiClient.get('/production/material-flow'),
   
   // Department-specific endpoints
   getCuttingSPKs: () =>
@@ -323,6 +375,29 @@ export const productionApi = {
   
   getSewingSPKs: () =>
     apiClient.get('/production/sewing/spk'),
+  
+  // Department-specific input methods
+  inputEmbroidery: (data: any) =>
+    apiClient.post('/production/embroidery/input', data),
+  
+  inputSewing: (data: any) =>
+    apiClient.post('/production/sewing/input', data),
+  
+  inputFinishing: (data: any) =>
+    apiClient.post('/production/finishing/input', data),
+  
+  inputPacking: (data: any) =>
+    apiClient.post('/production/packing/input', data),
+  
+  // Department-specific progress tracking
+  getSewingProgress: (spk_id: number, stream: 'BODY' | 'BAJU') =>
+    apiClient.get(`/production/sewing/progress/${spk_id}`, { params: { stream } }),
+  
+  getFinishingProgress: (spk_id: number, stage: 'STUFFING' | 'CLOSING') =>
+    apiClient.get(`/production/finishing/progress/${spk_id}`, { params: { stage } }),
+  
+  getPackingProgress: (spk_id: number) =>
+    apiClient.get(`/production/packing/progress/${spk_id}`),
   
   getFinishingSPKs: (stage?: 'STAGE1' | 'STAGE2') =>
     apiClient.get('/production/finishing/spk', { params: { stage } }),
@@ -359,9 +434,18 @@ export const warehouseApi = {
   materialReceipt: (data: any) =>
     apiClient.post('/warehouse/material/receipt', data),
   
+  createMaterialReceipt: (data: any) =>
+    apiClient.post('/warehouse/material/receipt', data),
+  
   // Material Issue to Production
   materialIssue: (data: any) =>
     apiClient.post('/warehouse/material/issue', data),
+  
+  issueMaterial: (data: any) =>
+    apiClient.post('/warehouse/material/issue', data),
+  
+  getMaterialIssueHistory: (spk_id: number) =>
+    apiClient.get(`/warehouse/material/issue/history/${spk_id}`),
   
   // Stock Adjustment
   stockAdjustment: (data: any) =>
@@ -370,6 +454,15 @@ export const warehouseApi = {
   // Finishing Warehouse (2-stage)
   getFinishingStock: (stage?: 'SKIN' | 'STUFFED' | 'FINISHED') =>
     apiClient.get('/warehouse/finishing/stock', { params: { stage } }),
+  
+  getFinishingWarehouseStock: (mo_id: number) =>
+    apiClient.get(`/warehouse/finishing/stock/${mo_id}`),
+  
+  getFinishingWarehouseHistory: (mo_id: number) =>
+    apiClient.get(`/warehouse/finishing/history/${mo_id}`),
+  
+  createFinishingWarehouseTransaction: (data: any) =>
+    apiClient.post('/warehouse/finishing/transaction', data),
   
   transferFinishing: (data: { from_stage: string; to_stage: string; qty: number }) =>
     apiClient.post('/warehouse/finishing/transfer', data),
@@ -381,6 +474,9 @@ export const warehouseApi = {
   fgReceipt: (data: any) =>
     apiClient.post('/warehouse/fg/receipt', data),
   
+  createFGReceipt: (data: any) =>
+    apiClient.post('/warehouse/fg/receipt', data),
+  
   fgShipment: (data: { do_number: string; cartons: Array<{ barcode: string; qty: number }> }) =>
     apiClient.post('/warehouse/fg/shipment', data),
   
@@ -390,6 +486,28 @@ export const warehouseApi = {
   
   inputStockOpname: (opname_id: number, data: Array<{ material_code: string; physical_count: number }>) =>
     apiClient.post(`/warehouse/opname/${opname_id}/input`, { materials: data }),
+  
+  recordStockOpname: (data: { 
+    material_id: number
+    opname_date: string
+    system_qty: number
+    physical_qty: number
+    variance_qty: number
+    variance_percentage: number
+    counted_by: string
+    variance_reason?: string
+    notes?: string
+  }) =>
+    apiClient.post('/warehouse/opname/record', data),
+  
+  getStockOpnameHistory: () =>
+    apiClient.get('/warehouse/opname/history'),
+  
+  getStockOpnamePending: () =>
+    apiClient.get('/warehouse/opname/pending'),
+  
+  approveStockOpname: (id: number, action: string, notes?: string) =>
+    apiClient.post(`/warehouse/opname/${id}/approve`, { action, notes }),
   
   getOpnameVariance: (opname_id: number) =>
     apiClient.get(`/warehouse/opname/${opname_id}/variance`),
@@ -404,8 +522,17 @@ export const qcApi = {
   inputQCCheckpoint: (data: QCCheckpointFormData) =>
     apiClient.post('/qc/checkpoint', data),
   
+  createQCCheckpoint: (data: QCCheckpointFormData) =>
+    apiClient.post('/qc/checkpoint', data),
+  
   getQCHistory: (spk_id: number) =>
     apiClient.get(`/qc/history/${spk_id}`),
+  
+  getQCCheckpointHistory: (spk_id: number, checkpoint: string) =>
+    apiClient.get(`/qc/checkpoint-history/${spk_id}`, { params: { checkpoint } }),
+  
+  getQCStatistics: (spk_id: number) =>
+    apiClient.get(`/qc/statistics/${spk_id}`),
   
   // Defect Analysis
   getDefectAnalysis: (params?: { 

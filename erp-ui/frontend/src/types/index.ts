@@ -139,3 +139,50 @@ export interface StockLot {
   received_date: string
   expiry_date?: string
 }
+
+// ==================== Phase 3: Shared Types Export ====================
+// Date: 2026-02-06
+// Purpose: Central export for all shared types (Code Duplication Elimination)
+
+// Work Order Types
+export * from './workOrder'
+
+// Manufacturing Order Types
+export * from './manufacturingOrder'
+
+// Stock/Inventory Types
+export * from './stock'
+
+// Re-export commonly used types for convenience
+export type {
+  WorkOrder,
+  WorkOrderExtended,
+  WorkOrderStatus,
+  CuttingStats,
+  SewingStats,
+  FinishingStats,
+  PackingStats,
+  EmbroideryStats
+} from './workOrder'
+
+export type {
+  ManufacturingOrder,
+  MODetail,
+  MOStatus,
+  MOFilter,
+  MOFormData,
+  MOStatusCount,
+  MOAggregateData
+} from './manufacturingOrder'
+
+export type {
+  StockItem,
+  StockQuant,
+  StockMovement,
+  StockMovementType,
+  StockDeduction,
+  StockAgingItem,
+  StockStatusItem,
+  Warehouse,
+  WarehouseLocation
+} from './stock'

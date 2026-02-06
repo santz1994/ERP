@@ -8,6 +8,36 @@
 
 ---
 
+## ⚠️ CRITICAL UPDATE - February 6, 2026
+
+**🚨 NEW MANDATORY REFERENCE DOCUMENT ADDED! 🚨**
+
+**File**: `NAVIGATION_INTEGRATION_AUDIT.md` (479 lines)
+
+**CRITICAL DISCOVERY**: Navigation integration audit revealed that:
+- ❌ New detail pages (CreatePOPage, QCCheckpointPage) were created WITHOUT refactoring old landing pages
+- ❌ Old pages (PurchasingPage, QCPage) have DUPLICATE implementations
+- ❌ No navigation flow: Dashboard → Landing → Detail
+- ❌ User confusion: Which page to use?
+
+**ACTION REQUIRED**:
+Before implementing ANY new page, you MUST:
+1. ✅ Read `NAVIGATION_INTEGRATION_AUDIT.md` completely
+2. ✅ Check if functionality already exists in old pages
+3. ✅ Refactor old pages to remove duplicates
+4. ✅ Add navigation cards to create proper flow
+5. ✅ Test navigation: Dashboard → Landing → Detail → Back
+
+**REFACTORING PHASES** (from audit):
+- **Phase 1**: Refactor PurchasingPage, QCPage, ReworkPage → Landing Dashboards
+- **Phase 2**: Enhance department pages with navigation buttons
+- **Phase 3**: Eliminate code duplication (API, schemas, utilities)
+- **Phase 4**: Test backend connectivity end-to-end
+
+**⚠️ RULE**: **NEVER create a new page without consulting NAVIGATION_INTEGRATION_AUDIT.md first!**
+
+---
+
 ## 📋 CONTEXT & BACKGROUND
 
 ### Project Overview
@@ -99,6 +129,51 @@ Anda adalah **IT Fullstack Expert** yang ditugaskan untuk mengimplementasikan si
 - `erp-softtoys/app/routers/` - API endpoints per module
 - `erp-softtoys/app/models/` - Database models (SQLAlchemy)
 - `erp-softtoys/app/schemas/` - Pydantic schemas (request/response)
+
+### 4. NAVIGATION INTEGRATION AUDIT (CRITICAL ⚠️)
+**File**: `NAVIGATION_INTEGRATION_AUDIT.md` (479 lines)
+
+**⚠️ CRITICAL DISCOVERY**: This audit revealed that new detail pages (CreatePOPage, QCCheckpointPage) were created WITHOUT refactoring old landing pages, causing:
+- ❌ Code duplication (old pages have their own implementations)
+- ❌ Navigation disconnection (no links from landing → detail)
+- ❌ User confusion (which page to use?)
+- ❌ Maintenance nightmare (same code in multiple files)
+
+**Why This Document Is MANDATORY**:
+Before implementing ANY new page, you MUST first:
+1. ✅ **Audit existing pages** - Check if functionality already exists
+2. ✅ **Read this navigation audit** - Understand 3-tier architecture
+3. ✅ **Refactor old pages** - Remove duplicates, add navigation cards
+4. ✅ **Establish proper flow** - Dashboard → Landing → Detail
+
+**Key Concepts**:
+- **3-Tier Architecture**: Dashboard → Module Landing → Detail Pages
+- **NavigationCard Component**: Reusable card component for linking modules
+- **Landing Page Pattern**: KPIs + Status Overview + Navigation Cards
+- **Zero Duplication Rule**: One implementation per functionality
+
+**Page Categories** (from audit):
+1. **Category 1**: Comprehensive Dashboards (Keep & Enhance) - PPICPage, WarehousePage
+2. **Category 2**: Generic Pages (Rework → Landing) - PurchasingPage, QCPage, ReworkPage
+3. **Category 3**: Department Pages (Keep as Dashboards) - CuttingPage, SewingPage, etc.
+4. **Category 4**: Admin/Settings Pages (Keep as-is) - AdminUserPage, AuditTrailPage, etc.
+5. **Category 5**: Utility/Special Pages - BarcodeBigButtonMode, KanbanPage, etc.
+
+**Refactoring Phases** (from audit):
+- **Phase 1 (Week 1)**: Refactor PurchasingPage, QCPage, ReworkPage → Landing Dashboards
+- **Phase 2 (Week 2)**: Enhance department pages with "Input Production" buttons
+- **Phase 3 (Week 2)**: Eliminate code duplication (API, schemas, utils)
+- **Phase 4 (Week 3)**: Test backend connectivity end-to-end
+
+**Success Metrics**:
+- ✅ Zero code duplication across all pages
+- ✅ Clear 3-tier navigation hierarchy
+- ✅ Consistent UX pattern across modules
+- ✅ All old pages refactored as landing dashboards
+- ✅ All new detail pages accessible via navigation cards
+
+**⚠️ IMPLEMENTATION RULE**:
+**NEVER create a new page without reading NAVIGATION_INTEGRATION_AUDIT.md first!**
 
 ---
 
@@ -1715,11 +1790,16 @@ Before marking refactoring as "DONE":
 ## 🏁 FINAL NOTES
 
 ### Critical Reminders
-1. **READ RENCANA TAMPILAN.MD COMPLETELY** - This is your source of truth (6,200+ lines)
-2. **Understand Business Logic FIRST** - Don't implement without understanding WHY
-3. **Focus on User Experience** - This is factory floor software (must be fast & reliable)
-4. **Test with Real Scenarios** - Use realistic data (actual articles, PO numbers, etc.)
-5. **Ask Questions** - Better to clarify than to implement wrong
+1. **READ NAVIGATION_INTEGRATION_AUDIT.MD FIRST!** ⚠️ - This document reveals critical gaps: new pages were created without refactoring old pages, causing code duplication and broken navigation. ALWAYS check this audit before creating ANY new page!
+2. **READ RENCANA TAMPILAN.MD COMPLETELY** - This is your source of truth (6,200+ lines)
+3. **Understand Business Logic FIRST** - Don't implement without understanding WHY
+4. **Follow 3-Tier Architecture** - Dashboard → Module Landing → Detail Pages (NO shortcuts!)
+5. **Zero Duplication Rule** - Before creating new functionality, check if it exists in old pages
+6. **Test Navigation Flows** - Always test: Dashboard → Landing → Detail → Back
+7. **Refactor Old Pages First** - Remove duplicates before adding new detail pages
+8. **Focus on User Experience** - This is factory floor software (must be fast & reliable)
+9. **Test with Real Scenarios** - Use realistic data (actual articles, PO numbers, etc.)
+10. **Ask Questions** - Better to clarify than to implement wrong
 
 ### Your Approach
 1. **Phase 1**: Read docs + setup project (Week 1)
@@ -1746,7 +1826,7 @@ Before marking refactoring as "DONE":
 
 ---
 
-**Document Version**: 1.0  
+**Document Version**: 2.6  
 **Last Updated**: 5 Februari 2026  
 **Author**: ERP Project Lead  
 **Target Audience**: IT Fullstack Developer (Claude AI)

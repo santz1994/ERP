@@ -108,7 +108,7 @@ const StockOpnamePage: React.FC = () => {
 
   // Stock Opname Mutation
   const opnameMutation = useMutation({
-    mutationFn: (data: StockOpnameForm) => api.warehouse.createStockOpname(data),
+    mutationFn: (data: StockOpnameForm) => api.warehouse.recordStockOpname(data as any),
     onSuccess: () => {
       toast.success('Stock opname recorded successfully')
       queryClient.invalidateQueries({ queryKey: ['stock-opname-history'] })
@@ -151,7 +151,7 @@ const StockOpnamePage: React.FC = () => {
   }
 
   const handleApproval = (id: number, action: 'APPROVE' | 'REJECT') => {
-    const notes = action === 'REJECT' 
+    const notes = action === 'REJECT'
       ? prompt('Enter rejection reason:')
       : undefined
 
@@ -160,7 +160,7 @@ const StockOpnamePage: React.FC = () => {
       return
     }
 
-    approvalMutation.mutate({ id, action, notes })
+    approvalMutation.mutate({ id, action, notes: notes ?? undefined })
   }
 
   // Filter materials
@@ -183,9 +183,9 @@ const StockOpnamePage: React.FC = () => {
   }, [materialStock, filterCategory, searchTerm])
 
   // Get unique categories
-  const categories = React.useMemo(() => {
-    const uniqueCategories = new Set(materialStock.map((m: any) => m.category))
-    return ['ALL', ...Array.from(uniqueCategories)]
+  const categories = React.useMemo<string[]>(() => {
+    const uniqueCategories = new Set(materialStock.map((m: any) => m.category as string))
+    return ['ALL', ...Array.from(uniqueCategories)] as string[]
   }, [materialStock])
 
   return (
@@ -251,15 +251,16 @@ const StockOpnamePage: React.FC = () => {
             <div className="space-y-3 mb-4">
               <div>
                 <Label htmlFor="category-filter">Category Filter</Label>
-                <Select
+                <select
                   id="category-filter"
                   value={filterCategory}
-                  onChange={(e) => setFilterCategory(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilterCategory(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  {categories.map((cat) => (
+                  {categories.map((cat: string) => (
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
-                </Select>
+                </select>
               </div>
               
               <div className="relative">
@@ -550,7 +551,7 @@ const StockOpnamePage: React.FC = () => {
                           </Button>
                           <Button
                             size="sm"
-                            variant="destructive"
+                            variant="danger"
                             onClick={() => handleApproval(opname.id, 'REJECT')}
                             disabled={approvalMutation.isPending}
                           >

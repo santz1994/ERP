@@ -44,6 +44,8 @@ import KanbanPage from '@/pages/KanbanPage'
 import ReportsPage from '@/pages/ReportsPage'
 import QCPage from '@/pages/QCPage'
 import ReworkManagementPage from '@/pages/ReworkManagementPage'
+import QCCheckpointPage from '@/pages/qc/QCCheckpointPage'
+import CreatePOPage from '@/pages/purchasing/CreatePOPage'
 import AdminUserPage from '@/pages/AdminUserPage'
 import PermissionManagementPage from '@/pages/PermissionManagementPage'
 import AdminMasterdataPage from '@/pages/AdminMasterdataPage'
@@ -336,12 +338,24 @@ function App() {
           }
         />
 
+        {/* Purchasing Module Routes */}
         <Route
           path="/purchasing"
           element={
             <PrivateRoute module="purchasing">
               <ProtectedLayout>
                 <PurchasingPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/purchasing/po/create"
+          element={
+            <PrivateRoute module="purchasing">
+              <ProtectedLayout>
+                <CreatePOPage />
               </ProtectedLayout>
             </PrivateRoute>
           }
@@ -380,12 +394,18 @@ function App() {
           }
         />
 
+        {/* QC Module Routes */}
         <Route
           path="/quality"
+          element={<Navigate to="/qc/checkpoint" replace />}
+        />
+
+        <Route
+          path="/qc/checkpoint"
           element={
             <PrivateRoute module="qc">
               <ProtectedLayout>
-                <QCPage />
+                <QCCheckpointPage />
               </ProtectedLayout>
             </PrivateRoute>
           }

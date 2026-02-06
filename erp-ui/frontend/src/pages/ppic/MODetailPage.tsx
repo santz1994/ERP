@@ -189,7 +189,7 @@ export default function MODetailPage() {
                 variant="warning"
                 size="lg"
                 onClick={() => releasePartialMutation.mutate()}
-                loading={releasePartialMutation.isPending}
+                isLoading={releasePartialMutation.isPending}
               >
                 🔓 Release to PARTIAL
               </Button>
@@ -257,7 +257,7 @@ export default function MODetailPage() {
               <Button
                 variant="success"
                 onClick={() => releaseFullMutation.mutate()}
-                loading={releaseFullMutation.isPending}
+                isLoading={releaseFullMutation.isPending}
               >
                 ✅ Confirm Release
               </Button>
@@ -587,14 +587,14 @@ export default function MODetailPage() {
             <CardContent className="space-y-2">
               <Button
                 variant="primary"
-                fullWidth
+                className="w-full"
                 onClick={() => navigate(`/ppic/spk?moId=${mo.id}`)}
               >
                 📋 View All SPKs
               </Button>
               <Button
                 variant="secondary"
-                fullWidth
+                className="w-full"
                 onClick={() => navigate(`/ppic/material-allocation/${mo.id}`)}
               >
                 📦 Material Allocation
@@ -602,7 +602,7 @@ export default function MODetailPage() {
               {mo.status === 'DRAFT' && (
                 <Button
                   variant="warning"
-                  fullWidth
+                  className="w-full"
                   onClick={() => navigate(`/ppic/mo/${mo.id}/edit`)}
                 >
                   ✏️ Edit MO

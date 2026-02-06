@@ -132,14 +132,17 @@ const CreateSPKPage: React.FC = () => {
   React.useEffect(() => {
     if (bomMaterials.length > 0 && watchTargetQty > 0) {
       const calculatedMaterials = bomMaterials.map(material => ({
-        ...material,
+        material_id: material.id,
+        material_code: material.material_code,
+        material_name: material.material_name,
         required_qty: material.required_qty_per_pc * watchTargetQty,
         allocated_qty: Math.min(
           material.required_qty_per_pc * watchTargetQty,
           material.stock_qty
         ),
+        unit: material.unit,
       }));
-      setMaterials(calculatedMaterials);
+      setMaterials(calculatedMaterials as any);
       setValue('materials', calculatedMaterials);
     }
   }, [bomMaterials, watchTargetQty, setValue]);
@@ -189,7 +192,10 @@ const CreateSPKPage: React.FC = () => {
     return { color: 'text-red-600', label: 'Insufficient' };
   };
 
-  const canSubmit = materials.length > 0 && materials.every(m => m.stock_qty >= m.required_qty);
+  const canSubmit = materials.length > 0 && materials.every(m => {
+    const requiredQty = m.required_qty_per_pc * watchTargetQty;
+    return m.stock_qty >= requiredQty;
+  });
 
   return (
     <div className="container mx-auto p-6 space-y-6">

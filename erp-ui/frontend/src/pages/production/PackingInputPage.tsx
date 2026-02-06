@@ -19,7 +19,7 @@ const packingInputSchema = z.object({
   date: z.string(),
   packed_sets: z.number().min(0),
   cartons_packed: z.number().min(0),
-  barcode_generated: z.boolean().default(false),
+  barcode_generated: z.boolean().optional().default(false),
   pallet_id: z.string().optional(),
   notes: z.string().optional()
 }).refine(data => data.packed_sets > 0 || data.cartons_packed > 0, {
@@ -70,7 +70,7 @@ const PackingInputPage: React.FC = () => {
   })
 
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<PackingInputForm>({
-    resolver: zodResolver(packingInputSchema),
+    resolver: zodResolver(packingInputSchema) as any,
     defaultValues: {
       date: selectedDate,
       packed_sets: 0,

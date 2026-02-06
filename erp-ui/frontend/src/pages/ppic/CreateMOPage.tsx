@@ -56,7 +56,7 @@ export default function CreateMOPage() {
   // Fetch available PO Labels (Type: LABEL, Status: RECEIVED, not yet used)
   const { data: poLabels, isLoading: loadingPOLabels } = useQuery({
     queryKey: ['po-labels-available'],
-    queryFn: () => api.purchasing.getPOs({ type: 'LABEL', status: 'RECEIVED', unusedForMO: true }),
+    queryFn: () => api.purchasing.getPOs({ po_type: 'LABEL', status: 'RECEIVED' }),
   });
 
   // Form setup with Zod validation
@@ -67,17 +67,15 @@ export default function CreateMOPage() {
     watch,
     formState: { errors, isSubmitting },
   } = useForm<MOFormData>({
-    resolver: zodResolver(moSchema),
+    resolver: zodResolver(moSchema) as any,
     defaultValues: {
-      targetQty: 0,
-      bufferQty: 0,
-      expectedStartDate: '',
-      expectedCompletionDate: '',
+      target_qty: 0,
+      status: 'DRAFT',
     },
   });
 
-  const targetQty = watch('targetQty');
-  const finalQty = targetQty + Math.round((targetQty * bufferPercent) / 100);
+  const target_qty = watch('target_qty');
+  const finalQty = target_qty + Math.round((target_qty * bufferPercent) / 100);
 
   // Handle PO Label selection
   const handlePOLabelSelect = (po: POLabel) => {
@@ -85,23 +83,12 @@ export default function CreateMOPage() {
     setShowInheritanceHighlight(true);
 
     // Auto-populate form fields
-    setValue('poLabelId', po.id);
-    setValue('articleCode', po.articleCode);
-    setValue('targetQty', po.qty);
-    setValue('bufferQty', Math.round((po.qty * bufferPercent) / 100));
-    setValue('week', po.week); // INHERIT from PO Label
+    setValue('po_label_id', po.id);
+    setValue('article_code', po.articleCode);
+    setValue('article_name', po.articleName);
+    setValue('target_qty', po.qty);
+    setValue('week_number', po.week); // INHERIT from PO Label
     setValue('destination', po.destination); // INHERIT from PO Label
-
-    // Calculate expected dates (16-day production cycle)
-    const today = new Date();
-    const startDate = new Date(today);
-    startDate.setDate(today.getDate() + 2); // Start in 2 days (prep time)
-    
-    const completionDate = new Date(startDate);
-    completionDate.setDate(startDate.getDate() + 16); // 16-day cycle
-
-    setValue('expectedStartDate', startDate.toISOString().split('T')[0]);
-    setValue('expectedCompletionDate', completionDate.toISOString().split('T')[0]);
 
     // Highlight animation for 3 seconds
     setTimeout(() => setShowInheritanceHighlight(false), 3000);
@@ -109,13 +96,10 @@ export default function CreateMOPage() {
     toast.success(`Auto-populated from ${po.poNumber}! Week & Destination inherited.`);
   };
 
-  // Update buffer when percentage changes
+  // Update buffer when percentage changes (for display only)
   useEffect(() => {
-    if (targetQty > 0) {
-      const buffer = Math.round((targetQty * bufferPercent) / 100);
-      setValue('bufferQty', buffer);
-    }
-  }, [bufferPercent, targetQty, setValue]);
+    // Buffer is just for display, not stored in MO
+  }, [bufferPercent, target_qty]);
 
   // Form submission
   const onSubmit = async (data: MOFormData) => {
@@ -125,7 +109,7 @@ export default function CreateMOPage() {
         status: 'DRAFT', // Initial status
       });
 
-      toast.success(`MO ${response.moNumber} created successfully!`);
+      toast.success(`MO ${response.mo_number || 'created'} successfully!`);
       navigate(`/ppic/mo/${response.id}`);
     } catch (error: any) {
       toast.error(error?.message || 'Failed to create MO. Please try again.');
@@ -213,8 +197,8 @@ export default function CreateMOPage() {
                 </Button>
               </div>
             )}
-            {errors.poLabelId && (
-              <p className="text-red-600 text-sm mt-2">⚠️ {errors.poLabelId.message}</p>
+            {errors.po_label_id && (
+              <p className="text-red-600 text-sm mt-2">⚠️ {errors.po_label_id.message}</p>
             )}
           </CardContent>
         </Card>
@@ -238,7 +222,7 @@ export default function CreateMOPage() {
                     </label>
                     <input
                       type="text"
-                      {...register('articleCode')}
+                      {...register('article_code')}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed"
                       readOnly
                     />
@@ -252,7 +236,7 @@ export default function CreateMOPage() {
                     </label>
                     <input
                       type="text"
-                      value={selectedPOLabel.articleName}
+                      {...register('article_name')}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed"
                       readOnly
                     />
@@ -265,12 +249,12 @@ export default function CreateMOPage() {
                     </label>
                     <input
                       type="number"
-                      {...register('targetQty', { valueAsNumber: true })}
+                      {...register('target_qty', { valueAsNumber: true })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed"
                       readOnly
                     />
-                    {errors.targetQty && (
-                      <p className="text-red-600 text-sm mt-1">⚠️ {errors.targetQty.message}</p>
+                    {errors.target_qty && (
+                      <p className="text-red-600 text-sm mt-1">⚠️ {errors.target_qty.message}</p>
                     )}
                   </div>
 
@@ -317,7 +301,7 @@ export default function CreateMOPage() {
                         <div className="text-right">
                           <p className="text-sm text-gray-600">Breakdown:</p>
                           <p className="text-sm text-gray-700 mt-1">
-                            Base: {targetQty} pcs + Buffer: {finalQty - targetQty} pcs
+                            Base: {target_qty} pcs + Buffer: {finalQty - target_qty} pcs
                           </p>
                         </div>
                       </div>
@@ -356,7 +340,7 @@ export default function CreateMOPage() {
                     <div className="relative">
                       <input
                         type="text"
-                        {...register('week')}
+                        {...register('week_number')}
                         className="w-full px-3 py-2 border-2 border-green-400 rounded-md bg-green-100 font-semibold text-lg"
                         readOnly
                       />
@@ -365,8 +349,8 @@ export default function CreateMOPage() {
                     <p className="text-xs text-green-700 mt-1 font-medium">
                       ✅ This field is automatically inherited from PO Label and CANNOT be changed.
                     </p>
-                    {errors.week && (
-                      <p className="text-red-600 text-sm mt-1">⚠️ {errors.week.message}</p>
+                    {errors.week_number && (
+                      <p className="text-red-600 text-sm mt-1">⚠️ {errors.week_number.message}</p>
                     )}
                   </div>
 
@@ -413,62 +397,11 @@ export default function CreateMOPage() {
               </CardContent>
             </Card>
 
-            {/* Step 4: Production Schedule */}
+            {/* Step 4: Notes (Optional) */}
             <Card variant="bordered">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <span className="text-2xl">4️⃣</span>
-                  <span>Production Schedule (16-Day Cycle)</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Expected Start Date */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Expected Start Date <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      {...register('expectedStartDate')}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    {errors.expectedStartDate && (
-                      <p className="text-red-600 text-sm mt-1">⚠️ {errors.expectedStartDate.message}</p>
-                    )}
-                  </div>
-
-                  {/* Expected Completion Date */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Expected Completion Date <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      {...register('expectedCompletionDate')}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    {errors.expectedCompletionDate && (
-                      <p className="text-red-600 text-sm mt-1">⚠️ {errors.expectedCompletionDate.message}</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="mt-4 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
-                  <p className="text-sm text-gray-700">
-                    <strong>Production Cycle:</strong> Standard 16-day cycle includes all 6 stages
-                    (Cutting → Embroidery → Sewing → Finishing 2-stage → Packing → FG).
-                    Dates are auto-calculated but can be adjusted if needed.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Step 5: Notes (Optional) */}
-            <Card variant="bordered">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <span className="text-2xl">5️⃣</span>
                   <span>Notes (Optional)</span>
                 </CardTitle>
               </CardHeader>
@@ -498,7 +431,7 @@ export default function CreateMOPage() {
                 type="submit"
                 variant="primary"
                 disabled={isSubmitting}
-                loading={isSubmitting}
+                isLoading={isSubmitting}
               >
                 {isSubmitting ? 'Creating MO...' : '✅ Create Manufacturing Order'}
               </Button>

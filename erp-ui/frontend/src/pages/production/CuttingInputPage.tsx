@@ -69,34 +69,35 @@ export default function CuttingInputPage() {
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<CuttingInputData>({
-    resolver: zodResolver(productionInputSchema),
+    resolver: zodResolver(productionInputSchema) as any,
     defaultValues: {
-      department: 'CUTTING',
-      productionDate: preselectedDate,
-      goodOutput: 0,
-      defectQty: 0,
+      date: preselectedDate,
+      good_output: 0,
+      defect_qty: 0,
     },
   });
 
-  const goodOutput = watch('goodOutput') || 0;
-  const defectQty = watch('defectQty') || 0;
-  const materialUsed = watch('materialUsed') || 0;
+  const good_output = watch('good_output') || 0;
+  const defect_qty = watch('defect_qty') || 0;
+  // Note: material_consumption is an array in schema, but we use single value for UI simplicity
+  const material_consumption = watch('material_consumption') || [];
+  const materialUsedQty = material_consumption[0]?.qty_used || 0;
 
   // Calculate material variance
   const calculateMaterialVariance = () => {
-    if (!selectedSPK || !materialUsed || goodOutput === 0) return null;
+    if (!selectedSPK || !materialUsedQty || good_output === 0) return null;
 
     const fabricMaterial = selectedSPK.bomMaterials.find(m => m.materialCode.includes('KOHAIR'));
     if (!fabricMaterial) return null;
 
-    const bomStandard = fabricMaterial.qtyPerUnit * goodOutput;
-    const variance = ((materialUsed - bomStandard) / bomStandard) * 100;
+    const bomStandard = fabricMaterial.qtyPerUnit * good_output;
+    const variance = ((materialUsedQty - bomStandard) / bomStandard) * 100;
 
     return {
       bomStandard,
-      actual: materialUsed,
+      actual: materialUsedQty,
       variance,
-      varianceQty: materialUsed - bomStandard,
+      varianceQty: materialUsedQty - bomStandard,
     };
   };
 
@@ -105,24 +106,32 @@ export default function CuttingInputPage() {
   // Handle SPK selection
   const handleSPKSelect = (spk: SPK) => {
     setSelectedSPK(spk);
-    setValue('spkId', spk.id);
+    setValue('spk_id', spk.id);
     
     // Auto-calculate material based on BOM
     const fabricMaterial = spk.bomMaterials.find(m => m.materialCode.includes('KOHAIR'));
-    if (fabricMaterial && goodOutput > 0) {
-      const estimatedUsage = fabricMaterial.qtyPerUnit * goodOutput;
-      setValue('materialUsed', estimatedUsage);
+    if (fabricMaterial && good_output > 0) {
+      const estimatedUsage = fabricMaterial.qtyPerUnit * good_output;
+      setValue('material_consumption', [{
+        material_code: fabricMaterial.materialCode,
+        qty_used: estimatedUsage,
+        uom: 'YARD'
+      }]);
     }
   };
 
   // Watch good output to update material estimate
   const updateMaterialEstimate = () => {
-    if (!selectedSPK || goodOutput === 0) return;
+    if (!selectedSPK || good_output === 0) return;
 
     const fabricMaterial = selectedSPK.bomMaterials.find(m => m.materialCode.includes('KOHAIR'));
     if (fabricMaterial) {
-      const estimatedUsage = fabricMaterial.qtyPerUnit * goodOutput;
-      setValue('materialUsed', estimatedUsage);
+      const estimatedUsage = fabricMaterial.qtyPerUnit * good_output;
+      setValue('material_consumption', [{
+        material_code: fabricMaterial.materialCode,
+        qty_used: estimatedUsage,
+        uom: 'YARD'
+      }]);
     }
   };
 
@@ -138,12 +147,9 @@ export default function CuttingInputPage() {
         }
       }
 
-      const response = await api.production.inputProduction({
-        ...data,
-        totalOutput: goodOutput + defectQty,
-      });
+      const response = await api.production.inputProduction(data);
 
-      toast.success(`Production input successful! ${goodOutput} pcs transferred to WIP Buffer.`);
+      toast.success(`Production input successful! ${good_output} pcs transferred to WIP Buffer.`);
       navigate('/production/calendar');
     } catch (error: any) {
       toast.error(error?.message || 'Failed to input production.');
@@ -224,8 +230,8 @@ export default function CuttingInputPage() {
                 <p className="text-gray-600">No active SPKs found for Cutting department.</p>
               </div>
             )}
-            {errors.spkId && (
-              <p className="text-red-600 text-sm mt-2">⚠️ {errors.spkId.message}</p>
+            {errors.spk_id && (
+              <p className="text-red-600 text-sm mt-2">⚠️ {errors.spk_id.message}</p>
             )}
           </CardContent>
         </Card>
@@ -246,11 +252,11 @@ export default function CuttingInputPage() {
                     </label>
                     <input
                       type="date"
-                      {...register('productionDate')}
+                      {...register('date')}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
-                    {errors.productionDate && (
-                      <p className="text-red-600 text-sm mt-1">⚠️ {errors.productionDate.message}</p>
+                    {errors.date && (
+                      <p className="text-red-600 text-sm mt-1">⚠️ {errors.date.message}</p>
                     )}
                   </div>
 
@@ -261,7 +267,7 @@ export default function CuttingInputPage() {
                     </label>
                     <input
                       type="number"
-                      {...register('goodOutput', { valueAsNumber: true, onChange: updateMaterialEstimate })}
+                      {...register('good_output', { valueAsNumber: true, onChange: updateMaterialEstimate })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       min="0"
                       max={selectedSPK.remainingQty}
@@ -270,8 +276,8 @@ export default function CuttingInputPage() {
                     <p className="text-xs text-gray-500 mt-1">
                       Max: {formatNumber(selectedSPK.remainingQty)} pcs
                     </p>
-                    {errors.goodOutput && (
-                      <p className="text-red-600 text-sm mt-1">⚠️ {errors.goodOutput.message}</p>
+                    {errors.good_output && (
+                      <p className="text-red-600 text-sm mt-1">⚠️ {errors.good_output.message}</p>
                     )}
                   </div>
 
@@ -282,13 +288,13 @@ export default function CuttingInputPage() {
                     </label>
                     <input
                       type="number"
-                      {...register('defectQty', { valueAsNumber: true })}
+                      {...register('defect_qty', { valueAsNumber: true })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       min="0"
                       placeholder="0"
                     />
-                    {errors.defectQty && (
-                      <p className="text-red-600 text-sm mt-1">⚠️ {errors.defectQty.message}</p>
+                    {errors.defect_qty && (
+                      <p className="text-red-600 text-sm mt-1">⚠️ {errors.defect_qty.message}</p>
                     )}
                   </div>
                 </div>
@@ -299,14 +305,14 @@ export default function CuttingInputPage() {
                     <div>
                       <p className="text-sm text-gray-700">Total Output (Good + Defect):</p>
                       <p className="text-2xl font-bold text-blue-700 mt-1">
-                        {formatNumber(goodOutput + defectQty)} pcs
+                        {formatNumber(good_output + defect_qty)} pcs
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-sm text-gray-600">Defect Rate:</p>
                       <p className="text-lg font-semibold text-gray-900">
-                        {goodOutput + defectQty > 0
-                          ? ((defectQty / (goodOutput + defectQty)) * 100).toFixed(2)
+                        {good_output + defect_qty > 0
+                          ? ((defect_qty / (good_output + defect_qty)) * 100).toFixed(2)
                           : 0}%
                       </p>
                     </div>
@@ -330,7 +336,18 @@ export default function CuttingInputPage() {
                     <input
                       type="number"
                       step="0.01"
-                      {...register('materialUsed', { valueAsNumber: true })}
+                      value={materialUsedQty}
+                      onChange={(e) => {
+                        const qty = parseFloat(e.target.value) || 0;
+                        const fabricMaterial = selectedSPK?.bomMaterials.find(m => m.materialCode.includes('KOHAIR'));
+                        if (fabricMaterial) {
+                          setValue('material_consumption', [{
+                            material_code: fabricMaterial.materialCode,
+                            qty_used: qty,
+                            uom: 'YARD'
+                          }]);
+                        }
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="0.00"
                     />
@@ -338,9 +355,6 @@ export default function CuttingInputPage() {
                       <p className="text-xs text-gray-500 mt-1">
                         BOM Standard: {selectedSPK.bomMaterials.find(m => m.materialCode.includes('KOHAIR'))!.qtyPerUnit} YARD/pcs
                       </p>
-                    )}
-                    {errors.materialUsed && (
-                      <p className="text-red-600 text-sm mt-1">⚠️ {errors.materialUsed.message}</p>
                     )}
                   </div>
 
@@ -446,7 +460,7 @@ export default function CuttingInputPage() {
                 type="submit"
                 variant="primary"
                 disabled={isSubmitting || !selectedSPK}
-                loading={isSubmitting}
+                isLoading={isSubmitting}
               >
                 {isSubmitting ? 'Submitting...' : '✅ Submit Production Input'}
               </Button>
