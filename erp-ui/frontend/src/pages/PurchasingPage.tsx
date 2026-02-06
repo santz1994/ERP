@@ -24,6 +24,7 @@ import {
 import axios from 'axios';
 import { NavigationCard } from '@/components/ui/NavigationCard';
 import { Card } from '@/components/ui/card';
+import { formatCurrency, getStatusBadge } from '@/lib/utils';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
@@ -75,31 +76,9 @@ export default function PurchasingPage() {
   // Get recent POs (last 10)
   const recentPOs = purchaseOrders?.slice(0, 10) || [];
 
-  const getStatusBadge = (status: string) => {
-    const badges: Record<string, { color: string; icon: any }> = {
-      'Draft': { color: 'bg-gray-100 text-gray-800', icon: FileText },
-      'Sent': { color: 'bg-blue-100 text-blue-800', icon: Clock },
-      'Received': { color: 'bg-green-100 text-green-800', icon: PackageCheck },
-      'Done': { color: 'bg-purple-100 text-purple-800', icon: CheckCircle },
-      'Cancelled': { color: 'bg-red-100 text-red-800', icon: XCircle },
-    };
-    const badge = badges[status] || badges['Draft'];
-    const Icon = badge.icon;
-    return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badge.color}`}>
-        <Icon className="w-3 h-3 mr-1" />
-        {status}
-      </span>
-    );
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0
-    }).format(amount);
-  };
+  // Removed duplicate functions - now using centralized @/lib/utils
+  // - formatCurrency(amount): formats as IDR currency
+  // - getStatusBadge(status, 'po'): returns badge config for PO status
 
   if (isLoading) {
     return (
@@ -335,7 +314,15 @@ export default function PurchasingPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {getStatusBadge(po.status)}
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          getStatusBadge(po.status, 'po').color === 'green' ? 'bg-green-100 text-green-800' :
+                          getStatusBadge(po.status, 'po').color === 'blue' ? 'bg-blue-100 text-blue-800' :
+                          getStatusBadge(po.status, 'po').color === 'yellow' ? 'bg-yellow-100 text-yellow-800' :
+                          getStatusBadge(po.status, 'po').color === 'red' ? 'bg-red-100 text-red-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {getStatusBadge(po.status, 'po').label}
+                        </span>
                       </td>
                     </tr>
                   ))

@@ -94,7 +94,7 @@ async def list_warehouse_stock(
         # Get total stock count
         total_products = db.query(StockQuant).count()
         total_quantity = db.query(
-            func.sum(StockQuant.quantity)
+            func.sum(StockQuant.qty_on_hand)
         ).scalar() or 0
 
         return {
