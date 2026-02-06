@@ -147,9 +147,20 @@ async def login(credentials: UserLogin, db: Session = Depends(get_db)):
             detail="User account is inactive. Contact administrator."
         )
 
+    # DEBUG: Print password values
+    print(f"\n🔍 DEBUG - Password Verification:")
+    print(f"   Username: {credentials.username}")
+    print(f"   Plain password: {credentials.password!r}")
+    print(f"   Plain password length: {len(credentials.password)} chars")
+    print(f"   Plain password bytes: {len(credentials.password.encode('utf-8'))} bytes")
+    print(f"   Hashed password: {user.hashed_password[:50]}...")
+    print(f"   Hashed password length: {len(user.hashed_password)} chars")
+    
     # Verify password
     try:
+        print(f"   Calling PasswordUtils.verify_password...")
         password_valid = PasswordUtils.verify_password(credentials.password, user.hashed_password)
+        print(f"   Verification result: {password_valid}")
     except Exception as e:
         print(f"❌ Error verifying password: {e}")
         import traceback

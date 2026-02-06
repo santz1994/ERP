@@ -38,7 +38,228 @@ Before implementing ANY new page, you MUST:
 
 ---
 
-## 📋 CONTEXT & BACKGROUND
+## � USER ACCOUNTS STATUS - February 6, 2026
+
+**✅ DATABASE CLEANUP COMPLETED**
+
+**🗑️ REMOVED (8 Operator-Level Users)**:
+Following specification in `Rencana Tampilan.md Section 9.1`, operator-level users have been **permanently removed** from the database. These users are NOT part of the UAC (User Access Control) for web-based ERP system:
+
+- ~~operator_cut~~ - Deleted (mobile app only)
+- ~~operator_embro~~ - Deleted (mobile app only)
+- ~~operator_sew~~ - Deleted (mobile app only)
+- ~~operator_finish~~ - Deleted (mobile app only)
+- ~~operator_pack~~ - Deleted (mobile app only)
+- ~~qc_inspector~~ - Deleted (mobile app only)
+- ~~wh_operator~~ - Deleted (mobile app only)
+- ~~security~~ - Deleted (mobile app only)
+
+**✅ ACTIVE USERS (15 Management-Level Only)**:
+
+Default Password: `admin123` (for all users)
+
+**Tier 1 - System Access**:
+- `developer` - System Developer (Full access + debug mode)
+- `superadmin` - Super Administrator (Full system access)
+
+**Tier 2 - Management**:
+- `manager` - General Manager (Operational metrics, MO/PO approval)
+- `finance_mgr` - Finance Manager (Financial oversight)
+- `ppic_mgr` - PPIC Manager (Production planning)
+- `purchasing_head` - Purchasing Head (PO approval, supplier management)
+
+**Tier 3 - Department Admin**:
+- `ppic_admin` - PPIC Admin (Create MO, SPK, material allocation)
+- `wh_admin` - Warehouse Admin (Material IN/OUT, stock opname)
+- `cut_admin` - Cutting Admin (Manage cutting operations)
+- `embro_admin` - Embroidery Admin (Manage embroidery operations)
+- `sew_admin` - Sewing Admin (Manage sewing operations)
+- `finish_admin` - Finishing Admin (Manage finishing operations)
+- `pack_admin` - Packing Admin (Manage packing operations)
+- `finishgood_admin` - Finished Goods Admin (Manage finished goods inventory)
+
+**Tier 4 - Supervisors**:
+- `spv_cutting` - Supervisor Cutting (Masterdata, SPK approval)
+- `spv_sewing` - Supervisor Sewing (Masterdata, SPK approval)
+- `spv_finishing` - Supervisor Finishing (Masterdata, SPK approval)
+
+**Tier 5 - Specialists**:
+- `qc_lab` - QC Laboratory (Quality metrics, QC approval)
+- `purchasing` - Purchasing Officer (Create/Edit PO, supplier relations)
+
+**Testing Account**:
+- `testuser` - Test User (For development testing only)
+
+**⚠️ IMPORTANT NOTES**:
+1. **Floor operators** (cutting, sewing, finishing, packing operators) will use **Mobile App** (Android) with barcode scanning for daily production input
+2. **Web-based ERP** is designed for management, admin, and supervisors only
+3. All 15 active users can login with password: `admin123`
+4. Password reset functionality should be implemented in User Management module
+5. Do NOT recreate operator-level users in UAC - they are intentionally excluded
+
+**🔒 PASSWORD HASH FIX COMPLETED**:
+- ✅ All 15 users now have valid 60-character bcrypt hashes
+- ✅ Login blocker issue resolved (was caused by malformed 63-char placeholder hashes)
+- ✅ Default password set to `admin123` for initial access
+
+---
+
+## 📦 MASTERDATA IMPORT - February 6, 2026
+
+**🆕 CRITICAL REQUIREMENT: Bulk Import from BOM Excel Files**
+
+### Business Context
+PT Quty Karunia has **extensive BOM data** in Excel format covering:
+- **300+ Materials** (Fabric, Thread, Filling, Accessories)
+- **50+ Articles** (IKEA soft toys with complete specifications)
+- **200+ BOM Structures** (Material requirements per article)
+- **20+ Suppliers** (Fabric, Label, Accessories, Subcontractors)
+
+**Problem**: Manual entry of this masterdata would take **weeks** and is error-prone.
+
+**Solution**: **Bulk Import System** from Excel templates.
+
+---
+
+### Import Priorities (Execution Order)
+
+**Phase 1: Foundation Data** (Must import FIRST)
+1. **Suppliers/Partners** (erp-softtoys/imports/suppliers.xlsx)
+   - Columns: supplier_code, supplier_name, supplier_type (FABRIC/LABEL/ACCESSORIES/SUBCONTRACTOR), contact_person, phone, email, address, payment_terms, lead_time_days
+   - Validation: Unique supplier_code, valid phone format, valid supplier_type enum
+
+2. **Materials/Products** (erp-softtoys/imports/materials.xlsx)
+   - Columns: material_code, material_name, material_type (RAW/BAHAN_PENOLONG/WIP/FINISHED_GOODS), uom_primary, uom_secondary, conversion_factor, minimum_stock, standard_cost
+   - Validation: Unique material_code, valid UOM, positive costs
+
+3. **Articles** (erp-softtoys/imports/articles.xlsx)
+   - Columns: article_code (IKEA code), article_name, description, buyer (IKEA), category, standard_packing (pcs/carton), image_url
+   - Validation: Unique article_code, positive standard_packing
+
+**Phase 2: Relationships** (Import AFTER Phase 1)
+4. **BOM (Bill of Materials)** (erp-softtoys/imports/bom.xlsx)
+   - Columns: article_code (FK), material_code (FK), quantity_required, uom, waste_percentage, notes
+   - Validation: article_code exists, material_code exists, positive quantity
+   - **Critical**: This links articles to materials (1 article = 50-100 material lines)
+
+5. **Supplier-Material Relations** (erp-softtoys/imports/supplier_materials.xlsx)
+   - Columns: supplier_code (FK), material_code (FK), unit_price, lead_time_days, minimum_order_qty, is_preferred_supplier
+   - Validation: Both FKs exist, positive price
+   - **Purpose**: Track which suppliers provide which materials (multi-supplier support)
+
+---
+
+### Implementation Requirements
+
+**Backend API Endpoints** (Create in erp-softtoys/app/api/v1/imports.py):
+```python
+POST /api/v1/imports/suppliers          # Upload suppliers.xlsx
+POST /api/v1/imports/materials          # Upload materials.xlsx
+POST /api/v1/imports/articles           # Upload articles.xlsx
+POST /api/v1/imports/bom                # Upload bom.xlsx
+POST /api/v1/imports/supplier-materials # Upload supplier_materials.xlsx
+
+GET /api/v1/imports/templates/{type}    # Download Excel template
+GET /api/v1/imports/history             # View import history
+```
+
+**Processing Logic**:
+1. **Validation Phase**:
+   - Check file format (XLSX only)
+   - Validate required columns exist
+   - Check data types (integer, float, enum, date)
+   - Validate business rules (unique codes, FK references exist, positive values)
+   - **Return validation report**: Success count, error list with row numbers
+
+2. **Transaction Phase**:
+   - Wrap all inserts in a database transaction
+   - If ANY row fails → Rollback entire import
+   - Update existing records if code already exists (UPDATE mode)
+   - Log all changes in audit_logs table
+
+3. **Response**:
+   ```json
+   {
+     "success": true,
+     "imported_count": 245,
+     "updated_count": 5,
+     "error_count": 0,
+     "errors": [],
+     "execution_time_seconds": 3.2,
+     "import_id": "IMP-2026-00012"
+   }
+   ```
+
+**Frontend Pages** (Create in erp-ui/frontend/src/pages/masterdata/):
+1. **BulkImportPage.tsx**:
+   - Upload zone (drag & drop Excel files)
+   - Template download buttons (5 types)
+   - Import history table (last 20 imports)
+   - Validation error display (if import fails)
+
+2. **Import Wizard Flow**:
+   ```
+   Step 1: Choose Import Type (Suppliers/Materials/Articles/BOM/Relations)
+   Step 2: Download Template (with sample data)
+   Step 3: Upload Filled Template
+   Step 4: Validation Preview (show first 10 rows + error summary)
+   Step 5: Confirm Import
+   Step 6: Success/Error Report
+   ```
+
+**Excel Template Structure** (Example: materials.xlsx):
+```
+Row 1 (Header - MANDATORY):
+| material_code | material_name | material_type | uom_primary | minimum_stock | standard_cost |
+
+Row 2 (Sample Data - for user reference):
+| IKHR504 | KOHAIR 7MM RECYCLE D.BROWN | RAW | YARD | 200 | 85000 |
+
+Row 3 onwards (User fills this):
+| ... | ... | ... | ... | ... | ... |
+```
+
+---
+
+### Success Criteria
+
+**Phase 1 Complete**:
+- ✅ All 5 import endpoints operational
+- ✅ Excel template generation working (with sample data)
+- ✅ Validation logic catches 95%+ errors before DB insertion
+- ✅ Transaction rollback works correctly
+- ✅ Audit logging records all import activities
+
+**Phase 2 Complete**:
+- ✅ BulkImportPage UI allows drag-drop upload
+- ✅ Template download buttons working (5 types)
+- ✅ Validation preview shows errors with row numbers
+- ✅ Success/Error reports display clearly
+- ✅ Import history table shows last 20 imports
+
+**Production Ready**:
+- ✅ 300+ materials imported successfully
+- ✅ 50+ articles imported successfully
+- ✅ 200+ BOM structures imported successfully
+- ✅ 20+ suppliers imported successfully
+- ✅ Zero manual data entry required
+
+---
+
+### Priority Level
+**P0 (CRITICAL)** - Block development of:
+- PO creation (needs suppliers + materials)
+- MO creation (needs articles + BOM)
+- Production input (needs materials + BOM)
+- Inventory management (needs materials)
+
+**Estimated Effort**: 8-10 hours (Backend: 5h, Frontend: 3h, Testing: 2h)
+
+**Deadline**: February 8, 2026 (Before Phase 4 implementation)
+
+---
+
+## �📋 CONTEXT & BACKGROUND
 
 ### Project Overview
 Anda adalah **IT Fullstack Expert** yang ditugaskan untuk mengimplementasikan sistem ERP Manufacturing untuk PT Quty Karunia, perusahaan manufaktur soft toys yang memproduksi boneka untuk IKEA dan buyer internasional lainnya.

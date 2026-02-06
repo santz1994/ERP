@@ -176,6 +176,55 @@ export const bomApi = {
 }
 
 // ============================================================================
+// MASTERDATA BULK IMPORT (Session 49 Phase 8)
+// ============================================================================
+
+export const importsApi = {
+  // Import endpoints
+  importSuppliers: (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return apiClient.post('/imports/suppliers', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+  },
+  
+  importMaterials: (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return apiClient.post('/imports/materials', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+  },
+  
+  importArticles: (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return apiClient.post('/imports/articles', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+  },
+  
+  importBOM: (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return apiClient.post('/imports/bom', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+  },
+  
+  // Template download endpoints
+  downloadTemplate: (importType: 'suppliers' | 'materials' | 'articles' | 'bom') =>
+    apiClient.get(`/imports/templates/${importType}`, {
+      responseType: 'blob'
+    }),
+  
+  // Import history (future)
+  getImportHistory: (params?: { skip?: number; limit?: number }) =>
+    apiClient.get('/imports/history', { params }),
+}
+
+// ============================================================================
 // PURCHASING MODULE
 // ============================================================================
 
@@ -223,6 +272,27 @@ export const purchasingApi = {
   // Export PO
   exportPO: (id: number) =>
     apiClient.get(`/purchasing/po/${id}/export`, { responseType: 'blob' }),
+  
+  // 🆕 PO REFERENCE SYSTEM (Phase 2 - Feb 6, 2026)
+  // Get available PO KAIN for dropdown in PO LABEL creation
+  getAvailablePoKain: () =>
+    apiClient.get('/purchasing/purchase-orders/available-kain'),
+  
+  // 🆕 SESSION 49 PHASE 9: Article Dropdown + BOM Auto-Generation (Feb 6, 2026)
+  // Get all articles (finished goods) for PO creation dropdown
+  getArticles: (params?: { search?: string }) =>
+    apiClient.get('/purchasing/articles', { params }),
+  
+  // Get BOM materials for an article with optional filtering
+  getBOMMaterials: (articleId: number, params?: { 
+    quantity?: number
+    material_type_filter?: 'FABRIC' | 'LABEL' | 'ACCESSORIES'
+  }) =>
+    apiClient.get(`/purchasing/bom-materials/${articleId}`, { params }),
+  
+  // Get PO family tree (PO KAIN + related PO LABEL + PO ACCESSORIES)
+  getPoFamilyTree: (poKainId: number) =>
+    apiClient.get(`/purchasing/purchase-orders/${poKainId}/related`),
 }
 
 // ============================================================================

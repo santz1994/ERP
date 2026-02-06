@@ -50,6 +50,7 @@ import AdminUserPage from '@/pages/AdminUserPage'
 import PermissionManagementPage from '@/pages/PermissionManagementPage'
 import AdminMasterdataPage from '@/pages/AdminMasterdataPage'
 import AdminImportExportPage from '@/pages/AdminImportExportPage'
+import BulkImportPage from '@/pages/BulkImportPage'  // ✅ NEW: Session 49 Phase 8
 import AuditTrailPage from '@/pages/AuditTrailPage'
 import MaterialDebtPage from '@/pages/MaterialDebtPage'
 import ChangePasswordPage from '@/pages/settings/ChangePasswordPage'
@@ -620,6 +621,18 @@ function App() {
             <PrivateRoute module="import_export">
               <ProtectedLayout>
                 <AdminImportExportPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        {/* ✅ NEW: Masterdata Bulk Import - Session 49 Phase 8 */}
+        <Route
+          path="/admin/bulk-import"
+          element={
+            <PrivateRoute module="masterdata">
+              <ProtectedLayout>
+                <BulkImportPage />
               </ProtectedLayout>
             </PrivateRoute>
           }

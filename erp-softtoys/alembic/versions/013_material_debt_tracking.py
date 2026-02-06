@@ -1,7 +1,7 @@
 """create material debt tables
 
 Revision ID: 013_material_debt_tracking
-Revises: 012_rework_qc_tables
+Revises: 012_rework_qc_system
 Create Date: 2026-02-05 10:00:00.000000
 
 """
@@ -12,7 +12,7 @@ from sqlalchemy import func
 
 # revision identifiers, used by Alembic.
 revision = '013_material_debt_tracking'
-down_revision = '012_rework_qc_tables'
+down_revision = '012_rework_qc_system'
 branch_labels = None
 depends_on = None
 

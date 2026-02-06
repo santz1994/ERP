@@ -44,12 +44,28 @@ class PurchasingService:
         order_date: date,
         expected_date: date,
         items: list[dict],
-        user_id: int
+        user_id: int,
+        # 🆕 PO REFERENCE SYSTEM FIELDS (Feb 6, 2026)
+        po_type=None,
+        source_po_kain_id: int | None = None,
+        article_id: int | None = None,
+        article_qty: int | None = None,
+        week: str | None = None,
+        destination: str | None = None,
+        linked_mo_id: int | None = None
     ) -> PurchaseOrder:
-        """Create new purchase order.
+        """Create new purchase order with PO Reference System support.
+        
+        🆕 PO Reference System (Feb 6, 2026):
+        - PO KAIN (Fabric) - TRIGGER 1: Enables Cutting/Embroidery
+        - PO LABEL - TRIGGER 2: Full MO Release + Week/Destination inheritance
+        - PO ACCESSORIES - Optional reference to PO KAIN
 
         items format: [{"product_id": 1, "quantity": 100, "unit_price": 50000}]
         """
+        # Import POType here to avoid circular import
+        from app.core.models.warehouse import POType
+        
         # Validate supplier exists
         from app.core.models.sales import Partner, PartnerType
         supplier = self.db.query(Partner).filter(
@@ -73,7 +89,7 @@ class PurchasingService:
         # Calculate total amount
         total_amount = sum(item["quantity"] * item["unit_price"] for item in items)
 
-        # Create PO
+        # Create PO with PO Reference System fields
         po = PurchaseOrder(
             po_number=po_number,
             supplier_id=supplier_id,
@@ -82,6 +98,14 @@ class PurchasingService:
             status=POStatus.DRAFT,
             total_amount=total_amount,
             currency="IDR",
+            # 🆕 PO Reference System fields
+            po_type=po_type or POType.ACCESSORIES,
+            source_po_kain_id=source_po_kain_id,
+            article_id=article_id,
+            article_qty=article_qty,
+            week=week,
+            destination=destination,
+            linked_mo_id=linked_mo_id,
             metadata={
                 "items": items,
                 "created_by": user_id,
@@ -91,14 +115,30 @@ class PurchasingService:
 
         self.db.add(po)
 
-        # Audit log
+        # Audit log with PO Reference System info
+        audit_changes = {
+            "po_number": po_number, 
+            "supplier": supplier.name, 
+            "amount": total_amount,
+            "po_type": po_type.value if po_type else "ACCESSORIES"
+        }
+        
+        if source_po_kain_id:
+            audit_changes["source_po_kain_id"] = source_po_kain_id
+        if article_id:
+            audit_changes["article_id"] = article_id
+        if week:
+            audit_changes["week"] = week
+        if destination:
+            audit_changes["destination"] = destination
+        
         log_audit(
             self.db,
             user_id=user_id,
             action="CREATE_PURCHASE_ORDER",
             entity_type="PurchaseOrder",
             entity_id=po.id,
-            changes={"po_number": po_number, "supplier": supplier.name, "amount": total_amount}
+            changes=audit_changes
         )
 
         self.db.commit()

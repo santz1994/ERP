@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -11,16 +11,23 @@ import api from '@/api'
 import { cn, formatCurrency, formatDate } from '@/lib/utils'
 
 /**
- * Enhanced Purchase Order Creation - DUAL MODE SYSTEM
+ * Enhanced Purchase Order Creation - DUAL MODE SYSTEM + PO REFERENCE
  * 
  * MODE 1: AUTO - BOM Explosion from Article
  * MODE 2: MANUAL - Line by line material entry
+ * 
+ * 🆕 PO REFERENCE SYSTEM (Phase 3 - Feb 6, 2026):
+ * - PO KAIN (Master) → TRIGGER 1 for early production start
+ * - PO LABEL (Child) → TRIGGER 2 for full MO release (auto-inherits article, week, destination)
+ * - PO ACCESSORIES → Optional reference to PO KAIN
  * 
  * Critical Features:
  * - Supplier per material (different suppliers for each material)
  * - Week & Destination inheritance for PO Label
  * - Material Debt tracking
  * - Variance validation
+ * - 🆕 Reference PO KAIN dropdown (for PO LABEL)
+ * - 🆕 Auto-inherited article display (read-only from PO KAIN)
  */
 
 interface POMaterialLine {
@@ -38,11 +45,40 @@ interface POMaterialLine {
   is_auto_generated?: boolean // Track if from BOM explosion
 }
 
+interface AvailablePoKain {
+  id: number
+  po_number: string
+  article_id: number
+  article_code: string
+  article_name: string
+  article_qty: number
+  order_date: string
+  status: string
+  supplier_name: string
+}
+
+interface Article {
+  id: number
+  code: string
+  name: string
+  description?: string
+}
+
 export const CreatePOPage: React.FC = () => {
   const navigate = useNavigate()
   const [inputMode, setInputMode] = useState<'AUTO' | 'MANUAL'>('AUTO')
   const [isExploding, setIsExploding] = useState(false)
   const [bomExplosionSuccess, setBomExplosionSuccess] = useState(false)
+  
+  // 🆕 PO Reference System State
+  const [availablePoKain, setAvailablePoKain] = useState<AvailablePoKain[]>([])
+  const [selectedPoKain, setSelectedPoKain] = useState<AvailablePoKain | null>(null)
+  const [isLoadingPoKain, setIsLoadingPoKain] = useState(false)
+  
+  // 🆕 SESSION 49 PHASE 9: Article Dropdown State (Feb 6, 2026)
+  const [articles, setArticles] = useState<Article[]>([])
+  const [selectedArticle, setSelectedArticle] = useState<Article | null>(null)
+  const [isLoadingArticles, setIsLoadingArticles] = useState(false)
 
   const {
     register,
@@ -68,43 +104,179 @@ export const CreatePOPage: React.FC = () => {
   const poType = watch('po_type')
   const articleCode = watch('article_code')
   const articleQty = watch('article_qty')
+  const sourcePoKainId = watch('source_po_kain_id')
 
-  // BOM Explosion Handler (AUTO Mode)
-  const handleBOMExplosion = async () => {
-    if (!articleCode || !articleQty) {
+  // 🆕 SESSION 49 PHASE 9: Fetch articles on component mount (Feb 6, 2026)
+  useEffect(() => {
+    const fetchArticles = async () => {
+      setIsLoadingArticles(true)
+      try {
+        const response = await api.purchasing.getArticles()
+        setArticles(response.data || [])
+        console.log(`✅ Loaded ${response.data.length} articles for dropdown`)
+      } catch (error: any) {
+        console.error('❌ Failed to fetch articles:', error)
+        toast.error('Failed to load articles')
+        setArticles([])
+      } finally {
+        setIsLoadingArticles(false)
+      }
+    }
+
+    fetchArticles()
+  }, []) // Run once on mount
+
+  // 🆕 Fetch available PO KAIN when PO type changes to LABEL or ACCESSORIES
+  useEffect(() => {
+    const fetchAvailablePoKain = async () => {
+      if (poType === 'LABEL' || poType === 'ACCESSORIES') {
+        setIsLoadingPoKain(true)
+        try {
+          const response = await api.purchasing.getAvailablePoKain()
+          setAvailablePoKain(response.data.data || [])
+          
+          if (response.data.count === 0) {
+            toast.warning('⚠️ No active PO KAIN available. Create PO KAIN first.')
+          }
+        } catch (error: any) {
+          toast.error('Failed to fetch available PO KAIN')
+          setAvailablePoKain([])
+        } finally {
+          setIsLoadingPoKain(false)
+        }
+      } else {
+        // Clear PO KAIN selection if switching to KAIN type
+        setAvailablePoKain([])
+        setSelectedPoKain(null)
+        setValue('source_po_kain_id', undefined)
+      }
+    }
+
+    fetchAvailablePoKain()
+  }, [poType, setValue])
+
+  // 🆕 Handle PO KAIN selection (auto-inherit article info)
+  const handlePoKainSelection = (poKainId: number) => {
+    const selected = availablePoKain.find((pk) => pk.id === poKainId)
+    
+    if (selected) {
+      setSelectedPoKain(selected)
+      setValue('source_po_kain_id', selected.id)
+      setValue('article_id', selected.article_id)
+      setValue('article_code', selected.article_code)
+      setValue('article_qty', selected.article_qty)
+      
+      toast.success(
+        `✅ Referenced PO KAIN: ${selected.po_number}\n📦 Article: ${selected.article_code} - ${selected.article_name} (${selected.article_qty} pcs)`
+      )
+    }
+  }
+
+  // 🆕 SESSION 49 PHASE 9: Handle Article Selection + Auto-BOM Explosion (Feb 6, 2026)
+  const handleArticleSelection = async (articleId: number) => {
+    const selected = articles.find((art) => art.id === articleId)
+    
+    if (!selected) return
+    
+    setSelectedArticle(selected)
+    setValue('article_id', selected.id)
+    setValue('article_code', selected.code)
+    
+    toast.success(`✅ Selected: ${selected.code} - ${selected.name}`)
+    
+    // Auto-trigger BOM explosion if quantity is set
+    const currentQty = articleQty || 1
+    if (currentQty > 0) {
+      await handleBOMExplosionWithFilter(selected.id, currentQty)
+    }
+  }
+  
+  // 🆕 SESSION 49 PHASE 9: BOM Explosion with Material Type Filter (Feb 6, 2026)
+  const handleBOMExplosionWithFilter = async (articleId?: number, quantity?: number) => {
+    const targetArticleId = articleId || selectedArticle?.id
+    const targetQty = quantity || articleQty
+    
+    if (!targetArticleId || !targetQty) {
       toast.error('Please select article and enter quantity')
       return
     }
 
     setIsExploding(true)
+    setBomExplosionSuccess(false)
+    
     try {
-      const response = await api.bom.bomExplosion(articleCode, articleQty)
-      const explodedMaterials = response.data.materials
+      // Determine material filter based on PO type
+      let materialTypeFilter: 'FABRIC' | 'LABEL' | 'ACCESSORIES' | undefined = undefined
+      
+      if (poType === 'KAIN') {
+        materialTypeFilter = 'FABRIC' // Only fabric materials for PO KAIN
+      } else if (poType === 'LABEL') {
+        materialTypeFilter = 'LABEL' // Only label materials for PO LABEL
+      } else if (poType === 'ACCESSORIES') {
+        materialTypeFilter = 'ACCESSORIES' // Non-fabric, non-label materials
+      }
 
-      // Replace materials array with BOM explosion result
-      replace(
-        explodedMaterials.map((material: any) => ({
-          material_code: material.code,
-          material_name: material.name,
-          material_type: material.type,
-          quantity: material.qty_required,
-          uom: material.uom,
-          unit_price: 0, // User must fill
-          total_price: 0,
-          supplier_id: undefined, // User must select
-          is_auto_generated: true,
-        }))
-      )
+      const response = await api.purchasing.getBOMMaterials(targetArticleId, {
+        quantity: targetQty,
+        material_type_filter: materialTypeFilter
+      })
+      
+      const bomData = response.data
+      const materials = bomData.materials || []
 
-      setBomExplosionSuccess(true)
-      toast.success(`✅ BOM Explosion successful! ${explodedMaterials.length} materials generated`)
+      if (materials.length === 0) {
+        toast.warning(
+          `⚠️ No ${materialTypeFilter ? materialTypeFilter.toLowerCase() : ''} materials found in BOM. You can add materials manually.`
+        )
+        replace([])
+      } else {
+        // Replace materials array with BOM explosion result
+        replace(
+          materials.map((material: any) => ({
+            material_code: material.material_code,
+            material_name: material.material_name,
+            material_type: material.material_type,
+            quantity: material.total_qty_needed,
+            uom: material.uom || 'PCS',
+            unit_price: 0, // User must fill
+            total_price: 0,
+            supplier_id: undefined, // User must select
+            description: material.description,
+            is_auto_generated: true,
+          }))
+        )
+
+        setBomExplosionSuccess(true)
+        const filterMsg = materialTypeFilter ? ` (filtered: ${materialTypeFilter})` : ''
+        toast.success(
+          `✅ BOM Explosion successful! ${materials.length} materials generated${filterMsg}`
+        )
+      }
     } catch (error: any) {
+      console.error('❌ BOM Explosion failed:', error)
       toast.error(error.response?.data?.detail || 'BOM Explosion failed')
       setBomExplosionSuccess(false)
+      replace([])
     } finally {
       setIsExploding(false)
     }
   }
+
+  // Legacy BOM Explosion Handler (kept for backward compatibility)
+  const handleBOMExplosion = async () => {
+    await handleBOMExplosionWithFilter()
+  }
+  
+  // 🆕 Trigger BOM explosion when article quantity changes (if article already selected)
+  useEffect(() => {
+    if (selectedArticle && articleQty && articleQty > 0 && inputMode === 'AUTO') {
+      const timer = setTimeout(() => {
+        handleBOMExplosionWithFilter(selectedArticle.id, articleQty)
+      }, 500) // Debounce 500ms
+      
+      return () => clearTimeout(timer)
+    }
+  }, [articleQty]) // React to quantity changes
 
   // Calculate total price for each line
   const calculateLineTotal = (index: number) => {
@@ -227,6 +399,66 @@ export const CreatePOPage: React.FC = () => {
                   </p>
                 )}
               </div>
+
+              {/* 🆕 Reference PO KAIN (PO Label & Accessories) */}
+              {(poType === 'LABEL' || poType === 'ACCESSORIES') && (
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium mb-2">
+                    Reference PO KAIN {poType === 'LABEL' && <span className="text-red-500">*</span>}
+                    {poType === 'ACCESSORIES' && <span className="text-gray-500">(Optional)</span>}
+                    <span className={`ml-2 text-xs ${poType === 'LABEL' ? 'text-purple-600' : 'text-green-600'}`}>
+                      {poType === 'LABEL' ? '(Parent-child relationship - MANDATORY)' : '(Optional reference for tracking)'}
+                    </span>
+                  </label>
+                  <select
+                    value={sourcePoKainId || ''}
+                    onChange={(e) => handlePoKainSelection(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-purple-300 rounded-md focus:ring-2 focus:ring-purple-500 bg-purple-50"
+                    disabled={isLoadingPoKain}
+                  >
+                    <option value="">
+                      {isLoadingPoKain
+                        ? 'Loading PO KAIN...'
+                        : availablePoKain.length === 0
+                        ? 'No active PO KAIN available'
+                        : '-- Select PO KAIN --'}
+                    </option>
+                    {availablePoKain.map((pk) => (
+                      <option key={pk.id} value={pk.id}>
+                        {pk.po_number} | {pk.article_code} - {pk.article_name} ({pk.article_qty} pcs) | {pk.supplier_name} | Status: {pk.status}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.source_po_kain_id && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {errors.source_po_kain_id.message}
+                    </p>
+                  )}
+                  
+                  {/* 🆕 Auto-Inherited Article Display */}
+                  {selectedPoKain && (
+                    <div className="mt-3 p-3 bg-purple-50 border border-purple-200 rounded-md">
+                      <p className="text-xs font-semibold text-purple-700 mb-2">
+                        ✅ Auto-Inherited from PO KAIN:
+                      </p>
+                      <div className="grid grid-cols-3 gap-2 text-xs">
+                        <div>
+                          <span className="text-gray-600">Article Code:</span>
+                          <p className="font-mono font-bold">{selectedPoKain.article_code}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Article Name:</span>
+                          <p className="font-semibold">{selectedPoKain.article_name}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Quantity:</span>
+                          <p className="font-bold">{selectedPoKain.article_qty} pcs</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* PO Date */}
               <div>
@@ -357,15 +589,37 @@ export const CreatePOPage: React.FC = () => {
                   📦 Article Selection (BOM Explosion Trigger)
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
+                  <div className="md:col-span-2">
                     <label className="block text-sm font-medium mb-2">
-                      Article Code <span className="text-red-500">*</span>
+                      Select Article <span className="text-red-500">*</span>
+                      <span className="ml-2 text-xs text-purple-600">
+                        (🆕 {poType === 'KAIN' ? 'Will show FABRIC materials only' : poType === 'LABEL' ? 'Will show LABEL materials only' : 'Will show all materials'})
+                      </span>
                     </label>
-                    <input
-                      {...register('article_code')}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      placeholder="e.g., 40551542"
-                    />
+                    <select
+                      value={selectedArticle?.id || ''}
+                      onChange={(e) => handleArticleSelection(Number(e.target.value))}
+                      className="w-full px-3 py-2 border border-purple-300 rounded-md focus:ring-2 focus:ring-purple-500 bg-white"
+                      disabled={isLoadingArticles}
+                    >
+                      <option value="">
+                        {isLoadingArticles
+                          ? 'Loading articles...'
+                          : articles.length === 0
+                          ? 'No articles available'
+                          : '-- Select Article --'}
+                      </option>
+                      {articles.map((art) => (
+                        <option key={art.id} value={art.id}>
+                          {art.code} - {art.name}
+                        </option>
+                      ))}
+                    </select>
+                    {selectedArticle && (
+                      <p className="text-xs text-purple-700 mt-1">
+                        ✅ Selected: {selectedArticle.code} - {selectedArticle.name}
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -378,27 +632,28 @@ export const CreatePOPage: React.FC = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md"
                       placeholder="e.g., 1000"
                       min="1"
+                      onChange={(e) => {
+                        // Manually update form value
+                        setValue('article_qty', Number(e.target.value))
+                      }}
                     />
                   </div>
-
-                  <div className="flex items-end">
-                    <Button
-                      type="button"
-                      onClick={handleBOMExplosion}
-                      variant="secondary"
-                      className="w-full"
-                      isLoading={isExploding}
-                      disabled={!articleCode || !articleQty}
-                    >
-                      {isExploding ? 'Exploding BOM...' : '🚀 Explode BOM'}
-                    </Button>
-                  </div>
                 </div>
+
+                {isExploding && (
+                  <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                    <p className="text-blue-800 text-sm flex items-center">
+                      <span className="animate-spin mr-2">⏳</span>
+                      Exploding BOM for {selectedArticle?.code}...
+                    </p>
+                  </div>
+                )}
 
                 {bomExplosionSuccess && (
                   <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
                     <p className="text-green-800 text-sm">
-                      ✅ BOM Explosion successful! {fields.length} materials generated.
+                      ✅ BOM Explosion successful! {fields.length} materials generated
+                      {poType === 'KAIN' && ' (FABRIC only)'}.
                       <br />
                       Please update supplier and unit price for each material below.
                     </p>

@@ -30,3 +30,16 @@ if invalid_users:
     for user in invalid_users:
         print(f"   - {user.username} (length: {len(user.hashed_password)})")
     
+    print("\n🔧 Fixing invalid hashes with default password 'admin123'...")
+    
+    for user in invalid_users:
+        new_hash = PasswordUtils.hash_password("admin123")
+        user.hashed_password = new_hash
+        print(f"   ✅ Fixed: {user.username} -> {new_hash[:50]}...")
+    
+    db.commit()
+    print("\n✅ All password hashes fixed!")
+else:
+    print("\n✅ All password hashes are valid!")
+
+db.close()

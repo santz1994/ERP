@@ -12,6 +12,7 @@ from app.api.v1 import (
     embroidery,
     finishgoods,
     import_export,
+    imports,  # ✅ NEW: Masterdata Imports (Session 49 Phase 8)
     kanban,
     material_allocation,  # ✅ NEW: Material Allocation API
     ppic,
@@ -299,6 +300,12 @@ app.include_router(
 # Import/Export Module (CSV/Excel)
 app.include_router(
     import_export.router,
+    prefix=settings.API_PREFIX
+)
+
+# ✅ Masterdata Bulk Import Module (Session 49 Phase 8)
+app.include_router(
+    imports.router,
     prefix=settings.API_PREFIX
 )
 

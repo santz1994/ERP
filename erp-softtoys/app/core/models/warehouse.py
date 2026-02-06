@@ -55,9 +55,28 @@ class POStatus(str, enum.Enum):
     DONE = "Done"
 
 
+class POType(str, enum.Enum):
+    """Purchase Order Type - PO Reference System."""
+
+    KAIN = "KAIN"  # Fabric PO - TRIGGER 1 (enables cutting/embroidery)
+    LABEL = "LABEL"  # Label PO - TRIGGER 2 (full production release + week/destination)
+    ACCESSORIES = "ACCESSORIES"  # Accessories PO (optional reference)
+
+
 class PurchaseOrder(Base):
     """Purchase Orders - Orders placed with suppliers
-    Tracks material procurement.
+    Tracks material procurement with parent-child reference chain.
+    
+    PO Reference System:
+    - PO KAIN (Master) → TRIGGER 1 for cutting/embroidery (MO PARTIAL)
+    - PO LABEL (Child) → TRIGGER 2 for full production (MO RELEASED)
+    - PO ACCESSORIES (Child) → Optional reference to PO KAIN
+    
+    Business Rules:
+    1. PO LABEL must reference PO KAIN (parent-child relationship)
+    2. PO LABEL must have week & destination
+    3. PO KAIN cannot self-reference
+    4. PO KAIN/LABEL must have article_id
     """
 
     __tablename__ = "purchase_orders"
@@ -75,14 +94,103 @@ class PurchaseOrder(Base):
     # Tracking
     po_number = Column(String(100), unique=True, nullable=False, index=True)
 
+    # 🆕 PO REFERENCE SYSTEM FIELDS (Added: 2026-02-06)
+    
+    # PO Type (KAIN/LABEL/ACCESSORIES)
+    po_type = Column(
+        Enum(POType), 
+        nullable=False, 
+        index=True,
+        comment="PO Type: KAIN (Fabric-TRIGGER 1), LABEL (TRIGGER 2), ACCESSORIES"
+    )
+    
+    # Parent-child relationship
+    source_po_kain_id = Column(
+        Integer,
+        ForeignKey("purchase_orders.id", ondelete="RESTRICT"),
+        nullable=True,
+        index=True,
+        comment="Reference to parent PO KAIN (required for PO LABEL/ACC)"
+    )
+    
+    # Article/Product reference
+    article_id = Column(
+        Integer,
+        ForeignKey("products.id", ondelete="RESTRICT"),
+        nullable=True,
+        index=True,
+        comment="Article/Product reference (required for PO KAIN/LABEL)"
+    )
+    
+    article_qty = Column(
+        Integer,
+        nullable=True,
+        comment="Article quantity (pcs)"
+    )
+    
+    # PO LABEL specific fields (TRIGGER 2)
+    week = Column(
+        String(20),
+        nullable=True,
+        index=True,
+        comment="Production week (e.g., W5, W12) - required for PO LABEL"
+    )
+    
+    destination = Column(
+        String(100),
+        nullable=True,
+        comment="Delivery destination - required for PO LABEL"
+    )
+    
+    # Manufacturing Order link
+    linked_mo_id = Column(
+        Integer,
+        ForeignKey("manufacturing_orders.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+        comment="Linked Manufacturing Order (MO) for production tracking"
+    )
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
     stock_lots = relationship("StockLot", foreign_keys="StockLot.purchase_order_id")
+    
+    # Supplier relationship (FK: supplier_id)
+    supplier = relationship(
+        "Partner",
+        foreign_keys=[supplier_id],
+        doc="Supplier/Vendor for this purchase order"
+    )
+    
+    # 🆕 PO REFERENCE SYSTEM RELATIONSHIPS
+    
+    # Parent-child relationship (self-referencing)
+    source_po_kain = relationship(
+        "PurchaseOrder",
+        remote_side=[id],
+        foreign_keys=[source_po_kain_id],
+        backref="related_po_children",
+        doc="Parent PO KAIN reference (for PO LABEL/ACC)"
+    )
+    
+    # Article reference
+    article = relationship(
+        "Product",
+        foreign_keys=[article_id],
+        doc="Article/Product associated with this PO"
+    )
+    
+    # Manufacturing Order link
+    linked_mo = relationship(
+        "ManufacturingOrder",
+        foreign_keys=[linked_mo_id],
+        doc="Manufacturing Order linked to this PO (especially PO KAIN)"
+    )
 
     def __repr__(self):
-        return f"<PurchaseOrder(po={self.po_number}, status={self.status.value})>"
+        return f"<PurchaseOrder(po={self.po_number}, type={self.po_type.value if self.po_type else 'N/A'}, status={self.status.value})>"
 
 
 class Location(Base):
