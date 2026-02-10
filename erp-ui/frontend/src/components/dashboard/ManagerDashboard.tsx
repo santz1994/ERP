@@ -35,7 +35,7 @@ export const ManagerDashboard: React.FC = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true)
-      const response = await apiClient.get('/api/v1/dashboard/manager')
+      const response = await apiClient.get('/dashboard/manager')
       setData(response.data.data)
     } catch (error) {
       console.error('Failed to fetch Manager dashboard:', error)
@@ -46,7 +46,7 @@ export const ManagerDashboard: React.FC = () => {
 
   const exportToPDF = async () => {
     try {
-      const response = await apiClient.get('/api/v1/dashboard/manager/export-pdf', {
+      const response = await apiClient.get('/dashboard/manager/export-pdf', {
         responseType: 'blob'
       })
       const url = window.URL.createObjectURL(new Blob([response.data]))

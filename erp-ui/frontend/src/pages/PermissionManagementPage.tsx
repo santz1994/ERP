@@ -73,9 +73,13 @@ const PermissionManagementPage: React.FC = () => {
     try {
       setLoading(true)
       const response = await apiClient.get('/admin/users')
-      setUsers(response.data.filter((u: User) => u.is_active))
+      // Defensive: Ensure response.data is array before filtering
+      const userData = Array.isArray(response.data) ? response.data : []
+      setUsers(userData.filter((u: User) => u.is_active))
     } catch (error) {
       console.error('Error fetching users:', error)
+      // Set to empty array on error
+      setUsers([])
     } finally {
       setLoading(false)
     }
@@ -84,26 +88,34 @@ const PermissionManagementPage: React.FC = () => {
   const fetchPermissions = async () => {
     try {
       const response = await apiClient.get('/admin/permissions')
+      // Defensive: Check if response.data exists
+      if (!response.data) {
+        setPermissions([])
+        return
+      }
+      
       // Handle both array and object response formats
       if (Array.isArray(response.data)) {
         setPermissions(response.data)
-      } else if (response.data.modules) {
+      } else if (response.data.modules && Array.isArray(response.data.modules)) {
         // Convert modules format to flat permission array
         const flatPermissions: Permission[] = []
         response.data.modules.forEach((module: any) => {
-          module.permissions.forEach((perm: string, index: number) => {
-            flatPermissions.push({
-              id: flatPermissions.length + 1,
-              code: `${module.name}.${perm}`,
-              name: perm,
-              description: `${perm} permission for ${module.name}`,
-              module: module.name,
-              category: 'system'
+          if (module?.permissions && Array.isArray(module.permissions)) {
+            module.permissions.forEach((perm: string, index: number) => {
+              flatPermissions.push({
+                id: flatPermissions.length + 1,
+                code: `${module.name}.${perm}`,
+                name: perm,
+                description: `${perm} permission for ${module.name}`,
+                module: module.name,
+                category: 'system'
+              })
             })
-          })
+          }
         })
         setPermissions(flatPermissions)
-      } else if (response.data.permissions) {
+      } else if (response.data.permissions && Array.isArray(response.data.permissions)) {
         setPermissions(response.data.permissions)
       } else {
         // Fallback - set empty array

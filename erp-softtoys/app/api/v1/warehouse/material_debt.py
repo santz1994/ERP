@@ -291,52 +291,61 @@ async def adjust_material_debt(
 
 
 @router.get(
-    "/{debt_id}",
-    response_model=MaterialDebtDetailResponse,
-    summary="Get Material Debt Details",
-    description="""
-    Get detailed information about a material debt including settlement history
-    
-    **Required Permission**: warehouse.view_debt
-    
-    **Response Includes**:
-    - Debt amount owed vs settled
-    - Approval status and chain
-    - Complete settlement history (dates, quantities, who recorded)
-    - Reason for debt
-    """
-)
-async def get_material_debt(
-    debt_id: int,
-    current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.VIEW)),
-    db: Session = Depends(get_db)
-):
-    """Get material debt details"""
-    try:
-        service = MaterialDebtService(db)
-        result = await service.get_debt_status(debt_id)
-        return result
-        
-    except BOMAllocationError as e:
-        logger.error(f"Failed to get material debt: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
-        )
-    except Exception as e:
-        logger.error(f"Unexpected error in get_material_debt: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to get material debt"
-        )
-
-
-@router.get(
     "/outstanding",
     response_model=OutstandingDebtsResponse,
     summary="Get Outstanding Material Debts",
     description="""
     Get list of all outstanding material debts not yet fully settled
+    
+    **Required Permission**: warehouse.view_debt
+    
+    **Query Parameters**:
+    - `only_pending_approval`: If true, only show debts waiting approval
+    
+    **Use Cases**:
+    1. PPIC: Check total outstanding before creating new MOs
+    2. Warehouse: Monitor material expected arrivals
+    3. Finance: Track liability for balance sheet
+    4. Manager: Overview of all active debts
+    
+    **Business Rules**:
+    - If total debt > threshold (Rp 50M) → block new PO creation
+    - This is checked before Purchasing creates new PO
+    """
+)
+async def get_outstanding_debts(
+    only_pending_approval: bool = False,
+    current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.VIEW)),
+    db: Session = Depends(get_db)
+):
+    """Get list of outstanding debts"""
+    try:
+        service = MaterialDebtService(db)
+        result = await service.get_outstanding_debts(
+            only_pending_approval=only_pending_approval
+        )
+        return result
+        
+    except BOMAllocationError as e:
+        logger.error(f"Failed to get outstanding debts: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error in get_outstanding_debts: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get outstanding debts"
+        )
+
+
+@router.get(
+    "/{debt_id}",
+    response_model=MaterialDebtDetailResponse,
+    summary="Get Material Debt Details",
+    description="""
+    Get detailed information about a material debt including settlement history
     
     **Required Permission**: warehouse.view_debt
     

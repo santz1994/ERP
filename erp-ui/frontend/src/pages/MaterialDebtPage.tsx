@@ -60,7 +60,7 @@ const MaterialDebtPage: React.FC = () => {
   const fetchDebts = async () => {
     setLoading(true);
     try {
-      const response = await apiClient.get('/api/v1/warehouse/material-debt/outstanding', {
+      const response = await apiClient.get('/warehouse/material-debt/outstanding', {
         params: {
           only_pending_approval: onlyPendingApproval
         }
@@ -579,7 +579,7 @@ const CreateDebtModal: React.FC<{
     setLoading(true);
     setError('');
     try {
-      await apiClient.post('/api/v1/warehouse/material-debt/create', {
+      await apiClient.post('/warehouse/material-debt/create', {
         ...formData,
         qty_owed: parseFloat(formData.qty_owed)
       });

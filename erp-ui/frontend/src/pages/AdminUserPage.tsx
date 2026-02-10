@@ -88,9 +88,12 @@ const AdminUserPage: React.FC = () => {
     setLoading(true)
     try {
       const response = await apiClient.get('/admin/users')
-      setUsers(response.data)
+      // Ensure users is always an array, even if API returns unexpected data
+      setUsers(Array.isArray(response.data) ? response.data : [])
     } catch (error) {
       console.error('Failed to fetch users:', error)
+      // Set to empty array on error to prevent undefined issues
+      setUsers([])
     } finally {
       setLoading(false)
     }
@@ -216,10 +219,10 @@ const AdminUserPage: React.FC = () => {
   }
 
   const toggleSelectAll = () => {
-    if (selectedUsers.size === users.length) {
+    if (selectedUsers.size === (users?.length ?? 0)) {
       setSelectedUsers(new Set())
     } else {
-      setSelectedUsers(new Set(users.map(u => u.id)))
+      setSelectedUsers(new Set(users?.map(u => u.id) ?? []))
     }
   }
 
@@ -265,19 +268,19 @@ const AdminUserPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg">
           <div className="text-sm opacity-90">Total Users</div>
-          <div className="text-3xl font-bold mt-2">{users.length}</div>
+          <div className="text-3xl font-bold mt-2">{users?.length ?? 0}</div>
         </div>
         <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white shadow-lg">
           <div className="text-sm opacity-90">Active Users</div>
-          <div className="text-3xl font-bold mt-2">{users.filter(u => u.is_active).length}</div>
+          <div className="text-3xl font-bold mt-2">{users?.filter(u => u.is_active).length ?? 0}</div>
         </div>
         <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-6 text-white shadow-lg">
           <div className="text-sm opacity-90">Inactive Users</div>
-          <div className="text-3xl font-bold mt-2">{users.filter(u => !u.is_active).length}</div>
+          <div className="text-3xl font-bold mt-2">{users?.filter(u => !u.is_active).length ?? 0}</div>
         </div>
         <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white shadow-lg">
           <div className="text-sm opacity-90">Operators</div>
-          <div className="text-3xl font-bold mt-2">{users.filter(u => u.role.includes('Operator')).length}</div>
+          <div className="text-3xl font-bold mt-2">{users?.filter(u => u.role?.includes('Operator')).length ?? 0}</div>
         </div>
       </div>
 
@@ -304,7 +307,7 @@ const AdminUserPage: React.FC = () => {
                 <th className="px-6 py-3 text-left">
                   <input
                     type="checkbox"
-                    checked={selectedUsers.size === users.length && users.length > 0}
+                    checked={selectedUsers.size === (users?.length ?? 0) && (users?.length ?? 0) > 0}
                     onChange={toggleSelectAll}
                     className="w-4 h-4 cursor-pointer"
                   />
@@ -319,14 +322,14 @@ const AdminUserPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {users.length === 0 ? (
+              {(users?.length ?? 0) === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
                     No users found.
                   </td>
                 </tr>
               ) : (
-                users.map((user) => (
+                users?.map((user) => (
                   <tr key={user.id} className={`hover:bg-gray-50 ${selectedUsers.has(user.id) ? 'bg-blue-50' : ''}`}>
                     <td className="px-6 py-4">
                       <input

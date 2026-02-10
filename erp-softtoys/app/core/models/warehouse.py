@@ -151,6 +151,24 @@ class PurchaseOrder(Base):
         comment="Linked Manufacturing Order (MO) for production tracking"
     )
 
+    # 🆕 PALLET PLANNING SYSTEM (Added: 2026-02-10)
+    # Allow Purchasing to specify target pallets → auto-calculate PCS quantity
+    target_pallets = Column(
+        Integer,
+        nullable=True,
+        comment="Number of pallets to produce (input by Purchasing staff)"
+    )
+    expected_cartons = Column(
+        Integer,
+        nullable=True,
+        comment="Auto-computed: target_pallets × article.cartons_per_pallet"
+    )
+    calculated_pcs = Column(
+        Integer,
+        nullable=True,
+        comment="Auto-computed: target_pallets × article.pcs_per_pallet. Should match article_qty."
+    )
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -371,3 +389,65 @@ class MaterialRequest(Base):
 
     def __repr__(self):
         return f"<MaterialRequest(product={self.product_id}, qty={self.qty_requested}, status={self.status.value})>"
+
+
+class PalletStatus(str, enum.Enum):
+    """Pallet barcode status."""
+
+    PACKED = "PACKED"  # Packed by Packing dept, not yet received by FG warehouse
+    RECEIVED = "RECEIVED"  # Received in FG warehouse
+    SHIPPED = "SHIPPED"  # Shipped to customer
+
+
+class PalletBarcode(Base):
+    """Pallet Barcode Tracking for FG Warehouse
+    
+    Each pallet gets a unique barcode for tracking through FG warehouse.
+    Business rule: Pallet content MUST match product packing specs.
+    
+    Workflow:
+    1. Packing dept forms pallet → creates barcode (status=PACKED)
+    2. FG warehouse receives pallet → scans barcode (status=RECEIVED)
+    3. Shipping loads pallet → scans barcode (status=SHIPPED)
+    
+    Example:
+    - Article: AFTONSPARV Bear
+    - Pallet: PLT-2026-00001
+    - Content: 8 cartons × 60 pcs = 480 pcs
+    """
+
+    __tablename__ = "pallet_barcodes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    barcode = Column(String(50), unique=True, nullable=False, index=True,
+                    comment="Unique pallet barcode (format: PLT-YYYY-XXXXX)")
+    product_id = Column(Integer, ForeignKey("products.id", ondelete="RESTRICT"), nullable=False, index=True)
+    work_order_id = Column(Integer, ForeignKey("work_orders.id", ondelete="SET NULL"), nullable=True)
+
+    # Pallet content
+    carton_count = Column(Integer, nullable=False,
+                         comment="Number of cartons on this pallet")
+    total_pcs = Column(Integer, nullable=False,
+                      comment="Total pieces on this pallet")
+
+    # Status tracking
+    status = Column(Enum(PalletStatus), default=PalletStatus.PACKED, nullable=False, index=True)
+
+    # Warehouse location
+    location_id = Column(Integer, ForeignKey("locations.id", ondelete="SET NULL"), nullable=True)
+
+    # Audit timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now(),
+                       comment="When pallet was packed")
+    received_at = Column(DateTime(timezone=True), nullable=True,
+                        comment="When FG warehouse received pallet")
+    shipped_at = Column(DateTime(timezone=True), nullable=True,
+                       comment="When pallet was shipped")
+
+    # Relationships
+    product = relationship("Product", foreign_keys=[product_id])
+    work_order = relationship("WorkOrder", foreign_keys=[work_order_id])
+    location = relationship("Location", foreign_keys=[location_id])
+
+    def __repr__(self):
+        return f"<PalletBarcode(barcode={self.barcode}, product={self.product_id}, status={self.status.value})>"

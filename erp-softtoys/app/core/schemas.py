@@ -113,6 +113,10 @@ class ProductCreate(BaseModel):
     category_id: int | None = None
     parent_article_id: int | None = None
     min_stock: Decimal = Field(default=0, decimal_places=2)
+    
+    # 🆕 PALLET SYSTEM (Added: 2026-02-10)
+    pcs_per_carton: int | None = Field(None, gt=0, description="Fixed pieces per carton for Finish Goods")
+    cartons_per_pallet: int | None = Field(None, gt=0, description="Fixed cartons per pallet for Finish Goods")
 
 
 class ProductResponse(BaseModel):
@@ -127,6 +131,11 @@ class ProductResponse(BaseModel):
     parent_article_id: int | None
     min_stock: Decimal
     created_at: datetime
+    
+    # 🆕 PALLET SYSTEM (Added: 2026-02-10)
+    pcs_per_carton: int | None = None
+    cartons_per_pallet: int | None = None
+    pcs_per_pallet: int | None = Field(None, description="Computed: pcs_per_carton × cartons_per_pallet")
 
     class Config:
         from_attributes = True

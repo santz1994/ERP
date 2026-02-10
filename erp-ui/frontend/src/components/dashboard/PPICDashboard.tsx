@@ -59,7 +59,7 @@ export const PPICDashboard: React.FC = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true)
-      const response = await apiClient.get('/api/v1/dashboard/ppic')
+      const response = await apiClient.get('/dashboard/ppic')
       setData(response.data.data)
     } catch (error) {
       console.error('Failed to fetch PPIC dashboard:', error)

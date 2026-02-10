@@ -16,6 +16,8 @@ Remove-Item -Recurse -Force __pycache__, app/__pycache__, app/**/__pycache__ -Er
 
 ### Step 3: Start Backend Fresh
 ```powershell
+# MAKE SURE YOU'RE IN erp-softtoys DIRECTORY!
+cd d:\Project\ERP2026\erp-softtoys
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 

@@ -15,6 +15,7 @@ from app.api.v1 import (
     imports,  # ✅ NEW: Masterdata Imports (Session 49 Phase 8)
     kanban,
     material_allocation,  # ✅ NEW: Material Allocation API
+    pallet,  # ✅ NEW: Pallet System API (2026-02-10)
     ppic,
     purchasing,
     qa_convenience_endpoints,
@@ -277,6 +278,13 @@ app.include_router(
 app.include_router(
     quality_router,
     prefix=settings.API_PREFIX
+)
+
+# ✅ Pallet System API (2026-02-10)
+app.include_router(
+    pallet.router,
+    # Note: pallet.router already has prefix="/api/v1/pallet"
+    # so we don't add settings.API_PREFIX here
 )
 
 # WebSocket for real-time notifications

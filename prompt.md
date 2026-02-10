@@ -302,7 +302,156 @@ bom_purchasing_details (header_id, material_id [RAW only], quantity_aggregated)
 ---
 
 
-## �📋 CONTEXT & BACKGROUND
+## 📦 PALLET SYSTEM (February 6, 2026)
+
+**FIXED PACKING QUANTITIES: Pallet → Carton → Pcs Hierarchy**
+
+### Core Concept
+
+**THREE-LEVEL HIERARCHY**:
+```
+PALLET (Storage & Shipping Unit)
+  └─ Fixed cartons per pallet (e.g., 8 CTN)
+       └─ CARTON (Packaging Unit)
+            └─ Fixed pcs per carton (e.g., 60 pcs)
+                 └─ PCS (Production Unit)
+```
+
+**Mathematical Relationship**:
+```
+pcs_per_pallet = pcs_per_carton × cartons_per_pallet
+
+Example: AFTONSPARV Bear
+• 60 pcs per carton
+• 8 cartons per pallet
+• = 480 pcs per pallet
+
+Therefore PO quantities MUST be multiples of 480 pcs
+```
+
+### Critical Business Rules
+
+1. **Purchasing (PO Kain Creation)**:
+   - Specify TARGET PALLETS (not arbitrary pcs)
+   - System auto-calculates: MO qty = target_pallets × pcs_per_pallet
+   - Example: 3 pallets → 3 × 480 = 1,440 pcs MO
+   - ✅ Guarantee: Zero partial pallets
+
+2. **Packing Flow**:
+   ```
+   Finishing → Packing (receive PCS)
+   Packing → Pack into CARTONS (EXACT qty: 60 pcs/carton)
+   Packing → Stack CARTONS on PALLETS (EXACT qty: 8 CTN/pallet)
+   Packing → Transfer PALLETS to FG Warehouse
+   ```
+
+3. **FG Warehouse Receiving**:
+   - Primary unit: PALLETS (not pcs!)
+   - Auto-calculate: cartons = pallets × cartons_per_pallet
+   - Auto-calculate: pcs = pallets × pcs_per_pallet
+   - Display: "3 PLT / 24 CTN / 1,440 PCS"
+
+4. **Validation Rules**:
+   - Carton packing: Variance > 0% → BLOCKED
+   - Pallet formation: Must be multiple of cartons_per_pallet
+   - FG receiving: Must match Packing output exactly
+
+### Database Schema
+
+```sql
+-- Add to products table
+ALTER TABLE products ADD COLUMN pcs_per_carton INTEGER NOT NULL;
+ALTER TABLE products ADD COLUMN cartons_per_pallet INTEGER NOT NULL;
+ALTER TABLE products ADD COLUMN pcs_per_pallet INTEGER GENERATED ALWAYS AS 
+    (pcs_per_carton * cartons_per_pallet) STORED;
+
+-- Add to purchase_orders table
+ALTER TABLE purchase_orders ADD COLUMN target_pallets INTEGER;
+ALTER TABLE purchase_orders ADD COLUMN expected_cartons INTEGER;
+ALTER TABLE purchase_orders ADD COLUMN calculated_pcs INTEGER;
+
+-- Add to work_orders table (Packing dept)
+ALTER TABLE work_orders ADD COLUMN cartons_packed INTEGER DEFAULT 0;
+ALTER TABLE work_orders ADD COLUMN pallets_formed INTEGER DEFAULT 0;
+ALTER TABLE work_orders ADD COLUMN packing_validated BOOLEAN DEFAULT FALSE;
+
+-- Add to fg_stock table
+ALTER TABLE fg_stock ADD COLUMN stock_pallets DECIMAL(10, 2);
+ALTER TABLE fg_stock ADD COLUMN stock_cartons DECIMAL(10, 2);
+ALTER TABLE fg_stock ADD COLUMN stock_pcs DECIMAL(10, 2);
+```
+
+### API Endpoints
+
+```python
+# PO Kain with pallet calculator
+POST /api/v1/purchasing/po-kain
+{
+  "article_id": 123,
+  "target_pallets": 3,  # ← NEW: Specify pallets
+  "delivery_date": "2026-03-15"
+}
+Response: {
+  "mo_quantity": 1440,  # Auto-calculated: 3 × 480
+  "expected_cartons": 24,
+  "pallet_breakdown": "3 PLT / 24 CTN / 1,440 PCS"
+}
+
+# Packing validation
+POST /api/v1/production/packing/validate-cartons
+{
+  "work_order_id": 456,
+  "cartons_packed": 16,
+  "total_pcs_packed": 960
+}
+Response: {
+  "status": "EXACT_MATCH",  # or "BLOCKED"
+  "can_form_pallets": true,
+  "complete_pallets": 2
+}
+
+# FG receiving by pallet
+POST /api/v1/warehouse/fg-receipt
+{
+  "work_order_id": 456,
+  "received_pallets": 2,
+  "barcode_scan": ["PLT-2026-00001", "PLT-2026-00002"]
+}
+Response: {
+  "stock_display": "2 PLT / 16 CTN / 960 PCS"
+}
+```
+
+### UI Components
+
+1. **PalletCalculatorWidget** (PO Kain page):
+   - Input: Target pallets
+   - Display: Packing specs (pcs/CTN, CTN/PLT)
+   - Output: Auto-calculated MO quantity
+
+2. **PackingValidation** (Packing page):
+   - Input: Cartons packed, Total pcs
+   - Validation: EXACT match required
+   - Output: Pallet formation status
+
+3. **FGStockDisplay** (FG Warehouse):
+   - Multi-UOM: Pallets / Cartons / Pcs
+   - Compact format: "5 PLT / 40 CTN / 2,400 PCS"
+
+### Masterdata Source
+
+**Packing Specs from BOM**:
+- File: `docs/Masterdata/BOM Production/Packing.xlsx`
+- Carton ratio: 1/60 PCE = 60 pcs per carton
+- Pallet ratio: 0.125 PCE = 8 cartons per pallet
+- Import script: Extract and populate products table
+
+**Reference**: See [PALLET_SYSTEM_IMPLEMENTATION_GUIDE.md](docs/PALLET_SYSTEM_IMPLEMENTATION_GUIDE.md) for complete guide (1,000+ lines).
+
+---
+
+
+## 📋 CONTEXT & BACKGROUND
 
 ### Project Overview
 Anda adalah **IT Fullstack Expert** yang ditugaskan untuk mengimplementasikan sistem ERP Manufacturing untuk PT Quty Karunia, perusahaan manufaktur soft toys yang memproduksi boneka untuk IKEA dan buyer internasional lainnya.

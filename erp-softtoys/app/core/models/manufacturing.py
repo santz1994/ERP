@@ -299,6 +299,24 @@ class WorkOrder(Base):
     # Labor tracking
     worker_id = Column(Integer, ForeignKey("users.id"), nullable=True)
 
+    # 🆕 PALLET TRACKING FOR PACKING DEPT (Added: 2026-02-10)
+    # Track cartons packed and pallets formed
+    cartons_packed = Column(
+        Integer,
+        default=0,
+        comment="Number of cartons packed (must be multiple of article.cartons_per_pallet)"
+    )
+    pallets_formed = Column(
+        Integer,
+        default=0,
+        comment="Number of pallets formed: cartons_packed / article.cartons_per_pallet"
+    )
+    packing_validated = Column(
+        Boolean,
+        default=False,
+        comment="TRUE if packing quantities validated (no partial cartons/pallets)"
+    )
+
     # Audit
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     

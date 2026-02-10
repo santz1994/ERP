@@ -99,6 +99,21 @@ class Product(Base):
     # Stock Management
     min_stock = Column(DECIMAL(10, 2), default=0)  # Safety Stock
 
+    # 🆕 PALLET SYSTEM (Added: 2026-02-10)
+    # Fixed packing specifications for Finish Goods
+    pcs_per_carton = Column(
+        Integer,
+        nullable=True,
+        comment="Fixed pieces per carton (e.g., 60 for AFTONSPARV). NULL for non-FG."
+    )
+    cartons_per_pallet = Column(
+        Integer,
+        nullable=True,
+        comment="Fixed cartons per pallet (typically 8). NULL for non-FG."
+    )
+    # NOTE: pcs_per_pallet is computed in database as GENERATED column
+    # Access via: product.pcs_per_carton * product.cartons_per_pallet
+
     # Audit
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     is_active = Column(Boolean, default=True, index=True)
@@ -112,6 +127,15 @@ class Product(Base):
     stock_moves_from = relationship("StockMove", foreign_keys="StockMove.product_id", back_populates="product")
     work_orders = relationship("WorkOrder", foreign_keys="WorkOrder.product_id", back_populates="product")
     manufacturing_orders = relationship("ManufacturingOrder", back_populates="product")
+
+    @property
+    def pcs_per_pallet(self) -> int:
+        """Computed: pieces per pallet (pcs_per_carton × cartons_per_pallet).
+        Returns 0 if either field is None.
+        """
+        if self.pcs_per_carton and self.cartons_per_pallet:
+            return self.pcs_per_carton * self.cartons_per_pallet
+        return 0
 
     def __repr__(self):
         return f"<Product(code={self.code}, type={self.type.value})>"
