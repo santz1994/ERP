@@ -85,7 +85,7 @@ const QCPage: React.FC = () => {
   }
 
   // Calculate FPY (First Pass Yield)
-  const fpy = stats ? stats.pass_rate : 0
+  const fpy = stats ? (isNaN(stats.pass_rate) ? 0 : stats.pass_rate) : 0
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -128,7 +128,7 @@ const QCPage: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-500 mb-1">Pass Rate</p>
-                  <p className="text-3xl font-bold text-green-600">{stats.pass_rate.toFixed(1)}%</p>
+                  <p className="text-3xl font-bold text-green-600">{(isNaN(stats.pass_rate) ? 0 : stats.pass_rate).toFixed(1)}%</p>
                   <p className="text-xs text-gray-400 mt-1">{stats.passed} passed</p>
                 </div>
                 <Award className="w-12 h-12 text-green-400" />
@@ -234,7 +234,7 @@ const QCPage: React.FC = () => {
               <div className="mt-6">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-gray-700">Overall Pass Rate</span>
-                  <span className="text-sm font-medium text-gray-900">{stats.pass_rate.toFixed(1)}%</span>
+                  <span className="text-sm font-medium text-gray-900">{(isNaN(stats.pass_rate) ? 0 : stats.pass_rate).toFixed(1)}%</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-3">
                   <div 
@@ -243,13 +243,13 @@ const QCPage: React.FC = () => {
                       stats.pass_rate >= 85 ? 'bg-yellow-500' :
                       'bg-red-500'
                     }`}
-                    style={{ width: `${stats.pass_rate}%` }}
+                    style={{ width: `${Math.min(100, Math.max(0, isNaN(stats.pass_rate) ? 0 : stats.pass_rate))}%` }}
                   />
                 </div>
                 <div className="flex justify-between text-xs text-gray-500 mt-1">
                   <span>Target: 95%</span>
                   <span className={stats.pass_rate >= 95 ? 'text-green-600 font-medium' : ''}>
-                    {stats.pass_rate >= 95 ? '✓ Target achieved!' : `${(95 - stats.pass_rate).toFixed(1)}% to target`}
+                    {stats.pass_rate >= 95 ? '✓ Target achieved!' : `${(95 - (isNaN(stats.pass_rate) ? 0 : stats.pass_rate)).toFixed(1)}% to target`}
                   </span>
                 </div>
               </div>

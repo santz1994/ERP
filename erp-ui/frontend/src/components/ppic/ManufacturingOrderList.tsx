@@ -55,9 +55,9 @@ import {
   XCircle
 } from 'lucide-react'
 import { apiClient } from '@/api/client'
-import { useUIStore } from '@/stores/uiStore'
-import { ManufacturingOrderCreate } from './ManufacturingOrderCreate'
+import { useUIStore } from '@/store/uiStore'
 import { ManufacturingOrderDetail } from './ManufacturingOrderDetail'
+import MOCreateModal from './MOCreateModal'
 
 // MO Status Types
 type MOStatus = 
@@ -432,12 +432,14 @@ export const ManufacturingOrderList: React.FC = () => {
       )}
 
       {/* Create Modal */}
-      {showCreateModal && (
-        <ManufacturingOrderCreate 
-          onClose={() => setShowCreateModal(false)}
-          onSuccess={handleCreateSuccess}
-        />
-      )}
+      <MOCreateModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={() => {
+          handleCreateSuccess()
+          setShowCreateModal(false)
+        }}
+      />
 
       {/* Detail Modal */}
       {selectedMO && (

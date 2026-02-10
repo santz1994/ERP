@@ -36,7 +36,8 @@ export const ManagerDashboard: React.FC = () => {
     try {
       setLoading(true)
       const response = await apiClient.get('/dashboard/manager')
-      setData(response.data.data)
+      const dashboardData = response.data || { data: null }
+      setData(dashboardData.data)
     } catch (error) {
       console.error('Failed to fetch Manager dashboard:', error)
     } finally {

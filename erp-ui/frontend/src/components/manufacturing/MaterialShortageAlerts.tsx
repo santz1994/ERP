@@ -47,8 +47,13 @@ export const MaterialShortageAlerts: React.FC<MaterialShortageAlertsProps> = ({
   const { data: shortages, isLoading, refetch } = useQuery({
     queryKey: ['material-shortages'],
     queryFn: async () => {
-      const response = await apiClient.get('/material-allocation/shortages');
-      return response.data as MaterialShortage[];
+      try {
+        const response = await apiClient.get('/material-allocation/shortages');
+        return (response.data  || []) as MaterialShortage[];
+      } catch (error) {
+        console.error('[MaterialShortage] Error fetching shortages:', error);
+        return []; // Return empty array on error
+      }
     },
     refetchInterval: 10000 // Refresh every 10 seconds
   });

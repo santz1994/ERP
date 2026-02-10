@@ -71,7 +71,8 @@ export const usePermissionStore = create<PermissionState>((set, get) => ({
       set({ loading: true, error: null })
       
       const response = await apiClient.get('/auth/permissions')
-      const { permissions } = response.data
+      const responseData = response.data || { permissions: [] }
+      const { permissions } = responseData
       
       set({ 
         permissions, 

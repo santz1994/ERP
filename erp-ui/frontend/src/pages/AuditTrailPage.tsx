@@ -64,8 +64,9 @@ export default function AuditTrailPage() {
       });
       
       const response = await api.get(`/audit/logs?${params}`);
-      setLogs(response.data.data);
-      setTotalPages(response.data.total_pages);
+      const auditData = response.data || { data: [], total_pages: 1 };
+      setLogs(auditData.data || []);
+      setTotalPages(auditData.total_pages || 1);
     } catch (error) {
       console.error('Failed to fetch audit logs:', error);
     } finally {

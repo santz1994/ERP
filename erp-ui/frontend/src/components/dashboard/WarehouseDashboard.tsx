@@ -69,7 +69,7 @@ export const WarehouseDashboard: React.FC = () => {
     try {
       setLoading(true)
       const response = await apiClient.get('/dashboard/warehouse')
-      setData(response.data)
+      setData(response.data || null)
     } catch (error) {
       console.error('Failed to fetch warehouse dashboard:', error)
     } finally {

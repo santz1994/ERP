@@ -14,7 +14,7 @@ interface NavigationCardProps {
   title: string;
   description: string;
   icon: LucideIcon;
-  link: string;
+  link?: string; // Made optional
   color?: 'purple' | 'blue' | 'green' | 'orange' | 'red' | 'yellow' | 'gray';
   badge?: string;
   disabled?: boolean;
@@ -91,7 +91,7 @@ export const NavigationCard: React.FC<NavigationCardProps> = ({
     
     if (onClick) {
       onClick();
-    } else {
+    } else if (link) {
       navigate(link);
     }
   };

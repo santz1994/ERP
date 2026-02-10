@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
 from app.core.models import User, SPKDailyProduction, AuditLog, SPK
+from app.core.models.manufacturing import SPKStatus
 
 router = APIRouter(prefix="/ppic", tags=["ppic"])
 
@@ -143,35 +144,56 @@ async def get_manufacturing_orders(
     ✅ Returns list of SPKs that represent manufacturing orders
     
     Query params:
-    - status: DRAFT, IN_PROGRESS, COMPLETED, CANCELLED
+    - status: DRAFT, IN_PROGRESS, COMPLETED, CANCELLED, all (all means no filter)
     
     Response: List of manufacturing orders
     """
-    # Get SPKs from database
-    query = db.query(SPK)
-    
-    if status:
-        query = query.filter(SPK.status == status)
-    
-    spks = query.all()
-    
-    # Transform to manufacturing order format
-    mos = []
-    for spk in spks:
-        mos.append({
-            "id": spk.id,
-            "product_id": spk.product_id,
-            "product_code": f"PROD-{spk.id}",
-            "product_name": f"Product {spk.id}",
-            "qty_planned": spk.target_qty,
-            "qty_produced": spk.actual_qty,
-            "routing_type": "Route1",
-            "batch_number": spk.batch_number or f"BATCH-{spk.id}",
-            "state": spk.status,
-            "created_at": spk.created_at.isoformat() if spk.created_at else None
-        })
-    
-    return mos
+    try:
+        # Get SPKs from database
+        query = db.query(SPK)
+        
+        # Skip filter if status is 'all' or empty
+        if status and status.lower() != 'all':
+            # Map IN_PROGRESS to valid SPK status
+            status_map = {
+                'IN_PROGRESS': SPKStatus.IN_PROGRESS,
+                'DRAFT': SPKStatus.DRAFT,
+                'COMPLETED': SPKStatus.COMPLETED,
+                'CANCELLED': SPKStatus.CANCELLED
+            }
+            
+            spk_status = status_map.get(status.upper())
+            if spk_status:
+                query = query.filter(SPK.status == spk_status)
+        
+        spks = query.all()
+        
+        # Transform to manufacturing order format
+        mos = []
+        for spk in spks:
+            mos.append({
+                "id": spk.id,
+                "product_id": spk.product_id,
+                "product_code": f"PROD-{spk.id}",
+                "product_name": f"Product {spk.id}",
+                "qty_planned": spk.target_qty,
+                "qty_produced": spk.actual_qty,
+                "routing_type": "Route1",
+                "batch_number": spk.batch_number or f"BATCH-{spk.id}",
+                "state": spk.status.value if hasattr(spk.status, 'value') else str(spk.status),
+                "created_at": spk.created_at.isoformat() if spk.created_at else None
+            })
+        
+        return mos
+    except Exception as e:
+        import traceback
+        print("❌ ERROR in get_manufacturing_orders:")
+        print(f"   {type(e).__name__}: {str(e)}")
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"{type(e).__name__}: {str(e)}"
+        )
 
 
 # ============================================================================

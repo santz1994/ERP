@@ -152,15 +152,25 @@ export const Sidebar: React.FC = () => {
     setOpenDropdowns(prev => prev.includes(label) ? prev.filter(i => i !== label) : [...prev, label])
   }
 
-  // Helper: Styles
+  // Helper: Enhanced Styles with Modern UI/UX
   const getLinkClasses = (isActive: boolean, isSubmenu = false) => {
-    const base = "flex items-center gap-3 transition-all duration-200 group relative "
-    const padding = isSubmenu ? "px-3 py-2 text-sm ml-8" : "px-4 py-3"
-    const activeState = isActive 
-      ? "text-brand-500 bg-brand-50/10 border-r-[3px] border-brand-500 font-medium" 
-      : "text-slate-400 hover:text-slate-100 hover:bg-slate-800/50 border-r-[3px] border-transparent"
+    const base = "flex items-center gap-3 transition-all duration-300 group relative overflow-hidden "
+    const padding = isSubmenu ? "px-4 py-2.5 text-sm ml-6" : "px-4 py-3.5"
     
-    return `${base} ${padding} ${activeState}`
+    if (isActive) {
+      return `${base} ${padding} text-white bg-gradient-to-r from-blue-600/90 to-blue-500/80 
+              border-r-4 border-blue-400 font-medium shadow-lg shadow-blue-500/20 
+              backdrop-blur-sm before:absolute before:inset-0 before:bg-gradient-to-r 
+              before:from-white/10 before:to-transparent before:opacity-0 hover:before:opacity-100 
+              before:transition-opacity before:duration-300`
+    }
+    
+    return `${base} ${padding} text-slate-300 hover:text-white relative 
+            hover:bg-gradient-to-r hover:from-slate-700/50 hover:to-slate-600/30 
+            hover:shadow-md hover:shadow-slate-900/20 hover:border-r-2 hover:border-slate-500/50 
+            before:absolute before:inset-0 before:bg-gradient-to-r before:from-white/5 
+            before:to-transparent before:opacity-0 hover:before:opacity-100 
+            before:transition-all before:duration-300 hover:backdrop-blur-sm`
   }
 
   const renderMenuItem = (item: MenuItem, index: number) => {
@@ -172,10 +182,17 @@ export const Sidebar: React.FC = () => {
 
     return (
       <div key={item.label}>
-        {/* Section Label */}
+        {/* Enhanced Section Label */}
         {showSectionLabel && (
-          <div className="px-4 mt-6 mb-2">
-            <p className="text-[10px] font-bold tracking-wider text-slate-500 uppercase">{item.section}</p>
+          <div className="px-4 mt-6 mb-3 relative">
+            <div className="flex items-center">
+              <div className="h-px bg-gradient-to-r from-slate-600 to-transparent flex-1"></div>
+              <p className="text-[10px] font-bold tracking-wider text-slate-400 uppercase px-3 bg-slate-900 
+                         border border-slate-700 rounded-full py-1 shadow-sm">
+                {item.section}
+              </p>
+              <div className="h-px bg-gradient-to-l from-slate-600 to-transparent flex-1"></div>
+            </div>
           </div>
         )}
 
@@ -184,32 +201,58 @@ export const Sidebar: React.FC = () => {
           <div>
             <button
               onClick={() => toggleDropdown(item.label)}
-              className={`w-full flex items-center justify-between ${getLinkClasses(false)}`}
+              className={`w-full flex items-center justify-between ${getLinkClasses(isActive)} 
+                         rounded-lg mx-2 mb-1 z-10 relative`}
               title={!sidebarOpen ? item.label : undefined}
             >
-              <div className="flex items-center gap-3">
-                <div className={`transition-colors ${isActive ? 'text-brand-400' : 'text-slate-400 group-hover:text-slate-100'}`}>
+              <div className="flex items-center gap-3 z-10">
+                <div className={`transition-all duration-300 transform group-hover:scale-110 
+                               ${isActive ? 'text-white drop-shadow-sm' : 'text-slate-400 group-hover:text-white'} 
+                               ${isDropdownOpen ? 'rotate-3' : ''}`}>
                   {item.icon}
                 </div>
-                {sidebarOpen && <span>{item.label}</span>}
+                {sidebarOpen && (
+                  <span className="font-medium tracking-wide truncate z-10">{item.label}</span>
+                )}
               </div>
               {sidebarOpen && (
-                <ChevronRight size={14} className={`transition-transform duration-200 ${isDropdownOpen ? 'rotate-90' : ''}`} />
+                <ChevronRight 
+                  size={16} 
+                  className={`transition-all duration-300 transform z-10 
+                            ${isDropdownOpen ? 'rotate-90 text-white' : 'text-slate-400 group-hover:text-white'} 
+                            group-hover:scale-110`} 
+                />
               )}
             </button>
             
-            {/* Submenu Items */}
-            {sidebarOpen && isDropdownOpen && (
-              <div className="mt-1 mb-2 space-y-0.5">
-                {item.submenu.filter(hasAccess).map(sub => (
-                  <Link
-                    key={sub.path}
-                    to={sub.path}
-                    className={getLinkClasses(location.pathname === sub.path, true)}
-                  >
-                    <span className="truncate">{sub.label}</span>
-                  </Link>
-                ))}
+            {/* Enhanced Submenu with Smooth Animation */}
+            {sidebarOpen && (
+              <div className={`overflow-hidden transition-all duration-300 ease-in-out 
+                            ${isDropdownOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+                <div className="mt-1 mb-2 space-y-1 pl-2 pr-2">
+                  {item.submenu.filter(hasAccess).map((sub, subIndex) => (
+                    <Link
+                      key={sub.path}
+                      to={sub.path}
+                      className={`${getLinkClasses(location.pathname === sub.path, true)} 
+                                rounded-md mx-1 transform transition-all duration-300 
+                                hover:translate-x-1 border border-transparent 
+                                hover:border-slate-600/30 hover:shadow-sm 
+                                ${location.pathname === sub.path ? 'border-blue-400/30' : ''}`}
+                      style={{
+                        animationDelay: `${subIndex * 50}ms`,
+                        animation: isDropdownOpen ? 'slideInLeft 0.3s ease-out forwards' : ''
+                      }}
+                    >
+                      <div className={`w-2 h-2 rounded-full mr-2 transition-all duration-300 
+                                     ${location.pathname === sub.path 
+                                       ? 'bg-blue-400 shadow-lg shadow-blue-400/50 scale-125' 
+                                       : 'bg-slate-600 group-hover:bg-slate-400'}`}>
+                      </div>
+                      <span className="truncate font-medium">{sub.label}</span>
+                    </Link>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -217,13 +260,21 @@ export const Sidebar: React.FC = () => {
           // --- Single Menu ---
           <Link
             to={item.path!}
-            className={getLinkClasses(isActive)}
+            className={`${getLinkClasses(isActive)} rounded-lg mx-2 mb-1 block relative z-10`}
             title={!sidebarOpen ? item.label : undefined}
           >
-            <div className={`transition-colors ${isActive ? 'text-brand-400' : 'text-slate-400 group-hover:text-slate-100'}`}>
+            <div className={`transition-all duration-300 transform group-hover:scale-110 z-10 
+                           ${isActive ? 'text-white drop-shadow-sm' : 'text-slate-400 group-hover:text-white'}`}>
               {item.icon}
             </div>
-            {sidebarOpen && <span>{item.label}</span>}
+            {sidebarOpen && (
+              <span className="font-medium tracking-wide truncate z-10">{item.label}</span>
+            )}
+            {/* Active indicator dot */}
+            {isActive && (
+              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 w-2 h-2 
+                            bg-white rounded-full shadow-lg animate-pulse z-10"></div>
+            )}
           </Link>
         )}
       </div>
@@ -231,38 +282,99 @@ export const Sidebar: React.FC = () => {
   }
 
   return (
-    <div className={`bg-slate-900 text-slate-300 h-screen shadow-xl transition-all duration-300 flex flex-col relative z-20 ${sidebarOpen ? 'w-64' : 'w-20'}`}>
-      {/* Brand Header */}
-      <div className="h-16 flex items-center justify-center border-b border-slate-800 bg-slate-950">
+    <div className={`bg-gradient-to-b from-slate-900 via-slate-900 to-slate-800 text-slate-300 
+                   h-screen shadow-2xl transition-all duration-300 flex flex-col fixed left-0 top-0 z-30
+                   before:absolute before:inset-0 before:bg-gradient-to-b before:from-blue-900/5 
+                   before:to-purple-900/5 before:pointer-events-none backdrop-blur-sm 
+                   ${sidebarOpen ? 'w-64' : 'w-20'}`}>
+      {/* Animated background pattern */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-purple-500/10"></div>
+      </div>
+      {/* Enhanced Brand Header */}
+      <div className="h-16 flex items-center justify-center border-b border-slate-700/50 
+                    bg-gradient-to-r from-slate-950 to-slate-900 relative z-10">
         {sidebarOpen ? (
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold">Q</div>
-            <div>
-              <h1 className="font-bold text-white leading-none">Quty Karunia</h1>
-              <span className="text-[10px] text-brand-400 font-medium">ERP SYSTEM v1.2</span>
+          <div className="flex items-center gap-3 px-4">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-500 rounded-xl 
+                          flex items-center justify-center text-white font-bold text-lg 
+                          shadow-lg shadow-blue-500/25 border border-blue-400/20 
+                          hover:shadow-blue-500/40 transition-all duration-300 hover:scale-105">
+              Q
+            </div>
+            <div className="overflow-hidden">
+              <h1 className="font-bold text-white leading-none tracking-tight text-lg 
+                           bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent">
+                Quty Karunia
+              </h1>
+              <span className="text-[11px] text-blue-400 font-medium tracking-wide">
+                ERP SYSTEM v1.2
+              </span>
             </div>
           </div>
         ) : (
-          <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-bold">Q</div>
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-500 rounded-xl 
+                        flex items-center justify-center text-white font-bold text-lg 
+                        shadow-lg shadow-blue-500/25 border border-blue-400/20 
+                        hover:shadow-blue-500/40 transition-all duration-300 hover:scale-105">
+            Q
+          </div>
         )}
       </div>
 
-      {/* Menu List */}
-      <nav className="flex-1 overflow-y-auto py-4 custom-scrollbar">
+      {/* Enhanced Menu List */}
+      <nav className="flex-1 overflow-y-auto py-4 custom-scrollbar relative z-10 
+                   scrollbar-thin scrollbar-track-slate-800 scrollbar-thumb-slate-600 
+                   hover:scrollbar-thumb-slate-500">
+        <style>{`
+          @keyframes slideInLeft {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+          }
+          .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgb(30 41 59);
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgb(71 85 105);
+            border-radius: 3px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgb(100 116 139);
+          }
+        `}</style>
         {menuItems.map((item, idx) => renderMenuItem(item, idx))}
       </nav>
 
-      {/* Footer Profile (Optional) */}
+      {/* Enhanced Footer Profile */}
       {sidebarOpen && user && (
-        <div className="p-4 border-t border-slate-800 bg-slate-950/50">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center border border-slate-600">
-              <span className="font-bold text-xs">{user.username.substring(0, 2).toUpperCase()}</span>
+        <div className="p-4 border-t border-slate-700/50 bg-gradient-to-r from-slate-950 to-slate-900 
+                      relative z-10 backdrop-blur-sm">
+          <div className="flex items-center gap-3 group hover:bg-slate-800/30 rounded-lg p-2 
+                        transition-all duration-300 border border-transparent 
+                        hover:border-slate-600/30 hover:shadow-lg">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 
+                          flex items-center justify-center border-2 border-white/10 
+                          shadow-lg group-hover:shadow-blue-500/20 transition-all duration-300 
+                          group-hover:scale-105">
+              <span className="font-bold text-sm text-white drop-shadow-sm">
+                {user.username.substring(0, 2).toUpperCase()}
+              </span>
             </div>
-            <div className="overflow-hidden">
-              <p className="text-sm font-medium text-white truncate">{user.username}</p>
-              <p className="text-xs text-slate-500 truncate capitalize">{user.role.replace('_', ' ')}</p>
+            <div className="overflow-hidden flex-1">
+              <p className="text-sm font-semibold text-white truncate tracking-wide 
+                         group-hover:text-blue-100 transition-colors">
+                {user.username}
+              </p>
+              <p className="text-xs text-slate-400 truncate capitalize tracking-wide 
+                         group-hover:text-slate-300 transition-colors">
+                {user.role.replace('_', ' ')}
+              </p>
             </div>
+            <div className="w-2 h-2 rounded-full bg-green-400 shadow-lg shadow-green-400/50 
+                          animate-pulse group-hover:scale-125 transition-transform"></div>
           </div>
         </div>
       )}

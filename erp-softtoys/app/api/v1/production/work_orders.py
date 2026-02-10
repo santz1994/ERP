@@ -226,7 +226,8 @@ async def list_work_orders(
     if mo_id:
         query = query.filter(WorkOrder.mo_id == mo_id)
     
-    if department:
+    # Skip filter if 'ALL' is sent from frontend
+    if department and department.upper() != 'ALL':
         try:
             dept_enum = Department[department.upper()]
             query = query.filter(WorkOrder.department == dept_enum)
@@ -236,7 +237,8 @@ async def list_work_orders(
                 detail=f"Invalid department: {department}"
             )
     
-    if status_filter:
+    # Skip filter if 'ALL' is sent from frontend  
+    if status_filter and status_filter.upper() != 'ALL':
         try:
             status_enum = WorkOrderStatus[status_filter.upper()]
             query = query.filter(WorkOrder.status == status_enum)

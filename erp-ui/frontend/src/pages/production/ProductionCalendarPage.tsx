@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { DayPicker } from 'react-day-picker';
@@ -9,6 +9,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/ca
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { cn, formatDate, formatNumber } from '../../lib/utils';
+import { useAuthStore } from '@/store';
 
 /**
  * Production Calendar Page
@@ -20,12 +21,17 @@ import { cn, formatDate, formatNumber } from '../../lib/utils';
  * - Click date to input production
  * - Department tabs (Cutting, Embroidery, Sewing, Finishing, Packing)
  * - Real-time data refresh
+ * - **SECURITY**: Department-based access control (users see only their department)
  * 
  * Business Logic:
  * - Calendar-based daily input (NOT cumulative per entry)
  * - Each date shows total produced that day
  * - Color coding: Green (>100%), Yellow (75-100%), Red (<75%), Gray (no data)
  * - Hover shows details (SPK, Good Output, Defects)
+ * 
+ * Access Control:
+ * - Management (ADMIN, MANAGER, PPIC): See all departments
+ * - Department staff (SPV, Operator): See only their department
  */
 
 type Department = 'CUTTING' | 'EMBROIDERY' | 'SEWING' | 'FINISHING' | 'PACKING';
@@ -54,17 +60,52 @@ const DEPARTMENTS: { id: Department; label: string; icon: string }[] = [
 
 export default function ProductionCalendarPage() {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [selectedDept, setSelectedDept] = useState<Department>('CUTTING');
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
 
+  // Determine user's department access
+  const userDepartment = user?.department?.toUpperCase() || null;
+  const userRole = user?.role?.toUpperCase() || '';
+  
+  // Full access roles (management)
+  const FULL_ACCESS_ROLES = ['ADMIN', 'SUPERADMIN', 'DEVELOPER', 'MANAGER', 'PPIC MANAGER', 'PPIC_MANAGER', 'PPIC ADMIN', 'PPIC_ADMIN'];
+  const hasFullAccess = FULL_ACCESS_ROLES.includes(userRole);
+  
+  // Filter departments based on access
+  const accessibleDepartments = hasFullAccess 
+    ? DEPARTMENTS 
+    : DEPARTMENTS.filter(dept => dept.id === userDepartment);
+
+  // Auto-select user's department if limited access
+  useEffect(() => {
+    if (!hasFullAccess && userDepartment && userDepartment !== selectedDept) {
+      const userDept = DEPARTMENTS.find(d => d.id === userDepartment);
+      if (userDept) {
+        setSelectedDept(userDept.id);
+      }
+    }
+  }, [hasFullAccess, userDepartment, selectedDept]);
+
   // Fetch calendar data
-  const { data: calendarData, isLoading } = useQuery<CalendarData>({
+  const { data: calendarData, isLoading, error } = useQuery<CalendarData>({
     queryKey: ['production-calendar', selectedDept, selectedMonth.getMonth(), selectedMonth.getFullYear()],
-    queryFn: () => api.production.getCalendar({
-      department: selectedDept,
-      month: `${selectedMonth.getFullYear()}-${String(selectedMonth.getMonth() + 1).padStart(2, '0')}`
-    }),
+    queryFn: async () => {
+      try {
+        return await api.production.getCalendar({
+          department: selectedDept,
+          month: `${selectedMonth.getFullYear()}-${String(selectedMonth.getMonth() + 1).padStart(2, '0')}`
+        });
+      } catch (err: any) {
+        // Handle 403 Forbidden with helpful message
+        if (err?.response?.status === 403) {
+          const detail = err?.response?.data?.detail;
+          toast.error(detail?.message || 'Access denied to this department calendar.');
+        }
+        throw err;
+      }
+    },
     refetchInterval: 60000, // Refresh every minute
   });
 
@@ -116,9 +157,26 @@ export default function ProductionCalendarPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Production Calendar</h1>
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+            Production Calendar
+            {!hasFullAccess && (
+              <Badge variant="warning" className="text-xs">
+                🔒 {userDepartment} Only
+              </Badge>
+            )}
+            {hasFullAccess && (
+              <Badge variant="success" className="text-xs">
+                ✅ All Departments
+              </Badge>
+            )}
+          </h1>
           <p className="text-gray-600 mt-1">
             Track daily production output per department
+            {!hasFullAccess && (
+              <span className="text-orange-600 font-medium ml-2">
+                ⚠️ You can only view {userDepartment} data
+              </span>
+            )}
           </p>
         </div>
         <Button
@@ -133,22 +191,33 @@ export default function ProductionCalendarPage() {
       <Card variant="bordered">
         <CardContent className="p-4">
           <div className="flex items-center gap-2 flex-wrap">
-            {DEPARTMENTS.map((dept) => (
+            {accessibleDepartments.map((dept) => (
               <button
                 key={dept.id}
                 onClick={() => setSelectedDept(dept.id)}
+                disabled={!hasFullAccess && dept.id !== userDepartment}
                 className={cn(
                   'px-6 py-3 rounded-lg font-semibold transition-all',
                   selectedDept === dept.id
                     ? 'bg-blue-500 text-white shadow-lg'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
+                  !hasFullAccess && dept.id !== userDepartment && 'opacity-50 cursor-not-allowed'
                 )}
               >
                 <span className="mr-2">{dept.icon}</span>
                 {dept.label}
+                {!hasFullAccess && dept.id === userDepartment && (
+                  <span className="ml-2 text-xs">🔓</span>
+                )}
               </button>
             ))}
           </div>
+          {accessibleDepartments.length === 0 && (
+            <div className="text-center py-8 text-red-600">
+              <p className="font-semibold">⚠️ No Department Access</p>
+              <p className="text-sm mt-2">Your account has no assigned department. Contact admin.</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 

@@ -64,14 +64,20 @@ export default function SewingPage() {
     today_output: workOrders.reduce((sum: number, wo: WorkOrder) => sum + wo.output_qty, 0),
     active_wos: workOrders.filter((wo: WorkOrder) => wo.status === 'Running').length,
     completed_today: workOrders.filter((wo: WorkOrder) => wo.status === 'Finished').length,
-    inline_qc_rate: workOrders.length > 0
-      ? (workOrders.reduce((sum: number, wo: WorkOrder) => sum + wo.output_qty, 0) /
-         workOrders.reduce((sum: number, wo: WorkOrder) => sum + wo.input_qty, 0) * 100)
-      : 0,
-    defect_rate: workOrders.length > 0
-      ? (workOrders.reduce((sum: number, wo: WorkOrder) => sum + wo.reject_qty, 0) /
-         workOrders.reduce((sum: number, wo: WorkOrder) => sum + wo.output_qty, 0) * 100)
-      : 0
+    inline_qc_rate: (() => {
+      const totalOutput = workOrders.reduce((sum: number, wo: WorkOrder) => sum + wo.output_qty, 0)
+      const totalInput = workOrders.reduce((sum: number, wo: WorkOrder) => sum + wo.input_qty, 0)
+      if (totalInput === 0) return 0
+      const rate = (totalOutput / totalInput * 100)
+      return isNaN(rate) ? 0 : rate
+    })(),
+    defect_rate: (() => {
+      const totalRejects = workOrders.reduce((sum: number, wo: WorkOrder) => sum + wo.reject_qty, 0)
+      const totalOutput = workOrders.reduce((sum: number, wo: WorkOrder) => sum + wo.output_qty, 0)
+      if (totalOutput === 0) return 0
+      const rate = (totalRejects / totalOutput * 100)
+      return isNaN(rate) ? 0 : rate
+    })()
   }
 
   const recentWOs = workOrders.slice(0, 10)

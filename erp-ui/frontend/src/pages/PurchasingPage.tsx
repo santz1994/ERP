@@ -25,6 +25,7 @@ import axios from 'axios';
 import { NavigationCard } from '@/components/ui/NavigationCard';
 import { Card } from '@/components/ui/card';
 import { formatCurrency, getStatusBadge } from '@/lib/utils';
+import POCreateModal from '@/components/purchasing/POCreateModal';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
@@ -49,6 +50,7 @@ interface PurchaseOrder {
 
 export default function PurchasingPage() {
   const navigate = useNavigate();
+  const [showPOModal, setShowPOModal] = useState(false);
 
   // Fetch purchase orders
   const { data: purchaseOrders, isLoading } = useQuery({
@@ -171,7 +173,7 @@ export default function PurchasingPage() {
             title="Create New PO"
             description="Create purchase order with AUTO (BOM explosion) or MANUAL mode. Supports Dual Trigger System (PO Kain + PO Label)."
             icon={Plus}
-            link="/purchasing/po/create"
+            onClick={() => setShowPOModal(true)}
             color="purple"
             badge="Dual Mode"
           />
@@ -278,7 +280,7 @@ export default function PurchasingPage() {
                       <ShoppingCart className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                       <p className="text-gray-500">No purchase orders yet</p>
                       <button
-                        onClick={() => navigate('/purchasing/po/create')}
+                        onClick={() => setShowPOModal(true)}
                         className="mt-4 text-blue-600 hover:text-blue-700 text-sm font-medium"
                       >
                         Create your first PO →
@@ -345,6 +347,16 @@ export default function PurchasingPage() {
           </div>
         </div>
       </Card>
+
+      {/* PO Create Modal */}
+      <POCreateModal
+        isOpen={showPOModal}
+        onClose={() => setShowPOModal(false)}
+        onSuccess={(poId) => {
+          setShowPOModal(false);
+          navigate(`/purchasing/po/${poId}`);
+        }}
+      />
     </div>
   );
 }

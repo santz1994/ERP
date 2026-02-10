@@ -75,11 +75,17 @@ export const WorkOrdersDashboard: React.FC<WorkOrdersDashboardProps> = ({
   const { data: workOrders, isLoading } = useQuery({
     queryKey: ['work-orders', selectedDepartment, statusFilter],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (selectedDepartment !== 'ALL') params.append('department', selectedDepartment);
-      if (statusFilter !== 'ALL') params.append('state', statusFilter);
-      const response = await apiClient.get(`/work-orders?${params}`);
-      return response.data as WorkOrder[];
+      try {
+        const params = new URLSearchParams();
+        // Only add params if not 'ALL' to avoid backend validation errors
+        if (selectedDepartment !== 'ALL') params.append('department', selectedDepartment);
+        if (statusFilter !== 'ALL') params.append('state', statusFilter);
+        const response = await apiClient.get(`/work-orders?${params}`);
+        return (response.data || []) as WorkOrder[];
+      } catch (error) {
+        console.error('[WorkOrders] Error fetching work orders:', error);
+        return []; // Return empty array on error
+      }
     },
     refetchInterval: 5000 // Refresh every 5 seconds
   });

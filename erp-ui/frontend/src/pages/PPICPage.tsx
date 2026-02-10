@@ -8,8 +8,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Lock, Eye } from 'lucide-react';
 import { apiClient } from '@/api';
 import { usePermission } from '@/hooks/usePermission';
-import { MOCreateForm, MOAggregateView } from '@/components/manufacturing';
+import { MOAggregateView } from '@/components/manufacturing';
 import { BOMExplorer, BOMExplosionViewer } from '@/components/bom';
+import MOCreateModal from '@/components/ppic/MOCreateModal';
+import SPKCreateModal from '@/components/ppic/SPKCreateModal';
 
 // Types
 interface ManufacturingOrder {
@@ -38,6 +40,7 @@ const PPICPage: React.FC = () => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'mos' | 'bom' | 'planning' | 'workorders' | 'bom-explorer' | 'mo-monitoring'>('mos');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showSPKModal, setShowSPKModal] = useState(false);
   const [showBOMForm, setShowBOMForm] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [selectedMO, setSelectedMO] = useState<number | null>(null);
@@ -63,10 +66,15 @@ const PPICPage: React.FC = () => {
   const { data: mosData, isLoading: mosLoading } = useQuery({
     queryKey: ['manufacturing-orders', filterStatus],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filterStatus !== 'all') params.append('status', filterStatus);
-      const response = await apiClient.get(`/ppic/manufacturing-orders?${params}`);
-      return response.data;
+      try {
+        const params = new URLSearchParams();
+        if (filterStatus !== 'all') params.append('status', filterStatus);
+        const response = await apiClient.get(`/ppic/manufacturing-orders?${params}`);
+        return response.data || [];
+      } catch (error) {
+        console.error('[PPIC] Error fetching manufacturing orders:', error);
+        return []; // Return empty array on error
+      }
     },
     refetchInterval: 5000
   });
@@ -77,7 +85,8 @@ const PPICPage: React.FC = () => {
     queryFn: async () => {
       const response = await apiClient.get('/admin/products');
       // Filter only WIP and Finish Good
-      return response.data.filter((p: Product) => 
+      const products = response.data || [];
+      return products.filter((p: Product) => 
         p.type === 'WIP' || p.type === 'Finish Good'
       );
     }
@@ -906,16 +915,25 @@ const PPICPage: React.FC = () => {
         </div>
       )}
 
-      {/* Create MO Modal - NEW COMPONENT */}
-      {showCreateModal && (
-        <MOCreateForm 
-          onClose={() => setShowCreateModal(false)}
-          onSuccess={() => {
-            queryClient.invalidateQueries({ queryKey: ['manufacturing-orders'] });
-            setShowCreateModal(false);
-          }}
-        />
-      )}
+      {/* MO Create Modal */}
+      <MOCreateModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={(moId) => {
+          queryClient.invalidateQueries({ queryKey: ['manufacturing-orders'] });
+          setShowCreateModal(false);
+        }}
+      />
+
+      {/* SPK Create Modal */}
+      <SPKCreateModal
+        isOpen={showSPKModal}
+        onClose={() => setShowSPKModal(false)}
+        onSuccess={(spkId) => {
+          queryClient.invalidateQueries({ queryKey: ['work-orders'] });
+          setShowSPKModal(false);
+        }}
+      />
 
       {/* OLD Create MO Modal - DEPRECATED */}
       {false && showCreateModal && (

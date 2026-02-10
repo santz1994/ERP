@@ -32,6 +32,7 @@ from app.api.v1.production import approval as production_approval
 from app.api.v1.production import spk_edit as production_spk_edit
 from app.api.v1.production import work_orders as production_work_orders
 from app.api.v1.production import production_execution
+from app.api.v1.production import calendar as production_calendar
 from app.api.v1.ppic import daily_production as ppic_daily_production
 from app.api.v1.ppic import dashboard as ppic_dashboard
 from app.api.v1.ppic import reports as ppic_reports
@@ -264,6 +265,12 @@ app.include_router(
 # Production Execution API (Daily Input, WIP Transfer)
 app.include_router(
     production_execution.router,
+    prefix=settings.API_PREFIX
+)
+
+# Production Calendar API (Department monthly view)
+app.include_router(
+    production_calendar.router,
     prefix=settings.API_PREFIX
 )
 

@@ -22,7 +22,8 @@ import {
   Factory,
   Package,
   Activity,
-  Award
+  Award,
+  X
 } from 'lucide-react';
 
 interface SPKProgress {

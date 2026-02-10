@@ -137,7 +137,7 @@ const BulkImportPage: React.FC = () => {
           break
       }
 
-      const result = response.data as ImportResult
+      const result = (response.data || { success: false, imported_count: 0, updated_count: 0, execution_time_ms: 0, errors: [] }) as ImportResult
 
       setImportResult(result)
 

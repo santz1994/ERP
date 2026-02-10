@@ -33,7 +33,7 @@ import {
   Box
 } from 'lucide-react'
 import { apiClient } from '@/api/client'
-import { useUIStore } from '@/stores/uiStore'
+import { useUIStore } from '@/store/uiStore'
 
 type MOStatus = 'DRAFT' | 'PARTIAL' | 'RELEASED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED'
 type Department = 'CUTTING' | 'EMBROIDERY' | 'SEWING' | 'FINISHING' | 'PACKING'
@@ -112,7 +112,7 @@ export const ManufacturingOrderDetail: React.FC<ManufacturingOrderDetailProps> =
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[95vh] overflow-hidden flex flex-col">
         
         {/* Header */}

@@ -12,10 +12,8 @@ import { UnauthorizedPage } from '@/pages/UnauthorizedPage'
 import { canAccessModule } from '@/utils/roleGuard'
 import PPICPage from '@/pages/PPICPage'
 import MOListPage from '@/pages/ppic/MOListPage'
-import CreateMOPage from '@/pages/ppic/CreateMOPage'
 import MODetailPage from '@/pages/ppic/MODetailPage'
 import SPKListPage from '@/pages/ppic/SPKListPage'
-import CreateSPKPage from '@/pages/ppic/CreateSPKPage'
 import DailyProductionPage from '@/pages/DailyProductionPage'
 import ProductionCalendarPage from '@/pages/production/ProductionCalendarPage'
 import CuttingInputPage from '@/pages/production/CuttingInputPage'
@@ -45,7 +43,7 @@ import ReportsPage from '@/pages/ReportsPage'
 import QCPage from '@/pages/QCPage'
 import ReworkManagementPage from '@/pages/ReworkManagementPage'
 import QCCheckpointPage from '@/pages/qc/QCCheckpointPage'
-import CreatePOPage from '@/pages/purchasing/CreatePOPage'
+
 import AdminUserPage from '@/pages/AdminUserPage'
 import PermissionManagementPage from '@/pages/PermissionManagementPage'
 import AdminMasterdataPage from '@/pages/AdminMasterdataPage'
@@ -76,30 +74,36 @@ const queryClient = new QueryClient({
   },
 })
 
-const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="flex h-screen bg-gray-100 relative">
-    {/* Sidebar */}
-    <Sidebar />
-    
-    {/* Main Content Area */}
-    <div className="flex-1 flex flex-col overflow-hidden relative z-0">
-      {/* Navbar - positioned above main content */}
-      <div className="relative z-10">
-        <Navbar />
+const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { sidebarOpen } = useUIStore();
+  
+  return (
+    <div className="flex h-screen bg-gray-100">
+      {/* Sidebar - Fixed positioning for proper stacking */}
+      <Sidebar />
+      
+      {/* Main Content Area - Adjusted for sidebar width */}
+      <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-20'}`}>
+        {/* Navbar - Level 2: Sticky and above content */}
+        <div className="sticky top-0 z-40 shadow-sm">
+          <Navbar />
+        </div>
+        
+        {/* Page Content - Level 0 */}
+        <main className="flex-1 overflow-auto">
+          {children}
+        </main>
       </div>
       
-      {/* Page Content */}
-      <main className="flex-1 overflow-auto">
-        {children}
-      </main>
+      {/* Notifications - Level 3: Above navbar */}
+      <div className="fixed top-4 right-4 z-50 pointer-events-none">
+        <div className="pointer-events-auto">
+          <NotificationCenter />
+        </div>
+      </div>
     </div>
-    
-    {/* Notifications - positioned at top right with high z-index */}
-    <div className="absolute top-0 right-0 z-50">
-      <NotificationCenter />
-    </div>
-  </div>
-)
+  )
+}
 
 const PrivateRoute: React.FC<{ 
   children: React.ReactNode
@@ -196,16 +200,7 @@ function App() {
           }
         />
 
-        <Route
-          path="/ppic/mo/create"
-          element={
-            <PrivateRoute module="ppic">
-              <ProtectedLayout>
-                <CreateMOPage />
-              </ProtectedLayout>
-            </PrivateRoute>
-          }
-        />
+
 
         <Route
           path="/ppic/mo/:id"
@@ -229,16 +224,7 @@ function App() {
           }
         />
 
-        <Route
-          path="/ppic/spk/create"
-          element={
-            <PrivateRoute module="ppic">
-              <ProtectedLayout>
-                <CreateSPKPage />
-              </ProtectedLayout>
-            </PrivateRoute>
-          }
-        />
+
 
         <Route
           path="/daily-production"
@@ -351,16 +337,7 @@ function App() {
           }
         />
 
-        <Route
-          path="/purchasing/po/create"
-          element={
-            <PrivateRoute module="purchasing">
-              <ProtectedLayout>
-                <CreatePOPage />
-              </ProtectedLayout>
-            </PrivateRoute>
-          }
-        />
+
 
         <Route
           path="/finishgoods"
