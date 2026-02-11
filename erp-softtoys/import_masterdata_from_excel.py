@@ -114,6 +114,7 @@ class MasterdataImporter:
             
             imported_count = 0
             skipped_count = 0
+            codes_in_session = set()  # Track codes added to current session batch
             
             for idx, row in df.iterrows():
                 try:
@@ -169,8 +170,14 @@ class MasterdataImporter:
                         skipped_count += 1
                         continue
                     
-                    # Check if material already exists
-                    existing = self.db.query(Product).filter(Product.code == material_code).first()
+                    # Check if already in current session batch
+                    if material_code in codes_in_session:
+                        self.log(f"Material {material_code} duplicate in batch, skipping", "WARNING")
+                        skipped_count += 1
+                        continue
+                    
+                    # Check if material already exists in database
+                    existing = self.db.query(Product).filter(Product.code ==material_code).first()
                     if existing:
                         self.log(f"Material {material_code} already exists, skipping", "WARNING")
                         skipped_count += 1
@@ -191,15 +198,19 @@ class MasterdataImporter:
                     )
                     
                     self.db.add(material)
+                    codes_in_session.add(material_code)  # Track in current batch
                     imported_count += 1
                     
                     if imported_count % 50 == 0:
                         self.db.flush()
+                        codes_in_session.clear()  # Clear batch tracking after flush
                         self.log(f"Progress: {imported_count} materials imported...")
                 
                 except Exception as e:
                     self.log(f"Row {idx+2}: Error - {str(e)}", "ERROR")
                     self.stats["errors"].append(f"Material import row {idx+2}: {str(e)}")
+                    self.db.rollback()  # Reset session state after error
+                    codes_in_session.clear()  # Clear batch tracking after rollback
                     continue
             
             # Commit transaction
@@ -246,6 +257,7 @@ class MasterdataImporter:
             
             imported_count = 0
             skipped_count = 0
+            codes_in_session = set()  # Track codes added to current session batch
             
             # Get or create "Finished Goods" category
             fg_category_id = self.get_or_create_category("Finished Goods")
@@ -300,7 +312,13 @@ class MasterdataImporter:
                         skipped_count += 1
                         continue
                     
-                    # Check if exists
+                    # Check if already in current session batch
+                    if article_code in codes_in_session:
+                        self.log(f"Article {article_code} duplicate in batch, skipping", "WARNING")
+                        skipped_count += 1
+                        continue
+                    
+                    # Check if exists in database
                     existing = self.db.query(Product).filter(Product.code == article_code).first()
                     if existing:
                         self.log(f"Article {article_code} already exists, skipping", "WARNING")
@@ -321,15 +339,19 @@ class MasterdataImporter:
                     )
                     
                     self.db.add(article)
+                    codes_in_session.add(article_code)  # Track in current batch
                     imported_count += 1
                     
                     if imported_count % 20 == 0:
                         self.db.flush()
+                        codes_in_session.clear()  # Clear batch tracking after flush
                         self.log(f"Progress: {imported_count} articles imported...")
                 
                 except Exception as e:
                     self.log(f"Row {idx+2}: Error - {str(e)}", "ERROR")
                     self.stats["errors"].append(f"Article import row {idx+2}: {str(e)}")
+                    self.db.rollback()  # Reset session state after error
+                    codes_in_session.clear()  # Clear batch tracking after rollback
                     continue
             
             self.db.commit()

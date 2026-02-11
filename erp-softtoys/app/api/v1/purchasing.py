@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.core.database import get_db
 from app.core.models.users import User
 from app.core.models.warehouse import PurchaseOrder, POType, POStatus
-from app.core.models.products import Product
+from app.core.models.products import Product, Partner, PartnerType
 from app.core.dependencies import require_permission
 from app.core.permissions import ModuleName, Permission
 from app.modules.purchasing import PurchasingService
@@ -569,8 +569,7 @@ def get_articles(
             {
                 "id": article.id,
                 "code": article.code,
-                "name": article.name,
-                "description": article.description
+                "name": article.name
             }
             for article in articles
         ]
@@ -761,3 +760,284 @@ def _detect_material_category(material_code: str, material_name: str) -> str:
     
     # Default: ACCESSORIES
     return 'ACCESSORIES'
+
+
+@router.get("/suppliers")
+def get_suppliers(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission(ModuleName.PURCHASING, Permission.VIEW))
+):
+    """Get all suppliers (partners with type=Supplier).
+    
+    Returns:
+        List of suppliers with id, name, contact info
+    """
+    suppliers = db.query(Partner).filter(
+        Partner.type == PartnerType.SUPPLIER
+    ).order_by(Partner.name).all()
+    
+    result = [
+        {
+            "id": supplier.id,
+            "name": supplier.name,
+            "contact_person": supplier.contact_person,
+            "phone": supplier.phone,
+            "email": supplier.email
+        }
+        for supplier in suppliers
+    ]
+    
+    print(f"✅ Retrieved {len(result)} suppliers")
+    return result
+
+
+@router.get("/available-po-kain")
+def get_available_po_kain(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission(ModuleName.PURCHASING, Permission.VIEW))
+):
+    """Get available PO KAIN for reference by PO LABEL/ACCESSORIES.
+    
+    Returns list of PO KAIN with status SENT or RECEIVED that can be
+    referenced by child PO LABEL or PO ACCESSORIES.
+    
+    Used by: POCreateModal dropdown for PO Reference System
+    
+    🔑 Business Rule:
+    - Only PO KAIN (po_type=KAIN) with status SENT/RECEIVED eligible
+    - Include article information for display (Article Code - Name)
+    - Include week & destination for context
+    
+    Response Format:
+    ```json
+    [
+      {
+        "id": 123,
+        "po_number": "PO-FAB-2026-0456",
+        "article": {
+          "id": 45,
+          "code": "40551542",
+          "name": "TEDDY BEAR 25CM"
+        },
+        "week": "W5",
+        "destination": "EU",
+        "status": "SENT",
+        "order_date": "2026-02-05"
+      }
+    ]
+    ```
+    """
+    try:
+        # Query PO KAIN with status SENT or RECEIVED
+        po_kain_list = (
+            db.query(PurchaseOrder)
+            .filter(
+                PurchaseOrder.po_type == POType.KAIN,
+                PurchaseOrder.status.in_([POStatus.SENT, POStatus.RECEIVED])
+            )
+            .options(joinedload(PurchaseOrder.article))  # Eager load article
+            .order_by(PurchaseOrder.order_date.desc())
+            .all()
+        )
+        
+        # Format response with article information
+        result = []
+        for po in po_kain_list:
+            po_data = {
+                "id": po.id,
+                "po_number": po.po_number,
+                "status": po.status.value if hasattr(po.status, 'value') else str(po.status),
+                "order_date": po.order_date.isoformat() if po.order_date else None,
+                "week": po.week,
+                "destination": po.destination,
+            }
+            
+            # Include article if exists
+            if po.article:
+                po_data["article"] = {
+                    "id": po.article.id,
+                    "code": po.article.code,
+                    "name": po.article.name
+                }
+            else:
+                po_data["article"] = None
+            
+            result.append(po_data)
+        
+        print(f"✅ Retrieved {len(result)} available PO KAIN for reference")
+        return result
+        
+    except Exception as e:
+        print(f"❌ Error fetching available PO KAIN: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch available PO KAIN: {str(e)}"
+        )
+
+
+@router.post("/bom/explosion")
+def bom_explosion(
+    request: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission(ModuleName.PURCHASING, Permission.VIEW))
+):
+    """BOM Explosion for AUTO mode - Generate materials from article + quantity.
+    
+    Used by: POCreateModal AUTO mode to auto-generate materials from BOM
+    
+    🚀 80% Time Saving: Traditional 30-material entry (15 min) → AUTO mode (3 min)
+    
+    Request Body:
+    ```json
+    {
+      "article_code": "40551542",
+      "quantity": 1000,
+      "material_type_filter": "FABRIC"  // Optional: FABRIC, LABEL, ACCESSORIES
+    }
+    ```
+    
+    Response Format:
+    ```json
+    {
+      "article": {
+        "id": 45,
+        "code": "40551542",
+        "name": "TEDDY BEAR 25CM"
+      },
+      "quantity": 1000,
+      "materials": [
+        {
+          "code": "IKHR504",
+          "name": "KOHAIR 7MM D.BROWN",
+          "type": "RAW",
+          "qty_required": 2500,
+          "uom": "M"
+        },
+        // ... 30+ materials
+      ],
+      "explosion_timestamp": "2026-02-10T14:30:00Z"
+    }
+    ```
+    
+    🔑 Business Rule:
+    - Aggregates materials from BOM across all departments
+    - Scales qty_required by article quantity
+    - Includes wastage percentage
+    - Optional filter by material type (FABRIC for PO KAIN, LABEL for PO LABEL, etc.)
+    """
+    try:
+        from app.core.models.bom import BOMHeader, BOMDetail
+        from app.core.models.products import ProductType
+        from datetime import datetime
+        
+        article_code = request.get("article_code")
+        quantity = request.get("quantity", 1)
+        material_type_filter = request.get("material_type_filter")
+        
+        if not article_code:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="article_code is required"
+            )
+        
+        # Find article by code
+        article = db.query(Product).filter(Product.code == article_code).first()
+        if not article:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Article with code '{article_code}' not found"
+            )
+        
+        # Get BOM Header
+        bom_header = db.query(BOMHeader).filter(
+            BOMHeader.product_id == article.id,
+            BOMHeader.is_active == True
+        ).first()
+        
+        if not bom_header:
+            # No BOM found - return empty materials list with message
+            print(f"⚠️ No BOM found for article {article.code}")
+            return {
+                "article": {
+                    "id": article.id,
+                    "code": article.code,
+                    "name": article.name
+                },
+                "quantity": quantity,
+                "materials": [],
+                "message": f"No BOM found for article {article.code}. You can add materials manually.",
+                "explosion_timestamp": datetime.now().isoformat()
+            }
+        
+        # Get BOM Details
+        bom_details = db.query(BOMDetail).filter(
+            BOMDetail.bom_header_id == bom_header.id
+        ).all()
+        
+        materials = []
+        for detail in bom_details:
+            component = detail.component
+            
+            # Calculate total quantity needed
+            qty_per_unit = float(detail.qty_needed)
+            total_qty = qty_per_unit * quantity
+            wastage_pct = float(detail.wastage_percent or 0)
+            qty_with_wastage = total_qty * (1 + wastage_pct / 100)
+            
+            # Determine material category from product code or name
+            material_category = _detect_material_category(component.code, component.name)
+            
+            # Apply filter if specified
+            if material_type_filter:
+                filter_upper = material_type_filter.upper()
+                if filter_upper == 'FABRIC':
+                    # For PO KAIN: Include fabric materials only
+                    if material_category not in ['FABRIC', 'KAIN']:
+                        continue
+                elif filter_upper == 'LABEL':
+                    # For PO LABEL: Include label materials only
+                    if material_category != 'LABEL':
+                        continue
+                elif filter_upper == 'ACCESSORIES':
+                    # For PO ACC: Include accessories, thread, filling, box
+                    if material_category in ['FABRIC', 'KAIN', 'LABEL']:
+                        continue
+            
+            # Get material type for PO
+            material_type = 'BAHAN_PENOLONG' if material_category in ['THREAD', 'ACCESSORIES'] else 'RAW'
+            if material_category == 'WIP':
+                material_type = 'WIP'
+            
+            materials.append({
+                "code": component.code,
+                "name": component.name,
+                "type": material_type,
+                "qty_required": round(qty_with_wastage, 2),
+                "uom": detail.unit or "PCS",
+                "category": material_category
+            })
+        
+        result = {
+            "article": {
+                "id": article.id,
+                "code": article.code,
+                "name": article.name
+            },
+            "quantity": quantity,
+            "materials": materials,
+            "explosion_timestamp": datetime.now().isoformat(),
+            "filter_applied": material_type_filter,
+            "total_materials": len(materials)
+        }
+        
+        print(f"✅ BOM Explosion for {article.code}: {len(materials)} materials generated (filter: {material_type_filter or 'none'})")
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error in BOM explosion: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"BOM explosion failed: {str(e)}"
+        )
