@@ -1713,8 +1713,7 @@ System Alert:
 
 ### 🔑 Perubahan Fundamental: Dual Trigger System
 
-**DULU**: Produksi dimulai dari PO IKEA (manual, tidak terintegrasi)  
-**SEKARANG**: Produksi dimulai dari **PO Purchasing** dengan **2 Mode Fleksibel**
+Produksi dimulai dari **PO Purchasing** dengan **2 Mode Fleksibel**
 
 ```
 ┌──────────────────────────────────────────────┐

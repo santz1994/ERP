@@ -4,7 +4,7 @@
 **Dokumen**: Workflow Illustration Complete  
 **Untuk**: Management & Operations Team PT Quty Karunia  
 **Tanggal**: 3 Februari 2026  
-**Version**: 1.0
+**Version**: 2.1
 
 ---
 
