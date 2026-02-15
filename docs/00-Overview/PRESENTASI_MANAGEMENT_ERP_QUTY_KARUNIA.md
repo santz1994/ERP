@@ -4727,14 +4727,14 @@ Setiap PO Label memiliki kode destinasi yang menentukan tujuan pengiriman produk
 
 | Kode | Kepanjangan | Region/Country | Contoh Usage |
 |------|-------------|----------------|--------------|
-| **EU** | **Euro** | Eropa (wilayah Uni Eropa) | General European distribution centers |
-| **AP** | **Asia Pacific** | Asia-Pasifik | Multiple Asian countries distribution |
-| **NA** | **North America** | Amerika Utara | General North American distribution |
-| **US** | **United States** | Amerika Serikat | IKEA US distribution centers |
-| **CA** | **Canada** | Kanada | IKEA Canada distribution centers |
-| **ID** | **Indonesia** | Indonesia | Domestic market / local IKEA stores |
-| **DE** | **Germany** | Jerman | IKEA Deutschland distribution centers |
-| **GB** | **Great Britain** | Inggris Raya | IKEA UK distribution centers |
+| **EU** | Euro | Eropa (wilayah Uni Eropa) | General European distribution centers |
+| **AP** | Asia Pacific | Asia-Pasifik | Multiple Asian countries distribution |
+| **NA** | North America | Amerika Utara | General North American distribution |
+| **US** | United States | Amerika Serikat | IKEA US distribution centers |
+| **CA** | Canada | Kanada | IKEA Canada distribution centers |
+| **ID** | Indonesia | Indonesia | Domestic market / local IKEA stores |
+| **DE** | Germany | Jerman | IKEA Deutschland distribution centers |
+| **GB** | Great Britain | Inggris Raya | IKEA UK distribution centers |
 | **SE** | Sweden | Swedia | IKEA Sverige (headquarters market) |
 | **FR** | France | Prancis | IKEA France distribution centers |
 | **BE** | Belgium | Belgia | IKEA Belgium/Luxembourg DC |
