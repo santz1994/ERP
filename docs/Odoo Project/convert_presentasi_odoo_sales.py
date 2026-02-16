@@ -1,6 +1,6 @@
 """
-Simple and reliable MD to DOCX converter
-Preserves formatting properly
+Convert PRESENTASI_ODOO_SALES.md to DOCX
+Simple and reliable converter
 """
 import os
 from docx import Document
@@ -190,27 +190,27 @@ def simple_md_to_docx(md_file, docx_file):
     
     # Save
     doc.save(docx_file)
-    print(f"✓ Converted: {os.path.basename(md_file)}")
+    print(f"✓ Converted: {os.path.basename(md_file)} -> {os.path.basename(docx_file)}")
 
 def main():
-    """Convert all markdown files"""
-    md_files = [f for f in os.listdir('.') if f.endswith('.md') and f.startswith(('1_', '2_', '3_', '4_', '5_'))]
+    """Convert PRESENTASI_ODOO_SALES.md to DOCX"""
+    md_file = 'PRESENTASI_ODOO_SALES.md'
+    docx_file = 'PRESENTASI_ODOO_SALES.docx'
     
-    if not md_files:
-        print("No files to convert")
+    if not os.path.exists(md_file):
+        print(f"✗ File not found: {md_file}")
         return
     
-    print(f"\nConverting {len(md_files)} files to DOCX...\n")
+    print(f"\nConverting {md_file} to DOCX...\n")
     
-    for md_file in sorted(md_files):
-        docx_file = md_file.replace('.md', '.docx')
-        try:
-            simple_md_to_docx(md_file, docx_file)
-        except Exception as e:
-            print(f"✗ Error converting {md_file}: {e}")
-    
-    print(f"\n✓ Conversion complete!")
-    print("All files saved with proper formatting")
+    try:
+        simple_md_to_docx(md_file, docx_file)
+        print(f"\n✓ Conversion complete!")
+        print(f"Output file: {docx_file}")
+    except Exception as e:
+        print(f"✗ Error converting {md_file}: {e}")
+        import traceback
+        traceback.print_exc()
 
 if __name__ == '__main__':
     main()

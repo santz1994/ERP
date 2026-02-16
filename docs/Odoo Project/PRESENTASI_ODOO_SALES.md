@@ -45,90 +45,439 @@
 ### Project Odoo 2023 - APA YANG SALAH?
 
 **1. BOM Management**
-- **Problem**: Admin harus input BOM manual satu per satu untuk 478 SKU
-- **Impact**: 
+- **Masalah**: Admin harus input BOM manual satu per satu untuk 478 SKU
+- **Dampak**: 
   - 3-4 bulan hanya untuk data entry BOM
   - Error frequent (typo, salah quantity)
   - Admin exhausted sebelum production mulai
   - Data tidak consistent antar SKU
+  - **Tidak memahami requirement Dual BOM**:
+    - Hanya input 1 BOM → Tidak tahu harus pakai BOM Purchasing atau BOM Production
+    - Material calculation jadi salah (shortage palsu atau over-order)
+    - Output production tidak match dengan MO target (confusing!)
 
 **2. Material Availability**
-- **Problem**: Material selalu status MERAH di system
-- **Root Cause**: 
+- **Masalah**: Material selalu status MERAH di system
+- **Akar Masalah**: 
   - Stock data tidak sync dengan warehouse physical
   - No proper receiving workflow (PO datang tidak ter-record)
   - System hitung stock salah (multi-unit conversion issue)
-- **Impact**: Production TIDAK BISA jalan karena system block (padahal material ada!)
+  - **Dual BOM System tidak di-configure** (CRITICAL!):
+    - **BOM Purchasing**: Untuk kalkulasi material yang harus dibeli (include defect rate/waste buffer)
+    - **BOM Production**: Untuk actual consumption di lantai produksi (based on efficiency)
+    - Odoo 2023 hanya pakai 1 BOM → Material calculation SALAH!
+    - Contoh: BOM Purchasing butuh 1000 meter fabric (with 5% defect buffer), tapi BOM Production actual consume hanya 950 meter
+    - System block production karena hitung stock berdasarkan BOM Purchasing (padahal BOM Production cukup!)
+- **Dampak**: 
+  - Production TIDAK BISA jalan karena system block (padahal material ada!)
+  - Material shortage palsu: Stock cukup untuk BOM Production, tapi system hitung pakai BOM Purchasing
+  - MO quantity salah: MO target 1000 pcs (from BOM Purchasing), tapi SPK actual output 1050 pcs (karena efficiency BOM Production lebih baik)
+  - Reconciliation chaos: "Kok output lebih banyak dari target MO?"
 
 **3. Reporting & Data Export**
-- **Problem**: Tidak ada fungsi import/export laporan
-- **Impact**: 
+- **Masalah**: Tidak ada fungsi import/export laporan
+- **Dampak**: 
   - Management tidak bisa analyze data (trapped di system)
   - Harus screenshot/manual entry untuk reporting
   - Cannot integrate dengan Excel existing workflows
 
 **4. Suplier Approach**
-- **Problem**: Suplier force-fit standard Odoo tanpa customize
-- **Quote**: "Ini sudah standard flow Odoo, kalian yang harus adjust"
-- **Impact**: 
+- **Masalah**: Suplier force-fit standard Odoo tanpa customize
+- **Kutipan**: "Ini sudah standard flow Odoo, kalian yang harus adjust"
+- **Dampak**: 
   - Business process kami forced pakai workaround
   - User frustasi, adoption failed
   - 6 bulan kemudian abandon project → Balik ke Excel
+
+**5. UOM Conversion Tidak Sesuai**
+- **Masalah**: Multi-unit conversion tidak configured dengan benar
+- **Akar Masalah**:
+  - Material datang dalam berbagai unit (ROLL, YARD, KG, BOX)
+  - Setiap suplier punya rate conversion berbeda
+  - **Production menggunakan unit berbeda dari Purchasing**:
+    - Purchasing terima Fabric dalam ROLL, Production consume dalam METER
+    - Purchasing terima Thread dalam KG, Production consume dalam GRAM
+    - BOM tidak bisa define conversion yang berbeda per suplier
+  - Odoo default UOM terlalu simple untuk PT Quty Karunia workflow
+  - **Pallet calculation tidak terintegrasi**:
+    - IKEA requirement: 24 carton per pallet (harus GENAP!)
+    - System tidak bisa auto-calculate pallet dari order quantity
+- **Dampak**:
+  - Stock calculation selalu salah (warehouse vs production unit berbeda!)
+  - Admin harus manual convert tiap kali check availability
+  - Production planning tidak akurat karena quantity mismatch
+  - Warehouse receiving harus selalu manual adjustment
+  - **BOM consumption salah**: Production report consume 100 METER, tapi system deduct 100 ROLL!
+  - **Material shortage palsu**: Stock ada 50 ROLL, tapi system bilang kurang (karena BOM minta 2500 METER)
+
+**6. UI/UX Tidak User Friendly**
+- **Masalah**: Interface Odoo terlalu complex untuk user PT Quty Karunia
+- **Akar Masalah**:
+  - Menu structure terlalu dalam (5-6 klik untuk akses fungsi umum)
+  - Terminology bahasa Inggris membingungkan user
+  - Mobile view tidak optimal (admin butuh input di lantai produksi)
+  - Terlalu banyak field yang tidak relevan ditampilkan
+- **Dampak**:
+  - User frustasi, adoption rate rendah
+  - Training time sangat lama (2-3 minggu masih bingung)
+  - User prefer balik ke Excel karena lebih familiar
+  - Mobile usage impossible → Admin tetap harus ke office untuk input
+
+**7. MO Manual Creation oleh Admin**
+- **Masalah**: Manufacturing Order (MO) harus dibuat manual satu per satu
+- **Akar Masalah**:
+  - Tidak ada auto-generation dari Purchase Order yang dibuat Purchasing
+  - Tidak ada link antara PO IKEA dengan MO Production
+  - Admin Production harus manual create MO based on WhatsApp/meeting
+- **Dampak**:
+  - Admin overwhelmed: 20-30 MO per hari harus manual create!
+  - Sering salah quantity atau SKU (human error ketik manual)
+  - Delay production start karena admin lupa create MO
+  - Tidak ada traceability: MO ini untuk order IKEA mana?
+
+**8. WO Manual Creation per Department**
+- **Masalah**: Work Order (WO) harus dibuat manual untuk tiap department
+- **Akar Masalah**:
+  - Routing tidak configured → WO tidak auto-generate dari MO
+  - Admin tiap dept harus manual create WO sendiri-sendiri
+  - 5 departments = 5x manual work untuk 1 production run!
+- **Dampak**:
+  - 5x administrative overhead (Cutting, Embr, Sewing, Finishing, Packing)
+  - WO antar dept sering tidak sync (dept A sudah done, dept B belum create WO)
+  - Tidak ada visibility production stage (застряло di dept mana?)
+  - Shop floor workers bingung: Kerja apa hari ini? (WO tidak ready)
 
 ---
 
 ### Rencana Odoo 2026 - APA YANG BERBEDA?
 
 **1. BOM Management (Improved)**
-- **Solution**: 
+- **Solusi**: 
   - Import BOM dari Excel existing (bulk import untuk 478 SKU)
+  - **Dual BOM Setup** (untuk setiap SKU):
+    - BOM Purchasing (Type: MRP): Include defect buffer 5-10% per material
+    - BOM Production (Type: Consumption): Actual efficiency-based consumption
   - Template standardized untuk similar products
   - Validation rules untuk prevent error
   - Progressive data entry (tidak harus complete 100% sebelum start)
-- **Timeline**: 2-3 minggu data preparation (vs 3-4 bulan sebelumnya)
+- **Garis Waktu**: 2-3 minggu data preparation (vs 3-4 bulan sebelumnya)
 
 **2. Material Availability (Fixed)**
-- **Solution**: 
+- **Solusi**: 
   - Proper receiving workflow: PO → Receive → Auto-update stock
   - Multi-unit conversion configured correct dari awal
+  - **Dual BOM + Dual MO System Configuration** (CRITICAL FIX!):
+    
+    **A. Dual BOM (untuk setiap SKU)**:
+    - **BOM Purchasing**: Include 5-10% defect buffer per material
+      - Fabric: 1000 meter + 5% waste = 1050 meter
+      - Thread: 500 gram + 10% waste = 550 gram
+    - **BOM Production**: Based on efficiency/standard consumption
+      - Fabric: Actual consume 950 meter (efficiency 95%+)
+      - Thread: Actual consume 480 gram (efficiency 96%+)
+    
+    **B. Dual MO System (2 Manufacturing Orders parallel)**:
+    - **MO IKEA** (untuk IKEA & Pabrik - Fixed/Planning):
+      - Dibuat dari PO IKEA menggunakan BOM Purchasing
+      - Target: 1000 pcs (sesuai order IKEA)
+      - Material requirement: 1050 meter fabric (dengan buffer)
+      - Status: Fixed (tidak berubah, untuk IKEA reporting)
+      - Fungsi: Planning & material procurement tracking
+    
+    - **MO Pabrik** (untuk Pabrik Only - Real-time/Execution):
+      - Dibuat parallel dengan MO IKEA
+      - Target: Flexible (daily target bisa berbeda, especially Sewing dept)
+      - Material consumption: Real-time input daily oleh admin dept
+      - Integrated dengan QC data: Defect count + Rework tracking
+      - Status: Dynamic (update setiap hari based on actual production)
+      - Fungsi: Actual production tracking & efficiency monitoring
+    
+    **C. Daily Production Flow**:
+    - Admin dept input daily: Production output + Material consumption
+    - System combine dengan QC data: Pass / Defect / Rework
+    - Sewing dept: Daily target flexible (tidak harus match MO IKEA!)
+      - Contoh: MO IKEA target 1000 pcs, tapi Sewing daily target 150 pcs/hari
+      - MO Pabrik track actual: Day 1 = 145 pcs, Day 2 = 160 pcs, etc.
+    - End of production: MO IKEA vs MO Pabrik akan beda → NORMAL!
+      - MO IKEA: 1000 pcs (fixed planning)
+      - MO Pabrik: 1050 pcs actual output (karena efficiency BOM Production)
+    
+    **D. Reconciliation Otomatis**:
+    - System reconcile MO IKEA (planning) vs MO Pabrik (actual)
+    - Dashboard show variance: +50 pcs (5% better efficiency) → GREEN
+    - Management report: IKEA requirement fulfilled + efficiency gain visible
+  
   - Safety stock threshold dengan alert system
   - Real-time stock sync (tidak delayed)
   - Manual adjustment workflow untuk edge cases
-- **Result**: Material status ACCURATE → Production bisa jalan
+
+- **Hasil**: 
+  - Material status ACCURATE → Production bisa jalan!
+  - MO IKEA (planning) vs MO Pabrik (actual) reconciliation clear
+  - Material planning akurat: Purchasing order based on BOM Purchasing
+  - Production flexibility: Dept bisa set daily target sendiri (especially Sewing)
+  - QC data terintegrasi dengan production tracking (IKEA audit ready!)
+  - Efficiency monitoring real-time: Target vs Actual visible
+
+---
+
+### **2B. OPSI MO SYSTEM - EVALUASI 2 PENDEKATAN**
+
+**PERTANYAAN KUNCI**: Apakah kita perlu 1 MO atau 2 MO parallel untuk handle IKEA requirement vs Factory flexibility?
+
+---
+
+#### **OPSI 1: Single MO (Untuk IKEA & Pabrik)**
+
+**Konsep**:
+- 1 Manufacturing Order untuk IKEA reporting & Factory execution
+- MO dibuat dari PO IKEA menggunakan BOM Purchasing (dengan buffer)
+- Admin dept input daily production & consumption ke MO yang sama
+- QC data terintegrasi ke MO yang sama
+- End result: MO akan update dari planning (1000 pcs) ke actual (1050 pcs)
+
+**Pro**:
+- ✅ **Simple**: Hanya 1 MO, tidak perlu manage 2 system parallel
+- ✅ **User familiar**: Mirip dengan workflow Excel existing (1 order 1 tracking)
+- ✅ **Training lebih cepat**: Admin hanya perlu belajar 1 MO workflow
+- ✅ **Data consolidation mudah**: Semua data (planning + actual) dalam 1 MO
+- ✅ **Reporting lebih simple**: Export 1 MO = dapat semua data
+
+**Cons**:
+- ❌ **MO target berubah-ubah**: 
+  - MO awal: 1000 pcs (from IKEA order)
+  - MO akhir: 1050 pcs (after production complete)
+  - IKEA butuh report 1000 pcs, tapi sistem show 1050 pcs → Butuh manual adjustment!
+- ❌ **Material calculation confusing**:
+  - Material requirement awal: 1050 meter fabric (with buffer dari BOM Purchasing)
+  - Material consumed: 950 meter fabric (actual dari BOM Production)
+  - Variance 100 meter → Terlihat seperti "waste" padahal itu buffer!
+- ❌ **Daily target flexibility terbatas**:
+  - MO target 1000 pcs → Sewing dept susah set daily target berbeda
+  - System akan selalu compare actual vs 1000 pcs (not flexible)
+- ❌ **QC data mixing**:
+  - Defect count tercampur dengan production output
+  - Sulit track: "Berapa actual target vs berapa yang defect?"
+- ❌ **IKEA reporting manual adjustment**:
+  - IKEA butuh report fixed 1000 pcs, tapi MO final 1050 pcs
+  - Admin harus manual adjust report sebelum kirim ke IKEA
+- ❌ **Efficiency monitoring tidak clear**:
+  - Tidak bisa compare planning vs actual (karena mixed dalam 1 MO)
+  - Management tidak bisa lihat: "Kita lebih efisien berapa persen?"
+
+**Rekomendasi Use Case**:
+- Cocok jika: Production target selalu match IKEA order (no flexibility)
+- Cocok jika: IKEA accept actual production output (bukan fixed reporting)
+- Cocok jika: Tidak butuh efficiency monitoring
+
+---
+
+#### **OPSI 2: Dual MO (IKEA Fixed + Pabrik Dynamic)** ✅ RECOMMENDED
+
+**Konsep**:
+- 2 Manufacturing Orders parallel:
+  - **MO IKEA**: Fixed planning untuk IKEA reporting (1000 pcs, tidak berubah)
+  - **MO Pabrik**: Dynamic execution untuk Factory tracking (1050 pcs actual)
+- MO IKEA dibuat dari PO IKEA menggunakan BOM Purchasing
+- MO Pabrik dibuat parallel, admin input daily production & consumption
+- QC data hanya ke MO Pabrik (IKEA tidak perlu tahu defect detail internal)
+- End result: MO IKEA tetap 1000 pcs, MO Pabrik 1050 pcs (variance tracked)
+
+**Pro**:
+- ✅ **IKEA reporting clean**:
+  - MO IKEA fixed 1000 pcs → Export langsung untuk IKEA, tidak perlu manual adjust!
+  - Traceability clear: MO-IKEA-12345 untuk Order IKEA-98765
+- ✅ **Factory flexibility penuh**:
+  - MO Pabrik dynamic → Sewing dept bisa set daily target berbeda
+  - Daily progress tracked independent dari IKEA requirement
+- ✅ **Material calculation clear**:
+  - MO IKEA: Material requirement 1050 meter (untuk Purchasing order)
+  - MO Pabrik: Material consumed 950 meter (actual consumption)
+  - Variance 100 meter → Jelas ini adalah buffer/efficiency gain!
+- ✅ **QC data segregated**:
+  - MO IKEA: Clean data untuk IKEA (no defect detail)
+  - MO Pabrik: Full QC data (Pass / Defect / Rework) untuk internal monitoring
+- ✅ **Efficiency monitoring real-time**:
+  - Dashboard compare: MO IKEA (planning) vs MO Pabrik (actual)
+  - Management lihat: "Target 1000 pcs, actual 1050 pcs = +5% efficiency!"
+- ✅ **Daily target flexibility**:
+  - Sewing dept: "Hari ini target 150 pcs" (tidak harus match MO IKEA 1000 pcs)
+  - System track cumulative progress per MO Pabrik
+- ✅ **Audit ready**:
+  - IKEA audit: Show MO IKEA (clean, fixed, match order)
+  - Internal audit: Show MO Pabrik (full detail, QC data, efficiency)
+
+**Cons**:
+- ❌ **Lebih complex**: 2 MO untuk manage (but system auto-create both!)
+- ❌ **Training lebih lama**: Admin perlu belajar 2 MO workflow (estimated +1 week training)
+- ❌ **Data entry double?**: NO! Admin hanya input ke MO Pabrik, MO IKEA auto-sync material requirement
+- ❌ **Risk data inconsistency**: Mitigated by system validation (MO IKEA vs MO Pabrik linked)
+
+**Rekomendasi Use Case**:
+- ✅ Cocok jika: IKEA butuh fixed reporting (1000 pcs), tapi Factory butuh flexibility
+- ✅ Cocok jika: Sewing dept butuh set daily target berbeda dari IKEA order
+- ✅ Cocok jif: Management butuh efficiency monitoring (planning vs actual)
+- ✅ Cocok jika: QC data harus terintegrasi tapi tidak exposed ke IKEA
+- ✅ **RECOMMENDED untuk PT Quty Karunia!**
+
+---
+
+#### **TABEL PERBANDINGAN - OPSI 1 VS OPSI 2**
+
+| Aspek | Opsi 1: Single MO | Opsi 2: Dual MO ✅ |
+|-------|-------------------|-------------------|
+| **Pelaporan IKEA** | Manual adjust (MO berubah) | Otomatis (MO IKEA tetap) |
+| **Fleksibilitas Pabrik** | Terbatas (target tetap) | Penuh (target harian fleksibel) |
+| **Kalkulasi Material** | Membingungkan (buffer+aktual tercampur) | Jelas (planning vs aktual terpisah) |
+| **Data QC** | Mixed dengan production | Terpisah (internal saja) |
+| **Monitoring Efisiensi** | Tidak jelas (data tercampur) | Real-time (planning vs aktual) |
+| **Waktu Pelatihan** | 2-3 minggu | 3-4 minggu (+1 minggu) |
+| **Kompleksitas User** | Sederhana (1 MO) | Sedang (2 MO, tapi otomatis dibuat) |
+| **IKEA Audit** | Perlu pembersihan manual | Bersih (tampilkan MO IKEA saja) |
+| **Target Harian Sewing** | Susah (harus match MO) | Mudah (target independen) |
+| **Variance Akhir** | Terlihat error (+50 pcs) | Gain tercatat (+5% efisiensi) |
+| **Rekomendasi** | Jika tidak butuh fleksibilitas | ✅ **Direkomendasikan!** |
+
+---
+
+#### **KEPUTUSAN REKOMENDASI: OPSI 2 (DUAL MO)** ✅
+
+**Alasan**:
+1. **IKEA compliance**: Fixed reporting tanpa manual adjustment
+2. **Factory flexibility**: Sewing dept butuh daily target berbeda (proven requirement!)
+3. **Efficiency visibility**: Management butuh monitoring planning vs actual
+4. **QC integration**: Data defect/rework harus ada tapi tidak exposed ke IKEA
+5. **Scalability**: Dual MO system bisa handle future complexity (multiple customers)
+
+**Trade-off yang acceptable**:
+- +1 week training time → Worth it untuk long-term flexibility
+- 2 MO management → Mitigated by auto-creation & system validation
+
+**Kalau mau safe approach**:
+- Phase 1 (3 bulan pertama): Pakai Opsi 1 (Single MO) untuk user familiar
+- Phase 2 (bulan 4-6): Upgrade ke Opsi 2 (Dual MO) setelah user comfortable
+- **TAPI**: Kami rekomendasi langsung Opsi 2 dari awal! (One-time training pain vs long-term manual adjustment pain)
+
+---
 
 **3. Reporting & Data Integration (Enhanced)**
-- **Solution**: 
+- **Solusi**: 
   - Export to Excel/CSV untuk semua reports
   - API integration untuk custom reporting tools
   - Dashboard configurable per user role
   - Scheduled reports (auto-email daily/weekly)
-- **Result**: Management tetap bisa analyze di Excel jika perlu
+- **Hasil**: Management tetap bisa analyze di Excel jika perlu
 
 **4. Partnership Approach (Critical Difference!)**
-- **New Approach**: 
+- **Pendekatan Baru**: 
   - Discovery workshop BEFORE commit (understand business process dulu)
   - Gap analysis transparent: What's standard vs what needs custom
   - Phased implementation: Prove value incrementally
   - Change management program: Training + adoption support
   - Post-implementation hypercare 2-3 bulan
-- **Commitment**: "ERP harus fit business, bukan sebaliknya"
+- **Komitmen**: "ERP harus fit business, bukan sebaliknya"
+
+**5. UOM Conversion (Configured Correctly)**
+- **Solusi**:
+  - Configure multi-unit per material: ROLL/YARD/KG/BOX/Pallet
+  - **Suplier-specific conversion rates**:
+    - Suplier A: 1 ROLL = 50 YARD, Suplier B: 1 ROLL = 45 YARD
+    - System auto-pilih conversion rate berdasarkan suplier saat receiving
+  - **Production-specific conversion** (PENTING!):
+    - BOM menggunakan unit production: Fabric dalam METER, Thread dalam GRAM
+    - Warehouse stock dalam unit purchasing: Fabric dalam ROLL, Thread dalam KG
+    - System auto-convert saat material consumption
+    - Contoh: BOM butuh 2.5 METER fabric → System deduct 0.05 ROLL dari stock (1 ROLL = 50 METER)
+    - Contoh: BOM butuh 150 GRAM thread → System deduct 0.15 KG dari stock
+  - **Pallet-level tracking untuk Finished Goods**:
+    - Production output dalam PCS
+    - Packing dalam CARTON (24 pcs/carton)
+    - Shipping dalam PALLET (24 carton/pallet = 576 pcs/pallet)
+    - System auto-calculate IKEA pallet requirement (karton harus GENAP per pallet!)
+  - Auto-conversion di semua transaksi: Receiving, Production, Transfer, Shipping
+  - Testing scenarios before go-live (verify semua conversion akurat)
+- **Hasil**: 
+  - Stock calculation akurat di warehouse & production level!
+  - No manual conversion Excel lagi!
+  - Purchasing terima dalam ROLL, Production consume dalam METER (seamless!)
+
+**6. UI/UX Customization (User-Friendly)**
+- **Solusi**:
+  - Simplified menu structure (1-2 klik untuk fungsi sering dipakai)
+  - Bahasa Indonesia untuk field labels & instructions
+  - Mobile-optimized views untuk admin lantai produksi
+  - Hide irrelevant fields per role (Production user tidak lihat Accounting fields)
+  - Custom dashboards per department
+- **Hasil**: User adoption rate tinggi, training time reduced 50%!
+
+**7. MO Auto-Generation dari Purchase Order yang dibuat Purchasing**
+- **Solusi - Dual MO System**:
+  - Purchasing create PO IKEA → System auto-generate **2 MO parallel**:
+    
+    **MO IKEA** (Planning/Fixed):
+    - Link traceability: MO-IKEA-12345 untuk Order IKEA-98765
+    - Auto-populate: Quantity, SKU, deadline dari PO IKEA
+    - Menggunakan BOM Purchasing (with defect buffer)
+    - Material requirement calculation untuk Purchasing
+    - Status: **Fixed** (tidak berubah, untuk IKEA reporting & traceability)
+    - View access: IKEA, Management, Purchasing
+    
+    **MO Pabrik** (Execution/Dynamic):
+    - Link ke MO IKEA: MO-FAC-12345 (linked to MO-IKEA-12345)
+    - Same: Quantity, SKU, deadline (initial)
+    - Menggunakan BOM Production (efficiency-based)
+    - Daily input oleh admin dept: Production output + Material consumption
+    - Integrated QC data: Pass / Defect / Rework per checkpoint
+    - Status: **Dynamic** (update daily based on actual)
+    - View access: Factory Manager, SPV, Admin dept, QC
+    
+  - Admin Production hanya perlu review & confirm (tidak manual create!)
+  - Flexible daily target: Sewing dept bisa set target berbeda dari MO IKEA
+    - Contoh: MO IKEA = 1000 pcs, Sewing daily target = 140-160 pcs/hari (adjust per line capacity)
+  
+- **Hasil**: 
+  - Zero admin overhead untuk create MO!
+  - Full traceability: IKEA requirement vs Factory actual
+  - Flexibility: Dept bisa manage daily target sendiri
+  - QC data integrated: Defect & rework tracked per MO Pabrik
+  - End-of-production reconciliation: MO IKEA vs MO Pabrik variance visible (efficiency monitoring)
+
+**8. WO Auto-Generation dengan Routing Configured**
+- **Solusi**:
+  - Configure routing: 1 **MO Pabrik** → 5 WO/SPK auto-generated (Cutting, Embr, Sewing, Finishing, Packing)
+  - Sequential dependency: WO Sewing baru bisa start after WO Embr done
+  - **WO/SPK Dynamic Tracking**:
+    - Admin dept input daily: Production output + Material consumption
+    - QC checkpoint integrated: Pass / Defect / Rework per WO
+    - Sewing dept: Daily target flexible (bisa berbeda dari MO IKEA target)
+      - WO Sewing: Day 1 target 150 pcs, Day 2 target 140 pcs (adjust per line)
+      - System track cumulative: Total progress vs MO target
+  - Real-time visibility: Dashboard show production stage per MO
+  - Shop floor app: Workers lihat WO hari ini (tidak perlu WhatsApp admin!)
+- **Hasil**: 
+  - 5x efficiency gain, full visibility, zero manual WO creation!
+  - Daily flexibility: Dept manage target sendiri
+  - QC data integrated per WO: Defect tracking per department
+  - Real-time progress monitoring: Cumulative output vs MO target
 
 ---
 
-### Summary: Why This Time Will Succeed?
+### Ringkasan: Mengapa Kali Ini Akan Berhasil?
 
-| Aspect | Odoo 2023 (FAILED) | Odoo 2026 (PLANNED) |
-|--------|-------------------|---------------------|
-| **BOM Setup** | Manual 1-by-1 input | Bulk import + template |
-| **Material Status** | Always RED (blocking) | Real-time accurate |
-| **Reporting** | Trapped in system | Export/API available |
-| **Customization** | Zero (force standard) | 7 unique requirements addressed |
-| **Suplier Attitude** | "Adjust to our system" | "We adjust to your business" |
-| **User Training** | Minimal (assumed easy) | Comprehensive + ongoing support |
-| **Implementation** | Big bang (all at once) | Phased (prove value first) |
-| **Timeline** | 3 months promised | Realistic 6-9 months |
+| Aspek | Odoo 2023 (GAGAL) | Odoo 2026 (RENCANA) |
+|-------|-------------------|---------------------|
+| **Setup BOM** | Input manual satu per satu | Import massal + Dual BOM (Purchasing + Produksi) |
+| **Sistem MO** | Single MO (variance membingungkan) | Dual MO (IKEA tetap + Pabrik dinamis) |
+| **Status Material** | Selalu MERAH (blocking) | Akurat real-time |
+| **Pelaporan** | Terjebak di sistem | Export/API tersedia |
+| **Konversi UOM** | Salah/tidak dikonfigurasi | Multi-unit (suplier + produksi) |
+| **UI/UX** | Kompleks, hanya Bahasa Inggris | Disederhanakan, Bahasa Indonesia |
+| **Pembuatan MO** | Manual oleh admin | Otomatis dari PO (Dual MO paralel) |
+| **Pembuatan WO** | Manual per dept (5x kerja!) | Otomatis dengan routing + tracking harian |
+| **Pelatihan User** | Minimal (diasumsikan mudah) | Komprehensif + dukungan berkelanjutan |
+| **Implementasi** | Big bang (sekaligus) | Bertahap (buktikan nilai dulu) |
 
-**Key Difference**: Kali ini kami demand **partnership**, bukan Suplier-client transactional. Sales Odoo harus commit untuk customize & support, atau kami tidak proceed.
+**Perbedaan Kunci**: Kali ini kami demand **partnership**, bukan Suplier-client transactional. Sales Odoo harus commit untuk customize & support, atau kami tidak proceed.
 
 ---
 
@@ -139,14 +488,14 @@
 | 1 | Material shortage tiba-tiba | Production stop, overtime, emergency purchasing |
 | 2 | Tidak tahu WIP real-time | Planning impossible, bottleneck detection delayed |
 | 3 | Quality defect traceable manual (Excel terpisah) | Tidak terintegrasi, IKEA audit risk, sulit root cause analysis |
-| 4 | **Mix Label risk (Finishing-Packing)** | **IKEA REJECT! Salah lihat datestamp/destination, no validation** |
+| 4 | Mix Label risk (Finishing-Packing) | IKEA REJECT! Salah lihat datestamp/destination, no validation |
 | 5 | Dual trigger system manual | Admin overwhelmed, packaging error frequent |
 | 6 | Excel-based planning | Error prone, single point of failure |
 | 7 | Target produksi flat | Shortage frequent (tidak hitung defect rate) |
 | 8 | Manual material tracking | Admin time wasted 2-3 jam/hari |
 | 9 | Stock opname 1 hari penuh | Production stop untuk counting |
 | 10 | Rework tidak ter-record | Cost tidak tahu, IKEA audit concern |
-| 11 | Multi-unit conversion manual + Pallet calculation | UOM error (ROLL/KG/PCS), Pallet IKEA rules complex (karton harus genap per pallet) |
+| 11 | Multi-unit conversion manual (Purchasing & Production) + Pallet calculation | UOM error: Purchasing terima ROLL consume METER, Thread KG consume GRAM. Pallet IKEA rules complex (24 karton genap per pallet). Manual Excel formula prone error! |
 
 **CRITICAL**: Pain point #4 (Mix Label) adalah **high-risk** untuk IKEA compliance! Operator sering salah lihat Week/Destination di Finishing & Packing, menyebabkan mix label saat dispatch. Tidak ada pengecekan kembali setelah packing selesai → IKEA reject baru ketahuan!
 
@@ -364,7 +713,7 @@ Production: Start dengan data ACCURATE
 
 ### 4. Dual PO Trigger - Unique Requirement (IKEA Workflow)
 
-**Problem**: 1 Manufacturing Order butuh 2 Purchase Order dengan timing berbeda
+**Masalah**: 1 Manufacturing Order butuh 2 Purchase Order dengan timing berbeda
 - **PO Fabric**: Purchasing order ke Suplier Fabric → Datang Week 0
 - **PO Label**: Purchasing order ke Suplier Label → Datang Week +2 (IKEA kirim Label info terlambat 2 minggu!)
 
@@ -432,12 +781,12 @@ All departments: Continue production sampai Packing dengan destination correct
 ✅ RESULT: Zero packaging error! System auto-inherit Label info!
 ```
 
-**Benefit**: 
+**Manfaat**: 
 - Admin tidak perlu track manual
 - System automatis enforce business rule (tidak bisa skip!)
 - Week & Destination auto-inherit dari PO Label (no manual copy-paste error!)
 
-**Benefit**: Admin tidak perlu track manual atau WhatsApp. System automatis enforce business rule!
+**Manfaat**: Admin tidak perlu track manual atau WhatsApp. System automatis enforce business rule!
 
 ---
 
