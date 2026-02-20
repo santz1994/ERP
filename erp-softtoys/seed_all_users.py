@@ -35,12 +35,12 @@ USERS_DATA = [
     {"username": "purchasing_head", "email": "purchasing.head@qutykarunia.com", "full_name": "Purchasing Head", "role": UserRole.PURCHASING_HEAD},
     {"username": "purchasing", "email": "purchasing@qutykarunia.com", "full_name": "Purchasing Officer", "role": UserRole.PURCHASING},
 
-    # Level 5: Operations
-    {"username": "operator_cut", "email": "operator.cutting@qutykarunia.com", "full_name": "Operator Cutting", "role": UserRole.OPERATOR_CUT},
-    {"username": "operator_embro", "email": "operator.embroidery@qutykarunia.com", "full_name": "Operator Embroidery", "role": UserRole.OPERATOR_EMBRO},
-    {"username": "operator_sew", "email": "operator.sewing@qutykarunia.com", "full_name": "Operator Sewing", "role": UserRole.OPERATOR_SEW},
-    {"username": "operator_finish", "email": "operator.finishing@qutykarunia.com", "full_name": "Operator Finishing", "role": UserRole.OPERATOR_FINISH},
-    {"username": "operator_pack", "email": "operator.packing@qutykarunia.com", "full_name": "Operator Packing", "role": UserRole.OPERATOR_PACK},
+    # Level 5: Department Administration
+    {"username": "admin_cutting", "email": "admin.cutting@qutykarunia.com", "full_name": "Admin Cutting", "role": UserRole.ADMIN_CUTTING},
+    {"username": "admin_embroidery", "email": "admin.embroidery@qutykarunia.com", "full_name": "Admin Embroidery", "role": UserRole.ADMIN_EMBROIDERY},
+    {"username": "admin_sewing", "email": "admin.sewing@qutykarunia.com", "full_name": "Admin Sewing", "role": UserRole.ADMIN_SEWING},
+    {"username": "admin_finishing", "email": "admin.finishing@qutykarunia.com", "full_name": "Admin Finishing", "role": UserRole.ADMIN_FINISHING},
+    {"username": "admin_packing", "email": "admin.packing@qutykarunia.com", "full_name": "Admin Packing", "role": UserRole.ADMIN_PACKING},
     {"username": "qc_inspector", "email": "qc.inspector@qutykarunia.com", "full_name": "QC Inspector", "role": UserRole.QC_INSPECTOR},
     {"username": "wh_operator", "email": "warehouse.operator@qutykarunia.com", "full_name": "Warehouse Operator", "role": UserRole.WAREHOUSE_OP},
     {"username": "security", "email": "security@qutykarunia.com", "full_name": "Security Guard", "role": UserRole.SECURITY},
@@ -107,8 +107,8 @@ def seed_all_users():
             print(f"{'PPIC Manager':<25} {'ppic_mgr':<20}")
             print(f"{'Warehouse Admin':<25} {'wh_admin':<20}")
             print(f"{'Supervisor Cutting':<25} {'spv_cutting':<20}")
-            print(f"{'Operator Cutting':<25} {'operator_cut':<20}")
-            print(f"{'Operator Embroidery':<25} {'operator_embro':<20}")
+            print(f"{'Admin Cutting':<25} {'admin_cutting':<20}")
+            print(f"{'Admin Embroidery':<25} {'admin_embroidery':<20}")
             print(f"{'QC Inspector':<25} {'qc_inspector':<20}")
             print("-" * 70)
             print("\n⚠️  SECURITY WARNING:")

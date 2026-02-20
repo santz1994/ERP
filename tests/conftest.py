@@ -80,10 +80,10 @@ TEST_USERS = {
         "password": os.getenv("ADMIN_PASSWORD", "admin123"),
         "role": "ADMIN"
     },
-    "operator": {
-        "username": "operator",
-        "password": os.getenv("OPERATOR_PASSWORD", "operator123"),
-        "role": "OPERATOR"
+    "admin_cutting": {
+        "username": "admin_cutting",
+        "password": os.getenv("ADMIN_CUTTING_PASSWORD", "password123"),
+        "role": "ADMIN_CUTTING"
     }
 }
 
@@ -156,16 +156,16 @@ def admin_token(requests_session) -> str:
 
 
 @pytest.fixture
-def operator_token(requests_session) -> str:
-    """Get operator authentication token"""
+def admin_cutting_token(requests_session) -> str:
+    """Get admin_cutting authentication token"""
     try:
         response = requests_session.post(
             f"{API_V1_URL}/auth/login",
-            json=TEST_USERS["operator"],
+            json=TEST_USERS["admin_cutting"],
             timeout=5
         )
         if response.status_code != 200:
-            pytest.skip("Operator user not available in test environment")
+            pytest.skip("Admin Cutting user not available in test environment")
         return response.json().get("access_token")
     except Exception as e:
         pytest.skip(f"Could not connect to API: {str(e)}")

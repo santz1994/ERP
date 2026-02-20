@@ -4,8 +4,8 @@
 
 DELETE FROM users WHERE username IN ('developer', 'superadmin', 'manager', 'finance_mgr', 'admin', 
   'ppic_mgr', 'ppic_admin', 'spv_cutting', 'spv_sewing', 'spv_finishing', 'wh_admin', 'qc_lab',
-  'purchasing_head', 'purchasing', 'operator_cut', 'operator_embro', 'operator_sew', 
-  'operator_finish', 'operator_pack', 'qc_inspector', 'wh_operator', 'security');
+  'purchasing_head', 'purchasing', 'admin_cutting', 'admin_embroidery', 'admin_sewing', 
+  'admin_finishing', 'admin_packing', 'qc_inspector', 'wh_operator', 'security');
 
 -- Level 0: System Development
 INSERT INTO users (username, email, hashed_password, full_name, role, is_active, is_verified, created_at)
@@ -54,21 +54,21 @@ VALUES ('purchasing_head', 'purchasing.head@qutykarunia.com', '$2b$10$abcdefghij
 INSERT INTO users (username, email, hashed_password, full_name, role, is_active, is_verified, created_at)
 VALUES ('purchasing', 'purchasing@qutykarunia.com', '$2b$10$abcdefghijklmnopqrstuvwxyz123456789012345678901234567890', 'Purchasing Officer', 'PURCHASING'::userrole, true, true, NOW());
 
--- Level 5: Operations
+-- Level 5: Department Administration
 INSERT INTO users (username, email, hashed_password, full_name, role, is_active, is_verified, created_at)
-VALUES ('operator_cut', 'operator.cutting@qutykarunia.com', '$2b$10$abcdefghijklmnopqrstuvwxyz123456789012345678901234567890', 'Operator Cutting', 'OPERATOR_CUT'::userrole, true, true, NOW());
+VALUES ('admin_cutting', 'admin.cutting@qutykarunia.com', '$2b$10$abcdefghijklmnopqrstuvwxyz123456789012345678901234567890', 'Admin Cutting', 'ADMIN_CUTTING'::userrole, true, true, NOW());
 
 INSERT INTO users (username, email, hashed_password, full_name, role, is_active, is_verified, created_at)
-VALUES ('operator_embro', 'operator.embroidery@qutykarunia.com', '$2b$10$abcdefghijklmnopqrstuvwxyz123456789012345678901234567890', 'Operator Embroidery', 'OPERATOR_EMBRO'::userrole, true, true, NOW());
+VALUES ('admin_embroidery', 'admin.embroidery@qutykarunia.com', '$2b$10$abcdefghijklmnopqrstuvwxyz123456789012345678901234567890', 'Admin Embroidery', 'ADMIN_EMBROIDERY'::userrole, true, true, NOW());
 
 INSERT INTO users (username, email, hashed_password, full_name, role, is_active, is_verified, created_at)
-VALUES ('operator_sew', 'operator.sewing@qutykarunia.com', '$2b$10$abcdefghijklmnopqrstuvwxyz123456789012345678901234567890', 'Operator Sewing', 'OPERATOR_SEW'::userrole, true, true, NOW());
+VALUES ('admin_sewing', 'admin.sewing@qutykarunia.com', '$2b$10$abcdefghijklmnopqrstuvwxyz123456789012345678901234567890', 'Admin Sewing', 'ADMIN_SEWING'::userrole, true, true, NOW());
 
 INSERT INTO users (username, email, hashed_password, full_name, role, is_active, is_verified, created_at)
-VALUES ('operator_finish', 'operator.finishing@qutykarunia.com', '$2b$10$abcdefghijklmnopqrstuvwxyz123456789012345678901234567890', 'Operator Finishing', 'OPERATOR_FINISH'::userrole, true, true, NOW());
+VALUES ('admin_finishing', 'admin.finishing@qutykarunia.com', '$2b$10$abcdefghijklmnopqrstuvwxyz123456789012345678901234567890', 'Admin Finishing', 'ADMIN_FINISHING'::userrole, true, true, NOW());
 
 INSERT INTO users (username, email, hashed_password, full_name, role, is_active, is_verified, created_at)
-VALUES ('operator_pack', 'operator.packing@qutykarunia.com', '$2b$10$abcdefghijklmnopqrstuvwxyz123456789012345678901234567890', 'Operator Packing', 'OPERATOR_PACK'::userrole, true, true, NOW());
+VALUES ('admin_packing', 'admin.packing@qutykarunia.com', '$2b$10$abcdefghijklmnopqrstuvwxyz123456789012345678901234567890', 'Admin Packing', 'ADMIN_PACKING'::userrole, true, true, NOW());
 
 INSERT INTO users (username, email, hashed_password, full_name, role, is_active, is_verified, created_at)
 VALUES ('qc_inspector', 'qc.inspector@qutykarunia.com', '$2b$10$abcdefghijklmnopqrstuvwxyz123456789012345678901234567890', 'QC Inspector', 'QC_INSPECTOR'::userrole, true, true, NOW());

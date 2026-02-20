@@ -8,7 +8,7 @@ BASE_URL = "http://localhost:8000/api/v1"
 test_users = [
     ("admin", "password123", "Admin"),
     ("ppic_mgr", "password123", "PPIC Manager"),
-    ("operator_cut", "password123", "Operator"),
+    ("admin_cutting", "password123", "Admin Cutting"),
     ("superadmin", "password123", "Superadmin"),
     ("wh_admin", "password123", "Warehouse"),
 ]

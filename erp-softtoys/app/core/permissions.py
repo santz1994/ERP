@@ -192,30 +192,40 @@ ROLE_PERMISSIONS = {
         ModuleName.REPORTS: [Permission.VIEW],
     },
 
-    UserRole.OPERATOR_CUT: {
+    UserRole.ADMIN_CUTTING: {
         ModuleName.DASHBOARD: [Permission.VIEW],
-        ModuleName.CUTTING: [Permission.VIEW, Permission.EXECUTE],
+        ModuleName.CUTTING: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
+        ModuleName.WAREHOUSE: [Permission.VIEW],
+        ModuleName.REPORTS: [Permission.VIEW],
     },
 
-    UserRole.OPERATOR_EMBRO: {
+    UserRole.ADMIN_EMBROIDERY: {
         ModuleName.DASHBOARD: [Permission.VIEW],
-        ModuleName.EMBROIDERY: [Permission.VIEW, Permission.EXECUTE],
+        ModuleName.EMBROIDERY: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
+        ModuleName.WAREHOUSE: [Permission.VIEW],
+        ModuleName.REPORTS: [Permission.VIEW],
     },
 
-    UserRole.OPERATOR_SEW: {
+    UserRole.ADMIN_SEWING: {
         ModuleName.DASHBOARD: [Permission.VIEW],
-        ModuleName.SEWING: [Permission.VIEW, Permission.EXECUTE],
+        ModuleName.SEWING: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
+        ModuleName.WAREHOUSE: [Permission.VIEW],
+        ModuleName.REPORTS: [Permission.VIEW],
     },
 
-    UserRole.OPERATOR_FINISH: {
+    UserRole.ADMIN_FINISHING: {
         ModuleName.DASHBOARD: [Permission.VIEW],
-        ModuleName.FINISHING: [Permission.VIEW, Permission.EXECUTE],
+        ModuleName.FINISHING: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
+        ModuleName.WAREHOUSE: [Permission.VIEW],
+        ModuleName.REPORTS: [Permission.VIEW],
     },
 
-    UserRole.OPERATOR_PACK: {
+    UserRole.ADMIN_PACKING: {
         ModuleName.DASHBOARD: [Permission.VIEW],
-        ModuleName.PACKING: [Permission.VIEW, Permission.EXECUTE],
+        ModuleName.PACKING: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
         ModuleName.KANBAN: [Permission.VIEW, Permission.CREATE],
+        ModuleName.WAREHOUSE: [Permission.VIEW],
+        ModuleName.REPORTS: [Permission.VIEW],
     },
 
     UserRole.QC_INSPECTOR: {

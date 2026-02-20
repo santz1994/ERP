@@ -24,11 +24,11 @@ TEST_USERS = [
     ("qc_lab", "password123", "QC Lab"),
     ("purchasing_head", "password123", "Purchasing Head"),
     ("purchasing", "password123", "Purchasing Officer"),
-    ("operator_cut", "password123", "Operator Cutting"),
-    ("operator_embro", "password123", "Operator Embroidery"),
-    ("operator_sew", "password123", "Operator Sewing"),
-    ("operator_finish", "password123", "Operator Finishing"),
-    ("operator_pack", "password123", "Operator Packing"),
+    ("admin_cutting", "password123", "Admin Cutting"),
+    ("admin_embroidery", "password123", "Admin Embroidery"),
+    ("admin_sewing", "password123", "Admin Sewing"),
+    ("admin_finishing", "password123", "Admin Finishing"),
+    ("admin_packing", "password123", "Admin Packing"),
     ("qc_inspector", "password123", "QC Inspector"),
     ("wh_operator", "password123", "Warehouse Operator"),
     ("security", "password123", "Security Guard"),
@@ -46,7 +46,7 @@ TEST_ENDPOINTS = {
         ("GET", "/ppic/manufacturing-orders", 200),
         ("GET", "/dashboard/stats", 200),
     ],
-    "Operator Cutting": [
+    "Admin Cutting": [
         ("GET", "/dashboard/stats", 200),
     ],
     "Warehouse Operator": [

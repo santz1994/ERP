@@ -32,12 +32,12 @@ VALUES
   ('purchasing_head', 'purchasing.head@qutykarunia.com', '$2b$12$z0xaLPyH3qChVQJ9OmjYZe1sLbg9kHUlHK8J5L3qK4l8Z8K0l1L3y', 'Purchasing Head', 'Purchasing Head', true, NOW()),
   ('purchasing', 'purchasing@qutykarunia.com', '$2b$12$z0xaLPyH3qChVQJ9OmjYZe1sLbg9kHUlHK8J5L3qK4l8Z8K0l1L3y', 'Purchasing Officer', 'Purchasing', true, NOW()),
 
-  -- Level 5: Operations (PBAC - Permission-Based Operations)
-  ('operator_cut', 'operator.cutting@qutykarunia.com', '$2b$12$z0xaLPyH3qChVQJ9OmjYZe1sLbg9kHUlHK8J5L3qK4l8Z8K0l1L3y', 'Operator Cutting', 'Operator Cutting', true, NOW()),
-  ('operator_embro', 'operator.embroidery@qutykarunia.com', '$2b$12$z0xaLPyH3qChVQJ9OmjYZe1sLbg9kHUlHK8J5L3qK4l8Z8K0l1L3y', 'Operator Embroidery', 'Operator Embroidery', true, NOW()),
-  ('operator_sew', 'operator.sewing@qutykarunia.com', '$2b$12$z0xaLPyH3qChVQJ9OmjYZe1sLbg9kHUlHK8J5L3qK4l8Z8K0l1L3y', 'Operator Sewing', 'Operator Sewing', true, NOW()),
-  ('operator_finish', 'operator.finishing@qutykarunia.com', '$2b$12$z0xaLPyH3qChVQJ9OmjYZe1sLbg9kHUlHK8J5L3qK4l8Z8K0l1L3y', 'Operator Finishing', 'Operator Finishing', true, NOW()),
-  ('operator_pack', 'operator.packing@qutykarunia.com', '$2b$12$z0xaLPyH3qChVQJ9OmjYZe1sLbg9kHUlHK8J5L3qK4l8Z8K0l1L3y', 'Operator Packing', 'Operator Packing', true, NOW()),
+  -- Level 5: Department Administration (PBAC - Permission-Based Operations)
+  ('admin_cutting', 'admin.cutting@qutykarunia.com', '$2b$12$z0xaLPyH3qChVQJ9OmjYZe1sLbg9kHUlHK8J5L3qK4l8Z8K0l1L3y', 'Admin Cutting', 'Admin Cutting', true, NOW()),
+  ('admin_embroidery', 'admin.embroidery@qutykarunia.com', '$2b$12$z0xaLPyH3qChVQJ9OmjYZe1sLbg9kHUlHK8J5L3qK4l8Z8K0l1L3y', 'Admin Embroidery', 'Admin Embroidery', true, NOW()),
+  ('admin_sewing', 'admin.sewing@qutykarunia.com', '$2b$12$z0xaLPyH3qChVQJ9OmjYZe1sLbg9kHUlHK8J5L3qK4l8Z8K0l1L3y', 'Admin Sewing', 'Admin Sewing', true, NOW()),
+  ('admin_finishing', 'admin.finishing@qutykarunia.com', '$2b$12$z0xaLPyH3qChVQJ9OmjYZe1sLbg9kHUlHK8J5L3qK4l8Z8K0l1L3y', 'Admin Finishing', 'Admin Finishing', true, NOW()),
+  ('admin_packing', 'admin.packing@qutykarunia.com', '$2b$12$z0xaLPyH3qChVQJ9OmjYZe1sLbg9kHUlHK8J5L3qK4l8Z8K0l1L3y', 'Admin Packing', 'Admin Packing', true, NOW()),
   ('qc_inspector', 'qc.inspector@qutykarunia.com', '$2b$12$z0xaLPyH3qChVQJ9OmjYZe1sLbg9kHUlHK8J5L3qK4l8Z8K0l1L3y', 'QC Inspector', 'QC Inspector', true, NOW()),
   ('wh_operator', 'warehouse.operator@qutykarunia.com', '$2b$12$z0xaLPyH3qChVQJ9OmjYZe1sLbg9kHUlHK8J5L3qK4l8Z8K0l1L3y', 'Warehouse Operator', 'Warehouse Operator', true, NOW()),
   ('security', 'security@qutykarunia.com', '$2b$12$z0xaLPyH3qChVQJ9OmjYZe1sLbg9kHUlHK8J5L3qK4l8Z8K0l1L3y', 'Security Guard', 'Security', true, NOW())
