@@ -98,8 +98,8 @@ const AdminMasterdataPage: React.FC = () => {
       if (productSearch) params.set('search', productSearch)
       if (productTypeFilter) params.set('product_type', productTypeFilter)
       const res = await apiClient.get(`/masterdata/products?${params}`)
-      setProducts(res.data.items)
-      setProductTotal(res.data.total)
+      setProducts(res.items)
+      setProductTotal(res.total)
     } catch (e) { console.error(e) } finally { setProdLoad(false) }
   }, [productPage, productSearch, productTypeFilter])
 
@@ -107,7 +107,7 @@ const AdminMasterdataPage: React.FC = () => {
     setCatLoad(true)
     try {
       const res = await apiClient.get('/masterdata/categories')
-      setCategories(res.data)
+      setCategories(res)
     } catch (e) { console.error(e) } finally { setCatLoad(false) }
   }, [])
 
@@ -116,7 +116,7 @@ const AdminMasterdataPage: React.FC = () => {
     try {
       const params = supplierSearch ? `?search=${supplierSearch}` : ''
       const res = await apiClient.get(`/masterdata/suppliers${params}`)
-      setSuppliers(res.data)
+      setSuppliers(res)
     } catch (e) { console.error(e) } finally { setSupLoad(false) }
   }, [supplierSearch])
 

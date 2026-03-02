@@ -1,5 +1,6 @@
 """Finishing Module API Endpoints
-Production workflow: WIP receipt → Line clearance → Stuffing → Closing → Metal detector QC → Conversion to FG.
+Production workflow: WIP receipt → Line clearance → Stuffing
+→ Closing → Metal detector QC → Conversion to FG.
 """
 
 from decimal import Decimal
@@ -7,10 +8,14 @@ from decimal import Decimal
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.core.base_production_service import BaseProductionService
-from app.core.dependencies import get_db, require_permission
-from app.core.models.users import User
-from app.modules.finishing.models import (
+from app.core.base_production_service import (  # pylint: disable=import-error
+    BaseProductionService,
+)
+from app.core.dependencies import (  # pylint: disable=import-error
+    get_db, require_permission,
+)
+from app.core.models.users import User  # pylint: disable=import-error
+from app.modules.finishing.models import (  # pylint: disable=import-error
     AcceptWIPRequest,
     ClosingAndGroomingRequest,
     ConversionRequest,
@@ -18,7 +23,9 @@ from app.modules.finishing.models import (
     MetalDetectorTestRequest,
     StuffingRequest,
 )
-from app.modules.finishing.services import FinishingService
+from app.modules.finishing.services import (  # pylint: disable=import-error
+    FinishingService,
+)
 
 router = APIRouter(prefix="/production/finishing", tags=["Finishing Module"])
 
@@ -26,7 +33,9 @@ router = APIRouter(prefix="/production/finishing", tags=["Finishing Module"])
 @router.post("/accept-transfer", response_model=dict)
 async def accept_wip_from_sewing(
     request: AcceptWIPRequest,
-    current_user: User = Depends(require_permission("finishing.accept_transfer")),
+    current_user: User = Depends(
+        require_permission("finishing.accept_transfer")
+    ),
     db: Session = Depends(get_db)
 ) -> dict:
     """**POST** - Step 400: Accept WIP SEW Transfer.
@@ -46,7 +55,7 @@ async def accept_wip_from_sewing(
         db=db,
         transfer_slip_number=request.transfer_slip_number,
         received_qty=request.received_qty,
-        user_id=current_user.id,
+        user_id=int(current_user.id),  # type: ignore[arg-type]
         notes=request.notes
     )
 
@@ -54,7 +63,9 @@ async def accept_wip_from_sewing(
 @router.post("/line-clearance-check/{work_order_id}", response_model=dict)
 async def check_packing_line_clearance(
     work_order_id: int,
-    current_user: User = Depends(require_permission("finishing.line_clearance")),
+    current_user: User = Depends(
+        require_permission("finishing.line_clearance")
+    ),
     db: Session = Depends(get_db)
 ) -> dict:
     """**POST** - Step 405-406: LINE CLEARANCE CHECK.
@@ -82,7 +93,7 @@ async def check_packing_line_clearance(
     return {
         "work_order_id": work_order_id,
         "line_clearance_status": "CLEAR",
-        "message": "Packing line is clear - ready to proceed to stuffing",
+        "message": "Packing line is clear - ready for stuffing",
         "next_step": "Step 410: Stuffing Operation"
     }
 
@@ -90,7 +101,9 @@ async def check_packing_line_clearance(
 @router.post("/stuffing", response_model=dict)
 async def perform_stuffing_operation(
     request: StuffingRequest,
-    current_user: User = Depends(require_permission("finishing.perform_stuffing")),
+    current_user: User = Depends(
+        require_permission("finishing.perform_stuffing")
+    ),
     db: Session = Depends(get_db)
 ) -> dict:
     """**POST** - Step 410: Perform Stuffing (Isi Dacron).
@@ -117,7 +130,9 @@ async def perform_stuffing_operation(
 @router.post("/closing-grooming", response_model=dict)
 async def perform_closing_grooming(
     request: ClosingAndGroomingRequest,
-    current_user: User = Depends(require_permission("finishing.perform_closing")),
+    current_user: User = Depends(
+        require_permission("finishing.perform_closing")
+    ),
     db: Session = Depends(get_db)
 ) -> dict:
     """**POST** - Step 420: Closing & Grooming (Jahit Tutup & Rapih).
@@ -143,7 +158,9 @@ async def perform_closing_grooming(
 @router.post("/metal-detector-test", response_model=dict)
 async def perform_metal_detector_test(
     request: MetalDetectorTestRequest,
-    current_user: User = Depends(require_permission("finishing.metal_detector_qc")),
+    current_user: User = Depends(
+        require_permission("finishing.metal_detector_qc")
+    ),
     db: Session = Depends(get_db)
 ) -> dict:
     """**POST** - Step 430-435: CRITICAL POINT - Metal Detector Test.
@@ -187,9 +204,11 @@ async def physical_and_symmetry_check(
     work_order_id: int,
     inspector_id: int,
     pass_qty: Decimal,
-    repair_qty: Decimal = 0,
-    notes: str = None,
-    current_user: User = Depends(require_permission("finishing.final_qc")),
+    repair_qty: Decimal = Decimal(0),
+    notes: str | None = None,
+    current_user: User = Depends(
+        require_permission("finishing.final_qc")
+    ),
     db: Session = Depends(get_db)
 ) -> dict:
     """**POST** - Step 440-445: Physical & Symmetry QC Check.
@@ -218,7 +237,9 @@ async def physical_and_symmetry_check(
 @router.post("/convert-to-fg", response_model=dict)
 async def convert_wip_to_finish_good(
     request: ConversionRequest,
-    current_user: User = Depends(require_permission("finishing.convert_to_fg")),
+    current_user: User = Depends(
+        require_permission("finishing.convert_to_fg")
+    ),
     db: Session = Depends(get_db)
 ) -> dict:
     """**POST** - Step 450: CONVERSION to Finish Good Code.
@@ -247,28 +268,41 @@ async def convert_wip_to_finish_good(
 
     """
     # Get product IDs from codes
-    from app.core.models.products import Product
+    from app.core.models.products import (  # pylint: disable=import-error
+        Product,
+    )
 
-    wip_product = db.query(Product).filter(Product.code == request.wip_code).first()
-    fg_product = db.query(Product).filter(Product.code == request.fg_code).first()
+    wip_product = (
+        db.query(Product).filter(Product.code == request.wip_code).first()
+    )
+    fg_product = (
+        db.query(Product).filter(Product.code == request.fg_code).first()
+    )
 
     if not wip_product or not fg_product:
-        raise HTTPException(status_code=404, detail="Product code not found")
+        raise HTTPException(
+            status_code=404, detail="Product code not found"
+        )
 
     return FinishingService.convert_wip_to_fg(
         db=db,
         work_order_id=request.work_order_id,
-        wip_product_id=wip_product.id,
-        fg_product_id=fg_product.id,
+        wip_product_id=int(wip_product.id),  # type: ignore[arg-type]
+        fg_product_id=int(fg_product.id),  # type: ignore[arg-type]
         qty_converted=request.qty_converted,
-        user_id=current_user.id
+        user_id=int(current_user.id),  # type: ignore[arg-type]
     )
 
 
-@router.get("/status/{work_order_id}", response_model=FinishingWorkOrderResponse)
+@router.get(
+    "/status/{work_order_id}",
+    response_model=FinishingWorkOrderResponse,
+)
 async def get_finishing_work_order_status(
     work_order_id: int,
-    current_user: User = Depends(require_permission("finishing.view_status")),
+    current_user: User = Depends(
+        require_permission("finishing.view_status")
+    ),
     db: Session = Depends(get_db)
 ) -> FinishingWorkOrderResponse:
     """**GET** - Retrieve Current Finishing Work Order Status.
@@ -283,7 +317,7 @@ async def get_finishing_work_order_status(
     """
     wo = BaseProductionService.get_work_order(db, work_order_id)
 
-    return FinishingWorkOrderResponse(
+    return FinishingWorkOrderResponse(  # type: ignore[arg-type]
         id=wo.id,
         mo_id=wo.mo_id,
         wip_product_id=wo.product_id,
@@ -316,15 +350,19 @@ async def get_pending_finishing_orders(
     - Conversion to FG
     - Transfer to Packing
     """
-    from app.core.models.manufacturing import Department, WorkOrder, WorkOrderStatus
+    from app.core.models.manufacturing import (  # pylint: disable=import-error
+        Department, WorkOrder, WorkOrderStatus,
+    )
 
     orders = db.query(WorkOrder).filter(
         WorkOrder.department == Department.FINISHING,
-        WorkOrder.status.in_([WorkOrderStatus.PENDING, WorkOrderStatus.RUNNING])
+        WorkOrder.status.in_(
+            [WorkOrderStatus.PENDING, WorkOrderStatus.RUNNING]
+        ),
     ).all()
 
     return [
-        FinishingWorkOrderResponse(
+        FinishingWorkOrderResponse(  # type: ignore[arg-type]
             id=o.id,
             mo_id=o.mo_id,
             wip_product_id=o.product_id,

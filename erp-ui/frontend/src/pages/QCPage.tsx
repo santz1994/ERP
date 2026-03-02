@@ -56,11 +56,11 @@ const QCPage: React.FC = () => {
     try {
       // Fetch QC stats
       const statsRes = await apiClient.get('/quality/stats')
-      setStats(statsRes.data)
+      setStats(statsRes)
       
       // Fetch recent inspections (last 10)
       const inspRes = await apiClient.get('/quality/inspections?limit=10')
-      const inspData = Array.isArray(inspRes.data) ? inspRes.data : (inspRes.data?.data || [])
+      const inspData = Array.isArray(inspRes) ? inspRes : (inspRes?.data || [])
       setInspections(inspData)
     } catch (error) {
       console.error('Failed to fetch QC data:', error)

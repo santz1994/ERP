@@ -144,34 +144,45 @@ async def create_manufacturing_order(
     db.add(new_mo)
     db.commit()
     db.refresh(new_mo)
+    return _serialize_mo(new_mo)
+
+
+from app.core.models.manufacturing import MOState as _MOState, MOType as _MOType
+
+def _serialize_mo(mo) -> ManufacturingOrderResponse:
+    """Safely serialize a ManufacturingOrder ORM object to a response schema."""
+    def _rt(val):
+        try:
+            return RoutingType(val) if val else RoutingType.ROUTE_2_DIRECT
+        except (ValueError, KeyError):
+            return RoutingType.ROUTE_2_DIRECT
+
+    def _st(val):
+        try:
+            return MOStatus(val) if val else MOStatus.DRAFT
+        except (ValueError, KeyError):
+            return MOStatus.DRAFT
 
     return ManufacturingOrderResponse(
-        id=new_mo.id,
-        so_line_id=new_mo.so_line_id,
-        product_id=new_mo.product_id,
-        qty_planned=new_mo.qty_planned,
-        qty_produced=new_mo.qty_produced,
-        routing_type=RoutingType(new_mo.routing_type),
-        batch_number=new_mo.batch_number,
-        state=MOStatus(new_mo.state),
-
-        # MO Type
-        mo_type=new_mo.mo_type.value if new_mo.mo_type else "PRODUCTION",
-        is_qty_locked=new_mo.is_qty_locked or False,
-        buyer_mo_id=new_mo.buyer_mo_id,
-
-        # Dual Trigger System
-        po_fabric_id=new_mo.po_fabric_id,
-        po_label_id=new_mo.po_label_id,
-        trigger_mode=new_mo.trigger_mode,
-
-        # IKEA Compliance
-        production_week=new_mo.production_week,
-        destination_country=new_mo.destination_country,
-        planned_production_date=new_mo.planned_production_date,
-        target_shipment_date=new_mo.target_shipment_date,
-
-        created_at=new_mo.created_at
+        id=mo.id,
+        so_line_id=mo.so_line_id,
+        product_id=mo.product_id,
+        qty_planned=mo.qty_planned,
+        qty_produced=mo.qty_produced or 0,
+        routing_type=_rt(mo.routing_type),
+        batch_number=mo.batch_number,
+        state=_st(mo.state),
+        mo_type=mo.mo_type.value if mo.mo_type else "PRODUCTION",
+        is_qty_locked=mo.is_qty_locked or False,
+        buyer_mo_id=mo.buyer_mo_id,
+        po_fabric_id=mo.po_fabric_id,
+        po_label_id=mo.po_label_id,
+        trigger_mode=mo.trigger_mode or "PARTIAL",
+        production_week=mo.production_week,
+        destination_country=mo.destination_country,
+        planned_production_date=mo.planned_production_date,
+        target_shipment_date=mo.target_shipment_date,
+        created_at=mo.created_at,
     )
 
 
@@ -185,36 +196,14 @@ async def get_manufacturing_order(
     current_user: User = Depends(require_permission("ppic.view_mo")),
     db: Session = Depends(get_db)
 ):
-    """Get Manufacturing Order details.
-
-    **Roles Required**: ppic_manager
-
-    **Path Parameters**:
-    - `mo_id`: Manufacturing Order ID
-
-    **Responses**:
-    - `200`: Manufacturing order details
-    - `403`: Insufficient permissions
-    - `404`: Manufacturing order not found
-    """
+    """Get Manufacturing Order details."""
     mo = db.query(ManufacturingOrder).filter(ManufacturingOrder.id == mo_id).first()
     if not mo:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Manufacturing order not found"
         )
-
-    return ManufacturingOrderResponse(
-        id=mo.id,
-        so_line_id=mo.so_line_id,
-        product_id=mo.product_id,
-        qty_planned=mo.qty_planned,
-        qty_produced=mo.qty_produced,
-        routing_type=RoutingType(mo.routing_type),
-        batch_number=mo.batch_number,
-        state=MOStatus(mo.state),
-        created_at=mo.created_at
-    )
+    return _serialize_mo(mo)
 
 
 # ==================== BOM MANAGEMENT ====================
@@ -492,44 +481,51 @@ async def list_manufacturing_orders(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     status: str = Query(None),
+    mo_type: str = Query(None, description="Filter by MO type: BUYER or PRODUCTION"),
     current_user: User = Depends(require_permission("ppic.schedule_production")),
     db: Session = Depends(get_db)
 ):
     """List Manufacturing Orders with pagination.
 
-    **Roles Required**: ppic_manager
-
     **Query Parameters**:
-    - `skip`: Number of records to skip (default: 0)
-    - `limit`: Number of records to return (default: 100, max: 1000)
-    - `status`: Filter by status (DRAFT, IN_PROGRESS, DONE, CANCELLED)
-
-    **Responses**:
-    - `200`: List of manufacturing orders
-    - `403`: Insufficient permissions
+    - `skip` / `limit`: Pagination
+    - `status`: Filter by state (Draft, In Progress, Done, Cancelled)
+    - `mo_type`: Filter by type (BUYER or PRODUCTION)
     """
+    from app.core.models.manufacturing import MOState, MOType
+
     query = db.query(ManufacturingOrder)
 
-    # Apply status filter
     if status:
-        query = query.filter(ManufacturingOrder.state == status)
+        # Accept both "Draft" and "DRAFT" style values
+        try:
+            state_val = MOState(status)
+        except ValueError:
+            state_val = status
+        query = query.filter(ManufacturingOrder.state == state_val)
+
+    if mo_type:
+        try:
+            mt_val = MOType(mo_type.upper())
+        except ValueError:
+            mt_val = mo_type
+        query = query.filter(ManufacturingOrder.mo_type == mt_val)
 
     mos = query.offset(skip).limit(limit).all()
 
-    return [
-        ManufacturingOrderResponse(
-            id=mo.id,
-            so_line_id=mo.so_line_id,
-            product_id=mo.product_id,
-            qty_planned=mo.qty_planned,
-            qty_produced=mo.qty_produced,
-            routing_type=RoutingType(mo.routing_type),
-            batch_number=mo.batch_number,
-            state=MOStatus(mo.state),
-            created_at=mo.created_at
-        )
-        for mo in mos
-    ]
+    def _safe_routing(val):
+        try:
+            return RoutingType(val) if val else RoutingType.ROUTE_2_DIRECT
+        except (ValueError, KeyError):
+            return RoutingType.ROUTE_2_DIRECT
+
+    def _safe_state(val):
+        try:
+            return MOStatus(val) if val else MOStatus.DRAFT
+        except (ValueError, KeyError):
+            return MOStatus.DRAFT
+
+    return [_serialize_mo(mo) for mo in mos]
 
 
 @router.post(
@@ -590,18 +586,7 @@ async def approve_manufacturing_order(
     db.add(initial_wo)
     db.commit()
     db.refresh(mo)
-
-    return ManufacturingOrderResponse(
-        id=mo.id,
-        so_line_id=mo.so_line_id,
-        product_id=mo.product_id,
-        qty_planned=mo.qty_planned,
-        qty_produced=mo.qty_produced,
-        routing_type=RoutingType(mo.routing_type),
-        batch_number=mo.batch_number,
-        state=MOStatus(mo.state),
-        created_at=mo.created_at
-    )
+    return _serialize_mo(mo)
 
 
 # ==================== PPIC TASK LIFECYCLE OPERATIONS ====================
@@ -671,18 +656,7 @@ async def approve_task(
 
     db.commit()
     db.refresh(mo)
-
-    return ManufacturingOrderResponse(
-        id=mo.id,
-        so_line_id=mo.so_line_id,
-        product_id=mo.product_id,
-        qty_planned=mo.qty_planned,
-        qty_produced=mo.qty_produced,
-        routing_type=RoutingType(mo.routing_type),
-        batch_number=mo.batch_number,
-        state=MOStatus(mo.state),
-        created_at=mo.created_at
-    )
+    return _serialize_mo(mo)
 
 
 @router.post(
@@ -760,18 +734,7 @@ async def start_task(
     db.add(initial_wo)
     db.commit()
     db.refresh(mo)
-
-    return ManufacturingOrderResponse(
-        id=mo.id,
-        so_line_id=mo.so_line_id,
-        product_id=mo.product_id,
-        qty_planned=mo.qty_planned,
-        qty_produced=mo.qty_produced,
-        routing_type=RoutingType(mo.routing_type),
-        batch_number=mo.batch_number,
-        state=MOStatus(mo.state),
-        created_at=mo.created_at
-    )
+    return _serialize_mo(mo)
 
 
 @router.post(
@@ -816,18 +779,7 @@ async def start_manufacturing_order(
     mo.state = MOState.IN_PROGRESS
     db.commit()
     db.refresh(mo)
-    
-    return ManufacturingOrderResponse(
-        id=mo.id,
-        so_line_id=mo.so_line_id,
-        product_id=mo.product_id,
-        qty_planned=mo.qty_planned,
-        qty_produced=mo.qty_produced,
-        routing_type=RoutingType(mo.routing_type),
-        batch_number=mo.batch_number,
-        state=MOStatus(mo.state),
-        created_at=mo.created_at
-    )
+    return _serialize_mo(mo)
 
 
 @router.post(
@@ -875,18 +827,7 @@ async def complete_manufacturing_order(
     mo.completed_by_id = current_user.id
     db.commit()
     db.refresh(mo)
-    
-    return ManufacturingOrderResponse(
-        id=mo.id,
-        so_line_id=mo.so_line_id,
-        product_id=mo.product_id,
-        qty_planned=mo.qty_planned,
-        qty_produced=mo.qty_produced,
-        routing_type=RoutingType(mo.routing_type),
-        batch_number=mo.batch_number,
-        state=MOStatus(mo.state),
-        created_at=mo.created_at
-    )
+    return _serialize_mo(mo)
 
 
 @router.post(
@@ -984,18 +925,7 @@ async def complete_task(
 
     db.commit()
     db.refresh(mo)
-
-    return ManufacturingOrderResponse(
-        id=mo.id,
-        so_line_id=mo.so_line_id,
-        product_id=mo.product_id,
-        qty_planned=mo.qty_planned,
-        qty_produced=mo.qty_produced,
-        routing_type=RoutingType(mo.routing_type),
-        batch_number=mo.batch_number,
-        state=MOStatus(mo.state),
-        created_at=mo.created_at
-    )
+    return _serialize_mo(mo)
 
 
 # ==================== SPK LIST & DETAIL ====================

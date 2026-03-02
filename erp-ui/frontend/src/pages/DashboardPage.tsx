@@ -170,11 +170,11 @@ const GenericDashboard: React.FC = () => {
         apiClient.get('/dashboard/alerts')
       ])
       // Ensure stats always has a valid value with fallback
-      setStats(statsRes.data || {
+      setStats(statsRes || {
         total_mos: 0, completed_today: 0, pending_qc: 0, critical_alerts: 0, refreshed_at: null
       })
-      setProductionStatus(prodRes.data || [])
-      setAlerts(alertsRes.data || [])
+      setProductionStatus(prodRes || [])
+      setAlerts(alertsRes || [])
     } catch (error) {
       console.error('Failed to load dashboard data:', error)
       addNotification('error', 'Gagal memuat data dashboard')

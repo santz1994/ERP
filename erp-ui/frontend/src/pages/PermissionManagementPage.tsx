@@ -73,8 +73,8 @@ const PermissionManagementPage: React.FC = () => {
     try {
       setLoading(true)
       const response = await apiClient.get('/admin/users')
-      // Defensive: Ensure response.data is array before filtering
-      const userData = Array.isArray(response.data) ? response.data : []
+      // Defensive: Ensure response is array before filtering
+      const userData = Array.isArray(response) ? response : []
       setUsers(userData.filter((u: User) => u.is_active))
     } catch (error) {
       console.error('Error fetching users:', error)
@@ -88,19 +88,19 @@ const PermissionManagementPage: React.FC = () => {
   const fetchPermissions = async () => {
     try {
       const response = await apiClient.get('/admin/permissions')
-      // Defensive: Check if response.data exists
-      if (!response.data) {
+      // Defensive: Check if response exists
+      if (!response) {
         setPermissions([])
         return
       }
       
       // Handle both array and object response formats
-      if (Array.isArray(response.data)) {
-        setPermissions(response.data)
-      } else if (response.data.modules && Array.isArray(response.data.modules)) {
+      if (Array.isArray(response)) {
+        setPermissions(response)
+      } else if (response.modules && Array.isArray(response.modules)) {
         // Convert modules format to flat permission array
         const flatPermissions: Permission[] = []
-        response.data.modules.forEach((module: any) => {
+        response.modules.forEach((module: any) => {
           if (module?.permissions && Array.isArray(module.permissions)) {
             module.permissions.forEach((perm: string, index: number) => {
               flatPermissions.push({
@@ -115,8 +115,8 @@ const PermissionManagementPage: React.FC = () => {
           }
         })
         setPermissions(flatPermissions)
-      } else if (response.data.permissions && Array.isArray(response.data.permissions)) {
-        setPermissions(response.data.permissions)
+      } else if (response.permissions && Array.isArray(response.permissions)) {
+        setPermissions(response.permissions)
       } else {
         // Fallback - set empty array
         setPermissions([])
@@ -131,7 +131,7 @@ const PermissionManagementPage: React.FC = () => {
     try {
       setLoading(true)
       const response = await apiClient.get(`/admin/users/${userId}/permissions`)
-      setUserPermissions(response.data)
+      setUserPermissions(response)
     } catch (error) {
       console.error('Error fetching user permissions:', error)
     } finally {

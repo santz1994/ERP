@@ -259,11 +259,20 @@ class ManufacturingOrder(Base):
     product = relationship("Product", back_populates="manufacturing_orders")
     work_orders = relationship("WorkOrder", back_populates="manufacturing_order", cascade="all, delete-orphan")
     transfer_logs = relationship("TransferLog", back_populates="manufacturing_order")
-    # BUYER ↔ PRODUCTION self-reference
+    # BUYER ↔ PRODUCTION self-referential adjacency list.
+    # remote_side=[id] marks 'id' as the "one" side so SQLAlchemy knows:
+    #   buyer_mo  = many-to-one (PRODUCTION MO → its BUYER MO)
+    #   production_mos = one-to-many (BUYER MO → all its PRODUCTION MOs)
+    buyer_mo = relationship(
+        "ManufacturingOrder",
+        foreign_keys=[buyer_mo_id],
+        remote_side=[id],
+        back_populates="production_mos",
+    )
     production_mos = relationship(
         "ManufacturingOrder",
-        foreign_keys="ManufacturingOrder.buyer_mo_id",
-        backref="buyer_mo",
+        foreign_keys=[buyer_mo_id],
+        back_populates="buyer_mo",
         lazy="dynamic",
     )
 

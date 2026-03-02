@@ -111,13 +111,13 @@ export default function AuditTrailPage() {
   };
 
   // Check if user has audit.view_logs permission
-  // Backend permissions: DEVELOPER, SUPERADMIN, MANAGER, ADMIN, PPIC_MANAGER all have audit.view_logs
-  const auditRoles = ['DEVELOPER', 'SUPERADMIN', 'MANAGER', 'ADMIN', 'PPIC_MANAGER'];
+  // Role string values match UserRole enum (title-cased): Developer, Superadmin, Manager, Admin, PPIC Manager
+  const auditRoles = ['Developer', 'Superadmin', 'Manager', 'Finance Manager', 'Admin', 'PPIC Manager'];
   if (!auditRoles.includes(user?.role || '')) {
     return (
       <div className="p-6">
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800">Access Denied: Audit Trail requires appropriate role (DEVELOPER, SUPERADMIN, MANAGER, ADMIN, or PPIC_MANAGER)</p>
+          <p className="text-red-800">Access Denied: Audit Trail requires Developer, Superadmin, Manager, Admin, or PPIC Manager role.</p>
         </div>
       </div>
     );

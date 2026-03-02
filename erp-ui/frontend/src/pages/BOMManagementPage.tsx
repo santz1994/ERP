@@ -99,15 +99,15 @@ const BOMManagementPage: React.FC = () => {
       if (search) params.set('search', search)
       if (activeOnly) params.set('active_only', 'true')
       const res = await apiClient.get(`/bom-management/headers?${params}`)
-      setHeaders(res.data.items)
-      setTotal(res.data.total)
+      setHeaders(res.items)
+      setTotal(res.total)
     } catch (e) { console.error(e) } finally { setLoading(false) }
   }, [page, search, activeOnly])
 
   const fetchProductOptions = useCallback(async () => {
     try {
       const res = await apiClient.get('/masterdata/products?page_size=500')
-      setProductOptions(res.data.items.map((p: any) => ({ id: p.id, code: p.code, name: p.name, uom: p.uom })))
+      setProductOptions(res.items.map((p: any) => ({ id: p.id, code: p.code, name: p.name, uom: p.uom })))
     } catch (e) { console.error(e) }
   }, [])
 
@@ -124,7 +124,7 @@ const BOMManagementPage: React.FC = () => {
     setDetailsLoading(prev => new Set(prev).add(headerId))
     try {
       const res = await apiClient.get(`/bom-management/headers/${headerId}`)
-      setDetailsMap(prev => ({ ...prev, [headerId]: res.data.details ?? [] }))
+      setDetailsMap(prev => ({ ...prev, [headerId]: res.details ?? [] }))
     } catch (e) { console.error(e) }
     setDetailsLoading(prev => { const s = new Set(prev); s.delete(headerId); return s })
   }
@@ -184,9 +184,9 @@ const BOMManagementPage: React.FC = () => {
       // Reload details
       if (detailModalHeaderId) {
         const res = await apiClient.get(`/bom-management/headers/${detailModalHeaderId}`)
-        setDetailsMap(prev => ({ ...prev, [detailModalHeaderId]: res.data.details ?? [] }))
+        setDetailsMap(prev => ({ ...prev, [detailModalHeaderId]: res.details ?? [] }))
         // Update detail_count in header list
-        setHeaders(prev => prev.map(h => h.id === detailModalHeaderId ? { ...h, detail_count: res.data.details?.length } : h))
+        setHeaders(prev => prev.map(h => h.id === detailModalHeaderId ? { ...h, detail_count: res.details?.length } : h))
       }
     } catch (e: any) { alert(e.response?.data?.detail ?? 'Error saving detail') }
   }
@@ -196,8 +196,8 @@ const BOMManagementPage: React.FC = () => {
     try {
       await apiClient.delete(`/bom-management/details/${d.id}`)
       const res = await apiClient.get(`/bom-management/headers/${headerId}`)
-      setDetailsMap(prev => ({ ...prev, [headerId]: res.data.details ?? [] }))
-      setHeaders(prev => prev.map(h => h.id === headerId ? { ...h, detail_count: res.data.details?.length } : h))
+      setDetailsMap(prev => ({ ...prev, [headerId]: res.details ?? [] }))
+      setHeaders(prev => prev.map(h => h.id === headerId ? { ...h, detail_count: res.details?.length } : h))
     } catch (e: any) { alert(e.response?.data?.detail ?? 'Error') }
   }
 

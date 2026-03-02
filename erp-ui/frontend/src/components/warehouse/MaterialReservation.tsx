@@ -49,8 +49,8 @@ export const MaterialReservation: React.FC<MaterialReservationProps> = ({
   const { data: workOrders } = useQuery({
     queryKey: ['work-orders-for-reservation'],
     queryFn: async () => {
-      const response = await apiClient.get('/work-orders?state=READY,RUNNING');
-      return response.data;
+      const data = await apiClient.get('/work-orders?state=READY,RUNNING');
+      return Array.isArray(data) ? data : (data?.items || []);
     }
   });
 
@@ -61,8 +61,8 @@ export const MaterialReservation: React.FC<MaterialReservationProps> = ({
       const params = new URLSearchParams();
       if (selectedWO) params.append('wo_id', selectedWO.toString());
       if (materialId) params.append('material_id', materialId.toString());
-      const response = await apiClient.get(`/material-allocation/reservations?${params}`);
-      return response.data as MaterialReservation[];
+      const data = await apiClient.get(`/material-allocation/reservations?${params}`);
+      return (Array.isArray(data) ? data : []) as MaterialReservation[];
     },
     enabled: !!selectedWO || !!materialId
   });
@@ -70,8 +70,7 @@ export const MaterialReservation: React.FC<MaterialReservationProps> = ({
   // Reserve Materials Mutation
   const reserveMutation = useMutation({
     mutationFn: async (data: { wo_id: number; auto_allocate?: boolean }) => {
-      const response = await apiClient.post('/material-allocation/reserve', data);
-      return response.data;
+      return await apiClient.post('/material-allocation/reserve', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['material-reservations'] });
@@ -86,8 +85,7 @@ export const MaterialReservation: React.FC<MaterialReservationProps> = ({
   // Release Reservation Mutation
   const releaseMutation = useMutation({
     mutationFn: async (reservationId: number) => {
-      const response = await apiClient.post(`/material-allocation/reservations/${reservationId}/release`);
-      return response.data;
+      return await apiClient.post(`/material-allocation/reservations/${reservationId}/release`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['material-reservations'] });

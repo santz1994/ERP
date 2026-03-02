@@ -105,7 +105,8 @@ type POFormData = z.infer<typeof poSchema>;
 interface Supplier {
   id: number;
   name: string;
-  code: string;
+  contact_person?: string;
+  phone?: string;
 }
 
 interface POCreateModalProps {
@@ -456,7 +457,7 @@ export default function POCreateModal({ isOpen, onClose, onSuccess }: POCreateMo
                       <SelectContent>
                         {(suppliers as Supplier[]).map((s) => (
                           <SelectItem key={s.id} value={s.id.toString()}>
-                            {s.code} — {s.name}
+                            {s.name}{s.contact_person ? ` (${s.contact_person})` : ''}
                           </SelectItem>
                         ))}
                       </SelectContent>

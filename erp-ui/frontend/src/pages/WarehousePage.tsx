@@ -73,34 +73,32 @@ const WarehousePage: React.FC = () => {
   const [transactionSuccess, setTransactionSuccess] = useState<any>(null);
 
   // Fetch Stock Inventory
-  const { data: inventoryData, isLoading: inventoryLoading } = useQuery({
-    queryKey: ['warehouse-inventory', searchTerm],
+  const { data: inventoryDataRaw, isLoading: inventoryLoading } = useQuery({
+    queryKey: ['warehouse-inventory'],
     queryFn: async () => {
-      // This would need an inventory endpoint - for now mock data
-      const response = await apiClient.get('/warehouse/inventory');
-      return response.data;
+      const data = await apiClient.get('/warehouse/stock-quants');
+      // Map API fields to StockItem interface
+      return (Array.isArray(data) ? data : []).map((item: any): StockItem => ({
+        product_id: item.product_id,
+        product_code: item.product_code || '',
+        product_name: item.product_name || '',
+        qty_on_hand: item.qty_on_hand || 0,
+        qty_reserved: item.qty_reserved || 0,
+        qty_available: item.available_quantity ?? item.qty_available ?? 0,
+        location: item.location_name || item.location || '',
+        uom: item.uom || 'Pcs'
+      }));
     },
-    refetchInterval: 5000,
-    enabled: false // Disable until endpoint exists
+    refetchInterval: 10000
   });
+  const inventoryData: StockItem[] = inventoryDataRaw || [];
 
-  // Fetch Stock Movements
-  const { data: movementsData } = useQuery({
-    queryKey: ['stock-movements'],
-    queryFn: async () => {
-      const response = await apiClient.get('/warehouse/stock-movements');
-      return response.data;
-    },
-    refetchInterval: 10000,
-    enabled: false // Disable until endpoint exists
-  });
-  
   // Fetch Barcode History
   const { data: barcodeHistory, refetch: refetchHistory } = useQuery({
     queryKey: ['barcode-history'],
     queryFn: async () => {
-      const response = await apiClient.get('/barcode/history?location=warehouse&limit=20');
-      return response.data;
+      const data = await apiClient.get('/barcode/history?location=warehouse&limit=20');
+      return Array.isArray(data) ? data : [];
     },
     refetchInterval: 10000
   });
@@ -132,7 +130,7 @@ const WarehousePage: React.FC = () => {
         notes: transactionNotes || null
       });
 
-      setTransactionSuccess(response.data);
+      setTransactionSuccess(response);
       setScannedBarcode('');
       setTransactionQty(0);
       setTransactionNotes('');
@@ -146,67 +144,6 @@ const WarehousePage: React.FC = () => {
       setTransactionLoading(false);
     }
   };
-
-  // Mock data for demonstration
-  const mockInventory: StockItem[] = [
-    {
-      product_id: 1,
-      product_code: 'FAB-VEL-BLU',
-      product_name: 'Velboa Blue Fabric',
-      qty_on_hand: 5000,
-      qty_reserved: 1200,
-      qty_available: 3800,
-      location: 'WH-RAW-A1',
-      uom: 'Meter'
-    },
-    {
-      product_id: 2,
-      product_code: 'WIP-CUT-SHARK',
-      product_name: 'Cut Parts - Shark',
-      qty_on_hand: 2500,
-      qty_reserved: 800,
-      qty_available: 1700,
-      location: 'WH-WIP-B2',
-      uom: 'Pcs'
-    },
-    {
-      product_id: 3,
-      product_code: 'ACC-EYE-10MM',
-      product_name: 'Safety Eyes 10mm',
-      qty_on_hand: 15000,
-      qty_reserved: 5000,
-      qty_available: 10000,
-      location: 'WH-ACC-C3',
-      uom: 'Pcs'
-    }
-  ];
-
-  const mockMovements: StockMovement[] = [
-    {
-      id: 1,
-      product_id: 1,
-      product_code: 'FAB-VEL-BLU',
-      product_name: 'Velboa Blue Fabric',
-      from_location: 'WH-RAW-A1',
-      to_location: 'CUTTING-LINE1',
-      qty: 500,
-      move_type: 'Internal Transfer',
-      created_at: '2026-01-19T10:30:00',
-      created_by: 'Admin Warehouse'
-    },
-    {
-      id: 2,
-      product_id: 2,
-      product_code: 'WIP-CUT-SHARK',
-      product_name: 'Cut Parts - Shark',
-      from_location: 'CUTTING-LINE1',
-      to_location: 'WH-WIP-B2',
-      qty: 1000,
-      move_type: 'Production Output',
-      created_at: '2026-01-19T11:15:00',
-      created_by: 'SPV Cutting'
-    }
-  ];
 
   // Handle Stock Adjustment
   const handleStockAdjustmentSubmit = async (e: React.FormEvent) => {
@@ -277,8 +214,7 @@ const WarehousePage: React.FC = () => {
       addNotification('success', 'Material request submitted for approval');
       setShowMaterialRequestModal(false);
       
-      // Refetch material requests if there's a list component
-      return response.data;
+      return response;
     } catch (error: any) {
       const errorMsg = error.response?.data?.detail || 'Failed to submit material request';
       setMaterialRequestError(errorMsg);
@@ -290,7 +226,7 @@ const WarehousePage: React.FC = () => {
   };
 
   // Filter inventory
-  const filteredInventory = mockInventory.filter(item => {
+  const filteredInventory = inventoryData.filter(item => {
     const matchesSearch = item.product_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          item.product_name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesLowStock = !showLowStockOnly || (item.qty_available < item.qty_on_hand * 0.3);
@@ -298,10 +234,10 @@ const WarehousePage: React.FC = () => {
   });
 
   // Statistics
-  const totalProducts = mockInventory.length;
-  const lowStockItems = mockInventory.filter(item => item.qty_available < item.qty_on_hand * 0.3).length;
-  const totalValue = mockInventory.reduce((sum, item) => sum + item.qty_on_hand, 0);
-  const totalReserved = mockInventory.reduce((sum, item) => sum + item.qty_reserved, 0);
+  const totalProducts = inventoryData.length;
+  const lowStockItems = inventoryData.filter(item => item.qty_available < item.qty_on_hand * 0.3).length;
+  const totalValue = inventoryData.reduce((sum, item) => sum + item.qty_on_hand, 0);
+  const totalReserved = inventoryData.reduce((sum, item) => sum + item.qty_reserved, 0);
 
   return (
     <>
@@ -626,6 +562,20 @@ const WarehousePage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
+                  {inventoryLoading && (
+                    <tr>
+                      <td colSpan={8} className="px-6 py-12 text-center text-gray-400">
+                        Loading inventory data...
+                      </td>
+                    </tr>
+                  )}
+                  {!inventoryLoading && filteredInventory.length === 0 && (
+                    <tr>
+                      <td colSpan={8} className="px-6 py-12 text-center text-gray-400">
+                        No products found
+                      </td>
+                    </tr>
+                  )}
                   {filteredInventory.map((item) => (
                     <tr key={item.product_id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 text-sm font-medium text-gray-900">{item.product_code}</td>
@@ -682,28 +632,11 @@ const WarehousePage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {mockMovements.map((movement) => (
-                    <tr key={movement.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        {new Date(movement.created_at).toLocaleString('id-ID')}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-gray-900">{movement.product_code}</div>
-                        <div className="text-xs text-gray-500">{movement.product_name}</div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-700">{movement.from_location}</td>
-                      <td className="px-6 py-4 text-sm text-gray-700">{movement.to_location}</td>
-                      <td className="px-6 py-4 text-sm text-right font-semibold text-gray-900">
-                        {movement.qty.toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                          {movement.move_type}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{movement.created_by}</td>
-                    </tr>
-                  ))}
+                  <tr>
+                    <td colSpan={7} className="px-6 py-12 text-center text-gray-400">
+                      No movement records available
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -723,12 +656,6 @@ const WarehousePage: React.FC = () => {
         )}
       </div>
 
-      {/* Note about mock data */}
-      <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-        <p className="text-sm text-yellow-800">
-          <strong>Note:</strong> Currently displaying mock data. Full warehouse integration coming soon with inventory endpoints.
-        </p>
-      </div>
 
       {/* Stock Adjustment Modal */}
       {showStockAdjustmentModal && (
@@ -745,7 +672,7 @@ const WarehousePage: React.FC = () => {
                   required
                 >
                   <option value="">Select Product</option>
-                  {mockInventory.map(item => (
+                  {inventoryData.map(item => (
                     <option key={item.product_id} value={item.product_id}>{item.product_code} - {item.product_name}</option>
                   ))}
                 </select>
@@ -823,7 +750,7 @@ const WarehousePage: React.FC = () => {
                   required
                 >
                   <option value="">Select Product</option>
-                  {mockInventory.map(item => (
+                  {inventoryData.map(item => (
                     <option key={item.product_id} value={item.product_id}>{item.product_code} - {item.product_name}</option>
                   ))}
                 </select>

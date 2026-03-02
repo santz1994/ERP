@@ -73,6 +73,26 @@ interface PODetail {
   }[];
   total_allocated: number;
   remaining_qty: number;
+  // Manufacturing Order (PO KAIN only)
+  linked_mo: {
+    id: number;
+    batch_number: string;
+    state: string | null;
+    trigger_mode: string;
+    qty_planned: number;
+    qty_produced: number;
+    routing_type: string | null;
+    created_at: string | null;
+    work_orders: {
+      id: number;
+      wo_number: string;
+      department: string | null;
+      status: string | null;
+      target_qty: number;
+      output_qty: number;
+      sequence: number | null;
+    }[];
+  } | null;
 }
 
 interface PODetailModalProps {
@@ -157,6 +177,26 @@ export default function PODetailModal({ poId, isOpen, onClose, onStatusChanged }
       toast.error(msg);
       setConfirmAction(null);
     },
+  });
+
+  // ── Generate MO (manual retroactive trigger) ────────────────────────────────
+  const generateMOMutation = useMutation({
+    mutationFn: async () => {
+      const response = await axios.post(
+        `${API_BASE}/purchasing/purchase-orders/${poId}/generate-mo`,
+        {},
+        { headers: { Authorization: `Bearer ${token()}` } }
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      const mo = data.mo_info;
+      const batchLabel = mo?.mo_production_batch || mo?.batch_number || 'N/A';
+      toast.success(`MO berhasil dibuat! Batch: ${batchLabel}`, { duration: 5000 });
+      queryClient.invalidateQueries({ queryKey: ['po-detail', poId] });
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+    },
+    onError: (e: any) => toast.error(e?.response?.data?.detail ?? 'Gagal generate MO'),
   });
 
   // ── Delete / Request-Delete mutations ─────────────────────────────────────
@@ -376,6 +416,103 @@ export default function PODetailModal({ poId, isOpen, onClose, onStatusChanged }
                             )}
                           </tfoot>
                         </table>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Manufacturing Order Section (PO KAIN only) */}
+                {po.po_type === 'KAIN' && (
+                  <div>
+                    <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                      <Package className="w-4 h-4 text-green-600" />
+                      Manufacturing Order (MO)
+                      {po.linked_mo && (
+                        <span className={`ml-2 px-2 py-0.5 text-xs rounded-full font-medium ${
+                          po.linked_mo.trigger_mode === 'RELEASED' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {po.linked_mo.trigger_mode}
+                        </span>
+                      )}
+                    </h3>
+
+                    {!po.linked_mo ? (
+                      <div className="bg-gray-50 border border-dashed border-gray-300 rounded-lg p-4 text-center">
+                        <p className="text-sm text-gray-400">MO belum dibuat.</p>
+                        <p className="text-xs text-gray-400 mt-1">MO akan otomatis dibuat saat PO di-Send ke supplier.</p>
+                        {['Draft', 'Sent', 'Done', 'Received', 'Confirmed'].includes(po.status ?? '') && (
+                          <button
+                            onClick={() => generateMOMutation.mutate()}
+                            disabled={generateMOMutation.isPending}
+                            className="mt-3 px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {generateMOMutation.isPending ? 'Generating...' : 'Generate MO Sekarang'}
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {/* MO Header card */}
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <div>
+                              <p className="text-xs text-green-600 font-medium">Batch Number</p>
+                              <p className="text-sm font-bold text-green-900 font-mono">{po.linked_mo.batch_number}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-green-600 font-medium">Status MO</p>
+                              <span className={`inline-block px-2 py-0.5 text-xs rounded-full font-medium ${
+                                po.linked_mo.state === 'Done' ? 'bg-green-100 text-green-800' :
+                                po.linked_mo.state === 'In Progress' ? 'bg-blue-100 text-blue-800' :
+                                po.linked_mo.state === 'Cancelled' ? 'bg-red-100 text-red-800' :
+                                'bg-gray-100 text-gray-700'
+                              }`}>{po.linked_mo.state || 'Draft'}</span>
+                            </div>
+                            <div>
+                              <p className="text-xs text-green-600 font-medium">Qty Planned</p>
+                              <p className="text-sm font-semibold text-gray-900">{po.linked_mo.qty_planned.toLocaleString()} pcs</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-green-600 font-medium">Qty Produced</p>
+                              <p className="text-sm font-semibold text-gray-900">{po.linked_mo.qty_produced.toLocaleString()} pcs</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Work Orders table */}
+                        {po.linked_mo.work_orders.length > 0 && (
+                          <div className="overflow-x-auto rounded-lg border border-green-100">
+                            <table className="min-w-full divide-y divide-green-100 text-sm">
+                              <thead className="bg-green-50">
+                                <tr>
+                                  <th className="px-4 py-2 text-left text-xs font-medium text-green-700 uppercase">WO Number</th>
+                                  <th className="px-4 py-2 text-left text-xs font-medium text-green-700 uppercase">Dept</th>
+                                  <th className="px-4 py-2 text-right text-xs font-medium text-green-700 uppercase">Target Qty</th>
+                                  <th className="px-4 py-2 text-right text-xs font-medium text-green-700 uppercase">Output</th>
+                                  <th className="px-4 py-2 text-center text-xs font-medium text-green-700 uppercase">Status</th>
+                                </tr>
+                              </thead>
+                              <tbody className="bg-white divide-y divide-green-50">
+                                {po.linked_mo.work_orders.map((wo) => (
+                                  <tr key={wo.id} className="hover:bg-green-50">
+                                    <td className="px-4 py-2 font-mono text-xs text-gray-700">{wo.wo_number}</td>
+                                    <td className="px-4 py-2 text-gray-900 font-medium">{wo.department}</td>
+                                    <td className="px-4 py-2 text-right text-gray-900">{wo.target_qty.toLocaleString()}</td>
+                                    <td className="px-4 py-2 text-right text-gray-900">{wo.output_qty.toLocaleString()}</td>
+                                    <td className="px-4 py-2 text-center">
+                                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                        wo.status === 'Done' || wo.status === 'DONE' || wo.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                                        wo.status === 'In Progress' || wo.status === 'RUNNING' ? 'bg-blue-100 text-blue-800' :
+                                        wo.status === 'Blocked' ? 'bg-red-100 text-red-800' :
+                                        'bg-gray-100 text-gray-600'
+                                      }`}>{wo.status}</span>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

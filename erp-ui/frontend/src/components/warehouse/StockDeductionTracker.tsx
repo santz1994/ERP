@@ -58,8 +58,8 @@ export const StockDeductionTracker: React.FC<StockDeductionTrackerProps> = ({
   const { data: workOrders } = useQuery({
     queryKey: ['work-orders-for-deduction'],
     queryFn: async () => {
-      const response = await apiClient.get('/work-orders?state=RUNNING,COMPLETED');
-      return response.data;
+      const data = await apiClient.get('/work-orders?state=RUNNING,COMPLETED');
+      return Array.isArray(data) ? data : (data?.items || []);
     }
   });
 
@@ -74,8 +74,8 @@ export const StockDeductionTracker: React.FC<StockDeductionTrackerProps> = ({
         params.append('department', selectedDepartment);
       }
       params.append('date_range', dateRange);
-      const response = await apiClient.get(`/material-allocation/deductions?${params}`);
-      return response.data as StockDeduction[];
+      const data = await apiClient.get(`/material-allocation/deductions?${params}`);
+      return (Array.isArray(data) ? data : []) as StockDeduction[];
     }
   });
 

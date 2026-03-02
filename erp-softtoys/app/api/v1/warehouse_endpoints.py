@@ -6,7 +6,7 @@ from datetime import datetime
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.core.dependencies import get_db, require_permission
 from app.api.v1.warehouse.material_debt import router as material_debt_router
@@ -1185,9 +1185,7 @@ async def get_locations(
         {
             "id": loc.id,
             "name": loc.name,
-            "location_type": loc.location_type.value if loc.location_type else None,
-            "barcode": loc.barcode,
-            "parent_id": loc.parent_id,
+            "location_type": loc.type.value if loc.type else None,
             "is_active": loc.is_active
         }
         for loc in locations
@@ -1198,51 +1196,51 @@ async def get_locations(
 async def get_stock_quants(
     product_id: int = Query(None),
     location_id: int = Query(None),
+    search: str = Query(None),
+    low_stock: bool = Query(False),
+    limit: int = Query(500),
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.VIEW))
 ):
-    """Get stock quants (inventory records).
-    
-    **Required Permission**: warehouse.view
-    
-    **Query Parameters**:
-    - `product_id`: Filter by product ID
-    - `location_id`: Filter by location ID
-    
-    **Returns**: List of stock quant records with availability info
-    """
-    query = db.query(StockQuant)
-    
+    """Get stock quants with eager loading (no N+1)."""
+    query = (
+        db.query(StockQuant)
+        .options(joinedload(StockQuant.product), joinedload(StockQuant.location))
+    )
+
     if product_id:
         query = query.filter(StockQuant.product_id == product_id)
-    
     if location_id:
         query = query.filter(StockQuant.location_id == location_id)
-    
-    quants = query.all()
-    
+    if search:
+        query = query.join(Product, StockQuant.product_id == Product.id).filter(
+            (Product.code.ilike(f"%{search}%")) | (Product.name.ilike(f"%{search}%"))
+        )
+
+    quants = query.limit(limit).all()
+
     result = []
     for quant in quants:
-        # Get product info
-        product = db.query(Product).filter(Product.id == quant.product_id).first()
-        
-        # Get location info
-        location = db.query(Location).filter(Location.id == quant.location_id).first()
-        
+        p = quant.product
+        loc = quant.location
+        qty_on = float(quant.qty_on_hand or 0)
+        qty_res = float(quant.qty_reserved or 0)
+        avail = qty_on - qty_res
+        if low_stock and avail > 0 and avail >= qty_on * 0.3:
+            continue
         result.append({
             "id": quant.id,
             "product_id": quant.product_id,
-            "product_code": product.code if product else None,
-            "product_name": product.name if product else None,
+            "product_code": p.code if p else None,
+            "product_name": p.name if p else None,
             "location_id": quant.location_id,
-            "location_name": location.name if location else None,
-            "qty_on_hand": float(quant.qty_on_hand) if quant.qty_on_hand else 0,
-            "qty_reserved": float(quant.qty_reserved) if quant.qty_reserved else 0,
-            "available_quantity": float(quant.qty_on_hand - quant.qty_reserved) if quant.qty_on_hand and quant.qty_reserved else 0,
-            "lot_id": quant.lot_id,
-            "package_id": quant.package_id
+            "location_name": loc.name if loc else None,
+            "qty_on_hand": qty_on,
+            "qty_reserved": qty_res,
+            "available_quantity": avail,
+            "lot_id": quant.lot_id
         })
-    
+
     return result
 
 

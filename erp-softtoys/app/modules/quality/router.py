@@ -2,12 +2,14 @@
 Endpoints for lab testing, inline QC, metal detector checks, quality analytics.
 """
 
-
+import datetime
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user, get_db
-from app.core.models.quality import QCInspection
+from app.core.models.quality import QCInspection, QCStatus
+from app.core.models.manufacturing import ReworkRequest, ReworkStatus
 from app.modules.quality.models import PerformInlineQCRequest, PerformLabTestRequest
 from app.modules.quality.services import QualityService
 
@@ -321,26 +323,178 @@ def get_quality_stats(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> dict:
-    """Get quality control statistics and metrics.
+    """Get quality control statistics from real database.
 
     Returns:
-    - total_tests: Total tests performed
-    - pass_rate: Percentage of passed tests
-    - fail_count: Number of failed tests
-    - critical_failures: Critical failures requiring action
-    - average_testing_time: Average time per test
-
+    - total_inspections: Total inspections performed
+    - passed: Number passed
+    - failed: Number failed
+    - pass_rate: Percentage passed
+    - today_inspections: Count of inspections today
     """
-    return {
-        "total_tests": 247,
-        "passed": 235,
-        "failed": 12,
-        "pass_rate": 95.1,
-        "critical_failures": 2,
-        "average_testing_time": 8.5,
-        "trending": "up",
-        "last_updated": "2026-01-22T10:30:00Z"
-    }
+    try:
+        today = datetime.date.today()
+        today_start = datetime.datetime.combine(today, datetime.time.min)
+
+        total = db.query(func.count(QCInspection.id)).scalar() or 0
+        passed = db.query(func.count(QCInspection.id)).filter(
+            QCInspection.status == QCStatus.PASS
+        ).scalar() or 0
+        failed = db.query(func.count(QCInspection.id)).filter(
+            QCInspection.status == QCStatus.FAIL
+        ).scalar() or 0
+        today_count = db.query(func.count(QCInspection.id)).filter(
+            QCInspection.created_at >= today_start
+        ).scalar() or 0
+
+        pass_rate = round((passed / total * 100), 1) if total > 0 else 0.0
+
+        return {
+            "total_inspections": total,
+            "passed": passed,
+            "failed": failed,
+            "pass_rate": pass_rate,
+            "today_inspections": today_count,
+        }
+    except Exception as e:
+        return {
+            "total_inspections": 0,
+            "passed": 0,
+            "failed": 0,
+            "pass_rate": 0.0,
+            "today_inspections": 0,
+        }
+
+
+@router.get("/rework-stats")
+def get_rework_stats(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> dict:
+    """Get rework dashboard statistics from real database.
+
+    Returns:
+    - queue_count: Rework items pending or approved (not started)
+    - in_progress_count: Items currently being reworked
+    - completed_today: Items completed today
+    - recovery_rate: % of verified items that passed (good qty / total defect qty)
+    - avg_repair_time_hours: Average hours from start to completion
+    - copq_this_month: Total cost of poor quality this calendar month
+    """
+    try:
+        today = datetime.date.today()
+        today_start = datetime.datetime.combine(today, datetime.time.min)
+        month_start = datetime.datetime(today.year, today.month, 1)
+
+        queue_count = db.query(func.count(ReworkRequest.id)).filter(
+            ReworkRequest.status.in_([ReworkStatus.PENDING, ReworkStatus.APPROVED])
+        ).scalar() or 0
+
+        in_progress_count = db.query(func.count(ReworkRequest.id)).filter(
+            ReworkRequest.status == ReworkStatus.IN_PROGRESS
+        ).scalar() or 0
+
+        completed_today = db.query(func.count(ReworkRequest.id)).filter(
+            ReworkRequest.status == ReworkStatus.COMPLETED,
+            ReworkRequest.rework_completed_at >= today_start
+        ).scalar() or 0
+
+        # Recovery rate: sum(verified_good_qty) / sum(defect_qty) for verified items
+        verified = db.query(
+            func.coalesce(func.sum(ReworkRequest.verified_good_qty), 0),
+            func.coalesce(func.sum(ReworkRequest.defect_qty), 0)
+        ).filter(ReworkRequest.verified_at.isnot(None)).one()
+        good_qty = float(verified[0])
+        total_defect = float(verified[1])
+        recovery_rate = round((good_qty / total_defect * 100), 1) if total_defect > 0 else 0.0
+
+        # Average repair time (hours) for completed items
+        completed_with_times = db.query(
+            ReworkRequest.rework_started_at,
+            ReworkRequest.rework_completed_at
+        ).filter(
+            ReworkRequest.rework_started_at.isnot(None),
+            ReworkRequest.rework_completed_at.isnot(None)
+        ).all()
+        if completed_with_times:
+            total_hours = sum(
+                (r.rework_completed_at - r.rework_started_at).total_seconds() / 3600
+                for r in completed_with_times
+            )
+            avg_repair_time_hours = round(total_hours / len(completed_with_times), 1)
+        else:
+            avg_repair_time_hours = 0.0
+
+        # COPQ this month
+        copq = db.query(func.coalesce(func.sum(ReworkRequest.total_cost), 0)).filter(
+            ReworkRequest.created_at >= month_start
+        ).scalar() or 0
+
+        return {
+            "queue_count": queue_count,
+            "in_progress_count": in_progress_count,
+            "completed_today": completed_today,
+            "recovery_rate": recovery_rate,
+            "avg_repair_time_hours": avg_repair_time_hours,
+            "copq_this_month": float(copq),
+        }
+    except Exception:
+        return {
+            "queue_count": 0,
+            "in_progress_count": 0,
+            "completed_today": 0,
+            "recovery_rate": 0.0,
+            "avg_repair_time_hours": 0.0,
+            "copq_this_month": 0.0,
+        }
+
+
+@router.get("/rework")
+def get_rework_list(
+    status: str | None = None,
+    limit: int = 50,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> list:
+    """Get list of rework requests.
+
+    Query params:
+    - status: filter by status (Pending, Approved, In Progress, Completed)
+    - limit: max items to return
+    """
+    try:
+        q = db.query(ReworkRequest)
+        if status:
+            # Map frontend status strings to enum values
+            status_map = {
+                "Pending": ReworkStatus.PENDING,
+                "PENDING": ReworkStatus.PENDING,
+                "Approved": ReworkStatus.APPROVED,
+                "APPROVED": ReworkStatus.APPROVED,
+                "In Progress": ReworkStatus.IN_PROGRESS,
+                "IN_PROGRESS": ReworkStatus.IN_PROGRESS,
+                "Completed": ReworkStatus.COMPLETED,
+                "COMPLETED": ReworkStatus.COMPLETED,
+            }
+            mapped = status_map.get(status)
+            if mapped:
+                q = q.filter(ReworkRequest.status == mapped)
+        items = q.order_by(ReworkRequest.created_at.desc()).limit(limit).all()
+        return [
+            {
+                "id": r.id,
+                "work_order_id": r.spk_id,
+                "defect_type": r.defect_notes or "",
+                "severity": "Major",
+                "status": r.status.value if r.status else "Unknown",
+                "assigned_to": r.rework_operator_id,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+                "completed_at": r.rework_completed_at.isoformat() if r.rework_completed_at else None,
+            }
+            for r in items
+        ]
+    except Exception:
+        return []
 
 
 @router.get("/inspections")

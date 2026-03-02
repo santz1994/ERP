@@ -26,16 +26,16 @@ from pathlib import Path
 from collections import defaultdict
 from decimal import Decimal
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Tuple
 
-import pandas as pd
+import pandas as pd  # type: ignore[import-untyped]
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
-from sqlalchemy.orm import Session
-from app.core.database import SessionLocal
-from app.core.models.products import Product, ProductType, UOM, Category
-from app.core.models.bom import BOMHeader, BOMDetail, BOMType
+from sqlalchemy.orm import Session  # noqa: E402
+from app.core.database import SessionLocal  # noqa: E402
+from app.core.models.products import Product, ProductType, Category  # noqa: E402
+from app.core.models.bom import BOMHeader, BOMDetail, BOMType  # noqa: E402
 
 # ─────────────────────────────────────────────
 # Constants
@@ -76,7 +76,7 @@ UOM_MAP = {
     "PCE":  "Pcs",  "PCS":  "Pcs",  "PIECE": "Pcs",  "EA": "Pcs",
     "YARD": "Yard", "YD":   "Yard",
     "KG":   "Kg",   "KILO": "Kg",
-    "M":    "Meter","METER":"Meter", "MTR":  "Meter",
+    "M":    "Meter", "METER": "Meter", "MTR":  "Meter",
     "ROLL": "Roll",
     "CM":   "Cm",
 }
@@ -85,13 +85,14 @@ UOM_MAP = {
 # Helpers
 # ─────────────────────────────────────────────
 
+
 def ts() -> str:
     return datetime.now().strftime("%H:%M:%S")
 
 
 def log(msg: str, level: str = "INFO"):
     icons = {"INFO": "ℹ️", "OK": "✅", "WARN": "⚠️", "ERR": "❌", "HEAD": "📋"}
-    print(f"[{ts()}] {icons.get(level,'ℹ️')} {msg}")
+    print(f"[{ts()}] {icons.get(level, 'ℹ️')} {msg}")
 
 
 def parse_code_name(raw: str) -> Tuple[str, str]:
@@ -120,11 +121,14 @@ def resolve_categories(db: Session):
     for name in CAT_MAP:
         cat = db.query(Category).filter(Category.name == name).first()
         if not cat:
-            cat = Category(name=name, description=f"Auto-created from BOM import: {name}")
+            cat = Category(
+                name=name,
+                description=f"Auto-created from BOM import: {name}",
+            )
             db.add(cat)
             db.flush()
             log(f"Created category '{name}'", "OK")
-        CAT_MAP[name] = cat.id
+        CAT_MAP[name] = cat.id  # type: ignore[assignment]
 
 
 def infer_product_type(product_str: str) -> str:
@@ -162,9 +166,9 @@ def get_or_create_product(
     else:
         # Update name/type if it was a placeholder
         if product.name != name[:255]:
-            product.name = name[:255]
+            product.name = name[:255]  # type: ignore[assignment]
         if product.type != p_type:
-            product.type = p_type
+            product.type = p_type  # type: ignore[assignment]
         db.flush()
     return product
 
@@ -182,7 +186,7 @@ def load_bom_files() -> Dict[str, pd.DataFrame]:
             continue
         df = pd.read_excel(path)
 
-        # Forward-fill 'Product' column (rows belonging to same BOM have blank Product)
+        # Forward-fill 'Product' column (blank rows belong to the same BOM)
         df["Product"] = df["Product"].ffill()
         df["Product/Name"] = df["Product/Name"].ffill()
         df["Quantity"] = df["Quantity"].ffill()
@@ -191,7 +195,8 @@ def load_bom_files() -> Dict[str, pd.DataFrame]:
         # Keep only rows that have a BOM line component
         df = df[df["BoM Lines/Component"].notna()].copy()
 
-        log(f"Loaded {name}: {len(df)} BOM lines, {df['Product'].nunique()} products", "OK")
+        product_count = df['Product'].nunique()
+        log(f"Loaded {name}: {len(df)} BOM lines, {product_count} products", "OK")
         dfs[name] = df
     return dfs
 
@@ -200,7 +205,10 @@ def load_bom_files() -> Dict[str, pd.DataFrame]:
 # Step 2 & 3: Upsert products + create department BOMs
 # ─────────────────────────────────────────────
 
-def import_department_boms(db: Session, dfs: Dict[str, pd.DataFrame]) -> Dict[str, int]:
+def import_department_boms(
+    db: Session,
+    dfs: Dict[str, pd.DataFrame],
+) -> Dict[str, int]:
     """Import all products and create BOMHeader/BOMDetail per department.
 
     Returns dict: product_code → product_id
@@ -224,8 +232,8 @@ def import_department_boms(db: Session, dfs: Dict[str, pd.DataFrame]) -> Dict[st
 
         # Group by Product
         for product_str, grp in df.groupby("Product"):
-            product_name_str = str(grp["Product/Name"].iloc[0]).strip()
-            qty_output = float(grp["Quantity"].iloc[0]) if pd.notna(grp["Quantity"].iloc[0]) else 1.0
+            qty_raw = grp["Quantity"].iloc[0]
+            qty_output = float(qty_raw) if pd.notna(qty_raw) else 1.0
             uom_str = normalize_uom(str(grp["Unit of Measure"].iloc[0]))
 
             # Parse product code/name
@@ -244,10 +252,13 @@ def import_department_boms(db: Session, dfs: Dict[str, pd.DataFrame]) -> Dict[st
                 cat_id = wip_cat_id
 
             # Upsert parent product
-            parent = get_or_create_product(db, code, name, p_type, uom_str, cat_id)
-            product_id_map[code] = parent.id
+            parent = get_or_create_product(
+                db, code, name, p_type, uom_str,
+                cat_id,  # type: ignore[arg-type]
+            )
+            product_id_map[code] = parent.id  # type: ignore[assignment]
 
-            # Delete existing BOMHeader for this product + dept combination to avoid duplication
+            # Delete existing BOMHeader for this product + dept to avoid duplication
             # (keyed by product_id + revision tag)
             # Revision tag must fit VARCHAR(10)
             dept_key = {
@@ -290,7 +301,9 @@ def import_department_boms(db: Session, dfs: Dict[str, pd.DataFrame]) -> Dict[st
                 comp_uom_raw = row["BoM Lines/Product Unit of Measure"]
 
                 comp_qty = float(comp_qty_raw) if pd.notna(comp_qty_raw) else 1.0
-                comp_uom = normalize_uom(str(comp_uom_raw) if pd.notna(comp_uom_raw) else "Pcs")
+                comp_uom = normalize_uom(
+                    str(comp_uom_raw) if pd.notna(comp_uom_raw) else "Pcs"
+                )
 
                 comp_code, comp_name = parse_code_name(comp_str)
 
@@ -304,9 +317,10 @@ def import_department_boms(db: Session, dfs: Dict[str, pd.DataFrame]) -> Dict[st
                     comp_cat_id = raw_cat_id
 
                 comp_product = get_or_create_product(
-                    db, comp_code, comp_name, comp_type, comp_uom, comp_cat_id
+                    db, comp_code, comp_name, comp_type, comp_uom,
+                    comp_cat_id,  # type: ignore[arg-type]
                 )
-                product_id_map[comp_code] = comp_product.id
+                product_id_map[comp_code] = comp_product.id  # type: ignore[assignment]
 
                 bom_detail = BOMDetail(
                     bom_header_id=bom_header.id,
@@ -321,7 +335,10 @@ def import_department_boms(db: Session, dfs: Dict[str, pd.DataFrame]) -> Dict[st
         db.commit()
         log(f"  ✅ {dept_name}: committed", "OK")
 
-    log(f"\nDepartment BOMs created: {bom_counter} headers / {detail_counter} details", "OK")
+    log(
+        f"\nDept BOMs: {bom_counter} headers / {detail_counter} details",
+        "OK",
+    )
     return product_id_map
 
 
@@ -329,7 +346,7 @@ def import_department_boms(db: Session, dfs: Dict[str, pd.DataFrame]) -> Dict[st
 # Step 4: Build consolidated FLAT BOMs for FINISH_GOOD
 # ─────────────────────────────────────────────
 
-def build_consolidated_bom(db: Session, product_id_map: Dict[str, int]):
+def build_consolidated_bom(db: Session, _product_id_map: Dict[str, int]):
     """
     For every FINISH_GOOD article, recursively walk the department BOMs
     and collect all leaf RAW_MATERIAL components (aggregated quantities).
@@ -343,7 +360,7 @@ def build_consolidated_bom(db: Session, product_id_map: Dict[str, int]):
 
     articles = (
         db.query(Product)
-        .filter(Product.type == ProductType.FINISH_GOOD, Product.is_active == True)
+        .filter(Product.type == ProductType.FINISH_GOOD, Product.is_active)
         .all()
     )
     log(f"Found {len(articles)} FINISH_GOOD articles to process")
@@ -353,7 +370,9 @@ def build_consolidated_bom(db: Session, product_id_map: Dict[str, int]):
 
     for article in articles:
         # Recursively collect raw materials
-        raw_materials = _collect_raw_materials(db, article.id, qty_multiplier=1.0, visited=set())
+        raw_materials = _collect_raw_materials(
+            db, int(article.id), qty_multiplier=1.0, visited=set()
+        )
 
         if not raw_materials:
             skipped += 1
@@ -400,7 +419,10 @@ def build_consolidated_bom(db: Session, product_id_map: Dict[str, int]):
         if created % 50 == 0:
             log(f"  Progress: {created}/{len(articles)} articles processed")
 
-    log(f"Consolidated BOMs created: {created} | Skipped (no raw materials): {skipped}", "OK")
+    log(
+        f"Consolidated BOMs: {created} created, {skipped} skipped (no raw materials)",
+        "OK",
+    )
 
 
 def _collect_raw_materials(
@@ -424,7 +446,7 @@ def _collect_raw_materials(
         db.query(BOMHeader)
         .filter(
             BOMHeader.product_id == product_id,
-            BOMHeader.is_active == True,
+            BOMHeader.is_active,
             BOMHeader.revision != "PURCH-1.0",
         )
         .all()
@@ -434,20 +456,28 @@ def _collect_raw_materials(
         qty_out = float(bom.qty_output) if bom.qty_output else 1.0
         scale = qty_multiplier / max(qty_out, 1.0)
 
-        details = db.query(BOMDetail).filter(BOMDetail.bom_header_id == bom.id).all()
+        details = (
+            db.query(BOMDetail)
+            .filter(BOMDetail.bom_header_id == bom.id)
+            .all()
+        )
         for detail in details:
-            comp = db.query(Product).filter(Product.id == detail.component_id).first()
+            comp = (
+                db.query(Product)
+                .filter(Product.id == detail.component_id)
+                .first()
+            )
             if not comp:
                 continue
 
             required_qty = float(detail.qty_needed) * scale
 
             if comp.type == ProductType.RAW_MATERIAL:
-                result[comp.id] += required_qty
+                result[int(comp.id)] += required_qty
             elif comp.type == ProductType.WIP:
                 # Recurse into WIP
                 sub_materials = _collect_raw_materials(
-                    db, comp.id, required_qty, visited.copy()
+                    db, int(comp.id), required_qty, visited.copy()
                 )
                 for sub_id, sub_qty in sub_materials.items():
                     result[sub_id] += sub_qty
@@ -489,19 +519,19 @@ def main():
         log("=" * 60, "HEAD")
 
         products = db.query(Product).all()
-        fg  = sum(1 for p in products if p.type == ProductType.FINISH_GOOD)
+        fg = sum(1 for p in products if p.type == ProductType.FINISH_GOOD)
         wip = sum(1 for p in products if p.type == ProductType.WIP)
         raw = sum(1 for p in products if p.type == ProductType.RAW_MATERIAL)
         bom_total = db.query(BOMHeader).count()
         detail_total = db.query(BOMDetail).count()
         purch_boms = db.query(BOMHeader).filter(BOMHeader.revision == "PURCH-1.0").count()
 
-        log(f"Products — FINISH_GOOD: {fg} | WIP: {wip} | RAW_MATERIAL: {raw}", "OK")
-        log(f"BOM Headers total: {bom_total}  (PURCH-1.0: {purch_boms})", "OK")
+        log(f"Products — FG: {fg} | WIP: {wip} | RAW: {raw}", "OK")
+        log(f"BOM Headers: {bom_total} total ({purch_boms} PURCH-1.0)", "OK")
         log(f"BOM Details total: {detail_total}", "OK")
         log("✅ IMPORT COMPLETE", "OK")
 
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         db.rollback()
         import traceback
         log(f"FATAL ERROR: {e}", "ERR")

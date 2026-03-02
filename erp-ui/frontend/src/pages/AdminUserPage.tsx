@@ -89,7 +89,7 @@ const AdminUserPage: React.FC = () => {
     try {
       const response = await apiClient.get('/admin/users')
       // Ensure users is always an array, even if API returns unexpected data
-      setUsers(Array.isArray(response.data) ? response.data : [])
+      setUsers(Array.isArray(response) ? response : [])
     } catch (error) {
       console.error('Failed to fetch users:', error)
       // Set to empty array on error to prevent undefined issues

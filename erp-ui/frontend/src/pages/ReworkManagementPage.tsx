@@ -65,25 +65,16 @@ const ReworkManagementPage: React.FC = () => {
     try {
       // Fetch rework stats
       const statsRes = await apiClient.get('/quality/rework-stats')
-      if (statsRes.data) {
-        setStats(statsRes.data)
+      if (statsRes) {
+        setStats(statsRes)
       }
       
       // Fetch recent rework items (last 10 in queue)
       const itemsRes = await apiClient.get('/quality/rework?status=Pending&limit=10')
-      const itemsData = Array.isArray(itemsRes.data) ? itemsRes.data : (itemsRes.data?.data || [])
+      const itemsData = Array.isArray(itemsRes) ? itemsRes : (itemsRes?.data || [])
       setReworkItems(itemsData)
     } catch (error) {
       console.error('Failed to fetch rework data:', error)
-      // Use mock data for demo
-      setStats({
-        queue_count: 3,
-        in_progress_count: 2,
-        completed_today: 5,
-        recovery_rate: 92.5,
-        avg_repair_time_hours: 2.3,
-        copq_this_month: 1250000
-      })
       setReworkItems([])
     } finally {
       setLoading(false)

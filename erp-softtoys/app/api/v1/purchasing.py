@@ -874,6 +874,34 @@ def request_po_deletion(
     }
 
 
+@router.post("/purchase-orders/{po_id}/generate-mo", status_code=200)
+def generate_mo_for_po(
+    po_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission(ModuleName.PURCHASING, Permission.UPDATE)),
+):
+    """Manually trigger MO + WO creation for a PO KAIN that has no linked MO.
+    
+    Used when PO was marked Done/Received without going through Sent (which auto-creates MO).
+    """
+    po = db.query(PurchaseOrder).filter(PurchaseOrder.id == po_id).first()
+    if not po:
+        raise HTTPException(404, "Purchase Order not found")
+    if not po.po_type or po.po_type.value != "KAIN":
+        raise HTTPException(400, "Only PO KAIN can generate Manufacturing Orders")
+    if not po.article_id:
+        raise HTTPException(400, "PO KAIN has no article_id — cannot generate MO")
+
+    mo_info = _auto_trigger_mo_wo(db, po, current_user.id)
+    if mo_info is None:
+        raise HTTPException(400, "MO generation failed — check PO data")
+
+    return {
+        "message": f"Manufacturing Order generated for {po.po_number}",
+        "mo_info": mo_info,
+    }
+
+
 @router.get("/purchase-orders/delete-requests")
 def list_delete_requests(
     db: Session = Depends(get_db),
@@ -1089,6 +1117,51 @@ def get_purchase_order_detail(
 
     remaining_qty = max(0, (po.article_qty or 0) - total_allocated)
 
+    # ── Linked Manufacturing Order (PO KAIN only) ────────────────────────────
+    linked_mo_data = None
+    if po.po_type and po.po_type.value == "KAIN":
+        from sqlalchemy.orm import joinedload as _jl
+        mo = None
+        # 1. Try via direct FK
+        if po.linked_mo_id:
+            mo = db.query(ManufacturingOrder).filter(
+                ManufacturingOrder.id == po.linked_mo_id
+            ).options(_jl(ManufacturingOrder.work_orders)).first()
+        # 2. Try by po_fabric_id (newer field)
+        if not mo:
+            mo = db.query(ManufacturingOrder).filter(
+                ManufacturingOrder.po_fabric_id == po.id
+            ).options(_jl(ManufacturingOrder.work_orders)).first()
+        # 3. Fallback: legacy po_id
+        if not mo:
+            mo = db.query(ManufacturingOrder).filter(
+                ManufacturingOrder.po_id == po.id
+            ).options(_jl(ManufacturingOrder.work_orders)).first()
+
+        if mo:
+            linked_mo_data = {
+                "id": mo.id,
+                "batch_number": mo.batch_number,
+                "state": mo.state.value if mo.state else None,
+                "trigger_mode": mo.trigger_mode or "PARTIAL",
+                "qty_planned": float(mo.qty_planned or 0),
+                "qty_produced": float(mo.qty_produced or 0),
+                "routing_type": mo.routing_type.value if mo.routing_type else None,
+                "created_at": mo.created_at.isoformat() if mo.created_at else None,
+                "work_orders": [
+                    {
+                        "id": wo.id,
+                        "wo_number": wo.wo_number or f"WO-{wo.id}",
+                        "department": wo.department.value if wo.department else None,
+                        "status": wo.status.value if wo.status else None,
+                        "target_qty": float(wo.target_qty or wo.input_qty or 0),
+                        "output_qty": float(wo.output_qty or 0),
+                        "sequence": wo.sequence,
+                    }
+                    for wo in sorted(mo.work_orders, key=lambda w: w.sequence or 99)
+                ]
+            }
+
     return {
         "id": po.id,
         "po_number": po.po_number,
@@ -1114,6 +1187,8 @@ def get_purchase_order_detail(
         "linked_labels": linked_labels,
         "total_allocated": total_allocated,
         "remaining_qty": remaining_qty,
+        # Manufacturing Order (only for PO KAIN)
+        "linked_mo": linked_mo_data,
     }
 
 

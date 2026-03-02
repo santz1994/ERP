@@ -1,5 +1,6 @@
 """Permission Service for PBAC (Permission-Based Access Control)
-Provides efficient permission checking with Redis caching and role hierarchy support.
+Provides efficient permission checking with Redis caching
+and role hierarchy support.
 
 Session 13.1 - Week 3: PBAC Implementation
 """
@@ -11,7 +12,7 @@ import redis
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.core.models.users import User, UserRole
+from app.core.models.users import User, UserRole  # pylint: disable=import-error
 
 logger = logging.getLogger(__name__)
 
@@ -31,13 +32,13 @@ class PermissionService:
         self.redis_client = redis_client
         self.cache_ttl = 300  # 5 minutes cache TTL
 
-        # Role hierarchy: higher roles inherit permissions from lower roles
+        # Role hierarchy: higher roles inherit from lower roles
         # 22 roles total (Session 13.1 - PBAC Implementation)
         self.role_hierarchy = {
-            # Level 0: System Development (bypass all checks in has_permission)
+            # Level 0: System Development (bypass all checks)
             UserRole.DEVELOPER: [UserRole.DEVELOPER],
 
-            # Level 1: System Administration (bypass all checks in has_permission)
+            # Level 1: System Administration (bypass all checks)
             UserRole.SUPERADMIN: [UserRole.SUPERADMIN],
 
             # Level 2: Top Management (Approvers - inherit all operational permissions)
@@ -48,14 +49,30 @@ class PermissionService:
             UserRole.ADMIN: [UserRole.ADMIN],
 
             # Level 4: Department Management
-            UserRole.PPIC_MANAGER: [UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN],
+            UserRole.PPIC_MANAGER: [
+                UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN,
+            ],
             UserRole.PPIC_ADMIN: [UserRole.PPIC_ADMIN],
-            UserRole.SPV_CUTTING: [UserRole.SPV_CUTTING, UserRole.ADMIN_CUTTING, UserRole.ADMIN_EMBROIDERY],
-            UserRole.SPV_SEWING: [UserRole.SPV_SEWING, UserRole.ADMIN_SEWING],
-            UserRole.SPV_FINISHING: [UserRole.SPV_FINISHING, UserRole.ADMIN_FINISHING, UserRole.ADMIN_PACKING],
-            UserRole.WAREHOUSE_ADMIN: [UserRole.WAREHOUSE_ADMIN, UserRole.WAREHOUSE_OP],
+            UserRole.SPV_CUTTING: [
+                UserRole.SPV_CUTTING,
+                UserRole.ADMIN_CUTTING,
+                UserRole.ADMIN_EMBROIDERY,
+            ],
+            UserRole.SPV_SEWING: [
+                UserRole.SPV_SEWING, UserRole.ADMIN_SEWING,
+            ],
+            UserRole.SPV_FINISHING: [
+                UserRole.SPV_FINISHING,
+                UserRole.ADMIN_FINISHING,
+                UserRole.ADMIN_PACKING,
+            ],
+            UserRole.WAREHOUSE_ADMIN: [
+                UserRole.WAREHOUSE_ADMIN, UserRole.WAREHOUSE_OP,
+            ],
             UserRole.QC_LAB: [UserRole.QC_LAB, UserRole.QC_INSPECTOR],
-            UserRole.PURCHASING_HEAD: [UserRole.PURCHASING_HEAD, UserRole.PURCHASING],
+            UserRole.PURCHASING_HEAD: [
+                UserRole.PURCHASING_HEAD, UserRole.PURCHASING,
+            ],
             UserRole.PURCHASING: [UserRole.PURCHASING],
 
             # Level 5: Department Administration (no inheritance)
@@ -90,7 +107,7 @@ class PermissionService:
         try:
             cached_value = self.redis_client.get(cache_key)
             if cached_value:
-                return cached_value.decode() == "1"
+                return cached_value.decode() == "1"  # type: ignore[union-attr]
         except Exception as e:
             logger.warning(f"Redis cache read failed: {e}")
 
@@ -152,13 +169,14 @@ class PermissionService:
     def _map_permission_code_to_role_permissions(
         self, permission_code: str
     ) -> tuple[str | None, str | None]:
-        """Convert permission code to (module, permission) for ROLE_PERMISSIONS lookup.
-        
+        """Convert permission code to (module, permission) enums.
+
         Args:
             permission_code: Permission code in format "module.action"
-        
+
         Returns:
-            Tuple of (ModuleName enum name, Permission enum name) or (None, None)
+            Tuple of (ModuleName enum name, Permission enum name)
+            or (None, None)
         """
         # Parse permission code: "admin.manage_users" -> ("admin", "manage_users")
         if '.' not in permission_code:
@@ -254,11 +272,14 @@ class PermissionService:
             return True
 
         # Import ROLE_PERMISSIONS from permissions module
-        from app.core.permissions import ROLE_PERMISSIONS, ModuleName, Permission
+        from app.core.permissions import (  # pylint: disable=import-error
+            ROLE_PERMISSIONS, ModuleName, Permission,
+        )
         
         # Map permission code to (module, permission) enums
-        module_enum_name, perm_enum_name = self._map_permission_code_to_role_permissions(
-            permission_code)
+        module_enum_name, perm_enum_name = (
+            self._map_permission_code_to_role_permissions(permission_code)
+        )
         
         if not module_enum_name or not perm_enum_name:
             if use_cache and cache_key:
@@ -276,8 +297,9 @@ class PermissionService:
         
         # Check if user's role has this permission in ROLE_PERMISSIONS dict
         has_perm = False
-        if user_role in ROLE_PERMISSIONS:
-            role_perms = ROLE_PERMISSIONS[user_role]
+        user_role_key = UserRole(user_role)  # type: ignore[arg-type]
+        if user_role_key in ROLE_PERMISSIONS:
+            role_perms = ROLE_PERMISSIONS[user_role_key]  # type: ignore[index]
             if module_enum in role_perms:
                 has_perm = perm_enum in role_perms[module_enum]
 
@@ -355,7 +377,9 @@ class PermissionService:
             return False
 
         # Get effective roles (including inherited)
-        effective_roles = self.get_effective_roles(user.role)
+        effective_roles = self.get_effective_roles(
+            UserRole(user.role),  # type: ignore[arg-type]
+        )
 
         # Check if any effective role matches required roles
         return any(role in required_roles for role in effective_roles)
@@ -372,8 +396,12 @@ class PermissionService:
             pattern = f"pbac:user:{user_id}:*"
             keys = self.redis_client.keys(pattern)
             if keys:
-                self.redis_client.delete(*keys)
-                logger.info(f"Invalidated {len(keys)} cache entries for user {user_id}")
+                keys_list = list(keys)  # type: ignore[arg-type]
+                self.redis_client.delete(*keys_list)
+                logger.info(
+                    "Invalidated %d cache entries for user %d",
+                    len(keys_list), user_id,
+                )
         except Exception as e:
             logger.warning(f"Cache invalidation failed: {e}")
 
@@ -395,7 +423,9 @@ class PermissionService:
             try:
                 cached = self.redis_client.get(cache_key)
                 if cached:
-                    return json.loads(cached.decode())
+                    return json.loads(  # type: ignore[union-attr]
+                        cached.decode()  # type: ignore[union-attr]
+                    )
             except Exception as e:
                 logger.warning(f"Cache read failed: {e}")
 
@@ -441,11 +471,11 @@ class PermissionService:
         if use_cache and self.redis_client:
             try:
                 self.redis_client.setex(
-                    cache_key,
+                    cache_key,  # type: ignore[possibly-undefined]
                     self.cache_ttl,
                     json.dumps(permissions)
                 )
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 logger.warning(f"Cache write failed: {e}")
 
         return permissions

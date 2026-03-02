@@ -80,8 +80,8 @@ export const StockManagement: React.FC<StockManagementProps> = ({
   const { data: locations } = useQuery({
     queryKey: ['warehouse-locations'],
     queryFn: async () => {
-      const response = await apiClient.get('/warehouse/locations');
-      return response.data;
+      const data = await apiClient.get('/warehouse/locations');
+      return Array.isArray(data) ? data : [];
     }
   });
 
@@ -94,8 +94,8 @@ export const StockManagement: React.FC<StockManagementProps> = ({
       if (selectedProduct) params.append('product_id', selectedProduct.toString());
       if (searchTerm) params.append('search', searchTerm);
       if (showLowStock) params.append('low_stock', 'true');
-      const response = await apiClient.get(`/warehouse/stock-quants?${params}`);
-      return response.data as StockQuant[];
+      const data = await apiClient.get(`/warehouse/stock-quants?${params}`);
+      return (Array.isArray(data) ? data : []) as StockQuant[];
     },
     refetchInterval: 10000 // Refresh every 10 seconds
   });
@@ -107,8 +107,8 @@ export const StockManagement: React.FC<StockManagementProps> = ({
       const params = new URLSearchParams();
       if (selectedProduct) params.append('product_id', selectedProduct.toString());
       params.append('limit', '50');
-      const response = await apiClient.get(`/warehouse/stock-moves?${params}`);
-      return response.data as StockMove[];
+      const data = await apiClient.get(`/warehouse/stock-moves?${params}`);
+      return (Array.isArray(data) ? data : []) as StockMove[];
     },
     enabled: viewMode === 'moves'
   });
@@ -117,9 +117,9 @@ export const StockManagement: React.FC<StockManagementProps> = ({
   const { data: products } = useQuery({
     queryKey: ['products-for-stock'],
     queryFn: async () => {
-      const response = await apiClient.get('/admin/products');
-      const stockData = response.data || { products: [] };
-      return stockData.products || [];
+      const data = await apiClient.get('/admin/products');
+      if (Array.isArray(data)) return data;
+      return data?.products || [];
     }
   });
 
