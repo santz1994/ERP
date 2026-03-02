@@ -27,6 +27,7 @@ import { cn, formatDate, formatNumber, calculatePercentage } from '../../lib/uti
 
 interface MOFilter {
   status?: 'DRAFT' | 'PARTIAL' | 'RELEASED' | 'COMPLETED';
+  moType?: 'BUYER' | 'PRODUCTION';
   articleCode?: string;
   week?: string;
   search?: string;
@@ -40,12 +41,16 @@ interface MO {
   articleName: string;
   targetQty: number;
   actualQty: number;
-  week?: string; // Inherited from PO Label
-  destination?: string; // Inherited from PO Label
+  week?: string;
+  destination?: string;
   status: 'DRAFT' | 'PARTIAL' | 'RELEASED' | 'COMPLETED';
+  moType: 'BUYER' | 'PRODUCTION';   // BUYER = fixed ref; PRODUCTION = operational
+  isQtyLocked: boolean;             // true for BUYER MOs (qty fixed to PO)
+  buyerMoId?: number;               // for PRODUCTION MOs: linked BUYER MO id
   daysRemaining: number;
-  poKainNumber?: string; // TRIGGER 1
-  poLabelNumber?: string; // TRIGGER 2
+  poKainNumber: string;             // Always set — MO always references a PO KAIN
+  poKainId: number;
+  poLabelNumber?: string;
   createdAt: string;
   createdBy: string;
 }
@@ -60,6 +65,22 @@ export default function MOListPage() {
     queryFn: () => api.ppic.getMOs(filters),
     refetchInterval: 30000, // Refresh every 30 seconds for real-time updates
   });
+
+  // MO type badge
+  const getMoTypeBadge = (mo: MO) => {
+    if (mo.moType === 'BUYER') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-purple-100 text-purple-800 border border-purple-300">
+          🔒 BUYER
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-300">
+        ⚙️ PRODUKSI
+      </span>
+    );
+  };
 
   // Status badge helper
   const getStatusBadge = (status: MO['status']) => {
@@ -114,9 +135,9 @@ export default function MOListPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
           { label: 'Total MOs', value: moList?.length || 0, color: 'bg-blue-500' },
+          { label: 'MO Buyer (Locked)', value: moList?.filter((mo: MO) => mo.moType === 'BUYER').length || 0, color: 'bg-purple-500' },
           { label: 'PARTIAL (Waiting Label)', value: moList?.filter((mo: MO) => mo.status === 'PARTIAL').length || 0, color: 'bg-yellow-500' },
           { label: 'RELEASED (Active)', value: moList?.filter((mo: MO) => mo.status === 'RELEASED').length || 0, color: 'bg-green-500' },
-          { label: 'COMPLETED', value: moList?.filter((mo: MO) => mo.status === 'COMPLETED').length || 0, color: 'bg-gray-500' },
         ].map((stat, idx) => (
           <Card key={idx} variant="bordered">
             <CardContent className="p-4">
@@ -141,7 +162,21 @@ export default function MOListPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            {/* Status Filter */}
+            {/* MO Type Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tipe MO</label>
+              <select
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={filters.moType || ''}
+                onChange={(e) => handleFilterChange('moType', e.target.value)}
+              >
+                <option value="">Semua Tipe</option>
+                <option value="BUYER">🔒 BUYER (Acuan)</option>
+                <option value="PRODUCTION">⚙️ PRODUKSI (Operasional)</option>
+              </select>
+            </div>
+
+            {/* Status Filter */}}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
               <select
@@ -228,6 +263,8 @@ export default function MOListPage() {
                 <thead className="bg-gray-50 border-b">
                   <tr>
                     <th className="px-4 py-3 text-left font-semibold text-gray-700">MO Number</th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-700">Tipe</th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-700">PO KAIN</th>
                     <th className="px-4 py-3 text-left font-semibold text-gray-700">Article</th>
                     <th className="px-4 py-3 text-center font-semibold text-gray-700">Target Qty</th>
                     <th className="px-4 py-3 text-center font-semibold text-gray-700">Progress</th>
@@ -253,6 +290,28 @@ export default function MOListPage() {
                           <p className="text-xs text-gray-500 mt-1">
                             {formatDate(mo.moDate)}
                           </p>
+                          {mo.isQtyLocked && (
+                            <p className="text-xs text-purple-600 mt-0.5">🔒 Qty terkunci ke PO</p>
+                          )}
+                        </td>
+
+                        {/* MO Type */}
+                        <td className="px-4 py-4">
+                          {getMoTypeBadge(mo)}
+                          {mo.moType === 'PRODUCTION' && mo.buyerMoId && (
+                            <p className="text-xs text-gray-400 mt-1">Ref #{mo.buyerMoId}</p>
+                          )}
+                        </td>
+
+                        {/* PO KAIN — always present */}
+                        <td className="px-4 py-4">
+                          <span className="text-sm font-medium text-gray-900">{mo.poKainNumber}</span>
+                          {mo.poLabelNumber && (
+                            <p className="text-xs text-gray-500 mt-0.5">Label: {mo.poLabelNumber}</p>
+                          )}
+                          {mo.week && (
+                            <p className="text-xs text-blue-600 mt-0.5">Wk {mo.week} • {mo.destination}</p>
+                          )}
                         </td>
 
                         {/* Article */}

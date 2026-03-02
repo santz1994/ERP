@@ -25,6 +25,7 @@ from app.api.v1 import (
 )
 # Import warehouse from warehouse_endpoints module
 from app.api.v1 import warehouse_endpoints as warehouse
+from app.api.v1 import masterdata, bom_management  # ✅ NEW: Masterdata & BOM CRUD
 
 # Import production module routers
 from app.api.v1.production import daily_input as production_daily_input
@@ -339,6 +340,18 @@ app.include_router(
 # QA Convenience Endpoints (for testing)
 app.include_router(
     qa_convenience_endpoints.router,
+    prefix=settings.API_PREFIX
+)
+
+# ✅ Masterdata CRUD (Products, Categories, Suppliers)
+app.include_router(
+    masterdata.router,
+    prefix=settings.API_PREFIX
+)
+
+# ✅ BOM Management CRUD
+app.include_router(
+    bom_management.router,
     prefix=settings.API_PREFIX
 )
 

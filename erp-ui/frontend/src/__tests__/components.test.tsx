@@ -113,7 +113,7 @@ describe('Sidebar Component', () => {
     // Mock user without admin permission
     const limitedAuthStore = {
       ...mockAuthStore,
-      user: { ...mockAuthStore.user, role: 'operator_cut' }
+      user: { ...mockAuthStore.user, role: 'Admin Cutting' }
     };
     
     const limitedPermissionStore = {

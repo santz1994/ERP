@@ -6,13 +6,14 @@ from .audit import AuditLog, SecurityLog, UserActivityLog
 from .bom import BOMDetail, BOMHeader
 from .exceptions import AlertLog, SegregasiAcknowledgement
 from .kanban import KanbanBoard, KanbanCard, KanbanRule
-from .manufacturing import ManufacturingOrder, MaterialConsumption, WorkOrder, SPK
+from .manufacturing import ManufacturingOrder, MaterialConsumption, WorkOrder, SPK, MOType
 from .products import Category, Partner, Product
 from .quality import QCInspection, QCLabTest
 from .sales import SalesOrder, SalesOrderLine
 from .transfer import LineOccupancy, TransferLog
 from .users import User
 from .warehouse import Location, PurchaseOrder, StockMove, StockQuant
+from .po_requests import PODeleteRequest, PORequestStatus
 from .daily_production import (
     SPKDailyProduction,
     SPKProductionCompletion,

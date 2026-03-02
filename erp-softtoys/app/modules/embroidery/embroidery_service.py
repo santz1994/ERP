@@ -255,8 +255,9 @@ class EmbroideryService:
 
     def get_line_status(self) -> list[LineOccupancy]:
         """Get all embroidery line statuses."""
+        from app.core.models.transfer import TransferDept
         return self.db.query(LineOccupancy).filter(
-            LineOccupancy.department == "Embroidery"
+            LineOccupancy.dept_name == TransferDept.EMBROIDERY
         ).all()
 
     def _create_shortage_alert(self, work_order: WorkOrder, shortage_qty: int, user_id: int):

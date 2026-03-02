@@ -41,11 +41,12 @@ import {
 
 // Complete Schema with PO Reference System
 const poMaterialSchema = z.object({
+  product_id: z.number().optional(),
   material_code: z.string().min(1, 'Material code required'),
   material_name: z.string().min(1, 'Material name required'),
   material_type: z.enum(['RAW', 'BAHAN_PENOLONG', 'WIP']),
-  supplier_id: z.number().min(1, 'Supplier required'),
-  quantity: z.number().min(1, 'Quantity must be > 0'),
+  supplier_id: z.number().min(0),
+  quantity: z.number().min(0.001, 'Quantity must be > 0'),
   uom: z.string().min(1, 'UOM required'),
   unit_price: z.number().min(0, 'Price must be >= 0'),
   total_price: z.number(),
@@ -59,7 +60,8 @@ const poSchema = z.object({
   po_date: z.string().min(1, 'PO date required'),
   expected_delivery_date: z.string().min(1, 'Delivery date required'),
   notes: z.string().optional(),
-  materials: z.array(poMaterialSchema).min(1, 'Add at least one material'),
+  primary_supplier_id: z.number().min(1, 'Primary supplier required'),
+  materials: z.array(poMaterialSchema),
   // PO Reference System fields
   source_po_kain_id: z.number().optional(),
   article_id: z.number().optional(),
@@ -68,6 +70,10 @@ const poSchema = z.object({
   destination: z.string().optional(),
 }).refine(
   (data) => {
+    // PO KAIN/LABEL must have article_id
+    if ((data.po_type === 'KAIN' || data.po_type === 'LABEL') && !data.article_id) {
+      return false;
+    }
     // PO LABEL must have source_po_kain_id
     if (data.po_type === 'LABEL' && !data.source_po_kain_id) {
       return false;
@@ -79,8 +85,18 @@ const poSchema = z.object({
     return true;
   },
   {
-    message: 'PO LABEL requires: Reference PO KAIN, Week, and Destination',
-    path: ['source_po_kain_id'],
+    message: 'PO KAIN/LABEL requires: Article, and PO LABEL also requires Reference PO KAIN, Week, Destination',
+    path: ['article_id'],
+  }
+).refine(
+  (data) => {
+    // All PO types (KAIN, LABEL, ACCESSORIES) must have at least 1 material
+    // PO LABEL buys label/tag items from vendors
+    return data.materials && data.materials.length >= 1;
+  },
+  {
+    message: 'Add at least one material',
+    path: ['materials'],
   }
 );
 
@@ -115,12 +131,14 @@ export default function POCreateModal({ isOpen, onClose, onSuccess }: POCreateMo
     watch,
     setValue,
     reset,
+    formState,
     formState: { errors },
   } = useForm<POFormData>({
     resolver: zodResolver(poSchema),
     defaultValues: {
       po_type: 'KAIN',
       po_date: new Date().toISOString().split('T')[0],
+      primary_supplier_id: 0,
       materials: [],
     },
   });
@@ -132,36 +150,59 @@ export default function POCreateModal({ isOpen, onClose, onSuccess }: POCreateMo
 
   const watchMaterials = watch('materials');
   const watchPOType = watch('po_type');
+  const watchArticleId = watch('article_id');
+  const watchSourcePOKainId = watch('source_po_kain_id');
+  const { isSubmitted } = formState;
 
   // Fetch suppliers
   const { data: suppliers = [] } = useQuery<Supplier[]>({
     queryKey: ['suppliers'],
-    queryFn: async () => {
-      const response = await apiClient.get('/purchasing/suppliers');
-      return response.data;
-    },
+    queryFn: () => apiClient.get('/purchasing/suppliers'),
     enabled: isOpen,
   });
   
   // Fetch available PO KAIN for reference (LABEL/ACC types)
   const { data: availablePOKain = [] } = useQuery({
     queryKey: ['available-po-kain'],
-    queryFn: async () => {
-      const response = await apiClient.get('/purchasing/available-po-kain');
-      return response.data;
-    },
+    queryFn: () => apiClient.get('/purchasing/available-po-kain'),
     enabled: isOpen && (watchPOType === 'LABEL' || watchPOType === 'ACCESSORIES'),
   });
   
-  // Fetch articles for AUTO mode
+  // Fetch articles (needed for header article field + AUTO BOM explosion)
   const { data: articles = [] } = useQuery({
-    queryKey: ['articles'],
-    queryFn: async () => {
-      const response = await apiClient.get('/purchasing/articles');
-      return response.data;
-    },
-    enabled: isOpen && inputMode === 'AUTO',
+    queryKey: ['purchasing-articles'],
+    queryFn: () => apiClient.get('/purchasing/articles'),
+    enabled: isOpen,
   });
+
+  // Sync article_id → selectedArticleCode for BOM explosion
+  useEffect(() => {
+    if (watchArticleId) {
+      const found = (articles as any[]).find((a: any) => a.id === watchArticleId);
+      if (found) setSelectedArticleCode(found.code);
+    }
+  }, [watchArticleId, articles]);
+
+  // Auto-inherit article + week + destination from selected PO KAIN
+  useEffect(() => {
+    if (!watchSourcePOKainId || !availablePOKain.length) return;
+    const poKain = (availablePOKain as any[]).find((p: any) => p.id === watchSourcePOKainId);
+    if (!poKain) return;
+    // Inherit article
+    if (poKain.article?.id) {
+      setValue('article_id', poKain.article.id);
+      setSelectedArticleCode(poKain.article.code || '');
+    }
+    // Inherit article_qty
+    if (poKain.article_qty) {
+      setArticleQty(poKain.article_qty);
+    }
+    // Inherit week & destination
+    if (poKain.week) setValue('week', poKain.week);
+    if (poKain.destination) setValue('destination', poKain.destination);
+    // Switch to AUTO mode so user sees the Explode button ready to go
+    setInputMode('AUTO');
+  }, [watchSourcePOKainId, availablePOKain, setValue]);
 
   // Calculate line total when quantity or price changes
   useEffect(() => {
@@ -193,12 +234,21 @@ export default function POCreateModal({ isOpen, onClose, onSuccess }: POCreateMo
     try {
       toast.loading('Exploding BOM...', { id: 'bom-explosion' });
       
-      const response = await apiClient.post('/bom/explosion', {
+      const filterMap: Record<string, string> = {
+        'KAIN': 'FABRIC',
+        'LABEL': 'LABEL',
+        'ACCESSORIES': 'ACCESSORIES',
+      };
+      const material_type_filter = filterMap[watchPOType] || undefined;
+
+      const response = await apiClient.post('/purchasing/bom/explosion', {
         article_code: selectedArticleCode,
         quantity: articleQty,
+        ...(material_type_filter ? { material_type_filter } : {}),
       });
       
-      const materials = response.data.materials.map((m: any) => ({
+      const materials = response.materials.map((m: any) => ({
+        product_id: m.id,
         material_code: m.code,
         material_name: m.name,
         material_type: m.type || 'RAW',
@@ -212,7 +262,11 @@ export default function POCreateModal({ isOpen, onClose, onSuccess }: POCreateMo
       }));
       
       replace(materials);
-      toast.success(`${materials.length} materials generated from BOM`, { id: 'bom-explosion' });
+      const filterLabel = watchPOType === 'KAIN' ? 'fabrics only'
+        : watchPOType === 'LABEL' ? 'labels only'
+        : watchPOType === 'ACCESSORIES' ? 'accessories only'
+        : 'all materials';
+      toast.success(`${materials.length} materials (${filterLabel}) generated from BOM`, { id: 'bom-explosion' });
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'BOM explosion failed', { id: 'bom-explosion' });
     }
@@ -221,8 +275,7 @@ export default function POCreateModal({ isOpen, onClose, onSuccess }: POCreateMo
   // Create PO mutation
   const createPOMutation = useMutation({
     mutationFn: async (data: POFormData) => {
-      const response = await apiClient.post('/purchasing/po', data);
-      return response.data;
+      return apiClient.post('/purchasing/po', { ...data, article_qty: articleQty });
     },
     onSuccess: (data) => {
       toast.success(`PO ${data.po_number || 'created'} successfully!`);
@@ -231,13 +284,15 @@ export default function POCreateModal({ isOpen, onClose, onSuccess }: POCreateMo
       onSuccess?.(data.id);
       onClose();
     },
-    onError: () => {
-      toast.error('Failed to create PO. Please try again.');
+    onError: (error: any) => {
+      const msg = error?.response?.data?.detail || error?.message || 'Failed to create PO';
+      toast.error(msg);
     },
   });
 
   const addMaterialLine = () => {
     append({
+      product_id: undefined,
       material_code: '',
       material_name: '',
       material_type: 'RAW',
@@ -252,6 +307,11 @@ export default function POCreateModal({ isOpen, onClose, onSuccess }: POCreateMo
   };
 
   const onSubmit = (data: POFormData) => {
+    // Validate article_id for KAIN/LABEL
+    if ((data.po_type === 'KAIN' || data.po_type === 'LABEL') && !data.article_id) {
+      toast.error(`PO ${data.po_type} requires an Article selection`);
+      return;
+    }
     // Final validation for PO LABEL
     if (data.po_type === 'LABEL') {
       if (!data.source_po_kain_id) {
@@ -379,6 +439,121 @@ export default function POCreateModal({ isOpen, onClose, onSuccess }: POCreateMo
                 </div>
               </div>
 
+              {/* Primary Supplier */}
+              <div>
+                <Label htmlFor="primary_supplier_id">Primary Supplier *</Label>
+                <Controller
+                  name="primary_supplier_id"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      onValueChange={(val) => field.onChange(Number(val))}
+                      value={field.value && field.value > 0 ? field.value.toString() : ''}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select supplier..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(suppliers as Supplier[]).map((s) => (
+                          <SelectItem key={s.id} value={s.id.toString()}>
+                            {s.code} — {s.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.primary_supplier_id && (
+                  <p className="text-sm text-red-600 mt-1">{errors.primary_supplier_id.message}</p>
+                )}
+              </div>
+
+              {/* Article Selection — required for PO KAIN/LABEL */}
+              {(watchPOType === 'KAIN' || watchPOType === 'LABEL' || watchPOType === 'ACCESSORIES') && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="article_id">
+                      Article *
+                      {watchPOType === 'KAIN' || watchPOType === 'LABEL'
+                        ? <span className="text-red-500 ml-1">(required for {watchPOType})</span>
+                        : <span className="text-gray-500 ml-1">(optional)</span>}
+                    </Label>
+
+                    {/* PO LABEL: show inherited article as readonly */}
+                    {watchPOType === 'LABEL' && watchSourcePOKainId ? (
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className="flex-1 px-3 py-2 bg-purple-50 border border-purple-200 rounded-md text-sm text-purple-900">
+                          {(() => {
+                            const poKain = (availablePOKain as any[]).find((p: any) => p.id === watchSourcePOKainId);
+                            return poKain?.article
+                              ? `${poKain.article.code} — ${poKain.article.name}`
+                              : 'Inherited from PO KAIN';
+                          })()}
+                        </div>
+                        <span className="text-xs text-purple-600 whitespace-nowrap">↑ dari PO KAIN</span>
+                      </div>
+                    ) : (
+                      <Controller
+                        name="article_id"
+                        control={control}
+                        render={({ field }) => (
+                          <Select
+                            onValueChange={(val) => field.onChange(Number(val))}
+                            value={field.value?.toString() ?? ''}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder={
+                                articles.length === 0
+                                  ? 'Loading articles...'
+                                  : 'Select article...'
+                              } />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(articles as any[]).map((article: any) => (
+                                <SelectItem key={article.id} value={article.id.toString()}>
+                                  {article.code} — {article.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    )}
+                    {isSubmitted && (watchPOType === 'KAIN' || watchPOType === 'LABEL') && !watchArticleId && (
+                      <p className="text-xs text-red-600 mt-1">Required for PO {watchPOType}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="article_qty">
+                      {watchPOType === 'LABEL' ? 'Batch Quantity — pcs untuk batch ini' : 'Article Quantity (pcs)'}
+                    </Label>
+                    {watchPOType === 'LABEL' && watchSourcePOKainId && (() => {
+                      const poKain = (availablePOKain as any[]).find((p: any) => p.id === watchSourcePOKainId);
+                      return poKain?.article_qty ? (
+                        <p className="text-xs text-purple-600 mb-1">
+                          Total PO KAIN: <strong>{Number(poKain.article_qty).toLocaleString()} pcs</strong>
+                          {' '}— isi qty untuk batch ini (boleh kurang dari total)
+                        </p>
+                      ) : null;
+                    })()}
+                    <Input
+                      id="article_qty"
+                      type="number"
+                      min={1}
+                      value={articleQty}
+                      onChange={(e) => setArticleQty(Number(e.target.value))}
+                      placeholder={watchPOType === 'LABEL' ? 'e.g., 4000 (qty batch ini)' : 'e.g., 1000'}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      {watchPOType === 'LABEL'
+                        ? '⚠️ Default = total PO KAIN. Ubah ke qty batch ini jika pengiriman parsial (mis. 4.000 dari 20.000). BOM label = qty ini × 1 label/pcs.'
+                        : 'Used for BOM explosion in AUTO mode'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <div>
                 <Label htmlFor="notes">Notes (Optional)</Label>
                 <Textarea
@@ -420,7 +595,7 @@ export default function POCreateModal({ isOpen, onClose, onSuccess }: POCreateMo
                           </Select>
                         )}
                       />
-                      {watchPOType === 'LABEL' && !watch('source_po_kain_id') && (
+                      {isSubmitted && watchPOType === 'LABEL' && !watch('source_po_kain_id') && (
                         <p className="text-sm text-red-600 mt-1">
                           ⚠️ PO LABEL must reference PO KAIN
                         </p>
@@ -444,7 +619,7 @@ export default function POCreateModal({ isOpen, onClose, onSuccess }: POCreateMo
                         {...register('week')}
                         placeholder="e.g., W5, W12, W28"
                       />
-                      {!watch('week') && (
+                      {!watch('week') && isSubmitted && (
                         <p className="text-sm text-red-600 mt-1">Required for PO LABEL</p>
                       )}
                     </div>
@@ -456,7 +631,7 @@ export default function POCreateModal({ isOpen, onClose, onSuccess }: POCreateMo
                         {...register('destination')}
                         placeholder="e.g., EU, AP, ME"
                       />
-                      {!watch('destination') && (
+                      {!watch('destination') && isSubmitted && (
                         <p className="text-sm text-red-600 mt-1">Required for PO LABEL</p>
                       )}
                     </div>
@@ -506,41 +681,23 @@ export default function POCreateModal({ isOpen, onClose, onSuccess }: POCreateMo
               {inputMode === 'AUTO' && (
                 <div className="space-y-4">
                   <p className="text-sm text-gray-600 mb-3">
-                    🚀 BOM Explosion: Select article + quantity, materials auto-generated from BOM
+                    🚀 BOM Explosion: Article is selected above. Click to auto-generate all raw materials.
                   </p>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="md:col-span-2">
-                      <Label>Article Code *</Label>
-                      <Select onValueChange={setSelectedArticleCode} value={selectedArticleCode}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select article..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {articles.length === 0 && (
-                            <div className="p-2 text-sm text-gray-500">No articles available</div>
-                          )}
-                          {articles.map((article: any) => (
-                            <SelectItem key={article.code} value={article.code}>
-                              {article.code} - {article.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+
+                  {!selectedArticleCode && (
+                    <p className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+                      ⚠️ Please select an Article in the Header section above first.
+                    </p>
+                  )}
+
+                  {selectedArticleCode && (
+                    <div className="flex items-center gap-2 text-sm bg-blue-50 border border-blue-200 rounded px-3 py-2">
+                      <span className="text-blue-600 font-medium">Article:</span>
+                      <span className="text-blue-800 font-semibold">{selectedArticleCode}</span>
+                      <span className="text-blue-600">× {articleQty} pcs</span>
                     </div>
-                    
-                    <div>
-                      <Label>Quantity *</Label>
-                      <Input
-                        type="number"
-                        min={1}
-                        value={articleQty}
-                        onChange={(e) => setArticleQty(Number(e.target.value))}
-                        placeholder="1"
-                      />
-                    </div>
-                  </div>
-                  
+                  )}
+
                   <Button
                     type="button"
                     onClick={handleBOMExplosion}
@@ -548,8 +705,18 @@ export default function POCreateModal({ isOpen, onClose, onSuccess }: POCreateMo
                     className="w-full"
                   >
                     <Zap className="w-4 h-4 mr-2" />
-                    Explode BOM (Generate Materials)
+                    Explode BOM (Generate Materials from BOM)
                   </Button>
+                  {watchPOType === 'LABEL' && (
+                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2 mt-2">
+                      💡 <strong>PO LABEL</strong>: BOM akan menghasilkan label untuk <strong>{articleQty.toLocaleString()} pcs</strong> (batch ini).
+                      Masing-masing label type × {articleQty.toLocaleString()} = jumlah yang dibeli per jenis label.
+                      Jika ingin beli label untuk semua {(() => {
+                        const poKain = (availablePOKain as any[]).find((p: any) => p.id === watchSourcePOKainId);
+                        return poKain?.article_qty ? `${Number(poKain.article_qty).toLocaleString()} pcs` : 'total kain';
+                      })()}, sesuaikan qty batch di atas.
+                    </p>
+                  )}
                 </div>
               )}
             </CardContent>
@@ -762,6 +929,7 @@ export default function POCreateModal({ isOpen, onClose, onSuccess }: POCreateMo
               )}
             </CardContent>
           </Card>
+
         </form>
 
         {/* Modal Footer */}
@@ -777,9 +945,14 @@ export default function POCreateModal({ isOpen, onClose, onSuccess }: POCreateMo
           <Button
             type="submit"
             variant="primary"
-            onClick={handleSubmit(onSubmit)}
             disabled={fields.length === 0 || createPOMutation.isPending}
             isLoading={createPOMutation.isPending}
+            onClick={handleSubmit(onSubmit, (validationErrors) => {
+              console.error('Form validation errors:', validationErrors);
+              const firstError  = Object.values(validationErrors)[0] as any;
+              const msg = firstError?.message || firstError?.[0]?.message || 'Please fill in all required fields';
+              toast.error(msg);
+            })}
           >
             {createPOMutation.isPending ? 'Creating...' : 'Create PO'}
           </Button>

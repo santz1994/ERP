@@ -53,12 +53,16 @@ const menuItems: MenuItem[] = [
     label: 'Production Floor', 
     permissions: ['production.view_status'],
     submenu: [
-      { icon: <Calendar />, label: 'Daily Input', path: '/daily-production', permissions: ['production.input_daily'] },
       { icon: <Scissors />, label: 'Cutting', path: '/cutting', permissions: ['cutting.view_status'] },
-      { icon: <Palette />, label: 'Embroidery', path: '/embroidery', roles: [UserRole.OPERATOR_EMBRO, UserRole.SPV_CUTTING, UserRole.ADMIN] },
+      { icon: <Calendar />, label: 'Cutting Daily Input', path: '/production/input/cutting', permissions: ['production.input_daily'] },
+      { icon: <Palette />, label: 'Embroidery', path: '/embroidery', roles: [UserRole.ADMIN_EMBROIDERY, UserRole.SPV_CUTTING, UserRole.ADMIN] },
+      { icon: <Calendar />, label: 'Embroidery Daily Input', path: '/production/input/embroidery', permissions: ['production.input_daily'] },
       { icon: <Zap />, label: 'Sewing', path: '/sewing', permissions: ['sewing.view_status'] },
+      { icon: <Calendar />, label: 'Sewing Daily Input', path: '/production/input/sewing', permissions: ['production.input_daily'] },
       { icon: <Sparkles />, label: 'Finishing', path: '/finishing', permissions: ['finishing.view_status'] },
+      { icon: <Calendar />, label: 'Finishing Daily Input', path: '/production/input/finishing', permissions: ['production.input_daily'] },
       { icon: <Package />, label: 'Packing', path: '/packing', permissions: ['packing.view_status'] },
+      { icon: <Calendar />, label: 'Packing Daily Input', path: '/production/input/packing', permissions: ['production.input_daily'] },
     ]
   },
   { 
@@ -118,6 +122,8 @@ const menuItems: MenuItem[] = [
       { icon: <Shield />, label: 'Permissions', path: '/admin/permissions', permissions: ['admin.view_system_info'] },
       { icon: <Shield />, label: 'Audit Trail', path: '/admin/audit-trail', roles: [UserRole.DEVELOPER, UserRole.SUPERADMIN] },
       { icon: <FileText />, label: 'Import/Export', path: '/admin/import-export', permissions: ['import_export.import_data'] },
+      { icon: <Database />, label: 'Masterdata', path: '/admin/masterdata', permissions: ['admin.manage_users'] },
+      { icon: <FileEdit />, label: 'BOM Management', path: '/admin/bom-management', permissions: ['admin.manage_users'] },
     ]
   },
   { 

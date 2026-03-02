@@ -10,7 +10,7 @@ Handles purchase orders, supplier management, material receiving
 - Business rule validation (PO LABEL must reference PO KAIN)
 """
 
-from datetime import date
+from datetime import date, datetime as dt
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -21,6 +21,9 @@ from app.core.database import get_db
 from app.core.models.users import User
 from app.core.models.warehouse import PurchaseOrder, POType, POStatus
 from app.core.models.products import Product, Partner, PartnerType
+from app.core.models.manufacturing import (
+    ManufacturingOrder, WorkOrder, MOState, WorkOrderStatus, Department, RoutingType, MOType
+)
 from app.core.dependencies import require_permission
 from app.core.permissions import ModuleName, Permission
 from app.modules.purchasing import PurchasingService
@@ -29,6 +32,22 @@ router = APIRouter(prefix="/purchasing", tags=["Purchasing"])
 
 
 # Pydantic Schemas
+
+class CreatePOUIRequest(BaseModel):
+    """Frontend-friendly PO creation schema."""
+    po_type: str = Field("ACCESSORIES", description="KAIN / LABEL / ACCESSORIES")
+    po_date: date = Field(..., description="Order date")
+    expected_delivery_date: date = Field(..., description="Expected delivery date")
+    notes: Optional[str] = None
+    primary_supplier_id: int = Field(..., description="Primary supplier ID")
+    article_id: Optional[int] = None
+    article_qty: Optional[int] = None
+    source_po_kain_id: Optional[int] = None
+    week: Optional[str] = None
+    destination: Optional[str] = None
+    materials: list[dict] = Field(default_factory=list)
+
+
 class POItemRequest(BaseModel):
     product_id: int = Field(..., description="Raw material product ID")
     quantity: int = Field(..., gt=0, description="Order quantity")
@@ -139,17 +158,28 @@ class PurchaseOrderResponse(BaseModel):
     supplier_id: int
     order_date: date
     expected_date: date
-    status: str
-    total_amount: float
-    currency: str
-    approved_by: int | None
-    approved_at: str | None
-    received_by: int | None
-    received_at: str | None
-    metadata: dict | None
+    status: Optional[str]
+    total_amount: Optional[float]
+    currency: Optional[str]
+    extra_metadata: Optional[dict]
+    # PO Reference System fields
+    po_type: Optional[str]
+    source_po_kain_id: Optional[int]
+    article_id: Optional[int]
+    article_qty: Optional[int]
+    week: Optional[str]
+    destination: Optional[str]
+    created_at: Optional[dt]
+    updated_at: Optional[dt]
+
+    @validator('status', 'po_type', pre=True)
+    def enum_to_str(cls, v):
+        if v is None:
+            return v
+        return v.value if hasattr(v, 'value') else str(v)
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 class SupplierPerformanceResponse(BaseModel):
@@ -159,6 +189,188 @@ class SupplierPerformanceResponse(BaseModel):
     on_time_delivery: int
     on_time_rate: float
     completion_rate: float
+
+
+# ─── AUTO MO/WO TRIGGER HELPER ─────────────────────────────────────────────
+
+def _auto_trigger_mo_wo(db: Session, po: PurchaseOrder, user_id: int) -> dict | None:
+    """
+    Dual Trigger System:
+      PO KAIN → Sent  : Create MO (PARTIAL) + Cutting WO
+      PO LABEL → Sent : Escalate existing MO to RELEASED + create Sewing/Finishing/Packing WOs
+    Returns a dict with info about what was created, or None if N/A.
+    """
+    try:
+        po_type = po.po_type.value if po.po_type else None
+        article_qty = int(po.article_qty or 0)
+
+        # ── TRIGGER 1: PO KAIN ─────────────────────────────────────────
+        if po_type == "KAIN":
+            if not po.article_id:
+                print(f"⚠ PO KAIN {po.po_number} has no article_id – skipping MO creation")
+                return None
+
+            # Prevent duplicate MOs for same PO KAIN
+            existing_buyer = db.query(ManufacturingOrder).filter(
+                ManufacturingOrder.po_fabric_id == po.id,
+                ManufacturingOrder.mo_type == MOType.BUYER,
+            ).first()
+            if existing_buyer:
+                existing_prod = db.query(ManufacturingOrder).filter(
+                    ManufacturingOrder.buyer_mo_id == existing_buyer.id,
+                ).first()
+                print(f"ℹ MO BUYER {existing_buyer.batch_number} already exists for PO KAIN {po.po_number}")
+                return {
+                    "mo_buyer_id": existing_buyer.id,
+                    "mo_production_id": existing_prod.id if existing_prod else None,
+                    "batch_number": existing_buyer.batch_number,
+                    "action": "existing",
+                }
+
+            ts = dt.now().strftime('%H%M%S')
+            batch_buyer = f"MO-BUYER-{po.po_number}-{ts}"
+            batch_prod  = f"MO-PROD-{po.po_number}-{ts}"
+
+            # ── MO BUYER (reference / acuan — FIXED qty, locked) ─────────
+            mo_buyer = ManufacturingOrder(
+                po_fabric_id=po.id,
+                po_id=po.id,
+                product_id=po.article_id,
+                qty_planned=article_qty,
+                routing_type=RoutingType.ROUTE2,
+                batch_number=batch_buyer,
+                state=MOState.DRAFT,
+                trigger_mode="PARTIAL",
+                mo_type=MOType.BUYER,
+                is_qty_locked=True,          # Locked to PO qty — cannot be changed
+                production_week=po.week,
+                destination_country=po.destination,
+            )
+            db.add(mo_buyer)
+            db.flush()  # get mo_buyer.id
+
+            # ── MO PRODUCTION (operational / daily tracking) ─────────────
+            mo_prod = ManufacturingOrder(
+                po_fabric_id=po.id,
+                po_id=po.id,
+                product_id=po.article_id,
+                qty_planned=article_qty,
+                routing_type=RoutingType.ROUTE2,
+                batch_number=batch_prod,
+                state=MOState.DRAFT,
+                trigger_mode="PARTIAL",
+                mo_type=MOType.PRODUCTION,
+                buyer_mo_id=mo_buyer.id,          # linked to BUYER MO
+                production_week=po.week,
+                destination_country=po.destination,
+            )
+            db.add(mo_prod)
+            db.flush()  # get mo_prod.id
+
+            # Cutting WO linked to PRODUCTION MO (PARTIAL mode – Cutting only)
+            wo_cutting = WorkOrder(
+                mo_id=mo_prod.id,
+                product_id=po.article_id,
+                department=Department.CUTTING,
+                status=WorkOrderStatus.PENDING,
+                wo_number=f"WO-CUT-{batch_prod}",
+                sequence=1,
+                input_qty=article_qty,
+                target_qty=article_qty,
+            )
+            db.add(wo_cutting)
+
+            # Link back to PO → PRODUCTION MO is the operational link
+            po.linked_mo_id = mo_prod.id
+            db.commit()
+
+            print(
+                f"✅ AUTO MO BUYER created: {batch_buyer}\n"
+                f"✅ AUTO MO PRODUCTION created: {batch_prod} | WO-CUT | PARTIAL mode | qty={article_qty}"
+            )
+            return {
+                "mo_buyer_id": mo_buyer.id,
+                "mo_buyer_batch": batch_buyer,
+                "mo_production_id": mo_prod.id,
+                "mo_production_batch": batch_prod,
+                "trigger_mode": "PARTIAL",
+                "work_orders_created": ["CUTTING"],
+                "action": "created",
+            }
+
+        # ── TRIGGER 2: PO LABEL ────────────────────────────────────────
+        elif po_type == "LABEL":
+            # Find the PRODUCTION MO created from PO KAIN (TRIGGER 1)
+            # We target mo_type=PRODUCTION because that's the operational MO
+            # (BUYER MO is the fixed reference — WOs go to PRODUCTION MO)
+            mo = None
+            if po.source_po_kain_id:
+                mo = db.query(ManufacturingOrder).filter(
+                    ManufacturingOrder.po_fabric_id == po.source_po_kain_id,
+                    ManufacturingOrder.mo_type == MOType.PRODUCTION,
+                ).first()
+                # Fallback: legacy single-MO (before dual-MO update)
+                if not mo:
+                    mo = db.query(ManufacturingOrder).filter(
+                        ManufacturingOrder.po_fabric_id == po.source_po_kain_id
+                    ).first()
+
+            if not mo:
+                print(f"⚠ No existing PRODUCTION MO found for source PO KAIN {po.source_po_kain_id} – cannot RELEASE")
+                return {"action": "skipped", "reason": "No MO found for source PO KAIN. Send PO KAIN first to create MO."}
+
+            # Escalate MO to RELEASED (first PO LABEL to be sent)
+            if mo.trigger_mode != "RELEASED":
+                mo.trigger_mode = "RELEASED"
+            mo.po_label_id = po.id  # last label wins (traceability)
+            db.flush()
+
+            # Use THIS PO LABEL's batch qty, NOT the total MO qty
+            # Each PO LABEL = 1 delivery batch (e.g. 5000 EU, 2000 EA)
+            batch_qty = int(po.article_qty or mo.qty_planned or 0)
+            label_suffix = po.po_number  # unique per PO LABEL
+
+            # Always create fresh WOs for this batch (no deduplication — different batches)
+            new_wos = []
+            route = [
+                (Department.SEWING,    2, "SEW"),
+                (Department.FINISHING, 3, "FIN"),
+                (Department.PACKING,   4, "PCK"),
+            ]
+            for dept, seq, code in route:
+                wo = WorkOrder(
+                    mo_id=mo.id,
+                    product_id=mo.product_id,
+                    department=dept,
+                    status=WorkOrderStatus.PENDING,
+                    wo_number=f"WO-{code}-{label_suffix}",
+                    sequence=seq,
+                    input_qty=batch_qty,
+                    target_qty=batch_qty,
+                    notes=f"Batch: {po.week} / {po.destination} ({batch_qty} pcs) — from {label_suffix}",
+                )
+                db.add(wo)
+                new_wos.append(f"{dept.value} ({batch_qty} pcs)")
+
+            db.commit()
+            print(f"✅ MO {mo.batch_number} | New batch WOs for {label_suffix}: {new_wos}")
+            return {
+                "mo_id": mo.id,
+                "batch_number": mo.batch_number,
+                "trigger_mode": "RELEASED",
+                "batch_qty": batch_qty,
+                "week": po.week,
+                "destination": po.destination,
+                "work_orders_created": new_wos,
+                "action": "released",
+            }
+
+    except Exception as e:
+        db.rollback()
+        print(f"❌ Error in auto MO/WO trigger: {e}")
+        return {"action": "error", "detail": str(e)}
+
+    return None
 
 
 # Endpoints
@@ -177,6 +389,74 @@ def get_purchase_orders(
     service = PurchasingService(db)
     pos = service.get_purchase_orders(status=status, supplier_id=supplier_id)
     return pos
+
+
+
+@router.patch("/purchase-orders/{po_id}/status")
+def update_po_status(
+    po_id: int,
+    new_status: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission(ModuleName.PURCHASING, Permission.APPROVE))
+):
+    """Update PO status with validation.
+
+    Allowed transitions:
+    - Draft → Sent (send to supplier)
+    - Draft → Cancelled
+    - Sent → Received (goods arriving)
+    - Received → Done
+    """
+    po = db.query(PurchaseOrder).filter(PurchaseOrder.id == po_id).first()
+    if not po:
+        raise HTTPException(status_code=404, detail=f"Purchase order {po_id} not found")
+
+    current = po.status.value if po.status else None
+    allowed = {
+        "Draft": ["Sent", "Cancelled"],
+        "Sent": ["Received", "Cancelled"],
+        "Received": ["Done"],
+        "Cancelled": [],
+        "Done": [],
+    }
+
+    if current not in allowed or new_status not in allowed.get(current, []):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot transition from {current} to {new_status}. Allowed: {allowed.get(current, [])}"
+        )
+
+    try:
+        status_map = {
+            "Draft": POStatus.DRAFT,
+            "Sent": POStatus.SENT,
+            "Received": POStatus.RECEIVED,
+            "Done": POStatus.DONE,
+            "Cancelled": POStatus.CANCELLED,
+        }
+        po.status = status_map[new_status]
+        db.commit()
+        db.refresh(po)
+
+        # ── AUTO MO/WO TRIGGER ────────────────────────────────────────────
+        mo_info = None
+        if new_status == "Sent":
+            mo_info = _auto_trigger_mo_wo(db, po, current_user.id)
+        # ─────────────────────────────────────────────────────────────────
+
+        print(f"✅ PO {po.po_number}: {current} → {new_status} (by user {current_user.id})")
+        result = {
+            "id": po.id,
+            "po_number": po.po_number,
+            "status": new_status,
+            "message": f"PO status updated to {new_status}",
+        }
+        if mo_info:
+            result["mo_created"] = mo_info
+        return result
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/purchase-order", response_model=PurchaseOrderResponse, status_code=status.HTTP_201_CREATED)
@@ -271,6 +551,167 @@ def create_purchase_order(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
+@router.post("/po", status_code=status.HTTP_201_CREATED)
+def create_po_from_ui(
+    request: CreatePOUIRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission(ModuleName.PURCHASING, Permission.CREATE))
+):
+    """Frontend-friendly PO creation endpoint.
+
+    Accepts the form data format from the UI modal:
+    - po_date / expected_delivery_date instead of order_date / expected_date
+    - primary_supplier_id at PO level
+    - materials[] array with per-material supplier_id
+    - Auto-generates po_number
+    - Stores line items in extra_metadata (JSON)
+    """
+    try:
+        # Map po_type string → POType enum
+        try:
+            po_type = POType[request.po_type.upper()]
+        except KeyError:
+            po_type = POType.ACCESSORIES
+
+        # Validate supplier
+        supplier = db.query(Partner).filter(
+            Partner.id == request.primary_supplier_id,
+            Partner.type == PartnerType.SUPPLIER,
+        ).first()
+        if not supplier:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Supplier ID {request.primary_supplier_id} not found or is not a supplier",
+            )
+
+        # PO LABEL validations
+        if po_type == POType.LABEL:
+            if not request.source_po_kain_id:
+                raise HTTPException(status_code=400, detail="PO LABEL must reference a PO KAIN")
+            if not request.week:
+                raise HTTPException(status_code=400, detail="PO LABEL requires week")
+            if not request.destination:
+                raise HTTPException(status_code=400, detail="PO LABEL requires destination")
+            po_kain = db.query(PurchaseOrder).filter(
+                PurchaseOrder.id == request.source_po_kain_id
+            ).first()
+            if not po_kain:
+                raise HTTPException(status_code=404, detail=f"PO KAIN {request.source_po_kain_id} not found")
+            # Auto-inherit article from PO KAIN
+            if not request.article_id and po_kain.article_id:
+                request.article_id = po_kain.article_id
+                request.article_qty = po_kain.article_qty
+
+            # ── QTY OVERFLOW CHECK ──────────────────────────────────────
+            # Total allocated across all existing PO LABELs + this new one
+            # must not exceed PO KAIN article_qty
+            if po_kain.article_qty and request.article_qty:
+                from sqlalchemy import func as sqlfunc
+                already_allocated = db.query(
+                    sqlfunc.coalesce(sqlfunc.sum(PurchaseOrder.article_qty), 0)
+                ).filter(
+                    PurchaseOrder.source_po_kain_id == request.source_po_kain_id,
+                    PurchaseOrder.po_type == POType.LABEL,
+                ).scalar() or 0
+                total_after = int(already_allocated) + int(request.article_qty)
+                if total_after > po_kain.article_qty:
+                    remaining = po_kain.article_qty - int(already_allocated)
+                    raise HTTPException(
+                        status_code=400,
+                        detail=(
+                            f"Qty overflow: PO KAIN total {po_kain.article_qty} pcs, "
+                            f"already allocated {int(already_allocated)} pcs, "
+                            f"remaining {remaining} pcs, "
+                            f"you requested {request.article_qty} pcs."
+                        )
+                    )
+
+        # PO KAIN requires article
+        if po_type == POType.KAIN and not request.article_id:
+            raise HTTPException(status_code=400, detail="PO KAIN requires article_id")
+
+        # Validate article exists
+        if request.article_id:
+            article = db.query(Product).filter(Product.id == request.article_id).first()
+            if not article:
+                raise HTTPException(status_code=404, detail=f"Article {request.article_id} not found")
+
+        # Resolve product_ids, normalise material list, compute total
+        normalized_materials = []
+        total_amount = 0.0
+        for mat in request.materials:
+            pid = mat.get("product_id")
+            if not pid:
+                code = mat.get("material_code", "")
+                prod = db.query(Product).filter(Product.code == code).first()
+                pid = prod.id if prod else None
+
+            qty = float(mat.get("quantity") or 0)
+            price = float(mat.get("unit_price") or 0)
+            total_amount += qty * price
+
+            normalized_materials.append({
+                "product_id": pid,
+                "material_code": mat.get("material_code", ""),
+                "material_name": mat.get("material_name", ""),
+                "supplier_id": mat.get("supplier_id"),
+                "quantity": qty,
+                "uom": mat.get("uom", "PCS"),
+                "unit_price": price,
+                "total_price": qty * price,
+                "description": mat.get("description", ""),
+            })
+
+        # Auto-generate unique po_number
+        po_number = f"PO-{po_type.value}-{dt.now().strftime('%Y%m%d%H%M%S')}"
+
+        # Create PO record
+        po = PurchaseOrder(
+            po_number=po_number,
+            supplier_id=request.primary_supplier_id,
+            order_date=request.po_date,
+            expected_date=request.expected_delivery_date,
+            status=POStatus.DRAFT,
+            po_type=po_type,
+            source_po_kain_id=request.source_po_kain_id,
+            article_id=request.article_id,
+            article_qty=request.article_qty,
+            week=request.week,
+            destination=request.destination,
+        )
+        db.add(po)
+        db.flush()  # get po.id before setting JSON columns
+
+        po.total_amount = total_amount
+        po.currency = "IDR"
+        po.extra_metadata = {
+            "items": normalized_materials,
+            "notes": request.notes,
+            "created_by": current_user.id,
+            "created_at": dt.now().isoformat(),
+        }
+
+        db.commit()
+        db.refresh(po)
+
+        print(f"✅ Created PO (UI): {po.po_number} type={po_type.value} total={total_amount:,.0f} IDR")
+        return {
+            "id": po.id,
+            "po_number": po.po_number,
+            "status": po.status.value,
+            "po_type": po_type.value,
+            "total_amount": total_amount,
+            "message": f"PO {po.po_number} created successfully",
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        print(f"❌ Error creating PO from UI: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
 @router.post("/purchase-order/{po_id}/approve", response_model=PurchaseOrderResponse)
 def approve_purchase_order(
     po_id: int,
@@ -333,6 +774,194 @@ def cancel_purchase_order(
         return po
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# PO DELETION / APPROVAL WORKFLOW
+# ══════════════════════════════════════════════════════════════════════════════
+
+from datetime import datetime as _dt
+from app.core.models.po_requests import PODeleteRequest, PORequestStatus as _ReqStatus
+
+ADMIN_ROLES = {"Developer", "Superadmin", "Admin"}
+
+
+class _DeletePOBody(BaseModel):
+    reason: str = Field(..., min_length=5, description="Reason for deletion / cancellation")
+
+
+class _RespondDeleteBody(BaseModel):
+    note: str = ""
+
+
+@router.delete("/purchase-orders/{po_id}")
+def delete_purchase_order(
+    po_id: int,
+    body: _DeletePOBody,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission(ModuleName.PURCHASING, Permission.DELETE)),
+):
+    """Permanently delete or forcibly cancel a PO.
+
+    - **System Admin** (Admin / Superadmin / Developer): direct action.
+    - Others: must use POST …/request-delete instead.
+    """
+    if current_user.role.value not in ADMIN_ROLES:
+        raise HTTPException(
+            403,
+            "You don't have permission to delete directly. "
+            "Use POST /purchasing/purchase-orders/{id}/request-delete instead.",
+        )
+    po = db.query(PurchaseOrder).filter(PurchaseOrder.id == po_id).first()
+    if not po:
+        raise HTTPException(404, "Purchase Order not found")
+
+    if po.status in (POStatus.RECEIVED, POStatus.DONE):
+        raise HTTPException(
+            400,
+            f"Cannot delete PO in '{po.status.value}' status. "
+            "Only Draft / Sent / Partial can be deleted.",
+        )
+
+    po_number = po.po_number
+    # Hard delete; foreign-key cascades handle child POs and WOs
+    db.delete(po)
+    db.commit()
+    return {"message": f"PO '{po_number}' deleted successfully."}
+
+
+@router.post("/purchase-orders/{po_id}/request-delete", status_code=201)
+def request_po_deletion(
+    po_id: int,
+    body: _DeletePOBody,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission(ModuleName.PURCHASING, Permission.VIEW)),
+):
+    """Non-admin users submit a deletion request for manager approval."""
+    if current_user.role.value in ADMIN_ROLES:
+        raise HTTPException(
+            400,
+            "Admins can delete directly. Use DELETE /purchasing/purchase-orders/{id}.",
+        )
+    po = db.query(PurchaseOrder).filter(PurchaseOrder.id == po_id).first()
+    if not po:
+        raise HTTPException(404, "Purchase Order not found")
+
+    existing = (
+        db.query(PODeleteRequest)
+        .filter(
+            PODeleteRequest.po_id == po_id,
+            PODeleteRequest.status == _ReqStatus.PENDING,
+        )
+        .first()
+    )
+    if existing:
+        raise HTTPException(400, "A deletion request for this PO is already pending.")
+
+    req = PODeleteRequest(
+        po_id=po_id,
+        po_number=po.po_number,
+        request_reason=body.reason,
+        requested_by=current_user.id,
+    )
+    db.add(req); db.commit(); db.refresh(req)
+    return {
+        "id": req.id,
+        "po_number": req.po_number,
+        "status": req.status.value,
+        "message": "Deletion request submitted. Awaiting manager approval.",
+    }
+
+
+@router.get("/purchase-orders/delete-requests")
+def list_delete_requests(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission(ModuleName.PURCHASING, Permission.VIEW)),
+):
+    """List pending PO deletion requests. Only accessible by Admin roles."""
+    if current_user.role.value not in ADMIN_ROLES:
+        raise HTTPException(403, "Only managers / admins can view deletion requests.")
+    reqs = (
+        db.query(PODeleteRequest)
+        .options(
+            joinedload(PODeleteRequest.requester),
+            joinedload(PODeleteRequest.responder),
+            joinedload(PODeleteRequest.purchase_order),
+        )
+        .order_by(PODeleteRequest.requested_at.desc())
+        .all()
+    )
+    return [_fmt_delete_request(r) for r in reqs]
+
+
+@router.post("/purchase-orders/delete-requests/{req_id}/approve")
+def approve_delete_request(
+    req_id: int,
+    body: _RespondDeleteBody,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission(ModuleName.PURCHASING, Permission.DELETE)),
+):
+    """Approve a deletion request — deletes the PO."""
+    if current_user.role.value not in ADMIN_ROLES:
+        raise HTTPException(403, "Only admins can approve deletion requests.")
+    req = db.query(PODeleteRequest).filter(PODeleteRequest.id == req_id).first()
+    if not req:
+        raise HTTPException(404, "Request not found")
+    if req.status != _ReqStatus.PENDING:
+        raise HTTPException(400, f"Request is already '{req.status.value}'")
+
+    po = db.query(PurchaseOrder).filter(PurchaseOrder.id == req.po_id).first()
+    if po:
+        db.delete(po)
+
+    req.status = _ReqStatus.APPROVED
+    req.responded_by = current_user.id
+    req.responded_at = _dt.utcnow()
+    req.response_note = body.note
+    req.po_id = None  # detach before flush
+    db.commit()
+    return {"message": f"PO '{req.po_number}' deletion approved and executed."}
+
+
+@router.post("/purchase-orders/delete-requests/{req_id}/reject")
+def reject_delete_request(
+    req_id: int,
+    body: _RespondDeleteBody,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission(ModuleName.PURCHASING, Permission.DELETE)),
+):
+    """Reject a deletion request — PO stays intact."""
+    if current_user.role.value not in ADMIN_ROLES:
+        raise HTTPException(403, "Only admins can reject deletion requests.")
+    req = db.query(PODeleteRequest).filter(PODeleteRequest.id == req_id).first()
+    if not req:
+        raise HTTPException(404, "Request not found")
+    if req.status != _ReqStatus.PENDING:
+        raise HTTPException(400, f"Request is already '{req.status.value}'")
+
+    req.status = _ReqStatus.REJECTED
+    req.responded_by = current_user.id
+    req.responded_at = _dt.utcnow()
+    req.response_note = body.note
+    db.commit()
+    return {"message": f"Deletion request for PO '{req.po_number}' rejected."}
+
+
+def _fmt_delete_request(r: PODeleteRequest) -> dict:
+    return {
+        "id": r.id,
+        "po_id": r.po_id,
+        "po_number": r.po_number,
+        "po_status": r.purchase_order.status.value if r.purchase_order else "deleted",
+        "request_reason": r.request_reason,
+        "status": r.status.value,
+        "requested_by": r.requester.username if r.requester else None,
+        "requested_at": r.requested_at.isoformat() if r.requested_at else None,
+        "responded_by": r.responder.username if r.responder else None,
+        "responded_at": r.responded_at.isoformat() if r.responded_at else None,
+        "response_note": r.response_note,
+    }
 
 
 @router.get("/supplier/{supplier_id}/performance", response_model=SupplierPerformanceResponse)
@@ -408,6 +1037,84 @@ def get_available_po_kain(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch available PO KAIN: {str(e)}"
         )
+
+
+@router.get("/purchase-orders/{po_id}")
+def get_purchase_order_detail(
+    po_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission(ModuleName.PURCHASING, Permission.VIEW))
+):
+    """Get single purchase order detail including materials list."""
+    po = db.query(PurchaseOrder).filter(PurchaseOrder.id == po_id).first()
+    if not po:
+        raise HTTPException(status_code=404, detail=f"Purchase order {po_id} not found")
+
+    supplier = db.query(Partner).filter(Partner.id == po.supplier_id).first()
+    supplier_name = supplier.name if supplier else f"Supplier #{po.supplier_id}"
+
+    article_name = None
+    if po.article_id:
+        article = db.query(Product).filter(Product.id == po.article_id).first()
+        article_name = article.name if article else None
+
+    source_po_number = None
+    if po.source_po_kain_id:
+        source_po = db.query(PurchaseOrder).filter(PurchaseOrder.id == po.source_po_kain_id).first()
+        source_po_number = source_po.po_number if source_po else None
+
+    metadata = po.extra_metadata or {}
+    items = metadata.get("items", [])
+
+    # For PO KAIN: include all linked PO LABELs (delivery batches)
+    linked_labels = []
+    total_allocated = 0
+    if po.po_type and po.po_type.value == "KAIN":
+        label_pos = db.query(PurchaseOrder).filter(
+            PurchaseOrder.source_po_kain_id == po.id,
+            PurchaseOrder.po_type == POType.LABEL,
+        ).order_by(PurchaseOrder.order_date).all()
+        for lpo in label_pos:
+            lqty = int(lpo.article_qty or 0)
+            total_allocated += lqty
+            linked_labels.append({
+                "id": lpo.id,
+                "po_number": lpo.po_number,
+                "status": lpo.status.value if lpo.status else None,
+                "week": lpo.week,
+                "destination": lpo.destination,
+                "article_qty": lqty,
+                "order_date": lpo.order_date.isoformat() if lpo.order_date else None,
+            })
+
+    remaining_qty = max(0, (po.article_qty or 0) - total_allocated)
+
+    return {
+        "id": po.id,
+        "po_number": po.po_number,
+        "po_type": po.po_type.value if po.po_type else None,
+        "status": po.status.value if po.status else None,
+        "supplier_id": po.supplier_id,
+        "supplier_name": supplier_name,
+        "order_date": po.order_date.isoformat() if po.order_date else None,
+        "expected_date": po.expected_date.isoformat() if po.expected_date else None,
+        "total_amount": float(po.total_amount) if po.total_amount else 0.0,
+        "currency": po.currency or "IDR",
+        "article_id": po.article_id,
+        "article_name": article_name,
+        "article_qty": po.article_qty,
+        "week": po.week,
+        "destination": po.destination,
+        "source_po_kain_id": po.source_po_kain_id,
+        "source_po_number": source_po_number,
+        "notes": metadata.get("notes"),
+        "created_at": po.created_at.isoformat() if po.created_at else None,
+        "items": items,
+        # Batch-split fields (only meaningful for PO KAIN)
+        "linked_labels": linked_labels,
+        "total_allocated": total_allocated,
+        "remaining_qty": remaining_qty,
+    }
 
 
 @router.get("/purchase-orders/{po_kain_id}/related")
@@ -621,11 +1328,20 @@ def get_bom_materials(
                 detail=f"Article with ID {article_id} not found"
             )
         
-        # Get BOM Header
+        # Get BOM Header - prefer consolidated purchasing BOM (PURCH-1.0) first,
+        # then fall back to any active BOM
         bom_header = db.query(BOMHeader).filter(
             BOMHeader.product_id == article_id,
+            BOMHeader.revision == "PURCH-1.0",
             BOMHeader.is_active == True
         ).first()
+        
+        if not bom_header:
+            # Fall back to any active BOM that is not a department-stage one
+            bom_header = db.query(BOMHeader).filter(
+                BOMHeader.product_id == article_id,
+                BOMHeader.is_active == True
+            ).first()
         
         if not bom_header:
             # No BOM found - return empty materials list
@@ -642,9 +1358,12 @@ def get_bom_materials(
             }
         
         # Get BOM Details
-        bom_details = db.query(BOMDetail).filter(
-            BOMDetail.bom_header_id == bom_header.id
-        ).all()
+        bom_details = (
+            db.query(BOMDetail)
+            .filter(BOMDetail.bom_header_id == bom_header.id)
+            .options(joinedload(BOMDetail.component).joinedload(Product.category))
+            .all()
+        )
         
         materials = []
         for detail in bom_details:
@@ -656,8 +1375,9 @@ def get_bom_materials(
             wastage_pct = float(detail.wastage_percent or 0)
             qty_with_wastage = total_qty * (1 + wastage_pct / 100)
             
-            # Determine material category from product code or name
-            material_category = _detect_material_category(component.code, component.name)
+            # Determine material category — use DB category name when available
+            cat_name = component.category.name if component.category else ''
+            material_category = _detect_material_category(component.code, component.name, cat_name)
             
             # Apply filter if specified
             if material_type_filter:
@@ -719,46 +1439,59 @@ def get_bom_materials(
         )
 
 
-def _detect_material_category(material_code: str, material_name: str) -> str:
-    """Helper function to detect material category from code/name.
-    
-    Categories:
-    - FABRIC/KAIN: Fabric materials (KOHAIR, JS BOA, POLYESTER, NYLEX, etc.)
-    - LABEL: Labels (Hang Tag, Care Label, EU Label)
-    - THREAD: Sewing thread
-    - FILLING: Filling/Kapas
-    - BOX: Carton/Box
-    - ACCESSORIES: Other accessories
+def _detect_material_category(material_code: str, material_name: str, category_name: str = '') -> str:
+    """Detect material category — uses DB category name first, then code/name fallback.
+
+    PO filter mapping:
+      FABRIC  → PO KAIN   (category starts with 'Fabric')
+      LABEL   → PO LABEL  (category starts with 'Label')
+      ACCESSORIES → PO ACCESSORIES  (Thread, Stuffing, Accessories, Packaging, Elastic, etc.)
     """
+    cat = category_name.upper() if category_name else ''
+
+    # ── DB-category-based detection (most reliable) ──────────────────────
+    if cat.startswith('FABRIC'):
+        return 'FABRIC'
+    if cat.startswith('LABEL'):
+        return 'LABEL'
+    if cat.startswith('THREAD'):
+        return 'THREAD'
+    if cat.startswith('STUFFING'):
+        return 'FILLING'
+    if cat.startswith('ACCESSORIES'):
+        return 'ACCESSORIES'
+    if cat.startswith('PACKAGING'):
+        return 'ACCESSORIES'
+    if cat in ('ELASTIC', 'ELASTIC TAPE'):
+        return 'ACCESSORIES'
+    if cat.startswith('WIP'):
+        return 'WIP'
+
+    # ── Fallback: code / name keyword detection ───────────────────────────
     code_upper = material_code.upper()
     name_upper = material_name.upper()
-    
-    # Fabric detection (common fabric codes)
-    fabric_keywords = ['IKHR', 'IJBR', 'INYR', 'INYNR', 'IPPR', 'IPR', 'KOHAIR', 'BOA', 'POLYESTER', 'NYLEX', 'FABRIC', 'KAIN']
-    if any(kw in code_upper or kw in name_upper for kw in fabric_keywords):
+
+    fabric_kw = ['IKHR', 'IJBR', 'INYR', 'INYNR', 'IPPR', 'IPR', 'ISHR',
+                 'IFLR', 'IKTR', 'IBTR', 'IKNR', 'ICOR',
+                 'KOHAIR', 'BOA', 'NYLEX', 'FLANNEL', 'VELVET', 'VELBOA',
+                 'MINKY', 'SHERPA', 'PLUMETTE', 'PLUCHE', 'CORAL',
+                 'POLYESTER PRINT', 'GREY FABRIC', 'BATTING']
+    if any(kw in code_upper or kw in name_upper for kw in fabric_kw):
         return 'FABRIC'
-    
-    # Label detection
-    label_keywords = ['LABEL', 'TAG', 'HANG', 'CARE', 'EU']
-    if any(kw in name_upper for kw in label_keywords):
+
+    label_kw = ['LABEL', 'HANG TAG', 'CARE LABEL', 'ULL STICKER', 'STICKER ULL',
+                'RPI', 'BARCODE', 'SWING TAG', 'TAG GUNTING', 'WOVEN LABEL']
+    if any(kw in name_upper for kw in label_kw):
         return 'LABEL'
-    
-    # Thread detection
-    thread_keywords = ['THREAD', 'BENANG', 'YARN']
-    if any(kw in name_upper for kw in thread_keywords):
+
+    thread_kw = ['THREAD', 'BENANG', 'JAHIT']
+    if any(kw in name_upper for kw in thread_kw):
         return 'THREAD'
-    
-    # Filling detection
-    filling_keywords = ['FILLING', 'KAPAS', 'DACRON', 'POLYESTER FILL']
-    if any(kw in name_upper for kw in filling_keywords):
+
+    filling_kw = ['FILLING', 'KAPAS', 'DACRON', 'FIBER FILL', 'POLYESTER FILL']
+    if any(kw in name_upper for kw in filling_kw):
         return 'FILLING'
-    
-    # Box detection
-    box_keywords = ['BOX', 'CARTON', 'ACB']
-    if any(kw in code_upper or kw in name_upper for kw in box_keywords):
-        return 'BOX'
-    
-    # Default: ACCESSORIES
+
     return 'ACCESSORIES'
 
 
@@ -833,7 +1566,9 @@ def get_available_po_kain(
             db.query(PurchaseOrder)
             .filter(
                 PurchaseOrder.po_type == POType.KAIN,
-                PurchaseOrder.status.in_([POStatus.SENT, POStatus.RECEIVED])
+                PurchaseOrder.status.in_([
+                    POStatus.DRAFT, POStatus.SENT, POStatus.RECEIVED, POStatus.DONE
+                ])
             )
             .options(joinedload(PurchaseOrder.article))  # Eager load article
             .order_by(PurchaseOrder.order_date.desc())
@@ -850,6 +1585,7 @@ def get_available_po_kain(
                 "order_date": po.order_date.isoformat() if po.order_date else None,
                 "week": po.week,
                 "destination": po.destination,
+                "article_qty": po.article_qty,
             }
             
             # Include article if exists
@@ -948,11 +1684,19 @@ def bom_explosion(
                 detail=f"Article with code '{article_code}' not found"
             )
         
-        # Get BOM Header
+        # Get BOM Header - prefer consolidated purchasing BOM (PURCH-1.0)
         bom_header = db.query(BOMHeader).filter(
             BOMHeader.product_id == article.id,
+            BOMHeader.revision == "PURCH-1.0",
             BOMHeader.is_active == True
         ).first()
+        
+        if not bom_header:
+            # Fall back to any active BOM
+            bom_header = db.query(BOMHeader).filter(
+                BOMHeader.product_id == article.id,
+                BOMHeader.is_active == True
+            ).first()
         
         if not bom_header:
             # No BOM found - return empty materials list with message
@@ -969,10 +1713,13 @@ def bom_explosion(
                 "explosion_timestamp": datetime.now().isoformat()
             }
         
-        # Get BOM Details
-        bom_details = db.query(BOMDetail).filter(
-            BOMDetail.bom_header_id == bom_header.id
-        ).all()
+        # Get BOM Details — eagerly load component + its category
+        bom_details = (
+            db.query(BOMDetail)
+            .filter(BOMDetail.bom_header_id == bom_header.id)
+            .options(joinedload(BOMDetail.component).joinedload(Product.category))
+            .all()
+        )
         
         materials = []
         for detail in bom_details:
@@ -984,8 +1731,9 @@ def bom_explosion(
             wastage_pct = float(detail.wastage_percent or 0)
             qty_with_wastage = total_qty * (1 + wastage_pct / 100)
             
-            # Determine material category from product code or name
-            material_category = _detect_material_category(component.code, component.name)
+            # Determine material category — use DB category name when available
+            cat_name = component.category.name if component.category else ''
+            material_category = _detect_material_category(component.code, component.name, cat_name)
             
             # Apply filter if specified
             if material_type_filter:
@@ -1013,7 +1761,7 @@ def bom_explosion(
                 "name": component.name,
                 "type": material_type,
                 "qty_required": round(qty_with_wastage, 2),
-                "uom": detail.unit or "PCS",
+                "uom": component.uom.value if hasattr(component.uom, 'value') else str(component.uom or 'PCS'),
                 "category": material_category
             })
         

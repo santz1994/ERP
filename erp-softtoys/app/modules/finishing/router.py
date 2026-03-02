@@ -40,7 +40,7 @@ async def accept_wip_from_sewing(
 
     Response confirms handshake and next step.
 
-    Requires: SPV Finishing or Operator_Finishing
+    Requires: SPV Finishing or Admin_Finishing
     """
     return FinishingService.accept_wip_transfer(
         db=db,
@@ -102,7 +102,7 @@ async def perform_stuffing_operation(
 
     Proceeds to Step 420: Closing & Grooming
 
-    Requires: Operator_Finishing
+    Requires: Admin_Finishing
     """
     return FinishingService.perform_stuffing(
         db=db,
@@ -129,7 +129,7 @@ async def perform_closing_grooming(
 
     Next: Step 430 - CRITICAL Metal Detector Test
 
-    Requires: Operator_Finishing
+    Requires: Admin_Finishing
     """
     return FinishingService.perform_closing_and_grooming(
         db=db,

@@ -137,6 +137,18 @@ class WorkOrderStatus(str, enum.Enum):
     FINISHED = "Finished"
 
 
+class MOType(str, enum.Enum):
+    """Purpose type of a Manufacturing Order.
+
+    BUYER     – Reference/target MO based on buyer's purchase order.
+                Read-only for production; used as benchmark (acuan).
+    PRODUCTION – Operational/working MO for real-time material usage
+                 and daily production input by department admins.
+    """
+    BUYER = "BUYER"
+    PRODUCTION = "PRODUCTION"
+
+
 class ManufacturingOrder(Base):
     """Manufacturing Order (SPK Induk)
     Master production order that spans multiple departments.
@@ -159,6 +171,32 @@ class ManufacturingOrder(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     
+    # ========================================================================
+    # MO TYPE — BUYER vs PRODUCTION
+    # ========================================================================
+    mo_type = Column(
+        Enum(MOType),
+        nullable=False,
+        default=MOType.PRODUCTION,
+        index=True,
+        comment="BUYER = target ref from buyer PO (read-only); PRODUCTION = operational daily-tracking MO",
+    )
+    # BUYER MOs are quantity-locked (fixed to PO qty, cannot be edited by production)
+    is_qty_locked = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        comment="TRUE for BUYER MOs: qty is locked to PO qty and cannot be changed.",
+    )
+    # For PRODUCTION MOs: link back to the master BUYER MO of same batch
+    buyer_mo_id = Column(
+        Integer,
+        ForeignKey("manufacturing_orders.id"),
+        nullable=True,
+        index=True,
+        comment="FK to the BUYER MO this production MO mirrors (null for BUYER MOs)",
+    )
+
     # ========================================================================
     # DUAL TRIGGER SYSTEM - PO Fabric + PO Label
     # ========================================================================
@@ -221,6 +259,13 @@ class ManufacturingOrder(Base):
     product = relationship("Product", back_populates="manufacturing_orders")
     work_orders = relationship("WorkOrder", back_populates="manufacturing_order", cascade="all, delete-orphan")
     transfer_logs = relationship("TransferLog", back_populates="manufacturing_order")
+    # BUYER ↔ PRODUCTION self-reference
+    production_mos = relationship(
+        "ManufacturingOrder",
+        foreign_keys="ManufacturingOrder.buyer_mo_id",
+        backref="buyer_mo",
+        lazy="dynamic",
+    )
 
     def __repr__(self):
         return f"<ManufacturingOrder(batch={self.batch_number}, routing={self.routing_type.value})>"

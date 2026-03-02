@@ -45,7 +45,7 @@ async def accept_transfer_from_cutting(
     - Handshake status (ACCEPTED)
     - Next step (Material validation vs BOM)
 
-    Requires: SPV Sewing or Operator_Sewing
+    Requires: SPV Sewing or Admin_Sewing
     """
     return SewingService.accept_transfer_and_validate(
         db=db,
@@ -115,7 +115,7 @@ async def process_sewing_stage(
 
     Response includes next stage or QC entry point.
 
-    Requires: Operator_Sewing
+    Requires: Admin_Sewing
     """
     return SewingService.process_sewing_step(
         db=db,

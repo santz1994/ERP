@@ -47,7 +47,7 @@ class UserRole(str, enum.Enum):
 
 class User(Base):
     """Users with role-based access control
-    16 roles: Admin, PPIC Manager, Supervisors (5), Operators (5), QC (2), Warehouse (2), Purchasing, Security.
+    22 roles: Developer, Superadmin, Manager, Finance Manager, Admin, PPIC (2), Supervisors (3), Purchasing (2), QC (2), Warehouse (2), Admins (5), Security.
     """
 
     __tablename__ = "users"

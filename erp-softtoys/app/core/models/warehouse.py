@@ -11,6 +11,8 @@ from sqlalchemy import (
     Enum,
     ForeignKey,
     Integer,
+    JSON,
+    Numeric,
     String,
     func,
 )
@@ -53,6 +55,7 @@ class POStatus(str, enum.Enum):
     SENT = "Sent"
     RECEIVED = "Received"
     DONE = "Done"
+    CANCELLED = "Cancelled"
 
 
 class POType(str, enum.Enum):
@@ -168,6 +171,11 @@ class PurchaseOrder(Base):
         nullable=True,
         comment="Auto-computed: target_pallets × article.pcs_per_pallet. Should match article_qty."
     )
+
+    # Financial & metadata columns (exist in DB via migrations)
+    total_amount = Column(Numeric(15, 2), nullable=True, comment="Total PO value in IDR")
+    currency = Column(String(3), nullable=True, default="IDR", comment="Currency code")
+    extra_metadata = Column(JSON, nullable=True, comment="PO line items and extra info stored as JSON")
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

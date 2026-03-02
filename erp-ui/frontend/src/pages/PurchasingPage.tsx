@@ -26,6 +26,7 @@ import { NavigationCard } from '@/components/ui/NavigationCard';
 import { Card } from '@/components/ui/card';
 import { formatCurrency, getStatusBadge } from '@/lib/utils';
 import POCreateModal from '@/components/purchasing/POCreateModal';
+import PODetailModal from '@/components/purchasing/PODetailModal';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
@@ -51,6 +52,7 @@ interface PurchaseOrder {
 export default function PurchasingPage() {
   const navigate = useNavigate();
   const [showPOModal, setShowPOModal] = useState(false);
+  const [selectedPOId, setSelectedPOId] = useState<number | null>(null);
 
   // Fetch purchase orders
   const { data: purchaseOrders, isLoading } = useQuery({
@@ -289,7 +291,12 @@ export default function PurchasingPage() {
                   </tr>
                 ) : (
                   recentPOs.map((po: PurchaseOrder) => (
-                    <tr key={po.id} className="hover:bg-gray-50 transition-colors">
+                    <tr
+                      key={po.id}
+                      className="hover:bg-blue-50 transition-colors cursor-pointer"
+                      onClick={() => setSelectedPOId(po.id)}
+                      title="Click to view detail"
+                    >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{po.po_number}</div>
                       </td>
@@ -352,10 +359,16 @@ export default function PurchasingPage() {
       <POCreateModal
         isOpen={showPOModal}
         onClose={() => setShowPOModal(false)}
-        onSuccess={(poId) => {
+        onSuccess={() => {
           setShowPOModal(false);
-          navigate(`/purchasing/po/${poId}`);
         }}
+      />
+
+      <PODetailModal
+        poId={selectedPOId}
+        isOpen={selectedPOId !== null}
+        onClose={() => setSelectedPOId(null)}
+        onStatusChanged={() => setSelectedPOId(null)}
       />
     </div>
   );

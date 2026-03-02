@@ -99,7 +99,7 @@ export const LoginPage: React.FC = () => {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-all outline-none text-slate-800 placeholder-slate-400"
-                placeholder="ex: operator_cutting"
+                placeholder="ex: admin_cutting"
                 autoComplete="username"
                 required
               />
@@ -145,7 +145,7 @@ export const LoginPage: React.FC = () => {
               <code className="bg-slate-100 px-2 py-1 rounded">admin</code>
               <code className="bg-slate-100 px-2 py-1 rounded">developer</code>
               <code className="bg-slate-100 px-2 py-1 rounded">ppic_manager</code>
-              <code className="bg-slate-100 px-2 py-1 rounded">operator_cut</code>
+              <code className="bg-slate-100 px-2 py-1 rounded">admin_cutting</code>
             </div>
           </div>
         </div>

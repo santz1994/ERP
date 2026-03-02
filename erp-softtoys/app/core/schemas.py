@@ -22,7 +22,7 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=8)
     full_name: str = Field(..., min_length=1, max_length=100)
-    roles: list[UserRole] = [UserRole.OPERATOR_CUT]
+    roles: list[UserRole] = [UserRole.WAREHOUSE_OP]
 
 
 class UserLogin(BaseModel):
@@ -161,19 +161,29 @@ class MOStatus(str, Enum):
 
 
 class ManufacturingOrderCreate(BaseModel):
-    """Create manufacturing order request with Dual Trigger System support."""
+    """Create manufacturing order request with Dual Trigger System support.
+
+    BUSINESS RULE: Every MO must always reference a PO KAIN (po_fabric_id is required).
+    Week and destination may differ per PO LABEL batch, but the parent PO never changes.
+    """
 
     so_line_id: int | None = Field(None, description="Sales order line ID (optional)")
     product_id: int = Field(..., description="WIP/FG product ID")
     qty_planned: Decimal = Field(..., gt=0, description="Planned production quantity")
     routing_type: RoutingType = Field(..., description="Production routing (Route 1/2/3)")
     batch_number: str = Field(..., min_length=1, max_length=50, description="Batch number for traceability")
-    
-    # Dual Trigger System (NEW)
-    po_fabric_id: int | None = Field(None, description="PO for fabric materials (TRIGGER 1)")
+
+    # MANDATORY: MO must always trace back to a PO KAIN
+    po_fabric_id: int = Field(..., description="PO KAIN ID — REQUIRED. MO always references a PO.")
+
+    # Optional second trigger
     po_label_id: int | None = Field(None, description="PO for labels/tags (TRIGGER 2)")
     trigger_mode: str = Field("PARTIAL", description="Production release mode: PARTIAL or RELEASED")
-    
+
+    # MO purpose type
+    mo_type: str = Field("PRODUCTION", description="BUYER (locked ref) or PRODUCTION (operational)")
+    buyer_mo_id: int | None = Field(None, description="Link to BUYER MO for PRODUCTION type MOs")
+
     # IKEA Compliance (NEW)
     production_week: str | None = Field(None, description="IKEA week format (e.g., 05-2026)")
     destination_country: str | None = Field(None, description="Shipping destination")
@@ -192,18 +202,23 @@ class ManufacturingOrderResponse(BaseModel):
     routing_type: RoutingType
     batch_number: str
     state: MOStatus
-    
+
+    # MO type
+    mo_type: str = "PRODUCTION"
+    is_qty_locked: bool = False
+    buyer_mo_id: int | None = None
+
     # Dual Trigger System
-    po_fabric_id: int | None = None
+    po_fabric_id: int | None = None   # Always set — MO always references a PO
     po_label_id: int | None = None
     trigger_mode: str = "PARTIAL"
-    
+
     # IKEA Compliance
     production_week: str | None = None
     destination_country: str | None = None
     planned_production_date: date | None = None
     target_shipment_date: date | None = None
-    
+
     created_at: datetime
 
     class Config:

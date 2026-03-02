@@ -32,7 +32,7 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     - `email`: Valid email address
     - `password`: Password (min 8 chars)
     - `full_name`: User full name
-    - `roles`: List of roles (default: operator_cutting)
+    - `roles`: List of roles (default: warehouse_op)
 
     **Responses**:
     - `201`: User created successfully
@@ -40,7 +40,7 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     - `422`: Validation error
 
     **Default Roles**:
-    - operator_cutting, operator_sewing, operator_finishing, qc_inspector, etc.
+    - admin_cutting, admin_sewing, admin_finishing, qc_inspector, etc.
     """
     # Check if username exists
     existing_user = db.query(User).filter(User.username == user_data.username).first()
@@ -62,7 +62,7 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     hashed_password = PasswordUtils.hash_password(user_data.password)
 
     # Use first role from list or default (already a UserRole enum)
-    user_role = user_data.roles[0] if user_data.roles else UserRoleModel.OPERATOR_CUT
+    user_role = user_data.roles[0] if user_data.roles else UserRoleModel.WAREHOUSE_OP
 
     new_user = User(
         username=user_data.username,

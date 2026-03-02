@@ -47,6 +47,7 @@ import QCCheckpointPage from '@/pages/qc/QCCheckpointPage'
 import AdminUserPage from '@/pages/AdminUserPage'
 import PermissionManagementPage from '@/pages/PermissionManagementPage'
 import AdminMasterdataPage from '@/pages/AdminMasterdataPage'
+import BOMManagementPage from '@/pages/BOMManagementPage'  // ✅ NEW
 import AdminImportExportPage from '@/pages/AdminImportExportPage'
 import BulkImportPage from '@/pages/BulkImportPage'  // ✅ NEW: Session 49 Phase 8
 import AuditTrailPage from '@/pages/AuditTrailPage'
@@ -315,6 +316,50 @@ function App() {
         />
 
         <Route
+          path="/production/input/embroidery"
+          element={
+            <PrivateRoute module="production">
+              <ProtectedLayout>
+                <EmbroideryInputPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/production/input/sewing"
+          element={
+            <PrivateRoute module="production">
+              <ProtectedLayout>
+                <SewingInputPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/production/input/finishing"
+          element={
+            <PrivateRoute module="production">
+              <ProtectedLayout>
+                <FinishingInputPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/production/input/packing"
+          element={
+            <PrivateRoute module="production">
+              <ProtectedLayout>
+                <PackingInputPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
           path="/production/wip"
           element={
             <PrivateRoute module="production">
@@ -375,7 +420,13 @@ function App() {
         {/* QC Module Routes */}
         <Route
           path="/quality"
-          element={<Navigate to="/qc/checkpoint" replace />}
+          element={
+            <PrivateRoute module="qc">
+              <ProtectedLayout>
+                <QCPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
         />
 
         <Route
@@ -587,6 +638,18 @@ function App() {
             <PrivateRoute module="masterdata">
               <ProtectedLayout>
                 <AdminMasterdataPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        {/* ✅ BOM Management - NEW */}
+        <Route
+          path="/admin/bom-management"
+          element={
+            <PrivateRoute module="masterdata">
+              <ProtectedLayout>
+                <BOMManagementPage />
               </ProtectedLayout>
             </PrivateRoute>
           }

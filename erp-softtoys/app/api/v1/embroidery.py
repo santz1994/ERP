@@ -178,13 +178,24 @@ def get_line_status(
         # Transform model to response schema
         results = []
         for ls in line_statuses:
+            # Handle enum value safely
+            dept_name = ls.dept_name.value if hasattr(ls.dept_name, 'value') else str(ls.dept_name)
+            line_num = ls.line_number if ls.line_number else 1
+            is_occupied = (
+                ls.occupancy_status.value == "Occupied"
+                if hasattr(ls, 'occupancy_status') and ls.occupancy_status and hasattr(ls.occupancy_status, 'value')
+                else False
+            )
+            
             results.append(LineStatusResponse(
-                line_id=f"{ls.dept_name}_{ls.line_number}",
+                line_id=f"{dept_name}_{line_num}",
                 current_article=ls.current_batch_id,
-                is_occupied=ls.occupancy_status.value == "OCCUPIED" if ls.occupancy_status else False,
+                is_occupied=is_occupied,
                 department="Embroidery",
                 destination=ls.current_destination
             ))
+        
+        # If no line statuses found, return empty list instead of error
         return results
     except Exception as e:
         raise HTTPException(

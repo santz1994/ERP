@@ -46,47 +46,47 @@ class EndpointRoleRequirements:
 
     # Cutting Module
     CUTTING_EXECUTE = [
-        UserRole.OPERATOR_CUT, UserRole.SPV_CUTTING, UserRole.ADMIN
+        UserRole.ADMIN_CUTTING, UserRole.SPV_CUTTING, UserRole.ADMIN
     ]
     CUTTING_APPROVE = [UserRole.SPV_CUTTING, UserRole.ADMIN]
     CUTTING_READ = [
-        UserRole.OPERATOR_CUT, UserRole.SPV_CUTTING, UserRole.ADMIN,
+        UserRole.ADMIN_CUTTING, UserRole.SPV_CUTTING, UserRole.ADMIN,
         UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN
     ]
 
     # Embroidery Module
     EMBROIDERY_EXECUTE = [
-        UserRole.OPERATOR_EMBRO, UserRole.SPV_CUTTING, UserRole.ADMIN
+        UserRole.ADMIN_EMBROIDERY, UserRole.SPV_CUTTING, UserRole.ADMIN
     ]
     EMBROIDERY_READ = [
-        UserRole.OPERATOR_EMBRO, UserRole.SPV_CUTTING, UserRole.ADMIN,
+        UserRole.ADMIN_EMBROIDERY, UserRole.SPV_CUTTING, UserRole.ADMIN,
         UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN
     ]
 
     # Sewing Module
     SEWING_EXECUTE = [
-        UserRole.OPERATOR_SEW, UserRole.SPV_SEWING, UserRole.ADMIN
+        UserRole.ADMIN_SEWING, UserRole.SPV_SEWING, UserRole.ADMIN
     ]
     SEWING_APPROVE = [UserRole.SPV_SEWING, UserRole.ADMIN]
     SEWING_READ = [
-        UserRole.OPERATOR_SEW, UserRole.SPV_SEWING, UserRole.ADMIN,
+        UserRole.ADMIN_SEWING, UserRole.SPV_SEWING, UserRole.ADMIN,
         UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN
     ]
 
     # Finishing Module
     FINISHING_EXECUTE = [
-        UserRole.OPERATOR_FINISH, UserRole.SPV_FINISHING, UserRole.ADMIN
+        UserRole.ADMIN_FINISHING, UserRole.SPV_FINISHING, UserRole.ADMIN
     ]
     FINISHING_APPROVE = [UserRole.SPV_FINISHING, UserRole.ADMIN]
     FINISHING_READ = [
-        UserRole.OPERATOR_FINISH, UserRole.SPV_FINISHING, UserRole.ADMIN,
+        UserRole.ADMIN_FINISHING, UserRole.SPV_FINISHING, UserRole.ADMIN,
         UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN
     ]
 
     # Packing Module
-    PACKING_EXECUTE = [UserRole.OPERATOR_PACK, UserRole.ADMIN]
+    PACKING_EXECUTE = [UserRole.ADMIN_PACKING, UserRole.ADMIN]
     PACKING_READ = [
-        UserRole.OPERATOR_PACK, UserRole.ADMIN, UserRole.WAREHOUSE_ADMIN,
+        UserRole.ADMIN_PACKING, UserRole.ADMIN, UserRole.WAREHOUSE_ADMIN,
         UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN
     ]
 
@@ -113,7 +113,7 @@ class EndpointRoleRequirements:
 
     # Kanban Module
     KANBAN_CREATE = [
-        UserRole.OPERATOR_PACK, UserRole.WAREHOUSE_OP, UserRole.ADMIN
+        UserRole.ADMIN_PACKING, UserRole.WAREHOUSE_OP, UserRole.ADMIN
     ]
     KANBAN_APPROVE = [UserRole.WAREHOUSE_ADMIN, UserRole.ADMIN]
     KANBAN_FULFILL = [
@@ -150,11 +150,11 @@ class EndpointRoleRequirements:
     AUDIT_READ = [UserRole.DEVELOPER, UserRole.SUPERADMIN, UserRole.MANAGER,
                   UserRole.FINANCE_MANAGER, UserRole.ADMIN]
 
-    # Barcode Scanner - All Production Operators
+    # Barcode Scanner - All Production Department Admins
     BARCODE_SCAN = [UserRole.WAREHOUSE_OP, UserRole.WAREHOUSE_ADMIN,
-                    UserRole.OPERATOR_CUT, UserRole.OPERATOR_EMBRO,
-                    UserRole.OPERATOR_SEW, UserRole.OPERATOR_FINISH,
-                    UserRole.OPERATOR_PACK, UserRole.ADMIN]
+                    UserRole.ADMIN_CUTTING, UserRole.ADMIN_EMBROIDERY,
+                    UserRole.ADMIN_SEWING, UserRole.ADMIN_FINISHING,
+                    UserRole.ADMIN_PACKING, UserRole.ADMIN]
 
 
 # Helper function to convert role list to role name strings

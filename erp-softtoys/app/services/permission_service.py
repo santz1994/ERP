@@ -50,20 +50,20 @@ class PermissionService:
             # Level 4: Department Management
             UserRole.PPIC_MANAGER: [UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN],
             UserRole.PPIC_ADMIN: [UserRole.PPIC_ADMIN],
-            UserRole.SPV_CUTTING: [UserRole.SPV_CUTTING, UserRole.OPERATOR_CUT, UserRole.OPERATOR_EMBRO],
-            UserRole.SPV_SEWING: [UserRole.SPV_SEWING, UserRole.OPERATOR_SEW],
-            UserRole.SPV_FINISHING: [UserRole.SPV_FINISHING, UserRole.OPERATOR_FINISH, UserRole.OPERATOR_PACK],
+            UserRole.SPV_CUTTING: [UserRole.SPV_CUTTING, UserRole.ADMIN_CUTTING, UserRole.ADMIN_EMBROIDERY],
+            UserRole.SPV_SEWING: [UserRole.SPV_SEWING, UserRole.ADMIN_SEWING],
+            UserRole.SPV_FINISHING: [UserRole.SPV_FINISHING, UserRole.ADMIN_FINISHING, UserRole.ADMIN_PACKING],
             UserRole.WAREHOUSE_ADMIN: [UserRole.WAREHOUSE_ADMIN, UserRole.WAREHOUSE_OP],
             UserRole.QC_LAB: [UserRole.QC_LAB, UserRole.QC_INSPECTOR],
             UserRole.PURCHASING_HEAD: [UserRole.PURCHASING_HEAD, UserRole.PURCHASING],
             UserRole.PURCHASING: [UserRole.PURCHASING],
 
-            # Level 5: Operations (no inheritance)
-            UserRole.OPERATOR_CUT: [UserRole.OPERATOR_CUT],
-            UserRole.OPERATOR_EMBRO: [UserRole.OPERATOR_EMBRO],
-            UserRole.OPERATOR_SEW: [UserRole.OPERATOR_SEW],
-            UserRole.OPERATOR_FINISH: [UserRole.OPERATOR_FINISH],
-            UserRole.OPERATOR_PACK: [UserRole.OPERATOR_PACK],
+            # Level 5: Department Administration (no inheritance)
+            UserRole.ADMIN_CUTTING: [UserRole.ADMIN_CUTTING],
+            UserRole.ADMIN_EMBROIDERY: [UserRole.ADMIN_EMBROIDERY],
+            UserRole.ADMIN_SEWING: [UserRole.ADMIN_SEWING],
+            UserRole.ADMIN_FINISHING: [UserRole.ADMIN_FINISHING],
+            UserRole.ADMIN_PACKING: [UserRole.ADMIN_PACKING],
             UserRole.QC_INSPECTOR: [UserRole.QC_INSPECTOR],
             UserRole.WAREHOUSE_OP: [UserRole.WAREHOUSE_OP],
             UserRole.SECURITY: [UserRole.SECURITY]
@@ -113,7 +113,7 @@ class PermissionService:
     def get_effective_roles(self, user_role: UserRole) -> list[UserRole]:
         """Get all roles that this user effectively has (including inherited).
 
-        Example: SPV_CUTTING can also perform OPERATOR_CUTTING actions
+        Example: SPV_CUTTING can also perform ADMIN_CUTTING actions
         """
         return self.role_hierarchy.get(user_role, [user_role])
 

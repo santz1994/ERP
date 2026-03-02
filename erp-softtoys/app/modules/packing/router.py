@@ -43,7 +43,7 @@ async def sort_by_destination_and_week(
 
     Response includes destination, week, and next step.
 
-    Requires: Operator_Packing or SPV Packing
+    Requires: Admin_Packing or SPV Packing
     """
     return PackingService.sort_by_destination_and_week(
         db=db,
@@ -80,7 +80,7 @@ async def package_into_cartons(
 
     **Next:** Step 490 - Generate Shipping Marks
 
-    Requires: Operator_Packing
+    Requires: Admin_Packing
     """
     return PackingService.package_into_cartons(
         db=db,

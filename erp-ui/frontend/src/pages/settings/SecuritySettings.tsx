@@ -85,7 +85,7 @@ export const SecuritySettings: React.FC = () => {
               className="w-4 h-4"
             />
             <div>
-              <p className="font-medium">Two-Factor Authentication (2FA)</p>\n              <p className="text-xs text-gray-600\">Require 2FA for all user accounts</p>
+              <p className="font-medium">Two-Factor Authentication (2FA)</p><p className="text-xs text-gray-600\">Require 2FA for all user accounts</p>
             </div>
           </label>
 

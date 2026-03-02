@@ -30,11 +30,11 @@ export const MODULE_ACCESS_MATRIX: Record<string, UserRole[]> = {
     UserRole.WAREHOUSE_ADMIN,
     UserRole.QC_LAB,
     UserRole.QC_INSPECTOR,
-    UserRole.OPERATOR_CUT,
-    UserRole.OPERATOR_EMBRO,
-    UserRole.OPERATOR_SEW,
-    UserRole.OPERATOR_FINISH,
-    UserRole.OPERATOR_PACK,
+    UserRole.ADMIN_CUTTING,
+    UserRole.ADMIN_EMBROIDERY,
+    UserRole.ADMIN_SEWING,
+    UserRole.ADMIN_FINISHING,
+    UserRole.ADMIN_PACKING,
     UserRole.WAREHOUSE_OP,
     UserRole.SECURITY,
   ],
@@ -76,7 +76,7 @@ export const MODULE_ACCESS_MATRIX: Record<string, UserRole[]> = {
     UserRole.ADMIN,
     UserRole.PPIC_MANAGER,
     UserRole.SPV_CUTTING,
-    UserRole.OPERATOR_CUT,
+    UserRole.ADMIN_CUTTING,
   ],
   embroidery: [
     UserRole.DEVELOPER,
@@ -85,7 +85,7 @@ export const MODULE_ACCESS_MATRIX: Record<string, UserRole[]> = {
     UserRole.ADMIN,
     UserRole.PPIC_MANAGER,
     UserRole.SPV_SEWING,
-    UserRole.OPERATOR_EMBRO,
+    UserRole.ADMIN_EMBROIDERY,
   ],
   sewing: [
     UserRole.DEVELOPER,
@@ -94,7 +94,7 @@ export const MODULE_ACCESS_MATRIX: Record<string, UserRole[]> = {
     UserRole.ADMIN,
     UserRole.PPIC_MANAGER,
     UserRole.SPV_SEWING,
-    UserRole.OPERATOR_SEW,
+    UserRole.ADMIN_SEWING,
   ],
   finishing: [
     UserRole.DEVELOPER,
@@ -103,7 +103,7 @@ export const MODULE_ACCESS_MATRIX: Record<string, UserRole[]> = {
     UserRole.ADMIN,
     UserRole.PPIC_MANAGER,
     UserRole.SPV_FINISHING,
-    UserRole.OPERATOR_FINISH,
+    UserRole.ADMIN_FINISHING,
   ],
   packing: [
     UserRole.DEVELOPER,
@@ -112,7 +112,7 @@ export const MODULE_ACCESS_MATRIX: Record<string, UserRole[]> = {
     UserRole.ADMIN,
     UserRole.PPIC_MANAGER,
     UserRole.SPV_FINISHING,
-    UserRole.OPERATOR_PACK,
+    UserRole.ADMIN_PACKING,
   ],
   finishgoods: [
     UserRole.DEVELOPER,
@@ -141,7 +141,7 @@ export const MODULE_ACCESS_MATRIX: Record<string, UserRole[]> = {
     UserRole.MANAGER,
     UserRole.ADMIN,
     UserRole.WAREHOUSE_ADMIN,
-    UserRole.OPERATOR_PACK,
+    UserRole.ADMIN_PACKING,
   ],
   reports: [
     UserRole.DEVELOPER,
@@ -253,11 +253,11 @@ export const ROLE_HIERARCHY: Record<UserRole, number> = {
   [UserRole.WAREHOUSE_ADMIN]: 4,
   [UserRole.QC_LAB]: 4,
   [UserRole.PURCHASING]: 5,
-  [UserRole.OPERATOR_CUT]: 5,
-  [UserRole.OPERATOR_EMBRO]: 5,
-  [UserRole.OPERATOR_SEW]: 5,
-  [UserRole.OPERATOR_FINISH]: 5,
-  [UserRole.OPERATOR_PACK]: 5,
+  [UserRole.ADMIN_CUTTING]: 5,
+  [UserRole.ADMIN_EMBROIDERY]: 5,
+  [UserRole.ADMIN_SEWING]: 5,
+  [UserRole.ADMIN_FINISHING]: 5,
+  [UserRole.ADMIN_PACKING]: 5,
   [UserRole.QC_INSPECTOR]: 5,
   [UserRole.WAREHOUSE_OP]: 5,
   [UserRole.SECURITY]: 5,
@@ -291,11 +291,11 @@ export const isHighPrivilegeRole = (userRole: UserRole): boolean => {
 }
 
 /**
- * Check if user is an operator (Level 5)
- * Operators have limited UI with focus on execution
+ * Check if user is a department admin (Level 5)
+ * Department admins have limited UI with focus on execution
  * 
  * @param userRole - The user's role
- * @returns true if user is operator
+ * @returns true if user is department admin (level 5)
  */
 export const isOperatorRole = (userRole: UserRole): boolean => {
   const level = ROLE_HIERARCHY[userRole]
@@ -359,7 +359,7 @@ export const hasPermission = (
     return true
   }
 
-  // Operator roles: only VIEW and EXECUTE on their department
+  // Level 5 Department Admin roles: only VIEW and EXECUTE on their department
   if (isOperatorRole(userRole)) {
     return permission === PermissionLevel.VIEW || permission === PermissionLevel.EXECUTE
   }

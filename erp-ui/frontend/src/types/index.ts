@@ -36,12 +36,12 @@ export enum UserRole {
   PURCHASING_HEAD = 'Purchasing Head',
   PURCHASING = 'Purchasing',
   
-  // Level 5: Operations
-  OPERATOR_CUT = 'Operator Cutting',
-  OPERATOR_EMBRO = 'Operator Embroidery',
-  OPERATOR_SEW = 'Operator Sewing',
-  OPERATOR_FINISH = 'Operator Finishing',
-  OPERATOR_PACK = 'Operator Packing',
+  // Level 5: Department Administration
+  ADMIN_CUTTING = 'Admin Cutting',
+  ADMIN_EMBROIDERY = 'Admin Embroidery',
+  ADMIN_SEWING = 'Admin Sewing',
+  ADMIN_FINISHING = 'Admin Finishing',
+  ADMIN_PACKING = 'Admin Packing',
   QC_INSPECTOR = 'QC Inspector',
   WAREHOUSE_OP = 'Warehouse Operator',
   SECURITY = 'Security',
@@ -153,36 +153,4 @@ export * from './manufacturingOrder'
 // Stock/Inventory Types
 export * from './stock'
 
-// Re-export commonly used types for convenience
-export type {
-  WorkOrder,
-  WorkOrderExtended,
-  WorkOrderStatus,
-  CuttingStats,
-  SewingStats,
-  FinishingStats,
-  PackingStats,
-  EmbroideryStats
-} from './workOrder'
-
-export type {
-  ManufacturingOrder,
-  MODetail,
-  MOStatus,
-  MOFilter,
-  MOFormData,
-  MOStatusCount,
-  MOAggregateData
-} from './manufacturingOrder'
-
-export type {
-  StockItem,
-  StockQuant,
-  StockMovement,
-  StockMovementType,
-  StockDeduction,
-  StockAgingItem,
-  StockStatusItem,
-  Warehouse,
-  WarehouseLocation
-} from './stock'
+// Note: export * above already re-exports all types from each module

@@ -95,8 +95,26 @@ async def create_manufacturing_order(
             detail="Batch number already exists"
         )
 
+    # BUSINESS RULE: Every MO must trace back to a PO KAIN
+    if not mo_data.po_fabric_id:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="po_fabric_id wajib diisi. Setiap MO harus selalu mereferensikan PO KAIN."
+        )
+
+    # Validate PO KAIN exists
+    from app.core.models.warehouse import PurchaseOrder
+    po_kain = db.query(PurchaseOrder).filter(PurchaseOrder.id == mo_data.po_fabric_id).first()
+    if not po_kain:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"PO KAIN dengan ID {mo_data.po_fabric_id} tidak ditemukan."
+        )
+
     # Create manufacturing order with dual trigger support
-    from app.core.models.manufacturing import MOState
+    from app.core.models.manufacturing import MOState, MOType
+    mo_type_val = MOType.BUYER if mo_data.mo_type == "BUYER" else MOType.PRODUCTION
+    is_locked = mo_type_val == MOType.BUYER  # BUYER MOs are always qty-locked
     new_mo = ManufacturingOrder(
         so_line_id=mo_data.so_line_id,
         product_id=mo_data.product_id,
@@ -105,13 +123,18 @@ async def create_manufacturing_order(
         routing_type=mo_data.routing_type.value,
         batch_number=mo_data.batch_number,
         state=MOState.DRAFT,
-        
-        # Dual Trigger System (NEW)
-        po_fabric_id=mo_data.po_fabric_id,
+
+        # Dual Trigger System
+        po_fabric_id=mo_data.po_fabric_id,  # ALWAYS set
         po_label_id=mo_data.po_label_id,
         trigger_mode=mo_data.trigger_mode,
-        
-        # IKEA Compliance (NEW)
+
+        # MO Type
+        mo_type=mo_type_val,
+        is_qty_locked=is_locked,
+        buyer_mo_id=mo_data.buyer_mo_id,
+
+        # IKEA Compliance
         production_week=mo_data.production_week,
         destination_country=mo_data.destination_country,
         planned_production_date=mo_data.planned_production_date,
@@ -131,18 +154,23 @@ async def create_manufacturing_order(
         routing_type=RoutingType(new_mo.routing_type),
         batch_number=new_mo.batch_number,
         state=MOStatus(new_mo.state),
-        
+
+        # MO Type
+        mo_type=new_mo.mo_type.value if new_mo.mo_type else "PRODUCTION",
+        is_qty_locked=new_mo.is_qty_locked or False,
+        buyer_mo_id=new_mo.buyer_mo_id,
+
         # Dual Trigger System
         po_fabric_id=new_mo.po_fabric_id,
         po_label_id=new_mo.po_label_id,
         trigger_mode=new_mo.trigger_mode,
-        
+
         # IKEA Compliance
         production_week=new_mo.production_week,
         destination_country=new_mo.destination_country,
         planned_production_date=new_mo.planned_production_date,
         target_shipment_date=new_mo.target_shipment_date,
-        
+
         created_at=new_mo.created_at
     )
 
@@ -968,3 +996,107 @@ async def complete_task(
         state=MOStatus(mo.state),
         created_at=mo.created_at
     )
+
+
+# ==================== SPK LIST & DETAIL ====================
+
+@router.get("/spk")
+async def get_spk_list(
+    mo_id: int | None = Query(None, description="Filter by Manufacturing Order ID"),
+    department: str | None = Query(None, description="Filter by department"),
+    status: str | None = Query(None, description="Filter by status (ACTIVE, NOT_STARTED, IN_PROGRESS, COMPLETED, CANCELLED)"),
+    search: str | None = Query(None, description="Search by SPK number or article"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission("ppic.view_mo")),
+):
+    """List all SPKs with optional filters.
+
+    **Status values**: ACTIVE (NOT_STARTED + IN_PROGRESS), NOT_STARTED, IN_PROGRESS, COMPLETED, CANCELLED
+    """
+    from app.core.models.manufacturing import SPK
+    from app.core.models.products import Product
+
+    query = db.query(SPK).join(ManufacturingOrder, SPK.mo_id == ManufacturingOrder.id)
+
+    if mo_id:
+        query = query.filter(SPK.mo_id == mo_id)
+
+    if department:
+        query = query.filter(SPK.department == department)
+
+    if status:
+        if status.upper() == "ACTIVE":
+            query = query.filter(
+                SPK.production_status.in_(["NOT_STARTED", "IN_PROGRESS"])
+            )
+        else:
+            query = query.filter(SPK.production_status == status.upper())
+
+    spks = query.order_by(SPK.created_at.desc()).all()
+
+    result = []
+    for spk in spks:
+        mo = spk.manufacturing_order
+        product = db.query(Product).filter(Product.id == mo.product_id).first() if mo else None
+        dept_value = spk.department.value if hasattr(spk.department, 'value') else str(spk.department)
+        result.append({
+            "id": spk.id,
+            "spk_number": f"SPK-{spk.id:04d}",
+            "mo_id": spk.mo_id,
+            "mo_number": mo.batch_number if mo else "",
+            "department": dept_value,
+            "target_qty": spk.target_qty,
+            "actual_qty": spk.produced_qty or 0,
+            "good_output": spk.good_qty or 0,
+            "rework_qty": spk.rework_qty or 0,
+            "reject_qty": spk.defect_qty or 0,
+            "status": spk.production_status,
+            "start_date": spk.start_date.isoformat() if spk.start_date else None,
+            "target_date": spk.target_completion_date.isoformat() if spk.target_completion_date else None,
+            "completion_date": spk.completion_date.isoformat() if spk.completion_date else None,
+            "article_code": product.code if product else None,
+            "article_name": product.name if product else None,
+            "week": mo.production_week if mo and mo.production_week else "",
+            "po_label_number": None,
+        })
+
+    return result
+
+
+@router.get("/spk/{spk_id}")
+async def get_spk_detail(
+    spk_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission("ppic.view_mo")),
+):
+    """Get SPK detail by ID."""
+    from app.core.models.manufacturing import SPK
+    from app.core.models.products import Product
+
+    spk = db.query(SPK).filter(SPK.id == spk_id).first()
+    if not spk:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="SPK not found")
+
+    mo = spk.manufacturing_order
+    product = db.query(Product).filter(Product.id == mo.product_id).first() if mo else None
+    dept_value = spk.department.value if hasattr(spk.department, 'value') else str(spk.department)
+
+    return {
+        "id": spk.id,
+        "spk_number": f"SPK-{spk.id:04d}",
+        "mo_id": spk.mo_id,
+        "mo_number": mo.batch_number if mo else "",
+        "department": dept_value,
+        "target_qty": spk.target_qty,
+        "actual_qty": spk.produced_qty or 0,
+        "good_output": spk.good_qty or 0,
+        "rework_qty": spk.rework_qty or 0,
+        "reject_qty": spk.defect_qty or 0,
+        "status": spk.production_status,
+        "start_date": spk.start_date.isoformat() if spk.start_date else None,
+        "target_date": spk.target_completion_date.isoformat() if spk.target_completion_date else None,
+        "completion_date": spk.completion_date.isoformat() if spk.completion_date else None,
+        "article_code": product.code if product else None,
+        "article_name": product.name if product else None,
+        "week": mo.production_week if mo and mo.production_week else "",
+    }
