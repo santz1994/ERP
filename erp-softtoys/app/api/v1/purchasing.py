@@ -237,6 +237,9 @@ def _auto_trigger_mo_wo(db: Session, po: PurchaseOrder, user_id: int) -> dict | 
                 po_id=po.id,
                 product_id=po.article_id,
                 qty_planned=article_qty,
+                target_quantity=article_qty,
+                buffer_quantity=0,
+                production_quantity=article_qty,
                 routing_type=RoutingType.ROUTE2,
                 batch_number=batch_buyer,
                 state=MOState.DRAFT,
@@ -255,6 +258,9 @@ def _auto_trigger_mo_wo(db: Session, po: PurchaseOrder, user_id: int) -> dict | 
                 po_id=po.id,
                 product_id=po.article_id,
                 qty_planned=article_qty,
+                target_quantity=article_qty,
+                buffer_quantity=0,
+                production_quantity=article_qty,
                 routing_type=RoutingType.ROUTE2,
                 batch_number=batch_prod,
                 state=MOState.DRAFT,
@@ -368,7 +374,7 @@ def _auto_trigger_mo_wo(db: Session, po: PurchaseOrder, user_id: int) -> dict | 
     except Exception as e:
         db.rollback()
         print(f"❌ Error in auto MO/WO trigger: {e}")
-        return {"action": "error", "detail": str(e)}
+        return None
 
     return None
 
@@ -893,8 +899,8 @@ def generate_mo_for_po(
         raise HTTPException(400, "PO KAIN has no article_id — cannot generate MO")
 
     mo_info = _auto_trigger_mo_wo(db, po, current_user.id)
-    if mo_info is None:
-        raise HTTPException(400, "MO generation failed — check PO data")
+    if not mo_info:
+        raise HTTPException(status_code=400, detail="MO generation failed — check server logs for details (article_id, BOM data, or DB constraint)")
 
     return {
         "message": f"Manufacturing Order generated for {po.po_number}",

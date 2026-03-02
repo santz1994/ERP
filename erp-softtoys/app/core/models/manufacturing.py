@@ -3,7 +3,7 @@
 import enum
 
 from datetime import datetime, date
-from sqlalchemy import DECIMAL, Column, DateTime, Enum, ForeignKey, Integer, String, func, Date, Boolean, TEXT
+from sqlalchemy import DECIMAL, Column, DateTime, Enum, ForeignKey, Integer, JSON, String, func, Date, Boolean, TEXT
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
@@ -215,6 +215,21 @@ class ManufacturingOrder(Base):
     # Quantity tracking
     qty_planned = Column(DECIMAL(10, 2), nullable=False)  # Target from BOM
     qty_produced = Column(DECIMAL(10, 2), default=0)  # Actual output
+
+    # Flexible target system (migration 010) — all NOT NULL in DB
+    target_quantity = Column(DECIMAL(15, 3), nullable=False, default=0,
+                             comment="Target pcs to produce (final deliverable qty)")
+    buffer_quantity = Column(DECIMAL(15, 3), nullable=False, default=0,
+                             comment="Buffer pcs for QC/rework (e.g., 50 pcs extra)")
+    production_quantity = Column(DECIMAL(15, 3), nullable=False, default=0,
+                                 comment="Actual production qty = target + buffer (auto-calculated)")
+    auto_calculate_buffer = Column(Boolean, nullable=False, default=True,
+                                   comment="If true, system auto-recalculates buffer based on rules")
+    week_destination_locked = Column(Boolean, nullable=False, default=False,
+                                     comment="Lock week/destination after MO RELEASED (from PO LABEL approval)")
+    week = Column(String(50), nullable=True, comment="Week number (e.g., W01, W02-W03)")
+    destination = Column(String(100), nullable=True, comment="Buyer/destination (e.g., SHEIN_UK)")
+    extra_metadata = Column(JSON, nullable=True, comment="JSON metadata: BOM explosion, PO links, QC results")
 
     # Routing
     routing_type = Column(Enum(RoutingType), nullable=False, index=True)  # Route 1, 2, or 3

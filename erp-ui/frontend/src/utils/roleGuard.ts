@@ -114,6 +114,24 @@ export const MODULE_ACCESS_MATRIX: Record<string, UserRole[]> = {
     UserRole.SPV_FINISHING,
     UserRole.ADMIN_PACKING,
   ],
+  // Production module — all dept admins/SPVs + PPIC + management
+  // Routes: /daily-production, /production/input/*, /production/calendar, /production/wip
+  production: [
+    UserRole.DEVELOPER,
+    UserRole.SUPERADMIN,
+    UserRole.MANAGER,
+    UserRole.ADMIN,
+    UserRole.PPIC_MANAGER,
+    UserRole.PPIC_ADMIN,
+    UserRole.SPV_CUTTING,
+    UserRole.SPV_SEWING,
+    UserRole.SPV_FINISHING,
+    UserRole.ADMIN_CUTTING,
+    UserRole.ADMIN_EMBROIDERY,
+    UserRole.ADMIN_SEWING,
+    UserRole.ADMIN_FINISHING,
+    UserRole.ADMIN_PACKING,
+  ],
   finishgoods: [
     UserRole.DEVELOPER,
     UserRole.SUPERADMIN,
