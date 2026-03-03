@@ -1473,8 +1473,21 @@ async def material_issue(
             break
 
     if remaining > 0:
-        # Material debt — still issue but flag it
-        pass
+        # Material debt — still issue but create a debt record
+        try:
+            from app.core.models.daily_production import MaterialDebt as MaterialDebtRecord
+            debt_rec = MaterialDebtRecord(
+                spk_id=spk_id,
+                product_id=material_id,
+                qty_owed=int(remaining),
+                qty_settled=0,
+                approval_status="PENDING",
+                created_by_id=current_user.id,
+                approval_reason=f"Auto-created: issued {qty_issue} units, only {float(qty_issue) - float(remaining):.2f} available",
+            )
+            db.add(debt_rec)
+        except Exception as _debt_exc:
+            pass  # Don't block the issue even if debt record fails
 
     # Record StockMove
     prod_loc = db.query(Location).filter(
@@ -1521,9 +1534,13 @@ async def get_material_issue_history(
         StockMove.reference_doc == f"SPK-{spk_id}",
     ).order_by(StockMove.date.desc()).all()
 
+    # Batch-load all products in one query (avoid N+1)
+    product_ids = list({m.product_id for m in moves if m.product_id})
+    product_map = {p.id: p for p in db.query(Product).filter(Product.id.in_(product_ids)).all()}
+
     result = []
     for move in moves:
-        product = db.query(Product).filter(Product.id == move.product_id).first()
+        product = product_map.get(move.product_id)
         result.append({
             "id": move.id,
             "material_id": move.product_id,

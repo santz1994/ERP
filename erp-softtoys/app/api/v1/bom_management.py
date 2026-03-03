@@ -19,7 +19,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.database import get_db
-from app.core.models.bom import BOMDetail, BOMHeader, BOMType
+from app.core.models.bom import BOMCategory, BOMDetail, BOMHeader, BOMType
 from app.core.models.products import Product
 from app.core.models.users import User
 from app.api.v1.auth import get_current_user
@@ -43,6 +43,7 @@ def list_bom_headers(
     search: str = Query("", description="Filter by article code or name"),
     revision: str = Query("", description="Filter by revision"),
     active_only: bool = Query(False),
+    bom_category: str = Query("", description="Filter by category: Production or Purchase"),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
@@ -61,6 +62,12 @@ def list_bom_headers(
         q = q.filter(BOMHeader.revision.ilike(f"%{revision}%"))
     if active_only:
         q = q.filter(BOMHeader.is_active == True)
+    if bom_category:
+        try:
+            cat = BOMCategory(bom_category)
+            q = q.filter(BOMHeader.bom_category == cat)
+        except ValueError:
+            pass
 
     total = q.count()
     headers = (
@@ -124,9 +131,16 @@ def create_bom_header(
     except ValueError:
         bom_type = BOMType.MANUFACTURING
 
+    cat_str = body.get("bom_category", BOMCategory.PRODUCTION.value)
+    try:
+        bom_cat = BOMCategory(cat_str)
+    except ValueError:
+        bom_cat = BOMCategory.PRODUCTION
+
     h = BOMHeader(
         product_id=product_id,
         bom_type=bom_type,
+        bom_category=bom_cat,
         revision=revision,
         qty_output=float(body.get("qty_output", 1) or 1),
         is_active=bool(body.get("is_active", True)),
@@ -162,6 +176,11 @@ def update_bom_header(
             pass
     if "revision_reason" in body:
         h.revision_reason = body["revision_reason"]
+    if "bom_category" in body and body["bom_category"]:
+        try:
+            h.bom_category = BOMCategory(body["bom_category"])
+        except ValueError:
+            pass
     h.revised_by = current_user.id
 
     db.commit(); db.refresh(h)
@@ -280,6 +299,7 @@ def _fmt_header(h: BOMHeader) -> dict:
         "bom_type": h.bom_type.value if h.bom_type else None,
         "qty_output": float(h.qty_output or 1),
         "is_active": h.is_active,
+        "bom_category": h.bom_category.value if h.bom_category else "Production",
         "revision_reason": h.revision_reason,
         "detail_count": len(h.details) if hasattr(h, "details") and h.details is not None else None,
         "created_at": h.created_at.isoformat() if h.created_at else None,

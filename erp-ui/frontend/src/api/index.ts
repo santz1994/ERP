@@ -387,6 +387,14 @@ export const ppicApi = {
   
   releaseMaterials: (spk_id: number) =>
     apiClient.post(`/ppic/material-allocation/release`, { spk_id }),
+
+  // BOM Auto-Allocate — bulk issue all BOM materials to a Work Order
+  autoAllocateBOM: (wo_id: number, dry_run = false) =>
+    apiClient.post(`/ppic/spk/${wo_id}/auto-allocate?dry_run=${dry_run}`),
+
+  // Material Efficiency Report — BOM planned vs actual issued
+  getMaterialEfficiency: (params?: { mo_id?: number; wo_id?: number; dept?: string }) =>
+    apiClient.get('/ppic/reports/material-efficiency', { params }),
 }
 
 // ============================================================================

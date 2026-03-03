@@ -20,7 +20,11 @@ import {
   Search,
   FileText,
   TrendingDown,
-  ArrowRight
+  ArrowRight,
+  Zap,
+  X,
+  CheckSquare,
+  Eye
 } from 'lucide-react'
 import { formatNumber, formatDate, cn } from '@/lib/utils'
 
@@ -35,11 +39,36 @@ const materialIssueSchema = z.object({
 
 type MaterialIssueForm = z.infer<typeof materialIssueSchema>
 
+interface AllocResult {
+  wo_id: number
+  dry_run: boolean
+  department: string
+  product_name: string
+  target_qty: number
+  reference: string
+  total_materials: number
+  total_debt_lines: number
+  allocations: Array<{
+    material_code: string
+    material_name: string
+    qty_required: number
+    qty_available: number
+    qty_allocated: number
+    qty_debt: number
+    uom: string
+    is_debt: boolean
+    status: string
+  }>
+  message: string
+}
+
 const MaterialIssuePage: React.FC = () => {
   const [selectedSPK, setSelectedSPK] = useState<number | null>(null)
   const [searchMaterial, setSearchMaterial] = useState('')
   const [showDebtWarning, setShowDebtWarning] = useState(false)
-  
+  const [allocResult, setAllocResult] = useState<AllocResult | null>(null)
+  const [showAllocModal, setShowAllocModal] = useState(false)
+
   const queryClient = useQueryClient()
 
   // Fetch SPK List (APPROVED status only)
@@ -118,6 +147,24 @@ const MaterialIssuePage: React.FC = () => {
     onError: (error: any) => {
       toast.error(error.response?.data?.detail || 'Failed to issue material')
     }
+  })
+
+  // Auto-Allocate BOM mutation
+  const autoAllocateMutation = useMutation({
+    mutationFn: ({ wo_id, dry_run }: { wo_id: number; dry_run: boolean }) =>
+      api.ppic.autoAllocateBOM(wo_id, dry_run),
+    onSuccess: (result: AllocResult) => {
+      setAllocResult(result)
+      setShowAllocModal(true)
+      if (!result.dry_run) {
+        queryClient.invalidateQueries({ queryKey: ['material-stock'] })
+        queryClient.invalidateQueries({ queryKey: ['material-issue-history'] })
+        toast.success(result.message)
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.detail || 'Auto-allocate failed')
+    },
   })
 
   const onSubmit = (data: MaterialIssueForm) => {
@@ -236,7 +283,7 @@ const MaterialIssuePage: React.FC = () => {
               {/* SPK Info Card */}
               <Card className="p-6 bg-blue-50 border-blue-200">
                 <div className="flex items-start justify-between">
-                  <div>
+                  <div className="flex-1">
                     <h3 className="text-lg font-semibold text-blue-900">
                       {spkDetail?.spk_number}
                     </h3>
@@ -250,8 +297,160 @@ const MaterialIssuePage: React.FC = () => {
                       </span>
                     </div>
                   </div>
+                  {/* Auto-Allocate buttons */}
+                  <div className="flex flex-col gap-2 ml-4">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-blue-400 text-blue-700 hover:bg-blue-100 text-xs whitespace-nowrap"
+                      disabled={autoAllocateMutation.isPending}
+                      onClick={() => autoAllocateMutation.mutate({ wo_id: selectedSPK!, dry_run: true })}
+                    >
+                      <Eye className="w-3 h-3 mr-1" />
+                      Preview BOM
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="bg-green-600 hover:bg-green-700 text-white text-xs whitespace-nowrap"
+                      disabled={autoAllocateMutation.isPending}
+                      onClick={() => autoAllocateMutation.mutate({ wo_id: selectedSPK!, dry_run: false })}
+                    >
+                      <Zap className="w-3 h-3 mr-1" />
+                      {autoAllocateMutation.isPending ? 'Allocating...' : 'Auto-Allocate All'}
+                    </Button>
+                  </div>
                 </div>
               </Card>
+
+              {/* Auto-Allocate Result Modal */}
+              {showAllocModal && allocResult && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                  <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col">
+                    {/* Modal header */}
+                    <div className={cn(
+                      'flex items-center justify-between p-5 border-b rounded-t-xl',
+                      allocResult.dry_run ? 'bg-amber-50' : 'bg-green-50'
+                    )}>
+                      <div>
+                        <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                          {allocResult.dry_run ? (
+                            <><Eye className="w-5 h-5 text-amber-600" /> BOM Preview (Dry Run)</>
+                          ) : (
+                            <><CheckSquare className="w-5 h-5 text-green-600" /> BOM Auto-Allocated</>
+                          )}
+                        </h2>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {allocResult.product_name} · {allocResult.department} · {formatNumber(allocResult.target_qty)} pcs
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setShowAllocModal(false)}
+                        className="p-2 hover:bg-gray-100 rounded-full"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    {/* Stats row */}
+                    <div className="grid grid-cols-3 gap-4 p-5 border-b bg-gray-50">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-blue-700">{allocResult.total_materials}</p>
+                        <p className="text-xs text-gray-500 mt-1">Total Materials</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-green-700">
+                          {allocResult.total_materials - allocResult.total_debt_lines}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">Fully Allocated</p>
+                      </div>
+                      <div className="text-center">
+                        <p className={cn(
+                          'text-2xl font-bold',
+                          allocResult.total_debt_lines > 0 ? 'text-red-600' : 'text-gray-400'
+                        )}>{allocResult.total_debt_lines}</p>
+                        <p className="text-xs text-gray-500 mt-1">On Debt</p>
+                      </div>
+                    </div>
+
+                    {/* Materials table */}
+                    <div className="overflow-y-auto flex-1 p-4">
+                      <table className="w-full text-sm">
+                        <thead className="text-xs text-gray-500 uppercase border-b">
+                          <tr>
+                            <th className="text-left pb-2">Material</th>
+                            <th className="text-right pb-2">Required</th>
+                            <th className="text-right pb-2">Available</th>
+                            <th className="text-right pb-2">Allocated</th>
+                            <th className="text-center pb-2">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                          {allocResult.allocations.map((a, idx) => (
+                            <tr key={idx} className={cn(
+                              'py-2',
+                              a.is_debt && 'bg-red-50'
+                            )}>
+                              <td className="py-2 pr-3">
+                                <p className="font-medium text-gray-900">{a.material_code}</p>
+                                <p className="text-xs text-gray-500">{a.material_name}</p>
+                              </td>
+                              <td className="text-right py-2 text-gray-700 whitespace-nowrap">
+                                {formatNumber(a.qty_required)} {a.uom}
+                              </td>
+                              <td className={cn(
+                                'text-right py-2 whitespace-nowrap',
+                                a.qty_available < a.qty_required ? 'text-red-600 font-semibold' : 'text-green-700'
+                              )}>
+                                {formatNumber(a.qty_available)} {a.uom}
+                              </td>
+                              <td className="text-right py-2 whitespace-nowrap">
+                                <span className={a.is_debt ? 'text-red-700' : 'text-green-700'}>
+                                  {formatNumber(a.qty_allocated)} {a.uom}
+                                </span>
+                                {a.qty_debt > 0 && (
+                                  <span className="ml-1 text-xs text-red-500">(-{formatNumber(a.qty_debt)} debt)</span>
+                                )}
+                              </td>
+                              <td className="text-center py-2">
+                                {a.status === 'OK' ? (
+                                  <Badge className="bg-green-100 text-green-800 text-xs">OK</Badge>
+                                ) : a.status === 'DEBT' ? (
+                                  <Badge className="bg-red-100 text-red-800 text-xs">DEBT</Badge>
+                                ) : (
+                                  <Badge className="bg-yellow-100 text-yellow-800 text-xs">LOW</Badge>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="p-4 border-t flex items-center justify-between bg-gray-50 rounded-b-xl">
+                      {allocResult.dry_run ? (
+                        <Button
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                          disabled={autoAllocateMutation.isPending}
+                          onClick={() => {
+                            setShowAllocModal(false)
+                            autoAllocateMutation.mutate({ wo_id: selectedSPK!, dry_run: false })
+                          }}
+                        >
+                          <Zap className="w-4 h-4 mr-2" />
+                          Confirm & Allocate Now
+                        </Button>
+                      ) : (
+                        <p className="text-sm text-green-700 font-medium">
+                          <CheckCircle className="w-4 h-4 inline mr-1" />
+                          Materials allocated — ref: {allocResult.reference}
+                        </p>
+                      )}
+                      <Button variant="outline" onClick={() => setShowAllocModal(false)}>Close</Button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Material Selection */}
               <Card className="p-6">

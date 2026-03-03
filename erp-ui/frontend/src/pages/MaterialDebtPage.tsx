@@ -85,7 +85,7 @@ const MaterialDebtPage: React.FC = () => {
 
   const fetchDebtDetail = async (debtId: number) => {
     try {
-      const response = await apiClient.get(`/api/v1/warehouse/material-debt/${debtId}`);
+      const response = await apiClient.get(`/warehouse/material-debt/${debtId}`);
       setSelectedDebt(response.data);
       setShowDetailModal(true);
     } catch (error) {
@@ -388,7 +388,7 @@ const DebtDetailModal: React.FC<{
     setLoading(true);
     try {
       const approverRole = user?.role === UserRole.MANAGER || user?.role === UserRole.FINANCE_MANAGER ? 'MANAGER' : 'SPV';
-      await apiClient.post(`/api/v1/warehouse/material-debt/${debt.id}/approve`, {
+      await apiClient.post(`/warehouse/material-debt/${debt.id}/approve`, {
         approval_decision: decision,
         approver_role: approverRole,
         notes: approvalNotes
@@ -736,7 +736,7 @@ const AdjustmentModal: React.FC<{
     setLoading(true);
     setError('');
     try {
-      await apiClient.post(`/api/v1/warehouse/material-debt/${debt.id}/adjust`, {
+      await apiClient.post(`/warehouse/material-debt/${debt.id}/adjust`, {
         actual_received_qty: parseFloat(formData.actual_received_qty),
         adjustment_notes: formData.adjustment_notes,
         received_date: formData.received_date

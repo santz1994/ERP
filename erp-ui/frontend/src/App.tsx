@@ -34,6 +34,7 @@ import MaterialIssuePage from '@/pages/warehouse/MaterialIssuePage'
 import FinishingWarehousePage from '@/pages/warehouse/FinishingWarehousePage'
 import StockOpnamePage from '@/pages/warehouse/StockOpnamePage'
 import MaterialAllocationPage from '@/pages/ppic/MaterialAllocationPage'
+import MaterialEfficiencyPage from '@/pages/ppic/MaterialEfficiencyPage'
 import EmbroideryInputPage from '@/pages/production/EmbroideryInputPage'
 import SewingInputPage from '@/pages/production/SewingInputPage'
 import FinishingInputPage from '@/pages/production/FinishingInputPage'
@@ -47,9 +48,11 @@ import QCCheckpointPage from '@/pages/qc/QCCheckpointPage'
 import AdminUserPage from '@/pages/AdminUserPage'
 import PermissionManagementPage from '@/pages/PermissionManagementPage'
 import AdminMasterdataPage from '@/pages/AdminMasterdataPage'
-import BOMManagementPage from '@/pages/BOMManagementPage'  // ✅ NEW
+import BOMManagementPage from '@/pages/BOMManagementPage'
+import BOMProductionPage from '@/pages/bom/BOMProductionPage'
+import BOMPurchasePage from '@/pages/bom/BOMPurchasePage'
 import AdminImportExportPage from '@/pages/AdminImportExportPage'
-import BulkImportPage from '@/pages/BulkImportPage'  // ✅ NEW: Session 49 Phase 8
+import BulkImportPage from '@/pages/BulkImportPage'
 import AuditTrailPage from '@/pages/AuditTrailPage'
 import MaterialDebtPage from '@/pages/MaterialDebtPage'
 import ChangePasswordPage from '@/pages/settings/ChangePasswordPage'
@@ -551,6 +554,17 @@ function App() {
         />
 
         <Route
+          path="/ppic/material-efficiency"
+          element={
+            <PrivateRoute module="ppic">
+              <ProtectedLayout>
+                <MaterialEfficiencyPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+
+        <Route
           path="/production/input/embroidery"
           element={
             <PrivateRoute module="production">
@@ -643,13 +657,33 @@ function App() {
           }
         />
 
-        {/* ✅ BOM Management - NEW */}
+        {/* BOM Management */}
         <Route
           path="/admin/bom-management"
           element={
             <PrivateRoute module="masterdata">
               <ProtectedLayout>
                 <BOMManagementPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/bom-production"
+          element={
+            <PrivateRoute module="masterdata">
+              <ProtectedLayout>
+                <BOMProductionPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/bom-purchase"
+          element={
+            <PrivateRoute module="masterdata">
+              <ProtectedLayout>
+                <BOMPurchasePage />
               </ProtectedLayout>
             </PrivateRoute>
           }

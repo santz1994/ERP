@@ -51,7 +51,7 @@ from app.core.datetime_utils import DateTimeJSONEncoder
 from app.modules.cutting import cutting_router
 from app.modules.finishing import finishing_router
 from app.modules.packing import packing_router
-from app.modules.quality import quality_router
+from app.modules.quality import quality_router, qc_checkpoint_router
 from app.modules.sewing import sewing_router
 
 # Create Tables (Otomatis buat tabel saat start - untuk dev mode)
@@ -285,6 +285,12 @@ app.include_router(
 # Phase 3: Quality Control Module
 app.include_router(
     quality_router,
+    prefix=settings.API_PREFIX
+)
+
+# QC 4-Checkpoint (inline QC per SPK per department)
+app.include_router(
+    qc_checkpoint_router,
     prefix=settings.API_PREFIX
 )
 

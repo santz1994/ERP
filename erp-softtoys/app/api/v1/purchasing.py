@@ -643,13 +643,17 @@ def create_po_from_ui(
                 raise HTTPException(status_code=404, detail=f"Article {request.article_id} not found")
 
         # Resolve product_ids, normalise material list, compute total
+        # Batch-load products by code in one query (avoid N+1)
+        codes_to_lookup = [mat.get("material_code", "") for mat in request.materials if not mat.get("product_id") and mat.get("material_code")]
+        code_map = {p.code: p for p in db.query(Product).filter(Product.code.in_(codes_to_lookup)).all()} if codes_to_lookup else {}
+
         normalized_materials = []
         total_amount = 0.0
         for mat in request.materials:
             pid = mat.get("product_id")
             if not pid:
                 code = mat.get("material_code", "")
-                prod = db.query(Product).filter(Product.code == code).first()
+                prod = code_map.get(code)
                 pid = prod.id if prod else None
 
             qty = float(mat.get("quantity") or 0)

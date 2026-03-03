@@ -193,13 +193,24 @@ async def get_spk_list(
 
         work_orders = query.order_by(WorkOrder.id.desc()).offset(skip).limit(limit).all()
 
+        # ── Batch-load MOs and Products to avoid N+1 queries ──
+        mo_ids = [wo.mo_id for wo in work_orders if wo.mo_id]
+        mo_map: dict = {}
+        if mo_ids:
+            mos = db.query(ManufacturingOrder).filter(ManufacturingOrder.id.in_(mo_ids)).all()
+            mo_map = {m.id: m for m in mos}
+
+        product_ids = list({m.product_id for m in mo_map.values() if m.product_id})
+        product_map: dict = {}
+        if product_ids:
+            products = db.query(Product).filter(Product.id.in_(product_ids)).all()
+            product_map = {p.id: p for p in products}
+
         result = []
         for wo in work_orders:
-            # Get MO + product info
-            mo = db.query(ManufacturingOrder).filter(ManufacturingOrder.id == wo.mo_id).first()
-            product = None
-            if mo:
-                product = db.query(Product).filter(Product.id == mo.product_id).first()
+            # Get MO + product from pre-loaded maps (no per-row DB query)
+            mo = mo_map.get(wo.mo_id) if wo.mo_id else None
+            product = product_map.get(mo.product_id) if mo and mo.product_id else None
 
             dept_val = wo.department.value if hasattr(wo.department, "value") else str(wo.department)
             produced = float(wo.output_qty or 0)
@@ -236,41 +247,48 @@ async def get_spk_list(
                     ).all()
 
                     # Aggregate raw materials across all WIP BOMs for this dept.
-                    # Same material may appear in multiple WIP pieces (e.g. RED fabric
-                    # used by both Chili and Sauce pieces) — SUM the quantities.
-                    # Exclude WIP sub-assemblies — only consumable raw materials.
+                    # Batch-load ALL BOMDetails + component Products at once (no N+1).
+                    wip_header_ids = [h.id for h in wip_bom_headers]
+                    all_details = db.query(BOMDetail).filter(
+                        BOMDetail.bom_header_id.in_(wip_header_ids)
+                    ).all()
+                    comp_ids = list({d.component_id for d in all_details})
+                    comp_map: dict = {}
+                    if comp_ids:
+                        comps = db.query(Product).filter(Product.id.in_(comp_ids)).all()
+                        comp_map = {p.id: p for p in comps}
+
                     mat_totals: dict = {}  # component_id -> {code, name, qty, uom}
-                    for wip_header in wip_bom_headers:
-                        for detail in db.query(BOMDetail).filter(
-                            BOMDetail.bom_header_id == wip_header.id
-                        ).all():
-                            mat = db.query(Product).filter(Product.id == detail.component_id).first()
-                            if mat and mat.type != ProductType.WIP:
-                                uom_val = mat.uom.value if hasattr(mat.uom, "value") else str(mat.uom) if mat.uom else "PCS"
-                                if detail.component_id in mat_totals:
-                                    mat_totals[detail.component_id]["qtyPerUnit"] = round(
-                                        mat_totals[detail.component_id]["qtyPerUnit"] + float(detail.qty_needed or 0), 6
-                                    )
-                                else:
-                                    mat_totals[detail.component_id] = {
-                                        "materialCode": mat.code or str(mat.id),
-                                        "materialName": mat.name or "",
-                                        "qtyPerUnit": float(detail.qty_needed or 0),
-                                        "uom": uom_val,
-                                    }
+                    for detail in all_details:
+                        mat = comp_map.get(detail.component_id)
+                        if mat and mat.type != ProductType.WIP:
+                            uom_val = mat.uom.value if hasattr(mat.uom, "value") else str(mat.uom) if mat.uom else "PCS"
+                            if detail.component_id in mat_totals:
+                                mat_totals[detail.component_id]["qtyPerUnit"] = round(
+                                    mat_totals[detail.component_id]["qtyPerUnit"] + float(detail.qty_needed or 0), 6
+                                )
+                            else:
+                                mat_totals[detail.component_id] = {
+                                    "materialCode": mat.code or str(mat.id),
+                                    "materialName": mat.name or "",
+                                    "qtyPerUnit": float(detail.qty_needed or 0),
+                                    "uom": uom_val,
+                                }
                     bom_materials = list(mat_totals.values())
 
-                # Fallback to consolidated PURCH-1.0 BOM if no dept-specific BOMs found
                 if not bom_materials:
                     bom_header = db.query(BOMHeader).filter(
                         BOMHeader.product_id == mo.product_id,
                         BOMHeader.is_active == True
                     ).order_by(BOMHeader.id.desc()).first()
                     if bom_header:
-                        for detail in db.query(BOMDetail).filter(
+                        fallback_details = db.query(BOMDetail).filter(
                             BOMDetail.bom_header_id == bom_header.id
-                        ).all():
-                            mat = db.query(Product).filter(Product.id == detail.component_id).first()
+                        ).all()
+                        fb_comp_ids = [d.component_id for d in fallback_details]
+                        fb_comp_map = {p.id: p for p in db.query(Product).filter(Product.id.in_(fb_comp_ids)).all()}
+                        for detail in fallback_details:
+                            mat = fb_comp_map.get(detail.component_id)
                             if mat:
                                 uom_val = mat.uom.value if hasattr(mat.uom, "value") else str(mat.uom) if mat.uom else "PCS"
                                 bom_materials.append({
@@ -371,6 +389,237 @@ async def get_spk_detail(
             }
             for e in entries
         ],
+    }
+
+
+# ============================================================================
+# ENDPOINT 1C: BOM Auto-Allocate — bulk issue materials to a Work Order from BOM
+# ============================================================================
+@router.post("/spk/{wo_id}/auto-allocate")
+async def auto_allocate_bom_materials(
+    wo_id: int,
+    dry_run: bool = False,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Auto-allocate (bulk issue) all BOM materials for a Work Order based on its production BOM.
+
+    Logic:
+    1. Load WorkOrder → ManufacturingOrder → product
+    2. Map department → BOM revision prefix (CUT-1.0, EMB-1.0, etc.)
+    3. Find active BOM headers for this product + department
+    4. For each BOM material: required_qty = qty_per_unit × (1 + wastage%) × wo.target_qty / bom.qty_output
+    5. FIFO deduct from StockQuants; record StockMove per material
+    6. Return allocation summary (allocated, debts, warnings)
+
+    Query params:
+    - dry_run=true  → preview only, no DB writes (default: false)
+    """
+    from decimal import Decimal
+    from app.core.models.warehouse import StockMove, StockQuant, Location, StockMoveStatus
+    from app.core.models.products import Product, ProductType
+
+    # ── 1. Load Work Order ────────────────────────────────────────────────────
+    wo = db.query(WorkOrder).filter(WorkOrder.id == wo_id).first()
+    if not wo:
+        raise HTTPException(status_code=404, detail=f"Work Order {wo_id} not found")
+
+    mo = db.query(ManufacturingOrder).filter(ManufacturingOrder.id == wo.mo_id).first()
+    if not mo:
+        raise HTTPException(status_code=404, detail=f"Manufacturing Order for WO {wo_id} not found")
+
+    product = db.query(Product).filter(Product.id == mo.product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product for MO not found")
+
+    dept_val = wo.department.value if hasattr(wo.department, "value") else str(wo.department)
+    target_qty = float(wo.target_qty or 0)
+    if target_qty <= 0:
+        raise HTTPException(status_code=400, detail="Work Order target_qty must be > 0")
+
+    # ── 2. BOM lookup — same logic as SPK list ────────────────────────────────
+    DEPT_BOM_REVISION = {
+        "Cutting": "CUT-1.0",
+        "Embroidery": "EMB-1.0",
+        "Sewing": "SEW-1.0",
+        "Finishing": "FIN-1.0",
+        "Packing": "PCK-1.0",
+    }
+    dept_revision = DEPT_BOM_REVISION.get(dept_val)
+    name_keyword = product.name.split()[0].upper() if product.name else ""
+
+    bom_headers = []
+    if dept_revision and name_keyword:
+        bom_headers = db.query(BOMHeader).join(
+            Product, BOMHeader.product_id == Product.id
+        ).filter(
+            BOMHeader.revision == dept_revision,
+            BOMHeader.is_active == True,
+            Product.code.ilike(f"%{name_keyword}%"),
+        ).all()
+
+    # Fallback: any active BOM for this product
+    if not bom_headers:
+        fallback = db.query(BOMHeader).filter(
+            BOMHeader.product_id == mo.product_id,
+            BOMHeader.is_active == True,
+        ).order_by(BOMHeader.id.desc()).first()
+        if fallback:
+            bom_headers = [fallback]
+
+    if not bom_headers:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No active BOM found for product '{product.name}' department '{dept_val}'"
+        )
+
+    # ── 3. Aggregate BOM materials (with wastage) ─────────────────────────────
+    header_ids = [h.id for h in bom_headers]
+    all_details = db.query(BOMDetail).filter(BOMDetail.bom_header_id.in_(header_ids)).all()
+
+    # Group by header to get qty_output denominator
+    header_map = {h.id: h for h in bom_headers}
+    comp_ids = list({d.component_id for d in all_details})
+    comp_map = {p.id: p for p in db.query(Product).filter(Product.id.in_(comp_ids)).all()}
+
+    # Aggregate: component_id → required total qty
+    mat_totals: dict = {}  # component_id → {code, name, uom, qty_required}
+    for detail in all_details:
+        mat = comp_map.get(detail.component_id)
+        if not mat or mat.type == ProductType.WIP:
+            continue
+        header = header_map.get(detail.bom_header_id)
+        bom_output = float((header.qty_output or 1) if header else 1)
+        wastage_mult = 1.0 + float(detail.wastage_percent or 0) / 100.0
+        qty_required = float(detail.qty_needed or 0) * wastage_mult * target_qty / bom_output
+        uom_val = mat.uom.value if hasattr(mat.uom, "value") else str(mat.uom) if mat.uom else "PCS"
+
+        if detail.component_id in mat_totals:
+            mat_totals[detail.component_id]["qty_required"] += qty_required
+        else:
+            mat_totals[detail.component_id] = {
+                "material_id": mat.id,
+                "material_code": mat.code or str(mat.id),
+                "material_name": mat.name or "",
+                "qty_required": qty_required,
+                "uom": uom_val,
+            }
+
+    if not mat_totals:
+        raise HTTPException(status_code=404, detail="BOM found but contains no raw material components")
+
+    # ── 4. Stock check + FIFO allocation ─────────────────────────────────────
+    product_ids_needed = list(mat_totals.keys())
+    all_quants = db.query(StockQuant).filter(
+        StockQuant.product_id.in_(product_ids_needed)
+    ).order_by(StockQuant.id).all()
+
+    # Group quants by product_id
+    quant_by_product: dict = {}
+    for q in all_quants:
+        quant_by_product.setdefault(q.product_id, []).append(q)
+
+    # Production location for StockMove destination
+    prod_loc = db.query(Location).filter(
+        Location.type == "Production"
+    ).first() or db.query(Location).filter(Location.id == 1).first()
+    dst_loc_id = prod_loc.id if prod_loc else 1
+    reference = f"AUTO-SPK-{wo_id}"
+
+    allocation_result = []
+    for pid, info in mat_totals.items():
+        qty_needed = Decimal(str(round(info["qty_required"], 4)))
+        quants = quant_by_product.get(pid, [])
+        total_available = sum(
+            float(q.qty_on_hand or 0) - float(q.qty_reserved or 0) for q in quants
+        )
+
+        remaining = qty_needed
+        deducted_from_loc = None
+
+        if not dry_run:
+            for quant in quants:
+                avail = (quant.qty_on_hand or Decimal('0')) - (quant.qty_reserved or Decimal('0'))
+                if avail <= 0:
+                    continue
+                take = min(avail, remaining)
+                quant.qty_on_hand = (quant.qty_on_hand or Decimal('0')) - take
+                deducted_from_loc = quant.location_id
+                remaining -= take
+                if remaining <= 0:
+                    break
+
+            # Record StockMove
+            src_loc = deducted_from_loc or (quants[0].location_id if quants else 1)
+            move = StockMove(
+                product_id=pid,
+                location_id_from=src_loc,
+                location_id_to=dst_loc_id,
+                qty=qty_needed,
+                uom=info["uom"],
+                reference_doc=reference,
+                state=StockMoveStatus.DONE,
+            )
+            db.add(move)
+
+        debt_qty = float(remaining) if remaining > 0 else 0.0
+        allocation_result.append({
+            "material_id": info["material_id"],
+            "material_code": info["material_code"],
+            "material_name": info["material_name"],
+            "qty_required": round(float(qty_needed), 4),
+            "qty_available": round(total_available, 4),
+            "qty_allocated": round(float(qty_needed) - debt_qty, 4),
+            "qty_debt": round(debt_qty, 4),
+            "uom": info["uom"],
+            "is_debt": debt_qty > 0,
+            "status": "DEBT" if debt_qty > 0 else ("LOW_STOCK" if total_available < float(qty_needed) * 1.1 else "OK"),
+        })
+
+    if not dry_run:
+        db.commit()
+
+    # Auto-create MaterialDebt records for any debt lines (not dry_run)
+    if not dry_run:
+        try:
+            from app.core.models.daily_production import MaterialDebt as MaterialDebtRecord
+            for r in allocation_result:
+                if r["is_debt"] and r["qty_debt"] > 0:
+                    debt_rec = MaterialDebtRecord(
+                        spk_id=wo_id,
+                        product_id=r["material_id"],
+                        qty_owed=int(r["qty_debt"]),
+                        qty_settled=0,
+                        approval_status="PENDING",
+                        created_by_id=current_user.id,
+                        approval_reason=(
+                            f"Auto-allocate BOM: WO-{wo_id} needed {r['qty_required']} "
+                            f"but only {r['qty_available']} available"
+                        ),
+                    )
+                    db.add(debt_rec)
+            db.commit()
+        except Exception:
+            pass  # Don't block allocation result if debt record creation fails
+
+    total_debt_lines = sum(1 for r in allocation_result if r["is_debt"])
+    return {
+        "success": True,
+        "dry_run": dry_run,
+        "wo_id": wo_id,
+        "department": dept_val,
+        "product_name": product.name,
+        "target_qty": target_qty,
+        "reference": reference,
+        "total_materials": len(allocation_result),
+        "total_debt_lines": total_debt_lines,
+        "allocations": allocation_result,
+        "message": (
+            f"{'[DRY RUN] ' if dry_run else ''}"
+            f"Allocated {len(allocation_result)} materials for {target_qty} pcs "
+            f"({total_debt_lines} on debt)"
+        ),
     }
 
 
@@ -811,7 +1060,6 @@ async def generate_work_orders(
                     product_id=mo.product_id,
                     department=dept,
                     status=WorkOrderStatus.PENDING,
-                    input_qty=mo.qty_planned,
                     target_qty=mo.qty_planned,
                     sequence=seq,
                     wo_number=f"{mo.batch_number}-{dept.value[:3].upper()}-{seq:02d}",
@@ -831,6 +1079,16 @@ async def generate_work_orders(
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {str(e)}")
+
+
+@router.post("/mo/{mo_id}/generate-spk")
+async def generate_spk_for_mo(
+    mo_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Alias: generate Work Orders (SPKs) for an MO — same as /work-orders/generate."""
+    return await generate_work_orders(mo_id=mo_id, current_user=current_user, db=db)
 
 
 # ============================================================================
@@ -1146,6 +1404,165 @@ async def complete_manufacturing_order(
 
 
 # ============================================================================
+# ENDPOINT: Upgrade MO trigger_mode PARTIAL → RELEASED (PO Label arrived)
+# ============================================================================
+@router.post("/manufacturing-orders/{mo_id}/upgrade-to-released")
+async def upgrade_mo_to_released(
+    mo_id: int,
+    data: dict = {},
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Upgrade MO trigger_mode from PARTIAL → RELEASED.
+
+    Called when the PO Label has been approved/received which enables
+    all remaining departments (Sewing, Finishing, Packing) to start.
+
+    Body (optional):
+    { "po_label_id": 42, "notes": "Label PO approved by manager" }
+    """
+    from app.core.models.manufacturing import MOState
+
+    mo = db.query(ManufacturingOrder).filter(ManufacturingOrder.id == mo_id).first()
+    if not mo:
+        raise HTTPException(status_code=404, detail="Manufacturing order not found")
+
+    if mo.trigger_mode == "RELEASED":
+        return {"id": mo.id, "trigger_mode": "RELEASED", "message": "Already RELEASED"}
+
+    mo.trigger_mode = "RELEASED"
+    if data.get("po_label_id"):
+        mo.po_label_id = int(data["po_label_id"])
+    # Lock week/destination when released
+    mo.week_destination_locked = True
+    # Transition to IN_PROGRESS if still DRAFT
+    if mo.state == MOState.DRAFT:
+        mo.state = MOState.IN_PROGRESS
+        mo.started_at = datetime.utcnow()
+        if not mo.actual_production_start_date:
+            mo.actual_production_start_date = date.today()
+    db.commit()
+
+    return {
+        "id": mo.id,
+        "batch_number": mo.batch_number,
+        "trigger_mode": "RELEASED",
+        "state": mo.state.value,
+        "message": "MO upgraded to RELEASED — all departments unlocked",
+    }
+
+
+# ============================================================================
+# ENDPOINT: MO Aggregate View — production progress by department
+# ============================================================================
+@router.get("/manufacturing-orders/{mo_id}/aggregate")
+async def get_mo_aggregate(
+    mo_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Aggregate production status for a Manufacturing Order across all departments.
+
+    Returns:
+    {
+      "mo_number": "...",
+      "product_name": "...",
+      "mo_target": 1000,
+      "trigger_mode": "RELEASED",
+      "spks": [{ dept, status, target_qty, produced_qty, pct, ... }],
+      "aggregate": { overall_pct, departments_total, departments_done, estimated_completion }
+    }
+    """
+    from app.core.models import Product
+
+    mo = db.query(ManufacturingOrder).filter(ManufacturingOrder.id == mo_id).first()
+    if not mo:
+        raise HTTPException(status_code=404, detail="Manufacturing order not found")
+
+    product = db.query(Product).filter(Product.id == mo.product_id).first()
+
+    # --- SPK-based (old model) ---
+    spks_raw = db.query(SPK).filter(SPK.mo_id == mo_id).all()
+    target = float(mo.production_quantity or mo.qty_planned or 0)
+
+    dept_rows = []
+    total_pct_sum = 0.0
+    completed_depts = 0
+
+    for spk in spks_raw:
+        dept_val = spk.department.value if hasattr(spk.department, "value") else str(spk.department)
+        spk_target = float(spk.target_qty or 0)
+        spk_produced = float(spk.produced_qty or spk.good_qty or 0)
+        pct = round((spk_produced / spk_target * 100), 1) if spk_target > 0 else 0.0
+        total_pct_sum += pct
+        if spk.production_status == "COMPLETED" or pct >= 100:
+            completed_depts += 1
+        dept_rows.append({
+            "department": dept_val,
+            "spk_id": spk.id,
+            "status": spk.production_status or "NOT_STARTED",
+            "target_qty": spk_target,
+            "produced_qty": spk_produced,
+            "good_qty": float(spk.good_qty or 0),
+            "defect_qty": float(spk.defect_qty or 0),
+            "completion_pct": pct,
+            "start_date": spk.actual_start_date.isoformat() if spk.actual_start_date else None,
+            "completion_date": spk.completion_date.isoformat() if spk.completion_date else None,
+        })
+
+    # --- WorkOrder-based (new model fallback) ---
+    if not dept_rows:
+        wos = db.query(WorkOrder).filter(WorkOrder.mo_id == mo_id).all()
+        for wo in wos:
+            dept_val = wo.department.value if hasattr(wo.department, "value") else str(wo.department)
+            wo_target = float(wo.target_qty or 0)
+            wo_produced = float(wo.output_qty or 0)
+            pct = round((wo_produced / wo_target * 100), 1) if wo_target > 0 else 0.0
+            total_pct_sum += pct
+            wo_status = wo.status.value if hasattr(wo.status, "value") else str(wo.status)
+            if wo_status == "Finished" or pct >= 100:
+                completed_depts += 1
+            dept_rows.append({
+                "department": dept_val,
+                "spk_id": wo.id,
+                "status": wo_status,
+                "target_qty": wo_target,
+                "produced_qty": wo_produced,
+                "good_qty": wo_produced,
+                "defect_qty": float(wo.reject_qty or 0),
+                "completion_pct": pct,
+                "start_date": wo.actual_start_date.isoformat() if wo.actual_start_date else None,
+                "completion_date": wo.actual_completion_date.isoformat() if wo.actual_completion_date else None,
+            })
+
+    n_depts = len(dept_rows)
+    overall_pct = round(total_pct_sum / n_depts, 1) if n_depts > 0 else 0.0
+
+    mo_state = mo.state.value if hasattr(mo.state, "value") else str(mo.state)
+    return {
+        "mo_id": mo.id,
+        "mo_number": mo.batch_number,
+        "product_name": product.name if product else None,
+        "product_code": product.code if product else None,
+        "mo_target": target,
+        "state": mo_state,
+        "trigger_mode": mo.trigger_mode or "PARTIAL",
+        "planned_start": mo.planned_production_date.isoformat() if mo.planned_production_date else None,
+        "target_shipment": mo.target_shipment_date.isoformat() if mo.target_shipment_date else None,
+        "spks": dept_rows,
+        "aggregate": {
+            "overall_pct": overall_pct,
+            "departments_total": n_depts,
+            "departments_completed": completed_depts,
+            "departments_active": sum(1 for r in dept_rows if r["status"] in ("IN_PROGRESS", "Running")),
+            "estimated_completion": mo.target_shipment_date.isoformat() if mo.target_shipment_date else None,
+        },
+    }
+
+
+# ============================================================================
 # HELPER FUNCTIONS
 # ============================================================================(spk: SPK, db: Session) -> str:
     """Calculate SPK health status: ON_TRACK, OFF_TRACK, or COMPLETED"""
@@ -1174,3 +1591,178 @@ async def complete_manufacturing_order(
         return "OFF_TRACK"
 
 
+# ============================================================================
+# Task 10: Material Efficiency Report
+# ============================================================================
+
+@router.get("/reports/material-efficiency")
+def get_material_efficiency(
+    mo_id: Optional[int] = None,
+    wo_id: Optional[int] = None,
+    dept: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """Material efficiency report: BOM planned qty vs actual usage per SPK.
+
+    Compares BOM planned qty against actual StockMove qty issued (reference_doc = SPK number).
+    Returns per-material efficiency percentage.
+
+    Query params:
+    - mo_id    : filter to work orders under this MO
+    - wo_id    : filter to a single work order (SPK)
+    - dept     : filter by department name (e.g. "CUTTING")
+
+    Response per material line:
+    - material_code, material_name
+    - planned_qty    : from BOM × wo.qty_target
+    - actual_qty     : sum of StockMoves referencing that SPK
+    - efficiency_pct : planned / actual × 100 (>100 = under-used, <100 = over-used)
+    - variance       : actual - planned (positive = over-used)
+    """
+    from app.core.models.warehouse import StockMove, StockMoveStatus
+    from app.core.models import Product
+
+    # Build WO queryset
+    wo_q = db.query(WorkOrder)
+    if wo_id:
+        wo_q = wo_q.filter(WorkOrder.id == wo_id)
+    elif mo_id:
+        wo_q = wo_q.filter(WorkOrder.mo_id == mo_id)
+    if dept:
+        wo_q = wo_q.filter(WorkOrder.department == dept)
+
+    work_orders = wo_q.all()
+    if not work_orders:
+        return {"items": [], "summary": {"total_materials": 0, "avg_efficiency_pct": 0, "over_used_count": 0, "under_used_count": 0}}
+
+    # Collect all SPK reference_doc values
+    # WorkOrder.reference is the SPK number used in StockMove.reference_doc
+    spk_refs = {}  # spk_ref → workorder
+    for wo in work_orders:
+        ref = getattr(wo, "reference", None) or getattr(wo, "spk_number", None) or f"SPK-WO{wo.id}"
+        spk_refs[ref] = wo
+
+    # Batch-load StockMoves for these references
+    all_refs = list(spk_refs.keys())
+    moves = (
+        db.query(StockMove)
+        .filter(
+            StockMove.reference_doc.in_(all_refs),
+            StockMove.state == StockMoveStatus.DONE,
+        )
+        .all()
+    )
+
+    # Organise actual usage: spk_ref → product_id → total_qty
+    actual_map: dict[str, dict[int, float]] = {}
+    for m in moves:
+        if m.reference_doc not in actual_map:
+            actual_map[m.reference_doc] = {}
+        actual_map[m.reference_doc][m.product_id] = (
+            actual_map[m.reference_doc].get(m.product_id, 0) + float(m.qty)
+        )
+
+    # Batch-load products for names
+    all_product_ids = set()
+    for sub in actual_map.values():
+        all_product_ids.update(sub.keys())
+
+    # Build BOM planned qty per WO
+    items: list[dict] = []
+
+    for ref, wo in spk_refs.items():
+        # Determine product_id for this WO (via MO)
+        mo = db.query(ManufacturingOrder).filter(ManufacturingOrder.id == wo.mo_id).first() if wo.mo_id else None
+        if not mo:
+            continue
+
+        # Load BOM for this product + department revision
+        dept_val = getattr(wo, "department", dept or "")
+        dept_prefix = dept_val[:3].upper() if dept_val else "MFG"
+        revision_keyword = f"{dept_prefix}-1.0"
+
+        bom_header = (
+            db.query(BOMHeader)
+            .filter(
+                BOMHeader.product_id == mo.product_id,
+                BOMHeader.is_active == True,
+            )
+            .filter(BOMHeader.revision.ilike(f"%{dept_prefix}%"))
+            .first()
+        )
+        if not bom_header:
+            # Fallback: any active BOM for this product
+            bom_header = (
+                db.query(BOMHeader)
+                .filter(BOMHeader.product_id == mo.product_id, BOMHeader.is_active == True)
+                .first()
+            )
+        if not bom_header:
+            continue
+
+        bom_details = (
+            db.query(BOMDetail)
+            .filter(BOMDetail.bom_header_id == bom_header.id)
+            .all()
+        )
+
+        qty_target = getattr(wo, "qty_target", 0) or getattr(wo, "qty_planned", 0) or 0
+        bom_output = float(bom_header.qty_output) if bom_header.qty_output else 1.0
+
+        actual_for_wo = actual_map.get(ref, {})
+
+        # Load component products in batch
+        comp_ids = [d.component_id for d in bom_details]
+        products = {p.id: p for p in db.query(Product).filter(Product.id.in_(comp_ids)).all()} if comp_ids else {}
+
+        for detail in bom_details:
+            planned_qty = float(detail.qty_needed) * float(qty_target) / bom_output
+            wastage_ratio = (1 + float(detail.wastage_percent or 0) / 100)
+            planned_with_waste = planned_qty * wastage_ratio
+
+            actual_qty = actual_for_wo.get(detail.component_id, 0)
+            product = products.get(detail.component_id)
+
+            if planned_with_waste > 0:
+                efficiency_pct = round(planned_with_waste / actual_qty * 100, 1) if actual_qty > 0 else None
+            else:
+                efficiency_pct = None
+
+            variance = round(actual_qty - planned_with_waste, 2)
+
+            items.append({
+                "wo_id": wo.id,
+                "wo_reference": ref,
+                "department": dept_val,
+                "material_code": product.material_code if product else str(detail.component_id),
+                "material_name": product.name if product else f"Product #{detail.component_id}",
+                "planned_qty": round(planned_with_waste, 2),
+                "actual_qty": round(actual_qty, 2),
+                "efficiency_pct": efficiency_pct,
+                "variance": variance,
+                "status": (
+                    "EFFICIENT" if efficiency_pct and efficiency_pct >= 95
+                    else "OVER_USED" if variance > 0
+                    else "UNDER_USED" if actual_qty > 0 and efficiency_pct and efficiency_pct > 105
+                    else "NO_DATA" if actual_qty == 0
+                    else "OK"
+                ),
+            })
+
+    # Summary
+    with_data = [i for i in items if i["efficiency_pct"] is not None]
+    avg_eff = round(sum(i["efficiency_pct"] for i in with_data) / len(with_data), 1) if with_data else 0
+    over_used = sum(1 for i in items if i["variance"] > 0)
+    under_used = sum(1 for i in items if i["variance"] < 0)
+
+    return {
+        "items": items,
+        "summary": {
+            "total_materials": len(items),
+            "total_with_data": len(with_data),
+            "avg_efficiency_pct": avg_eff,
+            "over_used_count": over_used,
+            "under_used_count": under_used,
+        },
+    }

@@ -8,7 +8,7 @@ from .exceptions import AlertLog, SegregasiAcknowledgement
 from .kanban import KanbanBoard, KanbanCard, KanbanRule
 from .manufacturing import ManufacturingOrder, MaterialConsumption, WorkOrder, SPK, MOType
 from .products import Category, Partner, Product
-from .quality import QCInspection, QCLabTest
+from .quality import QCCheckpoint, QCCheckpointType, QCInspection, QCLabTest
 from .sales import SalesOrder, SalesOrderLine
 from .transfer import LineOccupancy, TransferLog
 from .users import User

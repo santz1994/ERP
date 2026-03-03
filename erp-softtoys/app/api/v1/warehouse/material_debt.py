@@ -117,7 +117,7 @@ class OutstandingDebtsResponse(BaseModel):
 # ============================================================================
 
 router = APIRouter(
-    prefix="/api/v1/warehouse/material-debt",
+    prefix="/material-debt",
     tags=["Warehouse - Material Debt Management"],
 )
 
@@ -344,49 +344,24 @@ async def get_outstanding_debts(
     "/{debt_id}",
     response_model=MaterialDebtDetailResponse,
     summary="Get Material Debt Details",
-    description="""
-    Get detailed information about a material debt including settlement history
-    
-    **Required Permission**: warehouse.view_debt
-    
-    **Query Parameters**:
-    - `only_pending_approval`: If true, only show debts waiting approval
-    
-    **Use Cases**:
-    1. PPIC: Check total outstanding before creating new MOs
-    2. Warehouse: Monitor material expected arrivals
-    3. Finance: Track liability for balance sheet
-    4. Manager: Overview of all active debts
-    
-    **Business Rules**:
-    - If total debt > threshold (Rp 50M) → block new PO creation
-    - This is checked before Purchasing creates new PO
-    """
 )
-async def get_outstanding_debts(
-    only_pending_approval: bool = False,
+async def get_debt_detail(
+    debt_id: int,
     current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.VIEW)),
     db: Session = Depends(get_db)
 ):
-    """Get list of outstanding debts"""
+    """Get detailed status of a single material debt including settlement history"""
     try:
         service = MaterialDebtService(db)
-        result = await service.get_outstanding_debts(
-            only_pending_approval=only_pending_approval
-        )
+        result = await service.get_debt_status(debt_id)
         return result
-        
     except BOMAllocationError as e:
-        logger.error(f"Failed to get outstanding debts: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except Exception as e:
-        logger.error(f"Unexpected error in get_outstanding_debts: {str(e)}")
+        logger.error(f"Unexpected error in get_debt_detail: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to get outstanding debts"
+            detail="Failed to get debt detail"
         )
 
 

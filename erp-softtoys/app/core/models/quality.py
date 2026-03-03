@@ -76,6 +76,59 @@ class QCLabTest(Base):
         return f"<QCLabTest(test={self.test_type.value}, result={self.test_result.value})>"
 
 
+class QCCheckpointType(str, enum.Enum):
+    """4-Checkpoint QC types (matches frontend)."""
+
+    AFTER_CUTTING = "AFTER_CUTTING"
+    AFTER_SEWING = "AFTER_SEWING"
+    AFTER_FINISHING = "AFTER_FINISHING"
+    PRE_PACKING = "PRE_PACKING"
+
+
+class QCCheckpoint(Base):
+    """QC 4-Checkpoint records per SPK.
+    Inline quality inspection at each production stage.
+    """
+
+    __tablename__ = "qc_checkpoints"
+
+    id = Column(Integer, primary_key=True, index=True)
+    spk_id = Column(Integer, ForeignKey("work_orders.id"), nullable=False, index=True)
+
+    # Checkpoint type
+    checkpoint = Column(Enum(QCCheckpointType), nullable=False, index=True)
+
+    # Quantities
+    inspected_qty = Column(Integer, nullable=False)
+    pass_qty = Column(Integer, nullable=False, default=0)
+    fail_qty = Column(Integer, nullable=False, default=0)
+
+    # Defect info
+    defect_type = Column(String(255), nullable=True)
+    defect_description = Column(TEXT, nullable=True)
+
+    # Inspector
+    inspector_name = Column(String(255), nullable=False)
+    inspected_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+
+    # Date
+    inspection_date = Column(String(20), nullable=True)
+    notes = Column(TEXT, nullable=True)
+
+    # Computed
+    first_pass_yield = Column(NUMERIC(5, 2), nullable=True)
+
+    # Audit
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+    # Relationships
+    spk = relationship("WorkOrder", foreign_keys=[spk_id])
+    inspector = relationship("User", foreign_keys=[inspected_by])
+
+    def __repr__(self):
+        return f"<QCCheckpoint(spk={self.spk_id}, checkpoint={self.checkpoint.value}, fpy={self.first_pass_yield}%)>"
+
+
 class QCInspection(Base):
     """QC Inspections - Pass/Fail at various stages
     Inline inspection, metal detector, final QC.

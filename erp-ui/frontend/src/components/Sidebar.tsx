@@ -114,6 +114,12 @@ const menuItems: MenuItem[] = [
     roles: [UserRole.PPIC_MANAGER, UserRole.ADMIN] 
   },
   { 
+    icon: <BarChart3 />, 
+    label: 'Material Efficiency', 
+    path: '/ppic/material-efficiency', 
+    roles: [UserRole.PPIC_MANAGER, UserRole.ADMIN] 
+  },
+  { 
     icon: <Users />, 
     label: 'Administration', 
     permissions: ['admin.manage_users'],
@@ -123,7 +129,8 @@ const menuItems: MenuItem[] = [
       { icon: <Shield />, label: 'Audit Trail', path: '/admin/audit-trail', roles: [UserRole.DEVELOPER, UserRole.SUPERADMIN] },
       { icon: <FileText />, label: 'Import/Export', path: '/admin/import-export', permissions: ['import_export.import_data'] },
       { icon: <Database />, label: 'Masterdata', path: '/admin/masterdata', permissions: ['admin.manage_users'] },
-      { icon: <FileEdit />, label: 'BOM Management', path: '/admin/bom-management', permissions: ['admin.manage_users'] },
+      { icon: <Factory />, label: 'BOM Produksi', path: '/admin/bom-production', permissions: ['admin.manage_users'] },
+      { icon: <ShoppingCart />, label: 'BOM Purchasing', path: '/admin/bom-purchase', permissions: ['admin.manage_users'] },
     ]
   },
   { 
