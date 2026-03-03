@@ -140,13 +140,13 @@ async def input_production_daily(
         )
     
     try:
-        # Update quantities (cumulative)
-        wo.actual_qty = (wo.actual_qty or Decimal('0')) + request.qty_produced
-        wo.good_qty = (wo.good_qty or Decimal('0')) + request.qty_good
-        wo.defect_qty = (wo.defect_qty or Decimal('0')) + request.qty_defect
+        # Update quantities (cumulative) — use actual DB columns: output_qty, reject_qty
+        wo.output_qty = (wo.output_qty or Decimal('0')) + request.qty_good
+        wo.reject_qty = (wo.reject_qty or Decimal('0')) + request.qty_defect
+        total_produced = (wo.output_qty or Decimal('0'))
         
         # Calculate completion percentage
-        completion_pct = (wo.actual_qty / wo.target_qty) * 100 if wo.target_qty > 0 else 0
+        completion_pct = (total_produced / wo.target_qty) * 100 if wo.target_qty > 0 else 0
         
         # Auto-update status based on progress
         old_status = wo.status
@@ -154,7 +154,7 @@ async def input_production_daily(
             wo.status = WorkOrderStatus.RUNNING
         
         # Check if reached target
-        if wo.actual_qty >= wo.target_qty:
+        if (wo.output_qty or Decimal('0')) >= wo.target_qty:
             wo.status = WorkOrderStatus.FINISHED
         
         # Add notes
@@ -173,13 +173,13 @@ async def input_production_daily(
         
         return ProductionInputResponse(
             success=True,
-            message=f"Production input recorded for {wo.wo_number}. Completion: {completion_pct:.1f}%",
+            message=f"Production input recorded for WO#{wo.id}. Completion: {completion_pct:.1f}%",
             wo_id=wo.id,
-            wo_number=wo.wo_number,
+            wo_number=wo.wo_number or f"WO-{wo.id}",
             qty_produced=request.qty_produced,
             qty_good=request.qty_good,
             qty_defect=request.qty_defect,
-            completion_percentage=completion_pct,
+            completion_percentage=Decimal(str(round(float(completion_pct), 2))),
             status=wo.status.value if hasattr(wo.status, 'value') else str(wo.status)
         )
         

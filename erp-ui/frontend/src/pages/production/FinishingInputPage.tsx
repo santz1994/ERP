@@ -35,8 +35,7 @@ const FinishingInputPage: React.FC = () => {
   const { data: spkList = [] } = useQuery({
     queryKey: ['spk-list-finishing'],
     queryFn: async () => {
-      const response = await api.ppic.getSPKList({ department: 'FINISHING', status: 'IN_PROGRESS' })
-      return response.data
+      return await api.ppic.getSPKList({ department: 'FINISHING', status: 'IN_PROGRESS' })
     }
   })
 
@@ -44,8 +43,7 @@ const FinishingInputPage: React.FC = () => {
     queryKey: ['spk-detail', selectedSPK],
     enabled: !!selectedSPK,
     queryFn: async () => {
-      const response = await api.ppic.getSPKDetail(selectedSPK!)
-      return response.data
+      return await api.ppic.getSPKDetail(selectedSPK!)
     }
   })
 
@@ -53,8 +51,7 @@ const FinishingInputPage: React.FC = () => {
     queryKey: ['finishing-stuffing', selectedSPK],
     enabled: !!selectedSPK,
     queryFn: async () => {
-      const response = await api.production.getFinishingProgress(selectedSPK!, 'STUFFING')
-      return response.data
+      return await api.production.getFinishingProgress(selectedSPK!, 'STUFFING')
     }
   })
 
@@ -62,8 +59,7 @@ const FinishingInputPage: React.FC = () => {
     queryKey: ['finishing-closing', selectedSPK],
     enabled: !!selectedSPK,
     queryFn: async () => {
-      const response = await api.production.getFinishingProgress(selectedSPK!, 'CLOSING')
-      return response.data
+      return await api.production.getFinishingProgress(selectedSPK!, 'CLOSING')
     }
   })
 

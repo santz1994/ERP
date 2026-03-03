@@ -37,6 +37,7 @@ class UOM(str, enum.Enum):
     KG = "Kg"
     ROLL = "Roll"
     CM = "Cm"
+    GRAM = "Gram"
 
 
 class PartnerType(str, enum.Enum):

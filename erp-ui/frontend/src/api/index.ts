@@ -238,32 +238,32 @@ export const purchasingApi = {
     page?: number
     limit?: number
   }) =>
-    apiClient.get('/purchasing/po', { params }),
+    apiClient.get('/purchasing/purchase-orders', { params }),
   
   getPOList: (params?: { status?: string }) =>
-    apiClient.get('/purchasing/po', { params }),
+    apiClient.get('/purchasing/purchase-orders', { params }),
   
   getPOById: (id: number) =>
-    apiClient.get(`/purchasing/po/${id}`),
+    apiClient.get(`/purchasing/purchase-orders/${id}`),
   
   getPODetail: (id: number) =>
-    apiClient.get(`/purchasing/po/${id}`),
+    apiClient.get(`/purchasing/purchase-orders/${id}`),
   
   createPO: (data: POFormData) =>
-    apiClient.post('/purchasing/po', data),
+    apiClient.post('/purchasing/po', data),          // POST /purchasing/po (UI form endpoint)
   
   updatePO: (id: number, data: Partial<POFormData>) =>
-    apiClient.put(`/purchasing/po/${id}`, data),
+    apiClient.patch(`/purchasing/purchase-orders/${id}/status`, data),
   
-  deletePO: (id: number) =>
-    apiClient.delete(`/purchasing/po/${id}`),
+  deletePO: (id: number, reason: string) =>
+    apiClient.delete(`/purchasing/purchase-orders/${id}`, { data: { reason } }),
   
   // PO Status management
   sendPO: (id: number) =>
-    apiClient.post(`/purchasing/po/${id}/send`),
+    apiClient.patch(`/purchasing/purchase-orders/${id}/status`, { new_status: 'Sent' }),
   
-  receivePO: (id: number, materials: Array<{ material_code: string; qty: number }>) =>
-    apiClient.post(`/purchasing/po/${id}/receive`, { materials }),
+  receivePO: (id: number, received_items: Array<{ product_id: number; quantity: number; lot_number?: string }>, location_id?: number) =>
+    apiClient.post(`/purchasing/purchase-order/${id}/receive`, { received_items, location_id: location_id ?? 1 }),
   
   // PO Tracking
   getPOTracking: (id: number) =>
@@ -396,7 +396,14 @@ export const ppicApi = {
 export const productionApi = {
   // Daily production input
   inputProduction: (data: ProductionInputFormData) =>
-    apiClient.post('/production/input', data),
+    apiClient.post('/production/input', {
+      wo_id: data.spk_id,
+      date: data.date,
+      qty_good: data.good_output ?? 0,
+      qty_defect: data.defect_qty ?? 0,
+      qty_produced: (data.good_output ?? 0) + (data.defect_qty ?? 0),
+      notes: (data as any).notes,
+    }),
   
   getProductionHistory: (spk_id: number) =>
     apiClient.get(`/production/history/${spk_id}`),

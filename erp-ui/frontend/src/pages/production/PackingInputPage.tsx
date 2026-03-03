@@ -36,8 +36,7 @@ const PackingInputPage: React.FC = () => {
   const { data: spkList = [] } = useQuery({
     queryKey: ['spk-list-packing'],
     queryFn: async () => {
-      const response = await api.ppic.getSPKList({ department: 'PACKING', status: 'IN_PROGRESS' })
-      return response.data
+      return await api.ppic.getSPKList({ department: 'PACKING', status: 'IN_PROGRESS' })
     }
   })
 
@@ -45,8 +44,7 @@ const PackingInputPage: React.FC = () => {
     queryKey: ['spk-detail', selectedSPK],
     enabled: !!selectedSPK,
     queryFn: async () => {
-      const response = await api.ppic.getSPKDetail(selectedSPK!)
-      return response.data
+      return await api.ppic.getSPKDetail(selectedSPK!)
     }
   })
 
@@ -54,8 +52,7 @@ const PackingInputPage: React.FC = () => {
     queryKey: ['packing-progress', selectedSPK],
     enabled: !!selectedSPK,
     queryFn: async () => {
-      const response = await api.production.getPackingProgress(selectedSPK!)
-      return response.data
+      return await api.production.getPackingProgress(selectedSPK!)
     }
   })
 
@@ -64,8 +61,7 @@ const PackingInputPage: React.FC = () => {
     queryKey: ['wip-status', spkDetail?.mo_id],
     enabled: !!spkDetail?.mo_id,
     queryFn: async () => {
-      const response = await api.production.getWIPStatus(spkDetail.mo_id)
-      return response.data
+      return await api.production.getWIPStatus(spkDetail.mo_id)
     }
   })
 

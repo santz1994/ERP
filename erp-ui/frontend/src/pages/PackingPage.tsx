@@ -249,7 +249,7 @@ export default function PackingPage() {
                       <Box className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                       <p className="text-gray-500">No work orders yet</p>
                       <button
-                        onClick={() => navigate('/production/packing/input')}
+                        onClick={() => navigate('/production/input/packing')}
                         className="mt-4 text-indigo-600 hover:text-indigo-700 text-sm font-medium"
                       >
                         Start Production Input →

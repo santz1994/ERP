@@ -297,7 +297,7 @@ export default function CuttingPage() {
                       <Scissors className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                       <p className="text-gray-500">No work orders yet</p>
                       <button
-                        onClick={() => navigate('/production/cutting/input')}
+                        onClick={() => navigate('/production/input/cutting')}
                         className="mt-4 text-blue-600 hover:text-blue-700 text-sm font-medium"
                       >
                         Start Production Input →

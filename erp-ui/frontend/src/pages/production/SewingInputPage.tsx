@@ -45,8 +45,7 @@ const SewingInputPage: React.FC = () => {
   const { data: spkList = [] } = useQuery({
     queryKey: ['spk-list-sewing'],
     queryFn: async () => {
-      const response = await api.ppic.getSPKList({ department: 'SEWING', status: 'IN_PROGRESS' })
-      return response.data
+      return await api.ppic.getSPKList({ department: 'SEWING', status: 'IN_PROGRESS' })
     }
   })
 
@@ -55,8 +54,7 @@ const SewingInputPage: React.FC = () => {
     queryKey: ['spk-detail', selectedSPK],
     queryFn: async () => {
       if (!selectedSPK) return null
-      const response = await api.ppic.getSPKDetail(selectedSPK)
-      return response.data
+      return await api.ppic.getSPKDetail(selectedSPK)
     },
     enabled: !!selectedSPK
   })
@@ -66,8 +64,7 @@ const SewingInputPage: React.FC = () => {
     queryKey: ['sewing-progress-body', selectedSPK],
     queryFn: async () => {
       if (!selectedSPK) return []
-      const response = await api.production.getSewingProgress(selectedSPK, 'BODY')
-      return response.data
+      return await api.production.getSewingProgress(selectedSPK, 'BODY')
     },
     enabled: !!selectedSPK
   })
@@ -76,8 +73,7 @@ const SewingInputPage: React.FC = () => {
     queryKey: ['sewing-progress-baju', selectedSPK],
     queryFn: async () => {
       if (!selectedSPK) return []
-      const response = await api.production.getSewingProgress(selectedSPK, 'BAJU')
-      return response.data
+      return await api.production.getSewingProgress(selectedSPK, 'BAJU')
     },
     enabled: !!selectedSPK
   })

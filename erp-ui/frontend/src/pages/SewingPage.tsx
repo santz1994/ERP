@@ -253,7 +253,7 @@ export default function SewingPage() {
                       <Shirt className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                       <p className="text-gray-500">No work orders yet</p>
                       <button
-                        onClick={() => navigate('/production/sewing/input')}
+                        onClick={() => navigate('/production/input/sewing')}
                         className="mt-4 text-orange-600 hover:text-orange-700 text-sm font-medium"
                       >
                         Start Production Input →

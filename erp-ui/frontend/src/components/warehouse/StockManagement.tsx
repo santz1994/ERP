@@ -314,15 +314,15 @@ export const StockManagement: React.FC<StockManagementProps> = ({
                           )}
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <div className="font-bold text-gray-900">{quant.quantity.toFixed(2)}</div>
+                          <div className="font-bold text-gray-900">{(quant.quantity ?? 0).toFixed(2)}</div>
                           <div className="text-xs text-gray-600">{quant.uom}</div>
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <div className="font-semibold text-orange-600">{quant.reserved_quantity.toFixed(2)}</div>
+                          <div className="font-semibold text-orange-600">{(quant.reserved_quantity ?? 0).toFixed(2)}</div>
                           <div className="text-xs text-gray-600">{quant.uom}</div>
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <div className="font-bold text-green-600">{quant.available_quantity.toFixed(2)}</div>
+                          <div className="font-bold text-green-600">{(quant.available_quantity ?? 0).toFixed(2)}</div>
                           <div className="text-xs text-gray-600">{quant.uom}</div>
                         </td>
                         <td className="px-4 py-3 text-sm">

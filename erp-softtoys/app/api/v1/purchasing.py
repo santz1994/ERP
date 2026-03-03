@@ -1573,6 +1573,10 @@ def _detect_material_category(material_code: str, material_name: str, category_n
     if any(kw in name_upper for kw in filling_kw):
         return 'FILLING'
 
+    plastic_kw = ['PLASTIC', 'PE ', 'PET ', 'PVC', 'POLYETHYLENE', 'POLYPROPYLENE', 'POLYSTYRENE', 'EVA ', 'ABS ', 'IPP']
+    if any(kw in name_upper or kw in code_upper for kw in plastic_kw):
+        return 'ACCESSORIES'
+
     return 'ACCESSORIES'
 
 

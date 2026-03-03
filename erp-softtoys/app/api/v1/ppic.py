@@ -928,6 +928,133 @@ async def complete_task(
     return _serialize_mo(mo)
 
 
+# ==================== WORK ORDERS ====================
+
+
+def _serialize_wo(wo, db=None) -> dict:
+    """Safely serialize a WorkOrder ORM object to a plain dict."""
+    def _dept(val):
+        return val.value if hasattr(val, "value") else str(val) if val else None
+
+    def _status(val):
+        return val.value if hasattr(val, "value") else str(val) if val else "PENDING"
+
+    # Optionally resolve product codes
+    input_code = None
+    output_code = None
+    if db and wo.input_wip_product_id:
+        from app.core.models.products import Product as ProductModel
+        p = db.query(ProductModel).filter(ProductModel.id == wo.input_wip_product_id).first()
+        input_code = p.code if p else None
+    if db and wo.output_wip_product_id:
+        from app.core.models.products import Product as ProductModel
+        p = db.query(ProductModel).filter(ProductModel.id == wo.output_wip_product_id).first()
+        output_code = p.code if p else None
+
+    return {
+        "id": wo.id,
+        "mo_id": wo.mo_id,
+        "wo_number": wo.wo_number,
+        "department": _dept(wo.department),
+        "sequence": wo.sequence,
+        "status": _status(wo.status),
+        "target_qty": str(wo.target_qty) if wo.target_qty is not None else None,
+        "actual_qty": str(wo.output_qty) if wo.output_qty is not None else None,
+        "input_qty": str(wo.input_qty) if wo.input_qty is not None else "0",
+        "input_wip_product_id": wo.input_wip_product_id,
+        "output_wip_product_id": wo.output_wip_product_id,
+        "input_wip_product_code": input_code,
+        "output_wip_product_code": output_code,
+        "planned_start_date": wo.planned_start_date.isoformat() if wo.planned_start_date else None,
+        "actual_start_date": wo.actual_start_date.isoformat() if wo.actual_start_date else None,
+        "created_at": wo.created_at.isoformat() if wo.created_at else None,
+    }
+
+
+@router.get(
+    "/work-orders",
+    dependencies=[Depends(require_permission("ppic.view_mo"))]
+)
+async def list_work_orders(
+    mo_id: int | None = Query(None, description="Filter by Manufacturing Order ID"),
+    department: str | None = Query(None, description="Filter by department"),
+    status_filter: str | None = Query(None, alias="status", description="Filter by status"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(200, ge=1, le=500),
+    current_user: User = Depends(require_permission("ppic.view_mo")),
+    db: Session = Depends(get_db)
+):
+    """List Work Orders — optionally filter by MO, department, or status."""
+    query = db.query(WorkOrder)
+    if mo_id:
+        query = query.filter(WorkOrder.mo_id == mo_id)
+    if department:
+        query = query.filter(WorkOrder.department == department.upper())
+    if status_filter:
+        query = query.filter(WorkOrder.status == status_filter.upper())
+
+    wos = query.order_by(WorkOrder.mo_id, WorkOrder.sequence.asc().nulls_last()).offset(skip).limit(limit).all()
+    return [_serialize_wo(wo, db) for wo in wos]
+
+
+@router.post(
+    "/work-orders/generate",
+    dependencies=[Depends(require_permission("ppic.schedule_production"))]
+)
+async def generate_work_orders_for_mo(
+    mo_id: int = Query(..., description="Manufacturing Order ID to generate WOs for"),
+    current_user: User = Depends(require_permission("ppic.schedule_production")),
+    db: Session = Depends(get_db)
+):
+    """Generate missing Work Orders for all departments in an MO's routing.
+
+    If WOs already exist for a department, they are skipped (idempotent).
+    """
+    from app.core.models.manufacturing import MOState, RoutingType as RT
+
+    mo = db.query(ManufacturingOrder).filter(ManufacturingOrder.id == mo_id).first()
+    if not mo:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Manufacturing order not found")
+
+    # Determine departments from routing type
+    routing = mo.routing_type.value if hasattr(mo.routing_type, "value") else str(mo.routing_type)
+    routing_depts = {
+        "ROUTE_1_EMBROIDERY": [Department.CUTTING, Department.EMBROIDERY, Department.SEWING,
+                                Department.FINISHING, Department.PACKING],
+        "ROUTE_2_DIRECT": [Department.CUTTING, Department.SEWING, Department.FINISHING, Department.PACKING],
+        "ROUTE_3_LABEL_ONLY": [Department.PACKING],
+    }
+    depts = routing_depts.get(routing, [Department.CUTTING, Department.SEWING, Department.FINISHING, Department.PACKING])
+
+    # Find existing WO departments for this MO
+    existing = db.query(WorkOrder.department).filter(WorkOrder.mo_id == mo_id).all()
+    existing_depts = {row[0] for row in existing}
+
+    created = 0
+    for seq, dept in enumerate(depts, start=1):
+        if dept not in existing_depts:
+            wo = WorkOrder(
+                mo_id=mo_id,
+                product_id=mo.product_id,
+                department=dept,
+                status=WorkOrderStatus.PENDING,
+                input_qty=mo.qty_planned,
+                target_qty=mo.qty_planned,
+                sequence=seq,
+                wo_number=f"{mo.batch_number}-{dept.value[:3].upper()}-{seq:02d}",
+            )
+            db.add(wo)
+            created += 1
+
+    db.commit()
+    return {
+        "message": f"Generated {created} work order(s) for MO {mo.batch_number}",
+        "work_orders_created": created,
+        "mo_id": mo_id,
+        "batch_number": mo.batch_number,
+    }
+
+
 # ==================== SPK LIST & DETAIL ====================
 
 @router.get("/spk")

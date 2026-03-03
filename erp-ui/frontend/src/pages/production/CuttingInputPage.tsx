@@ -87,10 +87,11 @@ export default function CuttingInputPage() {
   const calculateMaterialVariance = () => {
     if (!selectedSPK || !materialUsedQty || good_output === 0) return null;
 
-    const fabricMaterial = selectedSPK.bomMaterials.find(m => m.materialCode.includes('KOHAIR'));
-    if (!fabricMaterial) return null;
+    // Use the first/primary BOM material (works for any product type)
+    const primaryMaterial = selectedSPK.bomMaterials[0];
+    if (!primaryMaterial) return null;
 
-    const bomStandard = fabricMaterial.qtyPerUnit * good_output;
+    const bomStandard = primaryMaterial.qtyPerUnit * good_output;
     const variance = ((materialUsedQty - bomStandard) / bomStandard) * 100;
 
     return {
@@ -107,32 +108,26 @@ export default function CuttingInputPage() {
   const handleSPKSelect = (spk: SPK) => {
     setSelectedSPK(spk);
     setValue('spk_id', spk.id);
-    
-    // Auto-calculate material based on BOM
-    const fabricMaterial = spk.bomMaterials.find(m => m.materialCode.includes('KOHAIR'));
-    if (fabricMaterial && good_output > 0) {
-      const estimatedUsage = fabricMaterial.qtyPerUnit * good_output;
-      setValue('material_consumption', [{
-        material_code: fabricMaterial.materialCode,
-        qty_used: estimatedUsage,
-        uom: 'YARD'
-      }]);
+
+    // Auto-calculate all BOM materials based on current good_output
+    if (spk.bomMaterials.length > 0 && good_output > 0) {
+      setValue('material_consumption', spk.bomMaterials.map((mat) => ({
+        material_code: mat.materialCode,
+        qty_used: parseFloat((mat.qtyPerUnit * good_output).toFixed(4)),
+        uom: mat.uom,
+      })));
     }
   };
 
-  // Watch good output to update material estimate
+  // Watch good output to update material estimate for ALL BOM materials
   const updateMaterialEstimate = () => {
     if (!selectedSPK || good_output === 0) return;
 
-    const fabricMaterial = selectedSPK.bomMaterials.find(m => m.materialCode.includes('KOHAIR'));
-    if (fabricMaterial) {
-      const estimatedUsage = fabricMaterial.qtyPerUnit * good_output;
-      setValue('material_consumption', [{
-        material_code: fabricMaterial.materialCode,
-        qty_used: estimatedUsage,
-        uom: 'YARD'
-      }]);
-    }
+    setValue('material_consumption', selectedSPK.bomMaterials.map((mat) => ({
+      material_code: mat.materialCode,
+      qty_used: parseFloat((mat.qtyPerUnit * good_output).toFixed(4)),
+      uom: mat.uom,
+    })));
   };
 
   // Form submission
@@ -324,57 +319,81 @@ export default function CuttingInputPage() {
             {/* Step 3: Material Consumption */}
             <Card variant="bordered">
               <CardHeader>
-                <CardTitle>3️⃣ Material Consumption (Fabric)</CardTitle>
+                <CardTitle>3️⃣ Material Consumption</CardTitle>
               </CardHeader>
               <CardContent>
+                {selectedSPK.bomMaterials.length === 0 ? (
+                  <p className="text-yellow-600 text-sm">⚠️ No BOM materials found for this product. Contact PPIC to set up BOM.</p>
+                ) : (
                 <div className="space-y-4">
-                  {/* Material Input */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      KOHAIR Fabric Used (YARD) <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={materialUsedQty}
-                      onChange={(e) => {
-                        const qty = parseFloat(e.target.value) || 0;
-                        const fabricMaterial = selectedSPK?.bomMaterials.find(m => m.materialCode.includes('KOHAIR'));
-                        if (fabricMaterial) {
-                          setValue('material_consumption', [{
-                            material_code: fabricMaterial.materialCode,
-                            qty_used: qty,
-                            uom: 'YARD'
-                          }]);
-                        }
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="0.00"
-                    />
-                    {selectedSPK.bomMaterials.find(m => m.materialCode.includes('KOHAIR')) && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        BOM Standard: {selectedSPK.bomMaterials.find(m => m.materialCode.includes('KOHAIR'))!.qtyPerUnit} YARD/pcs
-                      </p>
-                    )}
-                  </div>
+                  {selectedSPK.bomMaterials.map((mat, idx) => {
+                    const currentQty = (watch('material_consumption') || [])[idx]?.qty_used || 0;
+                    const bomStd = mat.qtyPerUnit * good_output;
+                    const varPct = bomStd > 0 ? ((currentQty - bomStd) / bomStd) * 100 : 0;
+                    return (
+                      <div key={mat.materialCode} className="border rounded-lg p-4 bg-gray-50">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          {mat.materialName} ({mat.materialCode}) Used ({mat.uom})
+                          <span className="text-red-500"> *</span>
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={currentQty || ''}
+                          onChange={(e) => {
+                            const qty = parseFloat(e.target.value) || 0;
+                            const current = watch('material_consumption') || [];
+                            const updated = [...current];
+                            updated[idx] = {
+                              material_code: mat.materialCode,
+                              qty_used: qty,
+                              uom: mat.uom,
+                            };
+                            setValue('material_consumption', updated);
+                          }}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="0.00"
+                        />
+                        <div className="flex items-center justify-between mt-1">
+                          <p className="text-xs text-gray-500">
+                            BOM Standard: {mat.qtyPerUnit} {mat.uom}/pcs
+                            {good_output > 0 && ` → ${(mat.qtyPerUnit * good_output).toFixed(2)} ${mat.uom} for ${good_output} pcs`}
+                          </p>
+                          {currentQty > 0 && good_output > 0 && (
+                            <p className={`text-xs font-semibold ${
+                              Math.abs(varPct) <= 3 ? 'text-green-600' :
+                              Math.abs(varPct) <= 5 ? 'text-yellow-600' : 'text-red-600'
+                            }`}>
+                              Variance: {varPct > 0 ? '+' : ''}{varPct.toFixed(1)}%
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                )}
 
-                  {/* Variance Analysis */}
-                  {materialVariance && (
+                  {/* Variance Analysis — based on primary BOM material */}
+                  {materialVariance && (() => {
+                    const primaryMat = selectedSPK.bomMaterials[0];
+                    const uomLabel = primaryMat?.uom ?? '';
+                    return (
                     <div className={cn(
-                      'p-4 rounded-lg border-2',
+                      'p-4 rounded-lg border-2 mt-4',
                       Math.abs(materialVariance.variance) <= 3 ? 'bg-green-50 border-green-300' :
                       Math.abs(materialVariance.variance) <= 5 ? 'bg-yellow-50 border-yellow-300' :
                       'bg-red-50 border-red-300'
                     )}>
-                      <h4 className="font-semibold text-gray-900 mb-3">Material Variance Analysis</h4>
+                      <h4 className="font-semibold text-gray-900 mb-3">Material Variance Analysis ({primaryMat?.materialName})</h4>
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
                           <p className="text-gray-600">BOM Standard:</p>
-                          <p className="font-semibold">{materialVariance.bomStandard.toFixed(2)} YARD</p>
+                          <p className="font-semibold">{materialVariance.bomStandard.toFixed(2)} {uomLabel}</p>
                         </div>
                         <div>
                           <p className="text-gray-600">Actual Used:</p>
-                          <p className="font-semibold">{materialVariance.actual.toFixed(2)} YARD</p>
+                          <p className="font-semibold">{materialVariance.actual.toFixed(2)} {uomLabel}</p>
                         </div>
                         <div>
                           <p className="text-gray-600">Variance Qty:</p>
@@ -383,7 +402,7 @@ export default function CuttingInputPage() {
                             materialVariance.varianceQty > 0 ? 'text-red-700' : 'text-green-700'
                           )}>
                             {materialVariance.varianceQty > 0 ? '+' : ''}
-                            {materialVariance.varianceQty.toFixed(2)} YARD
+                            {materialVariance.varianceQty.toFixed(2)} {uomLabel}
                           </p>
                         </div>
                         <div>
@@ -399,28 +418,20 @@ export default function CuttingInputPage() {
                           </p>
                         </div>
                       </div>
-
-                      {/* Variance Status */}
                       <div className="mt-3 pt-3 border-t">
                         {Math.abs(materialVariance.variance) <= 3 && (
-                          <p className="text-sm text-green-700 font-medium">
-                            ✅ Within normal waste tolerance (0-3%). Auto-approved.
-                          </p>
+                          <p className="text-sm text-green-700 font-medium">✅ Within normal waste tolerance (0-3%). Auto-approved.</p>
                         )}
                         {Math.abs(materialVariance.variance) > 3 && Math.abs(materialVariance.variance) <= 5 && (
-                          <p className="text-sm text-yellow-700 font-medium">
-                            ⚠️ Above normal waste (3-5%). Supervisor will review.
-                          </p>
+                          <p className="text-sm text-yellow-700 font-medium">⚠️ Above normal waste (3-5%). Supervisor will review.</p>
                         )}
                         {Math.abs(materialVariance.variance) > 5 && (
-                          <p className="text-sm text-red-700 font-medium">
-                            ❌ High variance (&gt;5%). Justification required below!
-                          </p>
+                          <p className="text-sm text-red-700 font-medium">❌ High variance (&gt;5%). Justification required below!</p>
                         )}
                       </div>
                     </div>
-                  )}
-                </div>
+                    );
+                  })()}
               </CardContent>
             </Card>
 

@@ -51,7 +51,7 @@ export const BOMExplosionViewer: React.FC<BOMExplosionViewerProps> = ({
     queryKey: ['mo-details', moId],
     queryFn: async () => {
       const response = await apiClient.get(`/ppic/manufacturing-order/${moId}`);
-      return response.data;
+      return response;
     }
   });
 
@@ -60,7 +60,7 @@ export const BOMExplosionViewer: React.FC<BOMExplosionViewerProps> = ({
     queryKey: ['bom-explosion-mo', moId],
     queryFn: async () => {
       const response = await apiClient.get(`/ppic/manufacturing-order/${moId}/explosion`);
-      return response.data as ExplosionNode[];
+      return response as ExplosionNode[];
     }
   });
 
@@ -69,7 +69,7 @@ export const BOMExplosionViewer: React.FC<BOMExplosionViewerProps> = ({
     queryKey: ['work-orders-for-mo', moId],
     queryFn: async () => {
       const response = await apiClient.get(`/work-orders?mo_id=${moId}`);
-      return response.data;
+      return response;
     }
   });
 

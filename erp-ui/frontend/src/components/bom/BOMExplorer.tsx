@@ -62,7 +62,7 @@ export const BOMExplorer: React.FC<BOMExplorerProps> = ({
     queryKey: ['products-with-bom'],
     queryFn: async () => {
       const response = await apiClient.get('/admin/products?has_bom=true');
-      return response.data.products;
+      return response?.products || response || [];
     },
     enabled: showSearch
   });
@@ -72,7 +72,7 @@ export const BOMExplorer: React.FC<BOMExplorerProps> = ({
     queryKey: ['bom-header', selectedProduct],
     queryFn: async () => {
       const response = await apiClient.get(`/bom/${selectedProduct}`);
-      return response.data as BOMHeader;
+      return response as BOMHeader;
     },
     enabled: !!selectedProduct
   });
@@ -82,7 +82,7 @@ export const BOMExplorer: React.FC<BOMExplorerProps> = ({
     queryKey: ['bom-explosion', selectedProduct],
     queryFn: async () => {
       const response = await apiClient.get(`/bom/${selectedProduct}/explosion`);
-      return response.data as BOMComponent[];
+      return response as BOMComponent[];
     },
     enabled: !!selectedProduct
   });

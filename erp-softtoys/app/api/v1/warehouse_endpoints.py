@@ -16,8 +16,9 @@ from app.core.models.transfer import TransferDept as TransferDeptEnum
 from app.core.models.transfer import TransferStatus as TransferStatusEnum
 from app.core.models.users import User
 from app.core.models.warehouse import (
-    Location, StockMove, StockQuant, 
-    MaterialRequest, MaterialRequestStatus
+    Location, StockMove, StockQuant, StockLot,
+    MaterialRequest, MaterialRequestStatus,
+    PurchaseOrder, POStatus, POType, StockMoveStatus
 )
 from app.core.models.bom import BOMHeader
 from app.core.permissions import ModuleName, Permission
@@ -1241,6 +1242,297 @@ async def get_stock_quants(
             "lot_id": quant.lot_id
         })
 
+    return result
+
+
+# ============================================================================
+# MATERIAL STOCK / RECEIPT / ISSUE — Dedicated endpoints used by
+# MaterialStockPage, MaterialReceiptPage, MaterialIssuePage
+# ============================================================================
+
+@router.get("/material/stock")
+async def get_material_stock(
+    search: str = Query(None),
+    material_type: str = Query(None),
+    low_stock: bool = Query(False),
+    limit: int = Query(500),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.VIEW))
+):
+    """List material stock — all StockQuants with product info.
+    Used by MaterialStockPage.tsx and warehouseApi.getMaterialStock().
+    """
+    query = (
+        db.query(StockQuant)
+        .options(joinedload(StockQuant.product), joinedload(StockQuant.location))
+    )
+
+    if search:
+        query = query.join(Product, StockQuant.product_id == Product.id).filter(
+            (Product.code.ilike(f"%{search}%")) | (Product.name.ilike(f"%{search}%"))
+        )
+
+    quants = query.limit(limit).all()
+    result = []
+    for q in quants:
+        p = q.product
+        loc = q.location
+        qty_on = float(q.qty_on_hand or 0)
+        qty_res = float(q.qty_reserved or 0)
+        avail = qty_on - qty_res
+        if low_stock and avail >= qty_on * 0.3:
+            continue
+        result.append({
+            "material_id": q.product_id,
+            "product_id": q.product_id,
+            "material_code": p.code if p else None,
+            "product_code": p.code if p else None,
+            "material_name": p.name if p else None,
+            "product_name": p.name if p else None,
+            "uom": (p.uom.value if hasattr(p.uom, 'value') else str(p.uom)) if p and p.uom else "Pcs",
+            "location": loc.name if loc else None,
+            "location_id": q.location_id,
+            "qty_on_hand": qty_on,
+            "qty_reserved": qty_res,
+            "available_qty": avail,
+            "available_quantity": avail,
+            "lot_id": q.lot_id,
+        })
+    return result
+
+
+@router.post("/material/receipt", status_code=201)
+async def material_receipt(
+    data: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.CREATE))
+):
+    """Receive materials into warehouse.
+    Accepts: { po_id, items: [{material_id, received_qty, lot_number?}], location_id?, notes? }
+    Creates StockLot + updates StockQuant + marks PO as Received.
+    Used by MaterialReceiptPage.tsx.
+    """
+    from datetime import datetime as _dt
+
+    po_id = data.get("po_id")
+    material_id = data.get("material_id")
+    received_qty = float(data.get("received_qty", 0))
+    items = data.get("items", [])
+    location_id = int(data.get("location_id") or 1)
+    notes = data.get("notes", "")
+
+    # Support both single-item form (material_id + received_qty) and items[] list
+    if not items and material_id and received_qty > 0:
+        items = [{"material_id": material_id, "received_qty": received_qty,
+                  "lot_number": data.get("lot_number")}]
+
+    if not items:
+        raise HTTPException(status_code=400, detail="No items provided for receipt")
+
+    # Validate PO if provided
+    po = None
+    if po_id:
+        po = db.query(PurchaseOrder).filter(PurchaseOrder.id == po_id).first()
+        if not po:
+            raise HTTPException(status_code=404, detail=f"PO {po_id} not found")
+
+    # Validate location
+    location = db.query(Location).filter(Location.id == location_id).first()
+    if not location:
+        # Try first available location
+        location = db.query(Location).first()
+        if not location:
+            raise HTTPException(status_code=400, detail="No warehouse location configured")
+        location_id = location.id
+
+    receipts = []
+    for item in items:
+        pid = item.get("material_id") or item.get("product_id")
+        qty = float(item.get("received_qty") or item.get("quantity") or 0)
+        lot_no = item.get("lot_number") or f"LOT-{pid}-{_dt.utcnow().strftime('%Y%m%d%H%M%S')}"
+
+        if not pid or qty <= 0:
+            continue
+
+        product = db.query(Product).filter(Product.id == pid).first()
+        if not product:
+            continue
+
+        # Create or update StockLot
+        lot = db.query(StockLot).filter(StockLot.lot_number == lot_no).first()
+        if not lot:
+            lot = StockLot(
+                product_id=pid,
+                lot_number=lot_no,
+                qty_initial=Decimal(str(qty)),
+                qty_remaining=Decimal(str(qty)),
+                purchase_order_id=po_id,
+                received_date=_dt.utcnow(),
+            )
+            db.add(lot)
+            db.flush()
+
+        # Update or create StockQuant
+        quant = db.query(StockQuant).filter(
+            StockQuant.product_id == pid,
+            StockQuant.location_id == location_id
+        ).first()
+        if quant:
+            quant.qty_on_hand = (quant.qty_on_hand or Decimal('0')) + Decimal(str(qty))
+        else:
+            quant = StockQuant(
+                product_id=pid,
+                location_id=location_id,
+                lot_id=lot.id,
+                qty_on_hand=Decimal(str(qty)),
+                qty_reserved=Decimal('0'),
+            )
+            db.add(quant)
+
+        # Create StockMove record
+        # Find supplier location for the "from" side of this receipt
+        supplier_loc = db.query(Location).filter(
+            Location.type == "Supplier"
+        ).first() or db.query(Location).filter(Location.id == 1).first()
+        src_loc_id = supplier_loc.id if supplier_loc else location_id
+
+        uom_val = (product.uom.value if hasattr(product.uom, 'value') else str(product.uom)) if product and product.uom else "Pcs"
+        move = StockMove(
+            product_id=pid,
+            location_id_from=src_loc_id,
+            location_id_to=location_id,
+            qty=Decimal(str(qty)),
+            uom=uom_val,
+            reference_doc=f"PO-{po_id}" if po_id else "MANUAL_RECEIPT",
+            state=StockMoveStatus.DONE,
+            lot_id=lot.id,
+        )
+        db.add(move)
+        receipts.append({"product_id": pid, "product_code": product.code,
+                         "qty_received": qty, "lot_number": lot_no})
+
+    # Mark PO as Received
+    if po:
+        po.status = POStatus.RECEIVED
+
+    db.commit()
+    return {"success": True, "po_id": po_id, "items_received": receipts,
+            "location": location.name, "message": "Materials received successfully"}
+
+
+@router.post("/material/issue", status_code=201)
+async def material_issue(
+    data: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.CREATE))
+):
+    """Issue material from warehouse to production (per SPK).
+    Accepts: { spk_id, material_id, quantity_issued, notes? }
+    Deducts qty from StockQuant, records StockMove.
+    Used by MaterialIssuePage.tsx.
+    """
+    from datetime import datetime as _dt
+    from app.core.models import SPK
+
+    spk_id = data.get("spk_id")
+    material_id = data.get("material_id")
+    qty_issue = float(data.get("quantity_issued") or data.get("qty") or 0)
+    notes = data.get("notes", "")
+
+    if not spk_id:
+        raise HTTPException(status_code=400, detail="spk_id is required")
+    if not material_id:
+        raise HTTPException(status_code=400, detail="material_id is required")
+    if qty_issue <= 0:
+        raise HTTPException(status_code=400, detail="quantity_issued must be > 0")
+
+    spk = db.query(SPK).filter(SPK.id == spk_id).first()
+    if not spk:
+        raise HTTPException(status_code=404, detail=f"SPK {spk_id} not found")
+
+    product = db.query(Product).filter(Product.id == material_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail=f"Material {material_id} not found")
+
+    # Check available stock
+    quants = db.query(StockQuant).filter(StockQuant.product_id == material_id).all()
+    total_available = sum(float(q.qty_on_hand or 0) - float(q.qty_reserved or 0) for q in quants)
+
+    # Deduct stock (FIFO — pick first non-empty quant)
+    remaining = Decimal(str(qty_issue))
+    deducted_locations = []
+    for quant in sorted(quants, key=lambda q: q.id):
+        avail = (quant.qty_on_hand or Decimal('0')) - (quant.qty_reserved or Decimal('0'))
+        if avail <= 0:
+            continue
+        take = min(avail, remaining)
+        quant.qty_on_hand = (quant.qty_on_hand or Decimal('0')) - take
+        deducted_locations.append(quant.location_id)
+        remaining -= take
+        if remaining <= 0:
+            break
+
+    if remaining > 0:
+        # Material debt — still issue but flag it
+        pass
+
+    # Record StockMove
+    prod_loc = db.query(Location).filter(
+        Location.type == "Production"
+    ).first() or db.query(Location).filter(Location.id == 1).first()
+    dst_loc_id = prod_loc.id if prod_loc else (deducted_locations[0] if deducted_locations else 1)
+
+    uom_val = (product.uom.value if hasattr(product.uom, 'value') else str(product.uom)) if product.uom else "Pcs"
+    move = StockMove(
+        product_id=material_id,
+        location_id_from=deducted_locations[0] if deducted_locations else 1,
+        location_id_to=dst_loc_id,
+        qty=Decimal(str(qty_issue)),
+        uom=uom_val,
+        reference_doc=f"SPK-{spk_id}",
+        state=StockMoveStatus.DONE,
+    )
+    db.add(move)
+    db.commit()
+
+    return {
+        "success": True,
+        "spk_id": spk_id,
+        "material_id": material_id,
+        "product_code": product.code,
+        "product_name": product.name,
+        "quantity_issued": qty_issue,
+        "is_debt": float(remaining) > 0,
+        "debt_qty": float(remaining),
+        "message": "Material issued successfully" if remaining <= 0 else f"Issued with {float(remaining)} units on debt",
+    }
+
+
+@router.get("/material/issue/history/{spk_id}")
+async def get_material_issue_history(
+    spk_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission(ModuleName.WAREHOUSE, Permission.VIEW))
+):
+    """Get material issue history for a given SPK.
+    Used by MaterialIssuePage.tsx — shows all materials issued to this SPK.
+    """
+    moves = db.query(StockMove).filter(
+        StockMove.reference_doc == f"SPK-{spk_id}",
+    ).order_by(StockMove.date.desc()).all()
+
+    result = []
+    for move in moves:
+        product = db.query(Product).filter(Product.id == move.product_id).first()
+        result.append({
+            "id": move.id,
+            "material_id": move.product_id,
+            "material_code": product.code if product else None,
+            "material_name": product.name if product else None,
+            "quantity_issued": float(move.qty or 0),
+            "issue_date": move.date.isoformat() if move.date else None,
+            "reference": move.reference_doc,
+        })
     return result
 
 

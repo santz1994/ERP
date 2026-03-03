@@ -18,13 +18,18 @@ interface ManufacturingOrder {
   id: number;
   so_line_id?: number;
   product_id: number;
-  product_code: string;
-  product_name: string;
   qty_planned: number;
   qty_produced: number;
   routing_type: string;
   batch_number: string;
   state: string;
+  mo_type?: string;
+  is_qty_locked?: boolean;
+  buyer_mo_id?: number | null;
+  po_fabric_id?: number | null;
+  trigger_mode?: string;
+  production_week?: string | null;
+  destination_country?: string | null;
   created_at: string;
 }
 
@@ -62,6 +67,14 @@ const PPICPage: React.FC = () => {
     so_line_id: ''
   });
 
+  // BOM form state
+  const [bomForm, setBomForm] = useState({
+    product_id: '',
+    component_id: '',
+    qty_needed: '',
+    bom_type: 'Manufacturing',
+  });
+
   // Fetch Manufacturing Orders
   const { data: mosData, isLoading: mosLoading } = useQuery({
     queryKey: ['manufacturing-orders', filterStatus],
@@ -70,7 +83,7 @@ const PPICPage: React.FC = () => {
         const params = new URLSearchParams();
         if (filterStatus !== 'all') params.append('status', filterStatus);
         const response = await apiClient.get(`/ppic/manufacturing-orders?${params}`);
-        return response.data || [];
+        return Array.isArray(response) ? response : [];
       } catch (error) {
         console.error('[PPIC] Error fetching manufacturing orders:', error);
         return []; // Return empty array on error
@@ -85,7 +98,7 @@ const PPICPage: React.FC = () => {
     queryFn: async () => {
       const response = await apiClient.get('/admin/products');
       // Filter only WIP and Finish Good
-      const products = response.data || [];
+      const products = Array.isArray(response) ? response : (response?.products || []);
       return products.filter((p: Product) => 
         p.type === 'WIP' || p.type === 'Finish Good'
       );
@@ -98,8 +111,8 @@ const PPICPage: React.FC = () => {
     queryFn: async () => {
       const params = new URLSearchParams();
       if (selectedMO) params.append('mo_id', selectedMO.toString());
-      const response = await apiClient.get(`/work-orders?${params}`);
-      return response.data;
+      const response = await apiClient.get(`/ppic/work-orders?${params}`);
+      return Array.isArray(response) ? response : [];
     },
     enabled: activeTab === 'workorders',
     refetchInterval: 5000
@@ -109,7 +122,7 @@ const PPICPage: React.FC = () => {
   const createMOMutation = useMutation({
     mutationFn: async (data: any) => {
       const response = await apiClient.post('/ppic/manufacturing-order', data);
-      return response.data;
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['manufacturing-orders'] });
@@ -132,7 +145,7 @@ const PPICPage: React.FC = () => {
   const startMOMutation = useMutation({
     mutationFn: async (moId: number) => {
       const response = await apiClient.post(`/ppic/manufacturing-order/${moId}/start`);
-      return response.data;
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['manufacturing-orders'] });
@@ -147,7 +160,7 @@ const PPICPage: React.FC = () => {
   const completeMOMutation = useMutation({
     mutationFn: async (moId: number) => {
       const response = await apiClient.post(`/ppic/manufacturing-order/${moId}/complete`);
-      return response.data;
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['manufacturing-orders'] });
@@ -158,11 +171,50 @@ const PPICPage: React.FC = () => {
     }
   });
 
+  // Fetch BOM Data
+  const { data: bomData, isLoading: bomLoading } = useQuery({
+    queryKey: ['ppic-bom'],
+    queryFn: async () => {
+      const response = await apiClient.get('/ppic/bom');
+      return Array.isArray(response) ? response : [];
+    },
+    enabled: activeTab === 'bom',
+  });
+
+  // Create BOM line mutation
+  const createBOMMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return await apiClient.post('/ppic/bom', data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ppic-bom'] });
+      setShowBOMForm(false);
+      setBomForm({ product_id: '', component_id: '', qty_needed: '', bom_type: 'Manufacturing' });
+      alert('BOM line saved!');
+    },
+    onError: (error: any) => {
+      alert('Error: ' + (error.response?.data?.detail || error.message));
+    }
+  });
+
+  // Delete BOM detail mutation
+  const deleteBOMDetailMutation = useMutation({
+    mutationFn: async (detailId: number) => {
+      return await apiClient.delete(`/ppic/bom/detail/${detailId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ppic-bom'] });
+    },
+    onError: (error: any) => {
+      alert('Error deleting: ' + (error.response?.data?.detail || error.message));
+    }
+  });
+
   // Generate Work Orders Mutation
   const generateWOMutation = useMutation({
     mutationFn: async (moId: number) => {
       const response = await apiClient.post('/work-orders/generate', { mo_id: moId });
-      return response.data;
+      return response;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['manufacturing-orders'] });
@@ -372,8 +424,8 @@ const PPICPage: React.FC = () => {
                         <td className="px-6 py-4 text-sm font-medium text-blue-600">MO-{mo.id}</td>
                         <td className="px-6 py-4 text-sm font-semibold text-gray-900">{mo.batch_number}</td>
                         <td className="px-6 py-4">
-                          <div className="text-sm font-medium text-gray-900">{mo.product_code}</div>
-                          <div className="text-xs text-gray-500">{mo.product_name}</div>
+                          <div className="text-sm font-medium text-gray-900">Product #{mo.product_id}</div>
+                          <div className="text-xs text-gray-500">{mo.mo_type || 'PRODUCTION'}</div>
                         </td>
                         <td className="px-6 py-4 text-center">
                           <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getRoutingColor(mo.routing_type)}`}>
@@ -462,7 +514,7 @@ const PPICPage: React.FC = () => {
                 <option value="">-- Select MO to View Aggregate Data --</option>
                 {mosData?.map((mo: ManufacturingOrder) => (
                   <option key={mo.id} value={mo.id}>
-                    {mo.batch_number} - {mo.product_name} ({mo.qty_planned} pcs) - {mo.state}
+                    {mo.batch_number} ({mo.qty_planned} pcs) - {mo.state}
                   </option>
                 ))}
               </select>
@@ -508,7 +560,7 @@ const PPICPage: React.FC = () => {
                 <option value="">All MOs</option>
                 {mosData?.map((mo: ManufacturingOrder) => (
                   <option key={mo.id} value={mo.id}>
-                    {mo.batch_number} - {mo.product_code}
+                    {mo.batch_number} - MO#{mo.id}
                   </option>
                 ))}
               </select>
@@ -623,90 +675,54 @@ const PPICPage: React.FC = () => {
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Add BOM Manually</h3>
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Product Name *</label>
-                    <input
-                      type="text"
-                      placeholder="e.g., T-Shirt Premium"
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Product ID (Finish Good / WIP) *</label>
+                    <select
+                      value={bomForm.product_id}
+                      onChange={e => setBomForm(f => ({ ...f, product_id: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
-                    />
+                    >
+                      <option value="">-- Select Product --</option>
+                      {productsData?.map((p: Product) => (
+                        <option key={p.id} value={p.id}>{p.code} — {p.name}</option>
+                      ))}
+                    </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Product Code *</label>
-                    <input
-                      type="text"
-                      placeholder="e.g., TS-001"
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Component / Material *</label>
+                    <select
+                      value={bomForm.component_id}
+                      onChange={e => setBomForm(f => ({ ...f, component_id: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
-                    />
+                    >
+                      <option value="">-- Select Material --</option>
+                      {productsData?.map((p: Product) => (
+                        <option key={p.id} value={p.id}>{p.code} — {p.name}</option>
+                      ))}
+                    </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Material/Component *</label>
-                    <input
-                      type="text"
-                      placeholder="e.g., Cotton Fabric"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Quantity Required *</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Qty Required per unit *</label>
                     <input
                       type="number"
                       placeholder="e.g., 1.5"
                       min="0"
                       step="0.01"
+                      value={bomForm.qty_needed}
+                      onChange={e => setBomForm(f => ({ ...f, qty_needed: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Unit *</label>
-                    <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500">
-                      <option value="">Select Unit</option>
-                      <option value="kg">Kilogram (kg)</option>
-                      <option value="meter">Meter (m)</option>
-                      <option value="pcs">Pieces (pcs)</option>
-                      <option value="liter">Liter (L)</option>
-                      <option value="box">Box</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Unit Price</label>
-                    <input
-                      type="number"
-                      placeholder="e.g., 25000"
-                      min="0"
-                      step="0.01"
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">BOM Type</label>
+                    <select
+                      value={bomForm.bom_type}
+                      onChange={e => setBomForm(f => ({ ...f, bom_type: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Material Type</label>
-                    <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500">
-                      <option value="">Select Type</option>
-                      <option value="fabric">Fabric</option>
-                      <option value="thread">Thread</option>
-                      <option value="button">Button</option>
-                      <option value="zipper">Zipper</option>
-                      <option value="elastic">Elastic</option>
-                      <option value="lace">Lace</option>
-                      <option value="other">Other</option>
+                    >
+                      <option value="Manufacturing">Manufacturing</option>
+                      <option value="Kit/Phantom">Kit/Phantom</option>
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Status</label>
-                    <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500">
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="mb-4">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Notes/Description</label>
-                  <textarea
-                    placeholder="e.g., Premium quality cotton, 100% cotton, white color"
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
-                  ></textarea>
                 </div>
                 <div className="flex gap-2 justify-end">
                   <button
@@ -715,8 +731,23 @@ const PPICPage: React.FC = () => {
                   >
                     Cancel
                   </button>
-                  <button className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
-                    Save BOM
+                  <button
+                    onClick={() => {
+                      if (!bomForm.product_id || !bomForm.component_id || !bomForm.qty_needed) {
+                        alert('Product, Component, and Quantity are required');
+                        return;
+                      }
+                      createBOMMutation.mutate({
+                        product_id: parseInt(bomForm.product_id),
+                        component_id: parseInt(bomForm.component_id),
+                        qty_needed: parseFloat(bomForm.qty_needed),
+                        bom_type: bomForm.bom_type,
+                      });
+                    }}
+                    disabled={createBOMMutation.isPending}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-50"
+                  >
+                    {createBOMMutation.isPending ? 'Saving...' : 'Save BOM'}
                   </button>
                 </div>
               </div>
@@ -814,60 +845,60 @@ const PPICPage: React.FC = () => {
                       <th className="text-left py-3 px-4 font-semibold text-gray-700">Material/Component</th>
                       <th className="text-center py-3 px-4 font-semibold text-gray-700">Qty Required</th>
                       <th className="text-center py-3 px-4 font-semibold text-gray-700">Unit</th>
-                      <th className="text-center py-3 px-4 font-semibold text-gray-700">Unit Price</th>
+                      <th className="text-center py-3 px-4 font-semibold text-gray-700">Wastage %</th>
                       <th className="text-center py-3 px-4 font-semibold text-gray-700">Status</th>
                       <th className="text-center py-3 px-4 font-semibold text-gray-700">Actions</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    <tr className="border-b border-gray-200 hover:bg-gray-50">
-                      <td className="py-3 px-4">T-Shirt Premium (TS-001)</td>
-                      <td className="py-3 px-4">Cotton Fabric</td>
-                      <td className="text-center py-3 px-4">1.5</td>
-                      <td className="text-center py-3 px-4">m</td>
-                      <td className="text-center py-3 px-4">Rp 25,000</td>
-                      <td className="text-center py-3 px-4">
-                        <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">Active</span>
-                      </td>
-                      <td className="text-center py-3 px-4 space-x-2">
-                        <button className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition text-xs">Edit</button>
-                        <button className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition text-xs">Delete</button>
-                      </td>
-                    </tr>
-                    <tr className="border-b border-gray-200 hover:bg-gray-50">
-                      <td className="py-3 px-4">T-Shirt Premium (TS-001)</td>
-                      <td className="py-3 px-4">Thread White</td>
-                      <td className="text-center py-3 px-4">2</td>
-                      <td className="text-center py-3 px-4">pcs</td>
-                      <td className="text-center py-3 px-4">Rp 5,000</td>
-                      <td className="text-center py-3 px-4">
-                        <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">Active</span>
-                      </td>
-                      <td className="text-center py-3 px-4 space-x-2">
-                        <button className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition text-xs">Edit</button>
-                        <button className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition text-xs">Delete</button>
-                      </td>
-                    </tr>
-                    <tr className="border-b border-gray-200 hover:bg-gray-50">
-                      <td className="py-3 px-4">T-Shirt Premium (TS-001)</td>
-                      <td className="py-3 px-4">Button (4 hole)</td>
-                      <td className="text-center py-3 px-4">5</td>
-                      <td className="text-center py-3 px-4">pcs</td>
-                      <td className="text-center py-3 px-4">Rp 2,000</td>
-                      <td className="text-center py-3 px-4">
-                        <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">Active</span>
-                      </td>
-                      <td className="text-center py-3 px-4 space-x-2">
-                        <button className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition text-xs">Edit</button>
-                        <button className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition text-xs">Delete</button>
-                      </td>
-                    </tr>
-                  </tbody>
+                  {bomLoading ? (
+                    <tbody><tr><td colSpan={7} className="py-8 text-center text-gray-400">Loading BOM data...</td></tr></tbody>
+                  ) : bomData && bomData.length > 0 ? (
+                    <tbody>
+                      {bomData.flatMap((bom: any) =>
+                        (bom.details || []).map((comp: any, idx: number) => (
+                          <tr key={`${bom.id}-${idx}`} className="border-b border-gray-200 hover:bg-gray-50">
+                            <td className="py-3 px-4">
+                              {bom.product_code ? `${bom.product_code} (ID:${bom.product_id})` : `Product #${bom.product_id}`}
+                              {bom.revision && <span className="ml-2 text-xs text-gray-400">Rev.{bom.revision}</span>}
+                            </td>
+                            <td className="py-3 px-4">
+                              {comp.component_code ? `${comp.component_code} (ID:${comp.component_id})` : `Material #${comp.component_id}`}
+                            </td>
+                            <td className="text-center py-3 px-4">{comp.qty_needed}</td>
+                            <td className="text-center py-3 px-4">{comp.uom || '-'}</td>
+                            <td className="text-center py-3 px-4">{comp.wastage_percent ? `${comp.wastage_percent}%` : '-'}</td>
+                            <td className="text-center py-3 px-4">
+                              <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">Active</span>
+                            </td>
+                            <td className="text-center py-3 px-4 space-x-2">
+                              <button className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition text-xs">Edit</button>
+                              <button
+                                className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition text-xs"
+                                onClick={() => { if (confirm('Delete this BOM line?')) deleteBOMDetailMutation.mutate(comp.id); }}
+                              >Delete</button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  ) : (
+                    <tbody>
+                      <tr>
+                        <td colSpan={7} className="py-12 text-center">
+                          <div className="text-5xl mb-3">📋</div>
+                          <p className="text-gray-500">No BOM data found</p>
+                          <p className="text-gray-400 text-sm mt-1">Add a BOM manually or import from Excel</p>
+                        </td>
+                      </tr>
+                    </tbody>
+                  )}
                 </table>
               </div>
-              <div className="mt-4 text-center text-sm text-gray-600">
-                Showing 3 BOM items | Total Cost: Rp 47,500 per unit
-              </div>
+              {bomData && bomData.length > 0 && (
+                <div className="mt-4 text-center text-sm text-gray-600">
+                  Showing {bomData.reduce((sum: number, b: any) => sum + (b.components?.length || 0), 0)} BOM component(s) across {bomData.length} product(s)
+                </div>
+              )}
             </div>
 
             {/* Action Links */}

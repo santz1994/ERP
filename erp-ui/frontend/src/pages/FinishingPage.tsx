@@ -246,7 +246,7 @@ export default function FinishingPage() {
                       <Package2 className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                       <p className="text-gray-500">No work orders yet</p>
                       <button
-                        onClick={() => navigate('/production/finishing/input')}
+                        onClick={() => navigate('/production/input/finishing')}
                         className="mt-4 text-purple-600 hover:text-purple-700 text-sm font-medium"
                       >
                         Start Production Input →
