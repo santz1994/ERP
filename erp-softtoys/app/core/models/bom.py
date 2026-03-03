@@ -19,6 +19,13 @@ from sqlalchemy.orm import relationship
 from app.core.database import Base
 
 
+class BOMCategory(str, enum.Enum):
+    """Top-level BOM category: separates production BOMs from purchasing BOMs."""
+
+    PRODUCTION = "Production"   # Cutting, Embo, Sewing, Finishing, Packing
+    PURCHASE = "Purchase"       # Purchasing / procurement BOM
+
+
 class BOMType(str, enum.Enum):
     """BOM types."""
 
@@ -45,6 +52,7 @@ class BOMHeader(Base):
     id = Column(Integer, primary_key=True, index=True)
     product_id = Column(Integer, ForeignKey("products.id"), nullable=False, index=True)
     bom_type = Column(Enum(BOMType), nullable=False)  # Manufacturing, Kit/Phantom
+    bom_category = Column(Enum(BOMCategory), nullable=False, default=BOMCategory.PRODUCTION, index=True)  # Production | Purchase
     qty_output = Column(DECIMAL(10, 2), default=1.0)  # Usually 1.0 for 1 Pcs
     is_active = Column(Boolean, default=True, index=True)
     revision = Column(String(10), default="Rev 1.0")
