@@ -51,6 +51,8 @@ import AdminMasterdataPage from '@/pages/AdminMasterdataPage'
 import BOMManagementPage from '@/pages/BOMManagementPage'
 import BOMProductionPage from '@/pages/bom/BOMProductionPage'
 import BOMPurchasePage from '@/pages/bom/BOMPurchasePage'
+import POListPage from '@/pages/purchasing/POListPage'
+import SupplierManagementPage from '@/pages/purchasing/SupplierManagementPage'
 import AdminImportExportPage from '@/pages/AdminImportExportPage'
 import BulkImportPage from '@/pages/BulkImportPage'
 import AuditTrailPage from '@/pages/AuditTrailPage'
@@ -380,6 +382,26 @@ function App() {
             <PrivateRoute module="purchasing">
               <ProtectedLayout>
                 <PurchasingPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/purchasing/po"
+          element={
+            <PrivateRoute module="purchasing">
+              <ProtectedLayout>
+                <POListPage />
+              </ProtectedLayout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/purchasing/suppliers"
+          element={
+            <PrivateRoute module="purchasing">
+              <ProtectedLayout>
+                <SupplierManagementPage />
               </ProtectedLayout>
             </PrivateRoute>
           }

@@ -5,13 +5,44 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { EnvironmentIndicator } from './EnvironmentBanner'
 import { UserRole } from '@/types'
 
-// Breadcrumb mapping
+// Breadcrumb mapping — segment → display label
 const routeLabels: Record<string, string> = {
-  dashboard: 'Dashboard', ppic: 'PPIC', 'daily-production': 'Daily Production',
-  cutting: 'Cutting', embroidery: 'Embroidery', sewing: 'Sewing', finishing: 'Finishing',
-  packing: 'Packing', quality: 'Quality Control', purchasing: 'Purchasing',
+  // Main
+  dashboard: 'Dashboard',
+  // PPIC
+  ppic: 'PPIC & Planning', 'material-efficiency': 'Material Efficiency', 'material-allocation': 'Material Allocation',
+  // Production
+  production: 'Production', 'daily-production': 'Daily Production',
+  input: 'Daily Input', wip: 'WIP Dashboard', calendar: 'Calendar',
+  cutting: 'Cutting', embroidery: 'Embroidery', sewing: 'Sewing',
+  finishing: 'Finishing', packing: 'Packing',
+  // QC / Rework
+  quality: 'Quality Control', 'rework-management': 'Rework Station', qc: 'QC',
+  // Purchasing
+  purchasing: 'Purchasing', po: 'PO List & Tracking', suppliers: 'Supplier Management',
+  // Inventory
   warehouse: 'Warehouse', 'material-debt': 'Material Debt', finishgoods: 'Finish Goods',
-  po: 'Purchase Orders', mo: 'Manufacturing Orders', spk: 'Work Orders', create: 'Create',
+  kanban: 'Kanban',
+  // Reports
+  reports: 'Reports',
+  // Admin
+  admin: 'Administration',
+  users: 'User Management', permissions: 'Permissions', 'audit-trail': 'Audit Trail',
+  'import-export': 'Import / Export', masterdata: 'Masterdata', 'bulk-import': 'Bulk Import',
+  'bom-management': 'BOM Management', 'bom-production': 'BOM Produksi', 'bom-purchase': 'BOM Purchasing',
+  // Settings
+  settings: 'Settings', security: 'Security', company: 'Company Settings', profile: 'My Profile',
+  // Misc
+  mo: 'Manufacturing Orders', spk: 'Work Orders', create: 'Create',
+}
+
+// Segments that have NO standalone page → redirect breadcrumb click to their
+// closest real parent page instead of navigating to a dead URL.
+const PARENT_OVERRIDES: Record<string, string> = {
+  '/admin':            '/admin/bom-management',
+  '/production':       '/daily-production',
+  '/production/input': '/daily-production',
+  '/settings':         '/settings/company',
 }
 
 export const Navbar: React.FC = () => {
@@ -42,8 +73,10 @@ export const Navbar: React.FC = () => {
     const pathSegments = location.pathname.split('/').filter(Boolean)
     return pathSegments.map((segment, index) => {
       const path = '/' + pathSegments.slice(0, index + 1).join('/')
-      const label = routeLabels[segment] || segment.charAt(0).toUpperCase() + segment.slice(1)
-      return { path, label }
+      const label = routeLabels[segment] || segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' ')
+      // Use override destination if this path is a dead namespace (no real page)
+      const navigateTo = PARENT_OVERRIDES[path] ?? path
+      return { path, navigateTo, label }
     })
   }
   const breadcrumbs = generateBreadcrumbs()
@@ -196,7 +229,7 @@ export const Navbar: React.FC = () => {
                 {index === breadcrumbs.length - 1 ? (
                   <span className="text-gray-900 font-medium">{crumb.label}</span>
                 ) : (
-                  <button onClick={() => navigate(crumb.path)} className="text-gray-600 hover:text-gray-900 transition-colors">{crumb.label}</button>
+                  <button onClick={() => navigate(crumb.navigateTo)} className="text-gray-600 hover:text-gray-900 transition-colors">{crumb.label}</button>
                 )}
               </div>
             ))}

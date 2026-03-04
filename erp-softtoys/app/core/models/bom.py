@@ -51,8 +51,8 @@ class BOMHeader(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     product_id = Column(Integer, ForeignKey("products.id"), nullable=False, index=True)
-    bom_type = Column(Enum(BOMType, values_callable=lambda x: [e.value for e in x]), nullable=False)  # Manufacturing, Kit/Phantom
-    bom_category = Column(Enum(BOMCategory, values_callable=lambda x: [e.value for e in x]), nullable=False, default=BOMCategory.PRODUCTION, index=True)  # Production | Purchase
+    bom_type = Column(Enum(BOMType), nullable=False)  # DB stores member name: MANUFACTURING, KIT_PHANTOM
+    bom_category = Column(Enum(BOMCategory, values_callable=lambda x: [e.value for e in x]), nullable=False, default=BOMCategory.PRODUCTION, index=True)  # DB stores .value: Production, Purchase
     qty_output = Column(DECIMAL(10, 2), default=1.0)  # Usually 1.0 for 1 Pcs
     is_active = Column(Boolean, default=True, index=True)
     revision = Column(String(10), default="Rev 1.0")
@@ -125,7 +125,7 @@ class BOMVariant(Base):
     material_id = Column(Integer, ForeignKey("products.id"), nullable=False, index=True)
     
     # Variant classification
-    variant_type = Column(Enum(BOMVariantType, values_callable=lambda x: [e.value for e in x]), default=BOMVariantType.PRIMARY)
+    variant_type = Column(Enum(BOMVariantType), default=BOMVariantType.PRIMARY)  # DB stores member name: PRIMARY, ALTERNATIVE, OPTIONAL
     sequence = Column(Integer, default=1)  # Order of preference
     
     # Quantity override

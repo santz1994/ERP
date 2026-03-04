@@ -117,6 +117,39 @@ def delete_category(
     return {"message": f"Category '{cat.name}' deleted"}
 
 
+# Default material categories matched by _detect_material_category() in purchasing.py
+# NOTE: The database already has comprehensive categories seeded (Fabric - *, Label - *,
+# Thread, Stuffing - *, Accessories - *, Packaging - *, Elastic, WIP *).
+# This list only adds categories that are genuinely missing.
+_DEFAULT_CATEGORIES = [
+    ("Chemical / Lem",       "Adhesive, glue (lem), solvent, chemical auxiliaries"),
+    ("Isolasi / Insulation", "Isolasi tape, masking tape, selotip, foam tape"),
+    ("Jarum / Needle",       "Sewing needles, machine needles, hand needles"),
+]
+
+
+@router.post("/categories/seed-defaults", status_code=200)
+def seed_default_categories(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Insert default material categories (idempotent — skips existing names)."""
+    _require_admin(current_user)
+    created, skipped = [], []
+    for name, desc in _DEFAULT_CATEGORIES:
+        if db.query(Category).filter(Category.name == name).first():
+            skipped.append(name)
+        else:
+            db.add(Category(name=name, description=desc))
+            created.append(name)
+    db.commit()
+    return {
+        "message": f"Seeded {len(created)} categories, skipped {len(skipped)} existing.",
+        "created": created,
+        "skipped": skipped,
+    }
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # PRODUCTS (Materials + Articles)
 # ══════════════════════════════════════════════════════════════════════════════

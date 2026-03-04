@@ -38,6 +38,16 @@ class UOM(str, enum.Enum):
     ROLL = "Roll"
     CM = "Cm"
     GRAM = "Gram"
+    # ╰── Additional UOMs added 2026-03-04 ─────────────────
+    CTN = "Ctn"      # Carton / karton
+    BOX = "Box"      # Box / kotak
+    CONE = "Cone"    # Thread cone / cone benang
+    PACK = "Pack"    # Pack / paket
+    SET = "Set"      # Set
+    LITER = "Liter"  # Liquid (glue/adhesive)
+    SHEET = "Sheet"  # Sheet / lembar
+    LUSIN = "Lusin"  # Dozen (Indonesian)
+    BALL = "Ball"    # Ball of thread
 
 
 class PartnerType(str, enum.Enum):

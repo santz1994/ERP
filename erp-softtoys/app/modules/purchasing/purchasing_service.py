@@ -180,67 +180,105 @@ class PurchasingService:
         po_id: int,
         received_items: list[dict],
         user_id: int,
-        location_id: int = 1  # Default warehouse location
+        location_id: int = 1  # Default warehouse location (to)
     ) -> PurchaseOrder:
-        """Receive materials from PO.
+        """Receive materials from PO — creates StockLot, StockMove, StockQuant.
 
-        received_items format: [{"product_id": 1, "quantity": 95, "lot_number": "LOT-001"}]
+        received_items format: [{"product_id": 1, "quantity": 95, "lot_number": "LOT-001", "uom": "PCS"}]
         """
+        from app.core.models.warehouse import Location, LocationType, StockMoveStatus
+
         po = BaseProductionService.get_purchase_order_optional(self.db, po_id)
 
         if not po:
             raise ValueError("Purchase Order not found")
 
-        if po.status != POStatus.SENT:
+        if po.status not in (POStatus.SENT, POStatus.DRAFT):
             raise ValueError(f"Cannot receive PO with status {po.status.value}")
+
+        # Ensure a "Virtual/Supplier" (from) location exists
+        supplier_loc = self.db.query(Location).filter(
+            Location.name == "Virtual/Supplier"
+        ).first()
+        if not supplier_loc:
+            supplier_loc = Location(
+                name="Virtual/Supplier",
+                type=LocationType.SUPPLIER,
+                is_active=True,
+            )
+            self.db.add(supplier_loc)
+            self.db.flush()
+
+        # Ensure the destination (to) location exists — fallback by id
+        wh_loc = self.db.query(Location).filter(Location.id == location_id).first()
+        if not wh_loc:
+            wh_loc = self.db.query(Location).filter(
+                Location.type == LocationType.INTERNAL
+            ).first()
+        if not wh_loc:
+            wh_loc = Location(
+                name="Warehouse/Stock",
+                type=LocationType.INTERNAL,
+                is_active=True,
+            )
+            self.db.add(wh_loc)
+            self.db.flush()
+
+        now = datetime.utcnow()
 
         # Process each received item
         for item in received_items:
             product_id = item["product_id"]
-            quantity = item["quantity"]
-            lot_number = item.get("lot_number", f"LOT-{po.po_number}-{product_id}")
+            quantity = float(item.get("quantity") or 0)
+            uom = str(item.get("uom") or "PCS")
+            lot_number = item.get("lot_number") or f"LOT-{po.po_number}-{product_id}-{now.strftime('%Y%m%d%H%M%S')}"
+
+            if quantity <= 0:
+                continue
 
             # Create stock lot for traceability
             stock_lot = StockLot(
                 lot_number=lot_number,
                 product_id=product_id,
-                quantity=quantity,
+                qty_initial=quantity,
+                qty_remaining=quantity,
+                supplier_id=po.supplier_id,
                 purchase_order_id=po.id,
-                expiry_date=None,  # Set if applicable
-                status="Active"
+                received_date=now,
             )
             self.db.add(stock_lot)
+            self.db.flush()  # Need lot.id for StockMove FK
 
-            # Create stock move (incoming)
+            # Create stock move (Supplier → Warehouse incoming)
             stock_move = StockMove(
                 product_id=product_id,
-                location_id=location_id,
-                quantity=quantity,
-                move_type="IN",
-                reference=f"PO/{po.po_number}",
-                move_date=datetime.utcnow(),
-                user_id=user_id
+                qty=quantity,
+                uom=uom,
+                location_id_from=supplier_loc.id,
+                location_id_to=wh_loc.id,
+                reference_doc=f"PO/{po.po_number}",
+                state=StockMoveStatus.DONE,
+                lot_id=stock_lot.id,
             )
             self.db.add(stock_move)
 
-            # Update or create stock quant
+            # Update or create stock quant (aggregate per product+location)
             stock_quant = self.db.query(StockQuant).filter(
                 and_(
                     StockQuant.product_id == product_id,
-                    StockQuant.location_id == location_id,
-                    StockQuant.lot_id == stock_lot.id
+                    StockQuant.location_id == wh_loc.id,
                 )
             ).first()
 
             if stock_quant:
-                stock_quant.quantity_on_hand += quantity
+                stock_quant.qty_on_hand += quantity
             else:
                 stock_quant = StockQuant(
                     product_id=product_id,
-                    location_id=location_id,
+                    location_id=wh_loc.id,
                     lot_id=stock_lot.id,
-                    quantity_on_hand=quantity,
-                    quantity_reserved=0
+                    qty_on_hand=quantity,
+                    qty_reserved=0,
                 )
                 self.db.add(stock_quant)
 

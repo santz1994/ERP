@@ -1,0 +1,694 @@
+﻿alembic_version|version_num|1|character varying|100|||NO||varchar
+alert_logs|id|1|integer||32|0|NO|nextval('alert_logs_id_seq'::regclass)|int4
+alert_logs|alert_type|2|USER-DEFINED||||NO||alerttype
+alert_logs|severity|3|USER-DEFINED||||NO||alertseverity
+alert_logs|triggered_at|4|timestamp with time zone||||YES|now()|timestamptz
+alert_logs|triggered_by|5|integer||32|0|YES||int4
+alert_logs|triggered_in_workflow_id|6|integer||32|0|YES||int4
+alert_logs|escalated_to|7|integer||32|0|YES||int4
+alert_logs|escalation_level|8|integer||32|0|YES||int4
+alert_logs|status|9|USER-DEFINED||||YES||alertstatus
+alert_logs|resolution_time|10|timestamp with time zone||||YES||timestamptz
+alert_logs|resolved_by|11|integer||32|0|YES||int4
+alert_logs|message|12|character varying|500|||NO||varchar
+alert_logs|notes|13|text||||YES||text
+alert_logs|created_at|14|timestamp with time zone||||YES|now()|timestamptz
+approval_requests|id|1|uuid||||NO||uuid
+approval_requests|entity_type|2|character varying|50|||NO||varchar
+approval_requests|entity_id|3|uuid||||NO||uuid
+approval_requests|submitted_by|4|integer||32|0|NO||int4
+approval_requests|changes|5|json||||NO||json
+approval_requests|reason|6|text||||NO||text
+approval_requests|status|7|character varying|20|||NO||varchar
+approval_requests|current_step|8|integer||32|0|NO||int4
+approval_requests|approval_chain|9|json||||NO||json
+approval_requests|approvals|10|json||||YES||json
+approval_requests|rejection_reason|11|text||||YES||text
+approval_requests|rejected_by|12|integer||32|0|YES||int4
+approval_requests|rejected_at|13|timestamp without time zone||||YES||timestamp
+approval_requests|created_at|14|timestamp without time zone||||NO||timestamp
+approval_requests|updated_at|15|timestamp without time zone||||YES||timestamp
+approval_steps|id|1|uuid||||NO||uuid
+approval_steps|approval_request_id|2|uuid||||NO||uuid
+approval_steps|step_number|3|integer||32|0|NO||int4
+approval_steps|approver_role|4|character varying|50|||NO||varchar
+approval_steps|status|5|character varying|20|||NO||varchar
+approval_steps|approved_by|6|integer||32|0|YES||int4
+approval_steps|approved_at|7|timestamp without time zone||||YES||timestamp
+approval_steps|notes|8|text||||YES||text
+approval_steps|created_at|9|timestamp without time zone||||NO||timestamp
+audit_logs|id|1|bigint||64|0|NO|nextval('audit_logs_id_seq'::regclass)|int8
+audit_logs|timestamp|2|timestamp without time zone||||NO||timestamp
+audit_logs|user_id|3|bigint||64|0|YES||int8
+audit_logs|username|4|character varying|100|||YES||varchar
+audit_logs|user_role|5|character varying|50|||YES||varchar
+audit_logs|ip_address|6|character varying|45|||YES||varchar
+audit_logs|action|7|USER-DEFINED||||NO||auditaction
+audit_logs|module|8|USER-DEFINED||||NO||auditmodule
+audit_logs|entity_type|9|character varying|100|||YES||varchar
+audit_logs|entity_id|10|bigint||64|0|YES||int8
+audit_logs|description|11|text||||NO||text
+audit_logs|old_values|12|json||||YES||json
+audit_logs|new_values|13|json||||YES||json
+audit_logs|session_id|14|character varying|255|||YES||varchar
+audit_logs|request_method|15|character varying|10|||YES||varchar
+audit_logs|request_path|16|character varying|500|||YES||varchar
+audit_logs|response_status|17|bigint||64|0|YES||int8
+bom_details|id|1|integer||32|0|NO|nextval('bom_details_id_seq'::regclass)|int4
+bom_details|bom_header_id|2|integer||32|0|NO||int4
+bom_details|component_id|3|integer||32|0|NO||int4
+bom_details|qty_needed|4|numeric||10|2|NO||numeric
+bom_details|wastage_percent|5|numeric||5|2|YES||numeric
+bom_details|has_variants|6|boolean||||YES||bool
+bom_details|variant_selection_mode|7|character varying|50|||YES||varchar
+bom_details|created_at|8|timestamp with time zone||||YES|now()|timestamptz
+bom_details|updated_at|9|timestamp with time zone||||YES|now()|timestamptz
+bom_headers|id|1|integer||32|0|NO|nextval('bom_headers_id_seq'::regclass)|int4
+bom_headers|product_id|2|integer||32|0|NO||int4
+bom_headers|bom_type|3|USER-DEFINED||||NO||bomtype
+bom_headers|qty_output|4|numeric||10|2|YES||numeric
+bom_headers|is_active|5|boolean||||YES||bool
+bom_headers|revision|6|character varying|10|||YES||varchar
+bom_headers|supports_multi_material|7|boolean||||YES||bool
+bom_headers|default_variant_selection|8|character varying|100|||YES||varchar
+bom_headers|revision_date|9|timestamp with time zone||||YES|now()|timestamptz
+bom_headers|revised_by|10|integer||32|0|YES||int4
+bom_headers|revision_reason|11|text||||YES||text
+bom_headers|created_at|12|timestamp with time zone||||YES|now()|timestamptz
+bom_headers|updated_at|13|timestamp with time zone||||YES|now()|timestamptz
+bom_headers|routing_department|14|character varying|50|||YES||varchar
+bom_headers|routing_sequence|15|integer||32|0|YES||int4
+bom_headers|bom_category|16|USER-DEFINED||||NO|'Production'::bomcategory|bomcategory
+bom_variants|id|1|integer||32|0|NO|nextval('bom_variants_id_seq'::regclass)|int4
+bom_variants|bom_detail_id|2|integer||32|0|NO||int4
+bom_variants|material_id|3|integer||32|0|NO||int4
+bom_variants|variant_type|4|USER-DEFINED||||YES||bomvarianttype
+bom_variants|sequence|5|integer||32|0|YES||int4
+bom_variants|qty_variance|6|numeric||10|2|YES||numeric
+bom_variants|qty_variance_percent|7|numeric||5|2|YES||numeric
+bom_variants|weight|8|numeric||5|2|YES||numeric
+bom_variants|selection_probability|9|numeric||5|2|YES||numeric
+bom_variants|preferred_vendor_id|10|integer||32|0|YES||int4
+bom_variants|vendor_lead_time_days|11|integer||32|0|YES||int4
+bom_variants|cost_variance|12|numeric||10|2|YES||numeric
+bom_variants|is_active|13|boolean||||YES||bool
+bom_variants|approval_status|14|character varying|50|||YES||varchar
+bom_variants|notes|15|text||||YES||text
+bom_variants|created_at|16|timestamp with time zone||||YES|now()|timestamptz
+bom_variants|updated_at|17|timestamp with time zone||||YES|now()|timestamptz
+bom_wip_routing|id|1|integer||32|0|NO|nextval('bom_wip_routing_id_seq'::regclass)|int4
+bom_wip_routing|bom_header_id|2|integer||32|0|NO||int4
+bom_wip_routing|department|3|character varying|50|||NO||varchar
+bom_wip_routing|sequence|4|integer||32|0|NO||int4
+bom_wip_routing|input_wip_product_id|5|integer||32|0|YES||int4
+bom_wip_routing|output_wip_product_id|6|integer||32|0|NO||int4
+bom_wip_routing|is_optional|7|boolean||||YES||bool
+bom_wip_routing|created_at|8|timestamp with time zone||||YES|now()|timestamptz
+bom_wip_routing|updated_at|9|timestamp with time zone||||YES|now()|timestamptz
+categories|id|1|integer||32|0|NO|nextval('categories_id_seq'::regclass)|int4
+categories|name|2|character varying|100|||NO||varchar
+categories|description|3|text||||YES||text
+categories|created_at|4|timestamp with time zone||||YES|now()|timestamptz
+defect_categories|id|1|integer||32|0|NO|nextval('defect_categories_id_seq'::regclass)|int4
+defect_categories|code|2|character varying|50|||NO||varchar
+defect_categories|name|3|character varying|100|||NO||varchar
+defect_categories|defect_type|4|USER-DEFINED||||NO||defecttype
+defect_categories|description|5|character varying|500|||YES||varchar
+defect_categories|severity|6|USER-DEFINED||||NO||defectseverity
+defect_categories|default_rework_hours|7|integer||32|0|YES||int4
+defect_categories|created_at|8|timestamp with time zone||||YES|now()|timestamptz
+defect_categories|updated_at|9|timestamp with time zone||||YES|now()|timestamptz
+finishing_inputs_outputs|id|1|integer||32|0|NO|nextval('finishing_inputs_outputs_id_seq'::regclass)|int4
+finishing_inputs_outputs|spk_id|2|integer||32|0|NO||int4
+finishing_inputs_outputs|stage|3|character varying|20|||NO||varchar
+finishing_inputs_outputs|production_date|4|date||||NO||date
+finishing_inputs_outputs|input_qty|5|numeric||10|2|NO||numeric
+finishing_inputs_outputs|good_qty|6|numeric||10|2|NO||numeric
+finishing_inputs_outputs|defect_qty|7|numeric||10|2|NO||numeric
+finishing_inputs_outputs|rework_qty|8|numeric||10|2|NO|'0'::numeric|numeric
+finishing_inputs_outputs|yield_rate|9|numeric||5|2|NO||numeric
+finishing_inputs_outputs|operator_id|10|integer||32|0|YES||int4
+finishing_inputs_outputs|notes|11|text||||YES||text
+finishing_inputs_outputs|created_at|12|timestamp without time zone||||NO|now()|timestamp
+finishing_inputs_outputs|updated_at|13|timestamp without time zone||||NO|now()|timestamp
+finishing_material_consumptions|id|1|integer||32|0|NO|nextval('finishing_material_consumptions_id_seq'::regclass)|int4
+finishing_material_consumptions|spk_id|2|integer||32|0|NO||int4
+finishing_material_consumptions|stage|3|character varying|20|||NO||varchar
+finishing_material_consumptions|material_id|4|integer||32|0|NO||int4
+finishing_material_consumptions|qty_planned|5|numeric||10|2|NO||numeric
+finishing_material_consumptions|qty_actual|6|numeric||10|2|YES||numeric
+finishing_material_consumptions|uom|7|character varying|10|||NO||varchar
+finishing_material_consumptions|lot_id|8|integer||32|0|YES||int4
+finishing_material_consumptions|created_at|9|timestamp without time zone||||NO|now()|timestamp
+finishing_material_consumptions|updated_at|10|timestamp without time zone||||NO|now()|timestamp
+kanban_boards|id|1|bigint||64|0|NO|nextval('kanban_boards_id_seq'::regclass)|int8
+kanban_boards|department|2|character varying|50|||NO||varchar
+kanban_boards|max_pending|3|integer||32|0|YES||int4
+kanban_boards|max_in_progress|4|integer||32|0|YES||int4
+kanban_boards|enable_auto_approve|5|boolean||||YES||bool
+kanban_boards|auto_approve_threshold|6|integer||32|0|YES||int4
+kanban_boards|notify_on_new_card|7|boolean||||YES||bool
+kanban_boards|notify_on_approval|8|boolean||||YES||bool
+kanban_boards|notify_on_fulfillment|9|boolean||||YES||bool
+kanban_boards|is_active|10|boolean||||YES||bool
+kanban_cards|id|1|bigint||64|0|NO|nextval('kanban_cards_id_seq'::regclass)|int8
+kanban_cards|card_number|2|character varying|50|||NO||varchar
+kanban_cards|requested_by_dept|3|character varying|50|||NO||varchar
+kanban_cards|requested_by_user_id|4|bigint||64|0|NO||int8
+kanban_cards|requested_at|5|timestamp without time zone||||NO||timestamp
+kanban_cards|product_id|6|bigint||64|0|NO||int8
+kanban_cards|qty_requested|7|integer||32|0|NO||int4
+kanban_cards|priority|8|USER-DEFINED||||NO||kanbanpriority
+kanban_cards|needed_by|9|timestamp without time zone||||YES||timestamp
+kanban_cards|status|10|USER-DEFINED||||NO||kanbanstatus
+kanban_cards|approved_by_user_id|11|bigint||64|0|YES||int8
+kanban_cards|approved_at|12|timestamp without time zone||||YES||timestamp
+kanban_cards|qty_fulfilled|13|integer||32|0|NO||int4
+kanban_cards|fulfilled_by_user_id|14|bigint||64|0|YES||int8
+kanban_cards|fulfilled_at|15|timestamp without time zone||||YES||timestamp
+kanban_cards|work_order_id|16|bigint||64|0|YES||int8
+kanban_cards|request_reason|17|text||||YES||text
+kanban_cards|fulfillment_notes|18|text||||YES||text
+kanban_cards|is_auto_replenish|19|boolean||||YES||bool
+kanban_cards|reorder_point|20|integer||32|0|YES||int4
+kanban_cards|cancelled_by_user_id|21|bigint||64|0|YES||int8
+kanban_cards|cancelled_at|22|timestamp without time zone||||YES||timestamp
+kanban_cards|cancellation_reason|23|text||||YES||text
+kanban_rules|id|1|bigint||64|0|NO|nextval('kanban_rules_id_seq'::regclass)|int8
+kanban_rules|product_id|2|bigint||64|0|NO||int8
+kanban_rules|department|3|character varying|50|||NO||varchar
+kanban_rules|reorder_point|4|integer||32|0|NO||int4
+kanban_rules|order_quantity|5|integer||32|0|NO||int4
+kanban_rules|default_priority|6|USER-DEFINED||||YES||kanbanpriority
+kanban_rules|lead_time_days|7|integer||32|0|YES||int4
+kanban_rules|is_active|8|boolean||||YES||bool
+line_occupancy|id|1|integer||32|0|NO|nextval('line_occupancy_id_seq'::regclass)|int4
+line_occupancy|dept_name|2|USER-DEFINED||||NO||transferdept
+line_occupancy|line_number|3|integer||32|0|YES||int4
+line_occupancy|current_article_id|4|integer||32|0|YES||int4
+line_occupancy|current_batch_id|5|character varying|50|||YES||varchar
+line_occupancy|current_destination|6|character varying|50|||YES||varchar
+line_occupancy|current_week|7|integer||32|0|YES||int4
+line_occupancy|occupancy_status|8|USER-DEFINED||||YES||linestatus
+line_occupancy|locked_at|9|timestamp with time zone||||YES||timestamptz
+line_occupancy|locked_by|10|integer||32|0|YES||int4
+line_occupancy|expected_clear_time|11|timestamp with time zone||||YES||timestamptz
+line_occupancy|updated_at|12|timestamp with time zone||||YES|now()|timestamptz
+locations|id|1|integer||32|0|NO|nextval('locations_id_seq'::regclass)|int4
+locations|name|2|character varying|100|||NO||varchar
+locations|type|3|USER-DEFINED||||NO||locationtype
+locations|capacity|4|numeric||10|2|YES||numeric
+locations|created_at|5|timestamp with time zone||||YES|now()|timestamptz
+locations|is_active|6|boolean||||YES||bool
+manufacturing_orders|id|1|integer||32|0|NO|nextval('manufacturing_orders_id_seq'::regclass)|int4
+manufacturing_orders|so_line_id|2|integer||32|0|YES||int4
+manufacturing_orders|product_id|3|integer||32|0|NO||int4
+manufacturing_orders|qty_planned|4|numeric||10|2|NO||numeric
+manufacturing_orders|qty_produced|5|numeric||10|2|YES||numeric
+manufacturing_orders|routing_type|6|USER-DEFINED||||NO||routingtype
+manufacturing_orders|batch_number|7|character varying|50|||NO||varchar
+manufacturing_orders|state|8|USER-DEFINED||||YES||mostate
+manufacturing_orders|created_at|9|timestamp with time zone||||YES|now()|timestamptz
+manufacturing_orders|started_at|10|timestamp with time zone||||YES||timestamptz
+manufacturing_orders|completed_at|11|timestamp with time zone||||YES||timestamptz
+manufacturing_orders|finished_good_product_id|12|integer||32|0|YES||int4
+manufacturing_orders|bom_explosion_complete|13|boolean||||YES||bool
+manufacturing_orders|total_departments|14|integer||32|0|YES||int4
+manufacturing_orders|po_id|15|integer||32|0|YES||int4
+manufacturing_orders|planned_production_date|16|date||||YES||date
+manufacturing_orders|actual_production_start_date|17|date||||YES||date
+manufacturing_orders|actual_production_end_date|18|date||||YES||date
+manufacturing_orders|label_production_date|19|date||||YES||date
+manufacturing_orders|production_week|20|character varying|10|||YES||varchar
+manufacturing_orders|destination_country|21|character varying|50|||YES||varchar
+manufacturing_orders|traceability_code|22|character varying|50|||YES||varchar
+manufacturing_orders|target_shipment_date|23|date||||YES||date
+manufacturing_orders|po_fabric_id|24|integer||32|0|YES||int4
+manufacturing_orders|po_label_id|25|integer||32|0|YES||int4
+manufacturing_orders|trigger_mode|26|character varying|20|||NO|'PARTIAL'::character varying|varchar
+manufacturing_orders|target_quantity|27|numeric||15|3|NO||numeric
+manufacturing_orders|buffer_quantity|28|numeric||15|3|NO||numeric
+manufacturing_orders|production_quantity|29|numeric||15|3|NO||numeric
+manufacturing_orders|auto_calculate_buffer|30|boolean||||NO||bool
+manufacturing_orders|week|31|character varying|50|||YES||varchar
+manufacturing_orders|destination|32|character varying|100|||YES||varchar
+manufacturing_orders|week_destination_locked|33|boolean||||NO||bool
+manufacturing_orders|extra_metadata|34|json||||YES||json
+manufacturing_orders|mo_type|35|character varying|20|||NO|'PRODUCTION'::character varying|varchar
+manufacturing_orders|is_qty_locked|36|boolean||||NO|false|bool
+manufacturing_orders|buyer_mo_id|37|integer||32|0|YES||int4
+material_debt|id|1|integer||32|0|NO|nextval('material_debt_id_seq'::regclass)|int4
+material_debt|spk_id|2|integer||32|0|NO||int4
+material_debt|product_id|3|integer||32|0|NO||int4
+material_debt|qty_owed|4|integer||32|0|NO||int4
+material_debt|qty_settled|5|integer||32|0|YES||int4
+material_debt|approval_status|6|character varying|50|||YES||varchar
+material_debt|created_by_id|7|integer||32|0|NO||int4
+material_debt|approved_by_id|8|integer||32|0|YES||int4
+material_debt|approved_at|9|timestamp without time zone||||YES||timestamp
+material_debt|approval_reason|10|character varying|255|||YES||varchar
+material_debt|created_at|11|timestamp without time zone||||YES||timestamp
+material_debt|updated_at|12|timestamp without time zone||||YES||timestamp
+material_debt_settlement|id|1|integer||32|0|NO|nextval('material_debt_settlement_id_seq'::regclass)|int4
+material_debt_settlement|material_debt_id|2|integer||32|0|NO||int4
+material_debt_settlement|qty_settled|3|integer||32|0|NO||int4
+material_debt_settlement|settlement_date|4|date||||NO||date
+material_debt_settlement|received_by_id|5|integer||32|0|NO||int4
+material_debt_settlement|settled_by_id|6|integer||32|0|NO||int4
+material_debt_settlement|settlement_notes|7|character varying|255|||YES||varchar
+material_debt_settlement|created_at|8|timestamp without time zone||||YES||timestamp
+material_requests|id|1|integer||32|0|NO|nextval('material_requests_id_seq'::regclass)|int4
+material_requests|product_id|2|integer||32|0|NO||int4
+material_requests|location_id|3|integer||32|0|NO||int4
+material_requests|qty_requested|4|numeric||10|2|NO||numeric
+material_requests|uom|5|character varying|10|||NO||varchar
+material_requests|requested_by_id|6|integer||32|0|NO||int4
+material_requests|requested_at|7|timestamp with time zone||||YES|now()|timestamptz
+material_requests|approved_by_id|8|integer||32|0|YES||int4
+material_requests|approved_at|9|timestamp with time zone||||YES||timestamptz
+material_requests|rejection_reason|10|character varying|500|||YES||varchar
+material_requests|status|11|USER-DEFINED||||NO||materialrequeststatus
+material_requests|purpose|12|character varying|500|||NO||varchar
+material_requests|received_by_id|13|integer||32|0|YES||int4
+material_requests|received_at|14|timestamp with time zone||||YES||timestamptz
+material_requests|created_at|15|timestamp with time zone||||YES|now()|timestamptz
+material_requests|updated_at|16|timestamp with time zone||||YES||timestamptz
+mo_material_consumption|id|1|integer||32|0|NO|nextval('mo_material_consumption_id_seq'::regclass)|int4
+mo_material_consumption|work_order_id|2|integer||32|0|NO||int4
+mo_material_consumption|product_id|3|integer||32|0|NO||int4
+mo_material_consumption|qty_planned|4|numeric||10|2|NO||numeric
+mo_material_consumption|qty_actual|5|numeric||10|2|YES||numeric
+mo_material_consumption|lot_id|6|integer||32|0|YES||int4
+mo_material_consumption|created_at|7|timestamp with time zone||||YES|now()|timestamptz
+pallet_barcodes|id|1|integer||32|0|NO|nextval('pallet_barcodes_id_seq'::regclass)|int4
+pallet_barcodes|barcode|2|character varying|50|||NO||varchar
+pallet_barcodes|product_id|3|integer||32|0|NO||int4
+pallet_barcodes|work_order_id|4|integer||32|0|YES||int4
+pallet_barcodes|carton_count|5|integer||32|0|NO||int4
+pallet_barcodes|total_pcs|6|integer||32|0|NO||int4
+pallet_barcodes|status|7|USER-DEFINED||||NO||palletstatus
+pallet_barcodes|location_id|8|integer||32|0|YES||int4
+pallet_barcodes|created_at|9|timestamp with time zone||||YES|now()|timestamptz
+pallet_barcodes|received_at|10|timestamp with time zone||||YES||timestamptz
+pallet_barcodes|shipped_at|11|timestamp with time zone||||YES||timestamptz
+partners|id|1|integer||32|0|NO|nextval('partners_id_seq'::regclass)|int4
+partners|name|2|character varying|255|||NO||varchar
+partners|type|3|USER-DEFINED||||NO||partnertype
+partners|address|4|text||||YES||text
+partners|contact_person|5|character varying|100|||YES||varchar
+partners|phone|6|character varying|20|||YES||varchar
+partners|email|7|character varying|100|||YES||varchar
+partners|created_at|8|timestamp with time zone||||YES|now()|timestamptz
+po_delete_requests|id|1|integer||32|0|NO|nextval('po_delete_requests_id_seq'::regclass)|int4
+po_delete_requests|po_id|2|integer||32|0|YES||int4
+po_delete_requests|po_number|3|character varying|100|||NO||varchar
+po_delete_requests|request_reason|4|text||||NO||text
+po_delete_requests|status|5|USER-DEFINED||||NO||porequeststatus
+po_delete_requests|requested_by|6|integer||32|0|NO||int4
+po_delete_requests|requested_at|7|timestamp with time zone||||YES|now()|timestamptz
+po_delete_requests|responded_by|8|integer||32|0|YES||int4
+po_delete_requests|responded_at|9|timestamp with time zone||||YES||timestamptz
+po_delete_requests|response_note|10|text||||YES||text
+products|id|1|integer||32|0|NO|nextval('products_id_seq'::regclass)|int4
+products|code|2|character varying|255|||NO||varchar
+products|name|3|character varying|255|||NO||varchar
+products|type|4|USER-DEFINED||||NO||producttype
+products|uom|5|USER-DEFINED||||NO||uom
+products|category_id|6|integer||32|0|NO||int4
+products|parent_article_id|7|integer||32|0|YES||int4
+products|min_stock|8|numeric||10|2|YES||numeric
+products|created_at|9|timestamp with time zone||||YES|now()|timestamptz
+products|is_active|10|boolean||||YES||bool
+products|product_type|11|character varying|20|||YES||varchar
+products|cartons_per_pallet|12|integer||32|0|YES||int4
+products|pcs_per_carton|13|integer||32|0|YES||int4
+purchase_order_lines|id|1|integer||32|0|NO|nextval('purchase_order_lines_id_seq'::regclass)|int4
+purchase_order_lines|purchase_order_id|2|integer||32|0|NO||int4
+purchase_order_lines|product_id|3|integer||32|0|NO||int4
+purchase_order_lines|supplier_id|4|integer||32|0|YES||int4
+purchase_order_lines|quantity|5|numeric||15|3|NO||numeric
+purchase_order_lines|unit_price|6|numeric||18|2|NO||numeric
+purchase_order_lines|subtotal|7|numeric||18|2|NO||numeric
+purchase_order_lines|uom|8|character varying|20|||NO||varchar
+purchase_order_lines|extra_metadata|9|json||||YES||json
+purchase_order_lines|created_at|10|timestamp with time zone||||YES|now()|timestamptz
+purchase_order_lines|updated_at|11|timestamp with time zone||||YES||timestamptz
+purchase_orders|id|1|integer||32|0|NO|nextval('purchase_orders_id_seq'::regclass)|int4
+purchase_orders|supplier_id|2|integer||32|0|NO||int4
+purchase_orders|order_date|3|date||||NO||date
+purchase_orders|expected_date|4|date||||NO||date
+purchase_orders|status|5|USER-DEFINED||||NO||postatus
+purchase_orders|po_number|6|character varying|100|||NO||varchar
+purchase_orders|created_at|7|timestamp with time zone||||YES|now()|timestamptz
+purchase_orders|updated_at|8|timestamp with time zone||||YES||timestamptz
+purchase_orders|input_mode|9|character varying|20|||NO|'MANUAL'::character varying|varchar
+purchase_orders|source_article_id|10|integer||32|0|YES||int4
+purchase_orders|article_quantity|11|numeric||15|3|YES||numeric
+purchase_orders|po_type|12|character varying|20|||NO|'ACCESSORIES'::character varying|varchar
+purchase_orders|linked_mo_id|13|integer||32|0|YES||int4
+purchase_orders|extra_metadata|14|json||||YES||json
+purchase_orders|total_amount|15|numeric||18|2|YES|0.00|numeric
+purchase_orders|currency|16|character varying|10|||YES|'IDR'::character varying|varchar
+purchase_orders|approved_by|17|integer||32|0|YES||int4
+purchase_orders|approved_at|18|timestamp with time zone||||YES||timestamptz
+purchase_orders|source_po_kain_id|19|integer||32|0|YES||int4
+purchase_orders|article_id|20|integer||32|0|YES||int4
+purchase_orders|article_qty|21|integer||32|0|YES||int4
+purchase_orders|week|22|character varying|20|||YES||varchar
+purchase_orders|destination|23|character varying|100|||YES||varchar
+purchase_orders|target_pallets|24|integer||32|0|YES||int4
+purchase_orders|expected_cartons|25|integer||32|0|YES||int4
+purchase_orders|calculated_pcs|26|integer||32|0|YES||int4
+qc_checkpoints|id|1|integer||32|0|NO|nextval('qc_checkpoints_id_seq'::regclass)|int4
+qc_checkpoints|spk_id|2|integer||32|0|NO||int4
+qc_checkpoints|checkpoint|3|USER-DEFINED||||NO||qccheckpointtype
+qc_checkpoints|inspected_qty|4|integer||32|0|NO||int4
+qc_checkpoints|pass_qty|5|integer||32|0|NO||int4
+qc_checkpoints|fail_qty|6|integer||32|0|NO||int4
+qc_checkpoints|defect_type|7|character varying|255|||YES||varchar
+qc_checkpoints|defect_description|8|text||||YES||text
+qc_checkpoints|inspector_name|9|character varying|255|||NO||varchar
+qc_checkpoints|inspected_by|10|integer||32|0|YES||int4
+qc_checkpoints|inspection_date|11|character varying|20|||YES||varchar
+qc_checkpoints|notes|12|text||||YES||text
+qc_checkpoints|first_pass_yield|13|numeric||5|2|YES||numeric
+qc_checkpoints|created_at|14|timestamp with time zone||||YES|now()|timestamptz
+qc_inspections|id|1|integer||32|0|NO|nextval('qc_inspections_id_seq'::regclass)|int4
+qc_inspections|work_order_id|2|integer||32|0|NO||int4
+qc_inspections|type|3|USER-DEFINED||||NO||qcinspectiontype
+qc_inspections|status|4|USER-DEFINED||||NO||qcstatus
+qc_inspections|defect_reason|5|text||||YES||text
+qc_inspections|defect_location|6|character varying|255|||YES||varchar
+qc_inspections|defect_qty|7|integer||32|0|YES||int4
+qc_inspections|inspected_by|8|integer||32|0|NO||int4
+qc_inspections|inspected_at|9|timestamp with time zone||||YES|now()|timestamptz
+qc_inspections|created_at|10|timestamp with time zone||||YES|now()|timestamptz
+qc_lab_tests|id|1|integer||32|0|NO|nextval('qc_lab_tests_id_seq'::regclass)|int4
+qc_lab_tests|batch_number|2|character varying|50|||NO||varchar
+qc_lab_tests|test_type|3|USER-DEFINED||||NO||testtype
+qc_lab_tests|test_result|4|USER-DEFINED||||NO||testresult
+qc_lab_tests|measured_value|5|numeric||10|2|YES||numeric
+qc_lab_tests|measured_unit|6|character varying|20|||YES||varchar
+qc_lab_tests|iso_standard|7|character varying|50|||YES||varchar
+qc_lab_tests|test_location|8|character varying|100|||YES||varchar
+qc_lab_tests|inspector_id|9|integer||32|0|NO||int4
+qc_lab_tests|evidence_photo_url|10|character varying|500|||YES||varchar
+qc_lab_tests|tested_at|11|timestamp with time zone||||YES|now()|timestamptz
+qc_lab_tests|created_at|12|timestamp with time zone||||YES|now()|timestamptz
+rework_materials|id|1|integer||32|0|NO|nextval('rework_materials_id_seq'::regclass)|int4
+rework_materials|rework_request_id|2|integer||32|0|NO||int4
+rework_materials|product_id|3|integer||32|0|NO||int4
+rework_materials|qty_used|4|numeric||10|2|NO||numeric
+rework_materials|uom|5|character varying|10|||NO||varchar
+rework_materials|unit_cost|6|numeric||12|2|NO||numeric
+rework_materials|total_cost|7|numeric||12|2|NO||numeric
+rework_materials|created_at|8|timestamp with time zone||||YES|now()|timestamptz
+rework_requests|id|1|integer||32|0|NO|nextval('rework_requests_id_seq'::regclass)|int4
+rework_requests|spk_id|2|integer||32|0|NO||int4
+rework_requests|defect_qty|3|numeric||10|2|NO||numeric
+rework_requests|defect_category_id|4|integer||32|0|NO||int4
+rework_requests|defect_notes|5|character varying|500|||YES||varchar
+rework_requests|status|6|USER-DEFINED||||NO||reworkstatus
+rework_requests|qc_reviewed_by_id|7|integer||32|0|YES||int4
+rework_requests|qc_reviewed_at|8|timestamp with time zone||||YES||timestamptz
+rework_requests|qc_approval_notes|9|character varying|500|||YES||varchar
+rework_requests|rework_started_at|10|timestamp with time zone||||YES||timestamptz
+rework_requests|rework_completed_at|11|timestamp with time zone||||YES||timestamptz
+rework_requests|rework_operator_id|12|integer||32|0|YES||int4
+rework_requests|rework_notes|13|character varying|500|||YES||varchar
+rework_requests|verified_by_id|14|integer||32|0|YES||int4
+rework_requests|verified_at|15|timestamp with time zone||||YES||timestamptz
+rework_requests|verified_good_qty|16|numeric||10|2|YES||numeric
+rework_requests|verified_failed_qty|17|numeric||10|2|YES||numeric
+rework_requests|material_cost|18|numeric||12|2|YES||numeric
+rework_requests|labor_cost|19|numeric||12|2|YES||numeric
+rework_requests|total_cost|20|numeric||12|2|YES||numeric
+rework_requests|created_at|21|timestamp with time zone||||YES|now()|timestamptz
+rework_requests|requested_by_id|22|integer||32|0|NO||int4
+rework_requests|updated_at|23|timestamp with time zone||||YES|now()|timestamptz
+sales_order_lines|id|1|integer||32|0|NO|nextval('sales_order_lines_id_seq'::regclass)|int4
+sales_order_lines|sales_order_id|2|integer||32|0|NO||int4
+sales_order_lines|product_id|3|integer||32|0|NO||int4
+sales_order_lines|qty_ordered|4|numeric||10|2|NO||numeric
+sales_order_lines|qty_produced|5|numeric||10|2|YES||numeric
+sales_order_lines|created_at|6|timestamp with time zone||||YES|now()|timestamptz
+sales_order_lines|updated_at|7|timestamp with time zone||||YES||timestamptz
+sales_orders|id|1|integer||32|0|NO|nextval('sales_orders_id_seq'::regclass)|int4
+sales_orders|po_number_buyer|2|character varying|100|||NO||varchar
+sales_orders|buyer_id|3|integer||32|0|YES||int4
+sales_orders|order_date|4|date||||NO||date
+sales_orders|delivery_week|5|integer||32|0|NO||int4
+sales_orders|destination|6|character varying|50|||NO||varchar
+sales_orders|status|7|USER-DEFINED||||NO||sostatus
+sales_orders|created_at|8|timestamp with time zone||||YES|now()|timestamptz
+sales_orders|updated_at|9|timestamp with time zone||||YES||timestamptz
+security_logs|id|1|bigint||64|0|NO|nextval('security_logs_id_seq'::regclass)|int8
+security_logs|timestamp|2|timestamp without time zone||||NO||timestamp
+security_logs|ip_address|3|character varying|45|||NO||varchar
+security_logs|event_type|4|character varying|50|||NO||varchar
+security_logs|severity|5|character varying|20|||NO||varchar
+security_logs|user_id|6|bigint||64|0|YES||int8
+security_logs|username_attempted|7|character varying|100|||YES||varchar
+security_logs|description|8|text||||NO||text
+security_logs|user_agent|9|character varying|500|||YES||varchar
+security_logs|action_taken|10|character varying|100|||YES||varchar
+segregasi_acknowledgement|id|1|integer||32|0|NO|nextval('segregasi_acknowledgement_id_seq'::regclass)|int4
+segregasi_acknowledgement|transfer_log_id|2|integer||32|0|NO||int4
+segregasi_acknowledgement|acknowledged_at|3|timestamp with time zone||||YES|now()|timestamptz
+segregasi_acknowledgement|acknowledged_by|4|integer||32|0|NO||int4
+segregasi_acknowledgement|clearance_method|5|USER-DEFINED||||NO||clearancemethod
+segregasi_acknowledgement|proof_photo_url|6|character varying|500|||YES||varchar
+segregasi_acknowledgement|clearance_notes|7|text||||YES||text
+segregasi_acknowledgement|created_at|8|timestamp with time zone||||YES|now()|timestamptz
+spk_daily_production|id|1|integer||32|0|NO|nextval('spk_daily_production_id_seq'::regclass)|int4
+spk_daily_production|spk_id|2|integer||32|0|NO||int4
+spk_daily_production|production_date|3|date||||NO||date
+spk_daily_production|input_qty|4|integer||32|0|NO||int4
+spk_daily_production|cumulative_qty|5|integer||32|0|YES||int4
+spk_daily_production|input_by_id|6|integer||32|0|NO||int4
+spk_daily_production|status|7|character varying|50|||YES||varchar
+spk_daily_production|notes|8|character varying|500|||YES||varchar
+spk_daily_production|created_at|9|timestamp without time zone||||YES||timestamp
+spk_daily_production|updated_at|10|timestamp without time zone||||YES||timestamp
+spk_edit_history|id|1|integer||32|0|NO|nextval('spk_edit_history_id_seq'::regclass)|int4
+spk_edit_history|spk_id|2|integer||32|0|NO||int4
+spk_edit_history|edit_type|3|USER-DEFINED||||NO||spkedittype
+spk_edit_history|status|4|USER-DEFINED||||YES||spkeditstatus
+spk_edit_history|old_values|5|json||||NO||json
+spk_edit_history|new_values|6|json||||NO||json
+spk_edit_history|requested_by_id|7|integer||32|0|NO||int4
+spk_edit_history|request_reason|8|text||||YES||text
+spk_edit_history|requested_at|9|timestamp without time zone||||YES|now()|timestamp
+spk_edit_history|approval_request_id|10|integer||32|0|YES||int4
+spk_edit_history|approved_by_id|11|integer||32|0|YES||int4
+spk_edit_history|approved_at|12|timestamp without time zone||||YES||timestamp
+spk_edit_history|approval_notes|13|text||||YES||text
+spk_edit_history|rejected_by_id|14|integer||32|0|YES||int4
+spk_edit_history|rejected_at|15|timestamp without time zone||||YES||timestamp
+spk_edit_history|rejection_reason|16|text||||YES||text
+spk_edit_history|applied_at|17|timestamp without time zone||||YES||timestamp
+spk_edit_history|applied_by_id|18|integer||32|0|YES||int4
+spk_edit_history|cancelled_at|19|timestamp without time zone||||YES||timestamp
+spk_edit_history|cancelled_by_id|20|integer||32|0|YES||int4
+spk_edit_history|cancellation_reason|21|text||||YES||text
+spk_edit_history|material_reallocation_details|22|json||||YES||json
+spk_edit_history|created_at|23|timestamp without time zone||||YES|now()|timestamp
+spk_edit_history|updated_at|24|timestamp without time zone||||YES|now()|timestamp
+spk_material_allocation|id|1|integer||32|0|NO|nextval('spk_material_allocation_id_seq'::regclass)|int4
+spk_material_allocation|spk_id|2|integer||32|0|NO||int4
+spk_material_allocation|material_id|3|integer||32|0|NO||int4
+spk_material_allocation|qty_allocated|4|numeric||10|2|NO||numeric
+spk_material_allocation|qty_from_stock|5|numeric||10|2|NO||numeric
+spk_material_allocation|qty_from_debt|6|numeric||10|2|NO||numeric
+spk_material_allocation|wastage_qty|7|numeric||10|2|NO||numeric
+spk_material_allocation|wastage_percentage|8|numeric||5|2|NO||numeric
+spk_material_allocation|allocation_status|9|USER-DEFINED||||YES||spkmaterialallocationstatus
+spk_material_allocation|material_shortage|10|boolean||||YES||bool
+spk_material_allocation|shortage_qty|11|numeric||10|2|YES||numeric
+spk_material_allocation|created_by|12|integer||32|0|YES||int4
+spk_material_allocation|created_at|13|timestamp without time zone||||YES|now()|timestamp
+spk_material_allocation|updated_at|14|timestamp without time zone||||YES|now()|timestamp
+spk_material_allocation_old|id|1|integer||32|0|NO|nextval('spk_material_allocation_old_id_seq'::regclass)|int4
+spk_material_allocation_old|spk_id|2|integer||32|0|NO||int4
+spk_material_allocation_old|material_id|3|integer||32|0|NO||int4
+spk_material_allocation_old|qty_allocated|4|numeric||10|2|NO||numeric
+spk_material_allocation_old|qty_from_stock|5|numeric||10|2|NO||numeric
+spk_material_allocation_old|qty_from_debt|6|numeric||10|2|NO||numeric
+spk_material_allocation_old|wastage_qty|7|numeric||10|2|NO||numeric
+spk_material_allocation_old|wastage_percentage|8|numeric||5|2|NO||numeric
+spk_material_allocation_old|allocation_status|9|USER-DEFINED||||YES||spkmaterialallocationstatus
+spk_material_allocation_old|material_shortage|10|boolean||||YES||bool
+spk_material_allocation_old|shortage_qty|11|numeric||10|2|YES||numeric
+spk_material_allocation_old|created_by|12|integer||32|0|YES||int4
+spk_material_allocation_old|created_at|13|timestamp without time zone||||YES|now()|timestamp
+spk_material_allocation_old|updated_at|14|timestamp without time zone||||YES|now()|timestamp
+spk_material_allocations|id|1|integer||32|0|NO|nextval('spk_material_allocations_id_seq'::regclass)|int4
+spk_material_allocations|wo_id|2|integer||32|0|NO||int4
+spk_material_allocations|material_id|3|integer||32|0|NO||int4
+spk_material_allocations|qty_allocated|4|numeric||12|3|NO||numeric
+spk_material_allocations|qty_consumed|5|numeric||12|3|NO||numeric
+spk_material_allocations|uom|6|character varying|20|||YES||varchar
+spk_material_allocations|is_reserved|7|boolean||||NO||bool
+spk_material_allocations|is_consumed|8|boolean||||NO||bool
+spk_material_allocations|allocated_at|9|timestamp without time zone||||YES||timestamp
+spk_material_allocations|consumed_at|10|timestamp without time zone||||YES||timestamp
+spk_material_allocations|created_at|11|timestamp with time zone||||YES|now()|timestamptz
+spk_material_allocations|updated_at|12|timestamp with time zone||||YES||timestamptz
+spk_modifications|id|1|integer||32|0|NO|nextval('spk_modifications_id_seq'::regclass)|int4
+spk_modifications|spk_id|2|integer||32|0|NO||int4
+spk_modifications|field_name|3|character varying|50|||NO||varchar
+spk_modifications|old_value|4|character varying|255|||YES||varchar
+spk_modifications|new_value|5|character varying|255|||YES||varchar
+spk_modifications|modified_by_id|6|integer||32|0|NO||int4
+spk_modifications|modification_reason|7|character varying|255|||YES||varchar
+spk_modifications|created_at|8|timestamp without time zone||||YES||timestamp
+spk_production_completion|id|1|integer||32|0|NO|nextval('spk_production_completion_id_seq'::regclass)|int4
+spk_production_completion|spk_id|2|integer||32|0|NO||int4
+spk_production_completion|target_qty|3|integer||32|0|NO||int4
+spk_production_completion|actual_qty|4|integer||32|0|NO||int4
+spk_production_completion|completed_date|5|date||||NO||date
+spk_production_completion|confirmed_by_id|6|integer||32|0|NO||int4
+spk_production_completion|confirmation_notes|7|character varying|255|||YES||varchar
+spk_production_completion|confirmed_at|8|timestamp without time zone||||NO||timestamp
+spk_production_completion|is_completed|9|boolean||||YES||bool
+spks|id|1|integer||32|0|NO|nextval('spks_id_seq'::regclass)|int4
+spks|mo_id|2|integer||32|0|NO||int4
+spks|department|3|USER-DEFINED||||NO||department
+spks|original_qty|4|integer||32|0|NO||int4
+spks|modified_qty|5|integer||32|0|YES||int4
+spks|target_qty|6|integer||32|0|NO||int4
+spks|produced_qty|7|integer||32|0|YES||int4
+spks|modification_reason|8|character varying|255|||YES||varchar
+spks|modified_by_id|9|integer||32|0|YES||int4
+spks|modified_at|10|timestamp without time zone||||YES||timestamp
+spks|production_status|11|character varying|50|||YES||varchar
+spks|start_date|12|date||||YES||date
+spks|target_completion_date|13|date||||YES||date
+spks|completion_date|14|date||||YES||date
+spks|allow_negative_inventory|15|boolean||||YES||bool
+spks|negative_approval_status|16|character varying|50|||YES||varchar
+spks|negative_approved_by_id|17|integer||32|0|YES||int4
+spks|negative_approved_at|18|timestamp without time zone||||YES||timestamp
+spks|created_by_id|19|integer||32|0|NO||int4
+spks|created_at|20|timestamp without time zone||||YES||timestamp
+spks|updated_at|21|timestamp without time zone||||YES||timestamp
+spks|planned_start_date|22|date||||YES||date
+spks|actual_start_date|23|date||||YES||date
+spks|production_date_stamp|24|date||||YES||date
+spks|buffer_percentage|25|numeric||5|2|NO|0|numeric
+spks|good_qty|26|integer||32|0|NO|0|int4
+spks|defect_qty|27|integer||32|0|NO|0|int4
+spks|rework_qty|28|integer||32|0|NO|0|int4
+stock_lots|id|1|integer||32|0|NO|nextval('stock_lots_id_seq'::regclass)|int4
+stock_lots|product_id|2|integer||32|0|NO||int4
+stock_lots|lot_number|3|character varying|50|||NO||varchar
+stock_lots|qty_initial|4|numeric||10|2|NO||numeric
+stock_lots|qty_remaining|5|numeric||10|2|NO||numeric
+stock_lots|supplier_id|6|integer||32|0|YES||int4
+stock_lots|purchase_order_id|7|integer||32|0|YES||int4
+stock_lots|received_date|8|timestamp with time zone||||NO||timestamptz
+stock_lots|expiry_date|9|timestamp with time zone||||YES||timestamptz
+stock_lots|created_at|10|timestamp with time zone||||YES|now()|timestamptz
+stock_moves|id|1|integer||32|0|NO|nextval('stock_moves_id_seq'::regclass)|int4
+stock_moves|product_id|2|integer||32|0|NO||int4
+stock_moves|qty|3|numeric||10|2|NO||numeric
+stock_moves|uom|4|character varying|10|||NO||varchar
+stock_moves|location_id_from|5|integer||32|0|NO||int4
+stock_moves|location_id_to|6|integer||32|0|NO||int4
+stock_moves|reference_doc|7|character varying|100|||NO||varchar
+stock_moves|state|8|USER-DEFINED||||YES||stockmovestatus
+stock_moves|lot_id|9|integer||32|0|YES||int4
+stock_moves|date|10|timestamp with time zone||||YES|now()|timestamptz
+stock_moves|created_at|11|timestamp with time zone||||YES|now()|timestamptz
+stock_quants|id|1|integer||32|0|NO|nextval('stock_quants_id_seq'::regclass)|int4
+stock_quants|product_id|2|integer||32|0|NO||int4
+stock_quants|location_id|3|integer||32|0|NO||int4
+stock_quants|lot_id|4|integer||32|0|YES||int4
+stock_quants|qty_on_hand|5|numeric||10|2|YES||numeric
+stock_quants|qty_reserved|6|numeric||10|2|YES||numeric
+stock_quants|updated_at|7|timestamp with time zone||||YES|now()|timestamptz
+transfer_logs|id|1|integer||32|0|NO|nextval('transfer_logs_id_seq'::regclass)|int4
+transfer_logs|mo_id|2|integer||32|0|NO||int4
+transfer_logs|from_dept|3|USER-DEFINED||||NO||transferdept
+transfer_logs|to_dept|4|USER-DEFINED||||NO||transferdept
+transfer_logs|article_code|5|character varying|50|||NO||varchar
+transfer_logs|batch_id|6|character varying|50|||NO||varchar
+transfer_logs|week_number|7|integer||32|0|YES||int4
+transfer_logs|destination|8|character varying|50|||YES||varchar
+transfer_logs|qty_sent|9|numeric||10|2|NO||numeric
+transfer_logs|qty_received|10|numeric||10|2|YES||numeric
+transfer_logs|is_line_clear|11|boolean||||YES||bool
+transfer_logs|line_checked_at|12|timestamp with time zone||||YES||timestamptz
+transfer_logs|line_checked_by|13|integer||32|0|YES||int4
+transfer_logs|status|14|USER-DEFINED||||YES||transferstatus
+transfer_logs|timestamp_start|15|timestamp with time zone||||YES|now()|timestamptz
+transfer_logs|timestamp_accept|16|timestamp with time zone||||YES||timestamptz
+transfer_logs|timestamp_end|17|timestamp with time zone||||YES||timestamptz
+transfer_logs|accepted_by|18|integer||32|0|YES||int4
+transfer_logs|created_at|19|timestamp with time zone||||YES|now()|timestamptz
+user_activity_logs|id|1|bigint||64|0|NO|nextval('user_activity_logs_id_seq'::regclass)|int8
+user_activity_logs|user_id|2|bigint||64|0|NO||int8
+user_activity_logs|activity_type|3|character varying|50|||NO||varchar
+user_activity_logs|activity_details|4|text||||YES||text
+user_activity_logs|session_id|5|character varying|255|||YES||varchar
+user_activity_logs|ip_address|6|character varying|45|||YES||varchar
+user_activity_logs|user_agent|7|character varying|500|||YES||varchar
+user_activity_logs|timestamp|8|timestamp without time zone||||NO||timestamp
+user_activity_logs|duration_seconds|9|bigint||64|0|YES||int8
+users|id|1|integer||32|0|NO|nextval('users_id_seq'::regclass)|int4
+users|username|2|character varying|50|||NO||varchar
+users|email|3|character varying|100|||NO||varchar
+users|hashed_password|4|character varying|255|||NO||varchar
+users|full_name|5|character varying|100|||NO||varchar
+users|role|6|USER-DEFINED||||NO||userrole
+users|department|7|character varying|50|||YES||varchar
+users|is_active|8|boolean||||YES||bool
+users|is_verified|9|boolean||||YES||bool
+users|created_at|10|timestamp with time zone||||YES|now()|timestamptz
+users|last_login|11|timestamp with time zone||||YES||timestamptz
+users|last_password_change|12|timestamp with time zone||||YES||timestamptz
+users|login_attempts|13|integer||32|0|YES||int4
+users|locked_until|14|timestamp with time zone||||YES||timestamptz
+warehouse_finishing_stocks|id|1|integer||32|0|NO|nextval('warehouse_finishing_stocks_id_seq'::regclass)|int4
+warehouse_finishing_stocks|stage|2|character varying|20|||NO||varchar
+warehouse_finishing_stocks|product_id|3|integer||32|0|NO||int4
+warehouse_finishing_stocks|good_qty|4|numeric||10|2|NO|'0'::numeric|numeric
+warehouse_finishing_stocks|defect_qty|5|numeric||10|2|NO|'0'::numeric|numeric
+warehouse_finishing_stocks|created_at|6|timestamp without time zone||||NO|now()|timestamp
+warehouse_finishing_stocks|updated_at|7|timestamp without time zone||||NO|now()|timestamp
+wip_transfer_logs|id|1|integer||32|0|NO|nextval('wip_transfer_logs_id_seq'::regclass)|int4
+wip_transfer_logs|wo_id|2|integer||32|0|NO||int4
+wip_transfer_logs|wip_product_id|3|integer||32|0|NO||int4
+wip_transfer_logs|from_department|4|character varying|50|||NO||varchar
+wip_transfer_logs|to_department|5|character varying|50|||NO||varchar
+wip_transfer_logs|qty_transferred|6|numeric||10|2|NO||numeric
+wip_transfer_logs|transfer_date|7|timestamp with time zone||||YES|now()|timestamptz
+wip_transfer_logs|transferred_by|8|integer||32|0|YES||int4
+wip_transfer_logs|notes|9|text||||YES||text
+wip_transfer_logs|created_at|10|timestamp with time zone||||YES|now()|timestamptz
+work_orders|id|1|integer||32|0|NO|nextval('work_orders_id_seq'::regclass)|int4
+work_orders|mo_id|2|integer||32|0|NO||int4
+work_orders|product_id|3|integer||32|0|NO||int4
+work_orders|department|4|USER-DEFINED||||NO||department
+work_orders|status|5|USER-DEFINED||||YES||workorderstatus
+work_orders|start_time|6|timestamp with time zone||||YES||timestamptz
+work_orders|end_time|7|timestamp with time zone||||YES||timestamptz
+work_orders|input_qty|8|numeric||10|2|NO||numeric
+work_orders|output_qty|9|numeric||10|2|YES||numeric
+work_orders|reject_qty|10|numeric||10|2|YES||numeric
+work_orders|worker_id|11|integer||32|0|YES||int4
+work_orders|created_at|12|timestamp with time zone||||YES|now()|timestamptz
+work_orders|input_wip_product_id|13|integer||32|0|YES||int4
+work_orders|output_wip_product_id|14|integer||32|0|YES||int4
+work_orders|sequence|15|integer||32|0|YES||int4
+work_orders|wo_number|16|character varying|100|||YES||varchar
+work_orders|target_qty|17|numeric||10|2|YES||numeric
+work_orders|notes|18|text||||YES||text
+work_orders|planned_start_date|19|date||||YES||date
+work_orders|actual_start_date|20|date||||YES||date
+work_orders|planned_completion_date|21|date||||YES||date
+work_orders|actual_completion_date|22|date||||YES||date
+work_orders|production_date_stamp|23|date||||YES||date
+work_orders|cartons_packed|24|integer||32|0|YES|0|int4
+work_orders|pallets_formed|25|integer||32|0|YES|0|int4
+work_orders|packing_validated|26|boolean||||YES|false|bool

@@ -187,7 +187,6 @@ export default function PurchasingPage() {
             link="/purchasing/po"
             color="blue"
             badge="Real-time"
-            disabled={true}
           />
           
           <NavigationCard
@@ -196,7 +195,6 @@ export default function PurchasingPage() {
             icon={Users}
             link="/purchasing/suppliers"
             color="green"
-            disabled={true}
           />
         </div>
       </div>
@@ -243,8 +241,7 @@ export default function PurchasingPage() {
           <h2 className="text-xl font-semibold text-gray-900">Recent Purchase Orders</h2>
           <button
             onClick={() => navigate('/purchasing/po')}
-            className="text-blue-600 hover:text-blue-700 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={true}
+            className="text-blue-600 hover:text-blue-700 text-sm font-medium"
           >
             View All →
           </button>

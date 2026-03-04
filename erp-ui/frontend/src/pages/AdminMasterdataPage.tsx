@@ -19,7 +19,11 @@ interface Supplier {
 
 const ADMIN_ROLES = ['Admin', 'Superadmin', 'Developer']
 const PRODUCT_TYPES = ['Raw Material', 'WIP', 'Finish Good', 'Label', 'Accessories', 'Service']
-const UOM_OPTIONS = ['Pcs', 'Meter', 'Yard', 'Kg', 'Roll', 'Box', 'Set', 'Sheet', 'Lembar', 'Lusin']
+const UOM_OPTIONS = [
+  'Pcs', 'Meter', 'Yard', 'Kg', 'Gram', 'Cm',
+  'Roll', 'Box', 'Ctn', 'Set', 'Pack',
+  'Sheet', 'Lusin', 'Cone', 'Ball', 'Liter',
+]
 
 // â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -153,6 +157,15 @@ const AdminMasterdataPage: React.FC = () => {
 
   // â”€â”€ Category CRUD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
+  const handleSeedCategories = async () => {
+    if (!confirm('Seed default material categories (Fabric, Benang, Label, Accessories, etc.)? Existing names will be skipped.')) return
+    try {
+      const res = await apiClient.post('/masterdata/categories/seed-defaults', {})
+      alert(res.message ?? 'Seeded successfully')
+      fetchCategories()
+    } catch (e: any) { alert(e.response?.data?.detail ?? 'Seed failed') }
+  }
+
   const handleSaveCat = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
@@ -208,7 +221,12 @@ const AdminMasterdataPage: React.FC = () => {
           <p className="text-gray-500 text-sm mt-0.5">Products Â· Categories Â· Suppliers</p>
         </div>
         {isAdmin && activeTab === 'products' && <button onClick={() => openProductModal()} className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">+ New Product</button>}
-        {isAdmin && activeTab === 'categories' && <button onClick={() => { setEditingCat(null); setCatForm({ name: '', description: '' }); setShowCatModal(true) }} className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700">+ New Category</button>}
+        {isAdmin && activeTab === 'categories' && (
+          <div className="flex gap-2">
+            <button onClick={handleSeedCategories} className="px-4 py-2 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700">Seed Default Categories</button>
+            <button onClick={() => { setEditingCat(null); setCatForm({ name: '', description: '' }); setShowCatModal(true) }} className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700">+ New Category</button>
+          </div>
+        )}
         {isAdmin && activeTab === 'suppliers' && <button onClick={() => openSupModal()} className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700">+ New Supplier</button>}
       </div>
 

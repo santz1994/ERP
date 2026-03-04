@@ -154,15 +154,21 @@ export default function PODetailModal({ poId, isOpen, onClose, onStatusChanged }
     },
     onSuccess: (data) => {
       const moInfo = data.mo_created;
+      const stockInfo = data.stock_received;
       if (moInfo?.action === 'created') {
         toast.success(
-          `${data.message}\n✅ MO ${moInfo.batch_number} dibuat — WO: ${moInfo.work_orders_created?.join(', ')}`,
+          `${data.message}\n✅ MO ${moInfo.mo_production_batch || moInfo.batch_number} dibuat — WO: ${moInfo.work_orders_created?.join(', ')}`,
           { duration: 6000 }
         );
       } else if (moInfo?.action === 'released') {
         toast.success(
           `${data.message}\n🚀 Produksi penuh dirilis! WO baru: ${moInfo.work_orders_created?.join(', ')}`,
           { duration: 6000 }
+        );
+      } else if (stockInfo?.received_lines > 0) {
+        toast.success(
+          `${data.message}\n📦 ${stockInfo.received_lines} material masuk ke stok gudang!`,
+          { duration: 5000 }
         );
       } else {
         toast.success(data.message || 'Status updated');
@@ -418,6 +424,120 @@ export default function PODetailModal({ poId, isOpen, onClose, onStatusChanged }
                         </table>
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* PO KAIN: Linked Accessories */}
+                {po.po_type === 'KAIN' && (po.linked_accessories?.length ?? 0) > 0 && (
+                  <div>
+                    <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                      <Package className="w-4 h-4 text-amber-600" />
+                      PO Accessories Terkait
+                      <span className="ml-auto text-xs font-normal text-gray-500">
+                        {po.linked_accessories.length} PO
+                      </span>
+                    </h3>
+                    <div className="overflow-x-auto rounded-lg border border-amber-100">
+                      <table className="min-w-full divide-y divide-amber-100 text-sm">
+                        <thead className="bg-amber-50">
+                          <tr>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-amber-700 uppercase">PO Number</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-amber-700 uppercase">Supplier</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-amber-700 uppercase">Tgl Order</th>
+                            <th className="px-4 py-2 text-right text-xs font-medium text-amber-700 uppercase">Total</th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-amber-700 uppercase">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-amber-50">
+                          {po.linked_accessories.map((acc) => (
+                            <tr key={acc.id} className="hover:bg-amber-50">
+                              <td className="px-4 py-2 font-mono text-xs text-amber-800">{acc.po_number}</td>
+                              <td className="px-4 py-2 text-gray-700 text-xs">{acc.supplier_name}</td>
+                              <td className="px-4 py-2 text-gray-500 text-xs">
+                                {acc.order_date ? format(new Date(acc.order_date), 'dd MMM yyyy') : '-'}
+                              </td>
+                              <td className="px-4 py-2 text-right font-medium text-gray-900">{formatCurrency(acc.total_amount)}</td>
+                              <td className="px-4 py-2">
+                                <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                  STATUS_COLORS[acc.status || ''] || 'bg-gray-100 text-gray-600'
+                                }`}>{acc.status || '?'}</span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* PO LABEL: Manufacturing Order Released */}
+                {po.po_type === 'LABEL' && po.linked_mo && (
+                  <div>
+                    <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                      <Package className="w-4 h-4 text-purple-600" />
+                      Manufacturing Order Dirilis
+                      <span className={`ml-2 px-2 py-0.5 text-xs rounded-full font-medium ${
+                        po.linked_mo.trigger_mode === 'RELEASED' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {po.linked_mo.trigger_mode}
+                      </span>
+                    </h3>
+                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 space-y-3">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div>
+                          <p className="text-xs text-purple-600 font-medium">Batch Number</p>
+                          <p className="text-sm font-bold text-purple-900 font-mono">{po.linked_mo.batch_number}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-purple-600 font-medium">Status MO</p>
+                          <span className={`inline-block px-2 py-0.5 text-xs rounded-full font-medium ${
+                            po.linked_mo.state === 'Done' ? 'bg-green-100 text-green-800' :
+                            po.linked_mo.state === 'In Progress' ? 'bg-blue-100 text-blue-800' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>{po.linked_mo.state || 'Draft'}</span>
+                        </div>
+                        <div>
+                          <p className="text-xs text-purple-600 font-medium">Qty Planned</p>
+                          <p className="text-sm font-semibold text-gray-900">{po.linked_mo.qty_planned.toLocaleString()} pcs</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-purple-600 font-medium">Qty Produced</p>
+                          <p className="text-sm font-semibold text-gray-900">{po.linked_mo.qty_produced.toLocaleString()} pcs</p>
+                        </div>
+                      </div>
+                      {po.linked_mo.work_orders.filter(wo => ['SEWING','FINISHING','PACKING'].includes(wo.department || '')).length > 0 && (
+                        <div className="overflow-x-auto rounded-lg border border-purple-100">
+                          <table className="min-w-full divide-y divide-purple-100 text-sm">
+                            <thead className="bg-purple-100">
+                              <tr>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-purple-700 uppercase">WO Number</th>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-purple-700 uppercase">Dept</th>
+                                <th className="px-4 py-2 text-right text-xs font-medium text-purple-700 uppercase">Target Qty</th>
+                                <th className="px-4 py-2 text-center text-xs font-medium text-purple-700 uppercase">Status</th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-purple-50">
+                              {po.linked_mo.work_orders
+                                .filter(wo => ['SEWING','FINISHING','PACKING'].includes(wo.department || ''))
+                                .map((wo) => (
+                                <tr key={wo.id} className="hover:bg-purple-50">
+                                  <td className="px-4 py-2 font-mono text-xs text-gray-700">{wo.wo_number}</td>
+                                  <td className="px-4 py-2 text-gray-900 font-medium">{wo.department}</td>
+                                  <td className="px-4 py-2 text-right text-gray-900">{wo.target_qty.toLocaleString()}</td>
+                                  <td className="px-4 py-2 text-center">
+                                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                      wo.status === 'Done' || wo.status === 'DONE' ? 'bg-green-100 text-green-800' :
+                                      wo.status === 'In Progress' || wo.status === 'RUNNING' ? 'bg-blue-100 text-blue-800' :
+                                      'bg-gray-100 text-gray-600'
+                                    }`}>{wo.status}</span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
 

@@ -14,9 +14,10 @@ import { UserRole } from '@/types'
 interface SubMenuItem {
   icon: React.ReactNode
   label: string
-  path: string
+  path?: string          // optional — no path = group header
   roles?: UserRole[]
   permissions?: string[]
+  children?: SubMenuItem[] // nested sub-group
 }
 
 interface MenuItem {
@@ -172,8 +173,6 @@ const menuItems: MenuItem[] = [
       { icon: <FileText />, label: 'Import/Export', path: '/admin/import-export', permissions: ['import_export.import_data'] },
       { icon: <Database />, label: 'Masterdata', path: '/admin/masterdata', permissions: ['admin.manage_users'] },
       { icon: <Factory />, label: 'BOM Management', path: '/admin/bom-management', permissions: ['admin.manage_users'] },
-      { icon: <Factory />, label: 'BOM Produksi', path: '/admin/bom-production', permissions: ['admin.manage_users'] },
-      { icon: <ShoppingCart />, label: 'BOM Purchasing', path: '/admin/bom-purchase', permissions: ['admin.manage_users'] },
       { icon: <Database />, label: 'Bulk Import', path: '/admin/bulk-import', permissions: ['admin.manage_users'] },
     ]
   },
@@ -193,6 +192,7 @@ export const Sidebar: React.FC = () => {
   const { hasPermission } = usePermissionStore()
   const location = useLocation()
   const [openDropdowns, setOpenDropdowns] = useState<string[]>([])
+  const [openSubGroups, setOpenSubGroups] = useState<string[]>([])
 
   // Helper: Check Access — RBAC bypass for top-level roles
   const hasAccess = (item: MenuItem | SubMenuItem): boolean => {
@@ -208,6 +208,10 @@ export const Sidebar: React.FC = () => {
 
   const toggleDropdown = (label: string) => {
     setOpenDropdowns(prev => prev.includes(label) ? prev.filter(i => i !== label) : [...prev, label])
+  }
+
+  const toggleSubGroup = (label: string) => {
+    setOpenSubGroups(prev => prev.includes(label) ? prev.filter(i => i !== label) : [...prev, label])
   }
 
   // Helper: Enhanced Styles with Modern UI/UX
@@ -286,30 +290,92 @@ export const Sidebar: React.FC = () => {
             {/* Enhanced Submenu with Smooth Animation */}
             {sidebarOpen && (
               <div className={`overflow-hidden transition-all duration-300 ease-in-out 
-                            ${isDropdownOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+                            ${isDropdownOpen ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'}`}>
                 <div className="mt-1 mb-2 space-y-1 pl-2 pr-2">
-                  {item.submenu.filter(hasAccess).map((sub, subIndex) => (
-                    <Link
-                      key={sub.path}
-                      to={sub.path}
-                      className={`${getLinkClasses(location.pathname === sub.path, true)} 
-                                rounded-md mx-1 transform transition-all duration-300 
-                                hover:translate-x-1 border border-transparent 
-                                hover:border-slate-600/30 hover:shadow-sm 
-                                ${location.pathname === sub.path ? 'border-blue-400/30' : ''}`}
-                      style={{
-                        animationDelay: `${subIndex * 50}ms`,
-                        animation: isDropdownOpen ? 'slideInLeft 0.3s ease-out forwards' : ''
-                      }}
-                    >
-                      <div className={`w-2 h-2 rounded-full mr-2 transition-all duration-300 
-                                     ${location.pathname === sub.path 
-                                       ? 'bg-blue-400 shadow-lg shadow-blue-400/50 scale-125' 
-                                       : 'bg-slate-600 group-hover:bg-slate-400'}`}>
-                      </div>
-                      <span className="truncate font-medium">{sub.label}</span>
-                    </Link>
-                  ))}
+                  {item.submenu.filter(hasAccess).map((sub, subIndex) => {
+                    // --- Group header with nested children ---
+                    if (sub.children) {
+                      const isGroupOpen = openSubGroups.includes(sub.label)
+                        || sub.children.some(c => c.path === location.pathname)
+                      const isGroupActive = location.pathname === sub.path
+                        || sub.children.some(c => c.path === location.pathname)
+                      return (
+                        <div key={sub.label}>
+                          {/* Group header row — links to overview page AND toggles children */}
+                          <div className="flex items-center gap-0 rounded-md mx-1">
+                            <Link
+                              to={sub.path!}
+                              className={`flex-1 flex items-center gap-2 px-3 py-2.5 text-sm
+                                rounded-l-md transition-all duration-200
+                                ${isGroupActive
+                                  ? 'text-white bg-gradient-to-r from-blue-600/90 to-blue-500/80 font-medium'
+                                  : 'text-slate-300 hover:text-white hover:bg-slate-700/40'}`}
+                            >
+                              <div className={`w-2 h-2 rounded-full flex-shrink-0 transition-all duration-300
+                                ${isGroupActive ? 'bg-blue-300 shadow-lg shadow-blue-400/50 scale-125' : 'bg-slate-600'}`} />
+                              <span className="truncate font-medium">{sub.label}</span>
+                            </Link>
+                            <button
+                              onClick={() => toggleSubGroup(sub.label)}
+                              className={`px-2 py-2.5 rounded-r-md transition-all duration-200 flex-shrink-0
+                                ${isGroupActive
+                                  ? 'text-white bg-gradient-to-r from-blue-500/80 to-blue-400/70'
+                                  : 'text-slate-400 hover:text-white hover:bg-slate-700/40'}`}
+                            >
+                              <ChevronRight
+                                size={12}
+                                className={`transition-transform duration-200 ${isGroupOpen ? 'rotate-90' : ''}`}
+                              />
+                            </button>
+                          </div>
+                          {/* Nested children */}
+                          <div className={`overflow-hidden transition-all duration-200
+                            ${isGroupOpen ? 'max-h-32 opacity-100' : 'max-h-0 opacity-0'}`}>
+                            <div className="pl-5 pr-1 pt-1 pb-1 space-y-1">
+                              {sub.children.filter(hasAccess).map(child => (
+                                <Link
+                                  key={child.path}
+                                  to={child.path!}
+                                  className={`flex items-center gap-2 px-3 py-2 text-sm rounded-md
+                                    transition-all duration-200 hover:translate-x-1 border border-transparent
+                                    ${location.pathname === child.path
+                                      ? 'text-white bg-blue-600/70 border-blue-400/30 font-medium'
+                                      : 'text-slate-400 hover:text-white hover:bg-slate-700/30 hover:border-slate-600/30'}`}
+                                >
+                                  <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0
+                                    ${location.pathname === child.path ? 'bg-blue-300' : 'bg-slate-700'}`} />
+                                  <span className="truncate">{child.label}</span>
+                                </Link>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    }
+                    // --- Regular link ---
+                    return (
+                      <Link
+                        key={sub.path}
+                        to={sub.path!}
+                        className={`${getLinkClasses(location.pathname === sub.path, true)} 
+                                  rounded-md mx-1 transform transition-all duration-300 
+                                  hover:translate-x-1 border border-transparent 
+                                  hover:border-slate-600/30 hover:shadow-sm 
+                                  ${location.pathname === sub.path ? 'border-blue-400/30' : ''}`}
+                        style={{
+                          animationDelay: `${subIndex * 50}ms`,
+                          animation: isDropdownOpen ? 'slideInLeft 0.3s ease-out forwards' : ''
+                        }}
+                      >
+                        <div className={`w-2 h-2 rounded-full mr-2 transition-all duration-300 
+                                       ${location.pathname === sub.path 
+                                         ? 'bg-blue-400 shadow-lg shadow-blue-400/50 scale-125' 
+                                         : 'bg-slate-600 group-hover:bg-slate-400'}`}>
+                        </div>
+                        <span className="truncate font-medium">{sub.label}</span>
+                      </Link>
+                    )
+                  })}
                 </div>
               </div>
             )}

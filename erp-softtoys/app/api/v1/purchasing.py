@@ -191,6 +191,120 @@ class SupplierPerformanceResponse(BaseModel):
     completion_rate: float
 
 
+# ─── STOCK RECEIVE HELPER ───────────────────────────────────────────────────
+
+def _receive_po_stock(db: Session, po: PurchaseOrder, user_id: int) -> dict:
+    """
+    Auto-create StockLot + StockMove + StockQuant when a PO is marked Received.
+    Extracts line-item data from po.extra_metadata["items"].
+    Returns {"received_lines": N, "wh_location_id": id} or {"skipped": reason}.
+    """
+    from datetime import datetime as _dt
+    from app.core.models.warehouse import (
+        Location, LocationType, StockLot, StockMove, StockQuant, StockMoveStatus
+    )
+
+    items = (po.extra_metadata or {}).get("items", [])
+    if not items:
+        return {"skipped": "no items in po.extra_metadata"}
+
+    # Get or create Virtual/Supplier (source) location
+    supplier_loc = db.query(Location).filter(Location.name == "Virtual/Supplier").first()
+    if not supplier_loc:
+        supplier_loc = Location(name="Virtual/Supplier", type=LocationType.SUPPLIER, is_active=True)
+        db.add(supplier_loc)
+        db.flush()
+
+    # Get or create default Warehouse/Stock (destination) location
+    wh_loc = db.query(Location).filter(Location.name == "Warehouse/Stock").first()
+    if not wh_loc:
+        wh_loc = db.query(Location).filter(Location.type == LocationType.INTERNAL).first()
+    if not wh_loc:
+        wh_loc = Location(name="Warehouse/Stock", type=LocationType.INTERNAL, is_active=True)
+        db.add(wh_loc)
+        db.flush()
+
+    now = _dt.utcnow()
+    received_lines = 0
+
+    for item in items:
+        pid = item.get("product_id")
+        qty = float(item.get("quantity") or 0)
+        uom = str(item.get("uom") or "PCS")
+        code = str(item.get("material_code") or pid or "")
+
+        if not pid or qty <= 0:
+            continue
+
+        lot_number = f"LOT-{po.po_number}-{code}-{now.strftime('%Y%m%d%H%M%S')}"
+
+        # Create StockLot (traceability)
+        lot = StockLot(
+            lot_number=lot_number,
+            product_id=pid,
+            qty_initial=qty,
+            qty_remaining=qty,
+            supplier_id=po.supplier_id,
+            purchase_order_id=po.id,
+            received_date=now,
+        )
+        db.add(lot)
+        db.flush()  # need lot.id for StockMove FK
+
+        # Create StockMove (Supplier → Warehouse, DONE)
+        move = StockMove(
+            product_id=pid,
+            qty=qty,
+            uom=uom,
+            location_id_from=supplier_loc.id,
+            location_id_to=wh_loc.id,
+            reference_doc=po.po_number,
+            state=StockMoveStatus.DONE,
+            lot_id=lot.id,
+        )
+        db.add(move)
+
+        # Update StockQuant (aggregate balance at warehouse location)
+        quant = db.query(StockQuant).filter(
+            StockQuant.product_id == pid,
+            StockQuant.location_id == wh_loc.id,
+        ).first()
+        if quant:
+            quant.qty_on_hand += qty
+        else:
+            quant = StockQuant(
+                product_id=pid,
+                location_id=wh_loc.id,
+                lot_id=lot.id,
+                qty_on_hand=qty,
+                qty_reserved=0,
+            )
+            db.add(quant)
+
+        received_lines += 1
+
+    db.flush()
+
+    # Traceability: find linked MO batch via source_po_kain_id (ACCESSORIES/LABEL)
+    linked_mo_batch = None
+    ref_kain_id = po.source_po_kain_id
+    if ref_kain_id:
+        from app.core.models.manufacturing import ManufacturingOrder, MOType
+        linked_mo = db.query(ManufacturingOrder).filter(
+            ManufacturingOrder.po_fabric_id == ref_kain_id,
+            ManufacturingOrder.mo_type == MOType.PRODUCTION,
+        ).first()
+        if linked_mo:
+            linked_mo_batch = linked_mo.batch_number
+
+    print(f"✅ PO {po.po_number}: {received_lines} line(s) stock updated → Warehouse/Stock")
+    return {
+        "received_lines": received_lines,
+        "wh_location_id": wh_loc.id,
+        "linked_mo_batch": linked_mo_batch,
+    }
+
+
 # ─── AUTO MO/WO TRIGGER HELPER ─────────────────────────────────────────────
 
 def _auto_trigger_mo_wo(db: Session, po: PurchaseOrder, user_id: int) -> dict | None:
@@ -302,6 +416,20 @@ def _auto_trigger_mo_wo(db: Session, po: PurchaseOrder, user_id: int) -> dict | 
                 "trigger_mode": "PARTIAL",
                 "work_orders_created": ["CUTTING"],
                 "action": "created",
+            }
+
+        # ── NO TRIGGER: PO ACCESSORIES ────────────────────────────────
+        elif po_type == "ACCESSORIES":
+            # Accessories POs are stock-only — no MO/WO trigger.
+            # They optionally link back to a PO KAIN for traceability.
+            return {
+                "action": "no_trigger",
+                "po_type": "ACCESSORIES",
+                "source_po_kain_id": po.source_po_kain_id,
+                "reason": (
+                    "PO ACCESSORIES does not trigger MO/WO "
+                    "— stock will update on Receive"
+                ),
             }
 
         # ── TRIGGER 2: PO LABEL ────────────────────────────────────────
@@ -446,8 +574,16 @@ def update_po_status(
 
         # ── AUTO MO/WO TRIGGER ────────────────────────────────────────────
         mo_info = None
+        stock_info = None
         if new_status == "Sent":
             mo_info = _auto_trigger_mo_wo(db, po, current_user.id)
+        elif new_status == "Received":
+            # Auto-update stock when PO is marked as received
+            try:
+                stock_info = _receive_po_stock(db, po, current_user.id)
+                db.commit()
+            except Exception as stock_err:
+                print(f"⚠ Stock receive failed for {po.po_number}: {stock_err}")
         # ─────────────────────────────────────────────────────────────────
 
         print(f"✅ PO {po.po_number}: {current} → {new_status} (by user {current_user.id})")
@@ -459,6 +595,8 @@ def update_po_status(
         }
         if mo_info:
             result["mo_created"] = mo_info
+        if stock_info:
+            result["stock_received"] = stock_info
         return result
     except Exception as e:
         db.rollback()
@@ -631,6 +769,18 @@ def create_po_from_ui(
                             f"you requested {request.article_qty} pcs."
                         )
                     )
+
+        # PO ACCESSORIES: validate referenced PO KAIN exists (any status allowed)
+        if po_type == POType.ACCESSORIES and request.source_po_kain_id:
+            acc_kain = db.query(PurchaseOrder).filter(
+                PurchaseOrder.id == request.source_po_kain_id,
+                PurchaseOrder.po_type == POType.KAIN,
+            ).first()
+            if not acc_kain:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"PO KAIN with ID {request.source_po_kain_id} not found",
+                )
 
         # PO KAIN requires article
         if po_type == POType.KAIN and not request.article_id:
@@ -1067,8 +1217,8 @@ def get_available_po_kain(
         ]
         
         print(f"✅ Retrieved {len(result)} active PO KAIN")
-        return {"data": result, "count": len(result)}
-        
+        return result  # flat list — frontend expects array, not wrapped object
+
     except Exception as e:
         print(f"❌ Error fetching available PO KAIN: {str(e)}")
         raise HTTPException(
@@ -1127,25 +1277,51 @@ def get_purchase_order_detail(
 
     remaining_qty = max(0, (po.article_qty or 0) - total_allocated)
 
-    # ── Linked Manufacturing Order (PO KAIN only) ────────────────────────────
-    linked_mo_data = None
+    # For PO KAIN: include linked PO ACCESSORIES
+    linked_accessories = []
     if po.po_type and po.po_type.value == "KAIN":
+        acc_pos = db.query(PurchaseOrder).filter(
+            PurchaseOrder.source_po_kain_id == po.id,
+            PurchaseOrder.po_type == POType.ACCESSORIES,
+        ).order_by(PurchaseOrder.order_date).all()
+        for apo in acc_pos:
+            asp = db.query(Partner).filter(
+                Partner.id == apo.supplier_id
+            ).first()
+            linked_accessories.append({
+                "id": apo.id,
+                "po_number": apo.po_number,
+                "status": apo.status.value if apo.status else None,
+                "supplier_name": asp.name if asp else f"Supplier #{apo.supplier_id}",
+                "total_amount": float(apo.total_amount or 0),
+                "order_date": apo.order_date.isoformat() if apo.order_date else None,
+            })
+
+    # ── Linked Manufacturing Order (KAIN direct / LABEL via source_po_kain_id)
+    linked_mo_data = None
+    po_type_val = po.po_type.value if po.po_type else None
+    is_kain = po_type_val == "KAIN"
+    # For LABEL/ACCESSORIES: look up MO of the parent PO KAIN
+    is_child = po_type_val in ("LABEL", "ACCESSORIES") and po.source_po_kain_id
+    if is_kain or is_child:
+        lookup_po_id = po.id if is_kain else po.source_po_kain_id
         from sqlalchemy.orm import joinedload as _jl
         mo = None
-        # 1. Try via direct FK
-        if po.linked_mo_id:
+        # 1. Try via direct FK (PO KAIN only)
+        if is_kain and po.linked_mo_id:
             mo = db.query(ManufacturingOrder).filter(
                 ManufacturingOrder.id == po.linked_mo_id
             ).options(_jl(ManufacturingOrder.work_orders)).first()
-        # 2. Try by po_fabric_id (newer field)
+        # 2. Try by po_fabric_id (PRODUCTION MO preferred)
         if not mo:
             mo = db.query(ManufacturingOrder).filter(
-                ManufacturingOrder.po_fabric_id == po.id
+                ManufacturingOrder.po_fabric_id == lookup_po_id,
+                ManufacturingOrder.mo_type == MOType.PRODUCTION,
             ).options(_jl(ManufacturingOrder.work_orders)).first()
-        # 3. Fallback: legacy po_id
+        # 3. Fallback: any MO linked to this PO
         if not mo:
             mo = db.query(ManufacturingOrder).filter(
-                ManufacturingOrder.po_id == po.id
+                ManufacturingOrder.po_fabric_id == lookup_po_id
             ).options(_jl(ManufacturingOrder.work_orders)).first()
 
         if mo:
@@ -1197,8 +1373,10 @@ def get_purchase_order_detail(
         "linked_labels": linked_labels,
         "total_allocated": total_allocated,
         "remaining_qty": remaining_qty,
-        # Manufacturing Order (only for PO KAIN)
+        # Manufacturing Order (PO KAIN direct / PO LABEL shows parent MO)
         "linked_mo": linked_mo_data,
+        # PO ACCESSORIES linked to this PO KAIN (only meaningful for KAIN)
+        "linked_accessories": linked_accessories,
     }
 
 
@@ -1484,12 +1662,17 @@ def get_bom_materials(
                 "material_id": component.id,
                 "material_code": component.code,
                 "material_name": component.name,
-                "material_type": component.type.value if hasattr(component, 'type') else 'RAW_MATERIAL',
+                "material_type": component.type.value if hasattr(component.type, 'value') else 'RAW_MATERIAL',
                 "material_category": material_category,
                 "qty_per_unit": qty_per_unit,
                 "total_qty_needed": round(qty_with_wastage, 4),
                 "wastage_percent": wastage_pct,
-                "uom": getattr(component, 'uom', 'PCS'),
+                # Always return plain string so frontend doesn't see enum objects
+                "uom": (
+                    component.uom.value
+                    if hasattr(component.uom, 'value')
+                    else str(component.uom or 'Pcs')
+                ),
                 "description": component.description
             })
         
@@ -1548,6 +1731,12 @@ def _detect_material_category(material_code: str, material_name: str, category_n
     if cat.startswith('PACKAGING'):
         return 'ACCESSORIES'
     if cat in ('ELASTIC', 'ELASTIC TAPE'):
+        return 'ACCESSORIES'
+    if cat.startswith('CHEMICAL'):      # Chemical / Lem
+        return 'ACCESSORIES'
+    if cat.startswith('ISOLASI'):       # Isolasi / Insulation
+        return 'ACCESSORIES'
+    if cat.startswith('JARUM'):         # Jarum / Needle
         return 'ACCESSORIES'
     if cat.startswith('WIP'):
         return 'WIP'
@@ -1850,7 +2039,11 @@ def bom_explosion(
                 "name": component.name,
                 "type": material_type,
                 "qty_required": round(qty_with_wastage, 2),
-                "uom": component.uom.value if hasattr(component.uom, 'value') else str(component.uom or 'PCS'),
+                "uom": (
+                    component.uom.value
+                    if hasattr(component.uom, 'value')
+                    else str(component.uom or 'Pcs')
+                ),
                 "category": material_category
             })
         
