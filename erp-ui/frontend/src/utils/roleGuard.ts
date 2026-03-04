@@ -193,6 +193,16 @@ export const MODULE_ACCESS_MATRIX: Record<string, UserRole[]> = {
     UserRole.DEVELOPER,
     UserRole.SUPERADMIN,
     UserRole.ADMIN,
+    UserRole.WAREHOUSE_ADMIN,
+    UserRole.FINANCE_MANAGER,
+  ],
+  // Audit trail — managers and finance in addition to system admins
+  audit: [
+    UserRole.DEVELOPER,
+    UserRole.SUPERADMIN,
+    UserRole.MANAGER,
+    UserRole.FINANCE_MANAGER,
+    UserRole.ADMIN,
   ],
 }
 

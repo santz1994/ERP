@@ -565,50 +565,6 @@ function App() {
         />
 
         <Route
-          path="/production/input/embroidery"
-          element={
-            <PrivateRoute module="production">
-              <ProtectedLayout>
-                <EmbroideryInputPage />
-              </ProtectedLayout>
-            </PrivateRoute>
-          }
-        />
-
-        <Route
-          path="/production/input/sewing"
-          element={
-            <PrivateRoute module="production">
-              <ProtectedLayout>
-                <SewingInputPage />
-              </ProtectedLayout>
-            </PrivateRoute>
-          }
-        />
-
-        <Route
-          path="/production/input/finishing"
-          element={
-            <PrivateRoute module="production">
-              <ProtectedLayout>
-                <FinishingInputPage />
-              </ProtectedLayout>
-            </PrivateRoute>
-          }
-        />
-
-        <Route
-          path="/production/input/packing"
-          element={
-            <PrivateRoute module="production">
-              <ProtectedLayout>
-                <PackingInputPage />
-              </ProtectedLayout>
-            </PrivateRoute>
-          }
-        />
-
-        <Route
           path="/material-debt"
           element={
             <PrivateRoute module="warehouse">

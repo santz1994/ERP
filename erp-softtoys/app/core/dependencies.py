@@ -131,10 +131,11 @@ def require_role(required_role: str):
     async def check_role(current_user: User = Depends(get_current_user)) -> User:
         """Check if user has required role."""
         user_role = current_user.role.value
-
-        if user_role == "Admin" or user_role == required_role:
+        # Bypass: system-level roles have full access
+        if user_role in ("Admin", "Superadmin", "Developer", "Manager"):
             return current_user
-
+        if user_role == required_role:
+            return current_user
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=f"Role '{required_role}' is required. Your role: {user_role}"
@@ -165,14 +166,12 @@ def require_any_role(*allowed_roles: str):
     async def check_any_role(current_user: User = Depends(get_current_user)) -> User:
         """Check if user has any allowed role."""
         user_role = current_user.role.value
-
-        if user_role == "Admin":
+        # Bypass: system-level roles have full access
+        if user_role in ("Admin", "Superadmin", "Developer", "Manager"):
             return current_user
-
         for allowed_role in allowed_roles:
             if user_role == allowed_role:
                 return current_user
-
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail=f"One of these roles is required: {', '.join(allowed_roles)}. Your role: {user_role}"
@@ -333,9 +332,11 @@ def require_any_permission(permission_codes: list[str]):
 def require_supervisor_or_admin():
     """Require supervisor or admin role."""
     async def check_supervisor(current_user: User = Depends(get_current_user)) -> User:
-        if current_user.is_supervisor() or current_user.role.value == "Admin":
+        # Bypass: system-level and management roles
+        if current_user.role.value in ("Admin", "Superadmin", "Developer", "Manager", "Finance Manager"):
             return current_user
-
+        if current_user.is_supervisor():
+            return current_user
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Supervisor or Admin role required"

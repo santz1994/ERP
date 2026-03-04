@@ -24,14 +24,27 @@ from app.api.v1.auth import get_current_user
 router = APIRouter(prefix="/masterdata", tags=["Masterdata"])
 
 # ── Role helpers ──────────────────────────────────────────────────────────────
+# Full write access (CREATE + UPDATE + DELETE): system admins
 ADMIN_ROLES = {"Developer", "Superadmin", "Admin"}
+# Create + update (no delete): PPIC Manager & Warehouse Admin per ROLE_PERMISSIONS
+WRITE_ROLES = ADMIN_ROLES | {"PPIC Manager", "Warehouse Admin", "Purchasing Head"}
 
 
 def _require_admin(user: User):
+    """Full CRUD — admin-only (create / update / delete)."""
     if user.role.value not in ADMIN_ROLES:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only Admin / Superadmin / Developer can modify masterdata",
+        )
+
+
+def _require_write(user: User):
+    """Create / update (not delete) — extended roles."""
+    if user.role.value not in WRITE_ROLES:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions to modify masterdata",
         )
 
 
@@ -54,7 +67,7 @@ def create_category(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    _require_admin(current_user)
+    _require_write(current_user)
     name = (body.get("name") or "").strip()
     if not name:
         raise HTTPException(400, "name is required")
@@ -72,7 +85,7 @@ def update_category(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    _require_admin(current_user)
+    _require_write(current_user)
     cat = db.query(Category).filter(Category.id == cat_id).first()
     if not cat:
         raise HTTPException(404, "Category not found")
@@ -160,7 +173,7 @@ def create_product(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    _require_admin(current_user)
+    _require_write(current_user)
     code = (body.get("code") or "").strip().upper()
     name = (body.get("name") or "").strip()
     if not code or not name:
@@ -208,7 +221,7 @@ def update_product(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    _require_admin(current_user)
+    _require_write(current_user)
     p = db.query(Product).filter(Product.id == product_id).first()
     if not p:
         raise HTTPException(404, "Product not found")
@@ -275,7 +288,7 @@ def create_supplier(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    _require_admin(current_user)
+    _require_write(current_user)
     name = (body.get("name") or "").strip()
     if not name:
         raise HTTPException(400, "name is required")
@@ -298,7 +311,7 @@ def update_supplier(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    _require_admin(current_user)
+    _require_write(current_user)
     s = db.query(Partner).filter(Partner.id == supplier_id, Partner.type == PartnerType.SUPPLIER).first()
     if not s:
         raise HTTPException(404, "Supplier not found")

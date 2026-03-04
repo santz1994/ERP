@@ -16,6 +16,7 @@ Access:
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.database import get_db
@@ -49,10 +50,18 @@ def list_bom_headers(
     db: Session = Depends(get_db),
     _: User = Depends(get_current_user),
 ):
+    # Subquery: count details per header (avoids N+1 lazy-load on each _fmt_header)
+    detail_count_sq = (
+        db.query(BOMDetail.bom_header_id, func.count(BOMDetail.id).label("detail_count"))
+        .group_by(BOMDetail.bom_header_id)
+        .subquery()
+    )
+
     q = (
-        db.query(BOMHeader)
+        db.query(BOMHeader, detail_count_sq.c.detail_count)
         .options(joinedload(BOMHeader.product).joinedload(Product.category))
         .join(Product, BOMHeader.product_id == Product.id)
+        .outerjoin(detail_count_sq, BOMHeader.id == detail_count_sq.c.bom_header_id)
     )
     if search:
         q = q.filter(
@@ -70,7 +79,7 @@ def list_bom_headers(
             pass
 
     total = q.count()
-    headers = (
+    rows = (
         q.order_by(Product.code, BOMHeader.revision)
         .offset((page - 1) * page_size)
         .limit(page_size)
@@ -80,7 +89,7 @@ def list_bom_headers(
         "total": total,
         "page": page,
         "page_size": page_size,
-        "items": [_fmt_header(h) for h in headers],
+        "items": [_fmt_header(h, cnt) for h, cnt in rows],
     }
 
 
@@ -287,7 +296,15 @@ def delete_bom_detail(
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def _fmt_header(h: BOMHeader) -> dict:
+def _fmt_header(h: BOMHeader, precomputed_detail_count: int | None = None) -> dict:
+    # Use pre-computed count when available (avoids N+1 lazy load in list endpoint)
+    if precomputed_detail_count is not None:
+        cnt = precomputed_detail_count
+    elif hasattr(h, "details") and h.details is not None:
+        # details were eagerly loaded (detail endpoint)
+        cnt = len(h.details)
+    else:
+        cnt = None
     return {
         "id": h.id,
         "product_id": h.product_id,
@@ -301,7 +318,7 @@ def _fmt_header(h: BOMHeader) -> dict:
         "is_active": h.is_active,
         "bom_category": h.bom_category.value if h.bom_category else "Production",
         "revision_reason": h.revision_reason,
-        "detail_count": len(h.details) if hasattr(h, "details") and h.details is not None else None,
+        "detail_count": cnt,
         "created_at": h.created_at.isoformat() if h.created_at else None,
         "revision_date": h.revision_date.isoformat() if h.revision_date else None,
     }

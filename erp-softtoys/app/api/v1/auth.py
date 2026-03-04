@@ -116,12 +116,9 @@ async def login(credentials: UserLogin, db: Session = Depends(get_db)):
             (User.username == credentials.username) | (User.email == credentials.username)
         ).first()
     except Exception as e:
-        print(f"❌ Error querying user: {e}")
-        import traceback
-        traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Database error: {str(e)}"
+            detail="Database error while retrieving user"
         )
 
     if not user:
@@ -147,27 +144,13 @@ async def login(credentials: UserLogin, db: Session = Depends(get_db)):
             detail="User account is inactive. Contact administrator."
         )
 
-    # DEBUG: Print password values
-    print(f"\n🔍 DEBUG - Password Verification:")
-    print(f"   Username: {credentials.username}")
-    print(f"   Plain password: {credentials.password!r}")
-    print(f"   Plain password length: {len(credentials.password)} chars")
-    print(f"   Plain password bytes: {len(credentials.password.encode('utf-8'))} bytes")
-    print(f"   Hashed password: {user.hashed_password[:50]}...")
-    print(f"   Hashed password length: {len(user.hashed_password)} chars")
-    
     # Verify password
     try:
-        print(f"   Calling PasswordUtils.verify_password...")
         password_valid = PasswordUtils.verify_password(credentials.password, user.hashed_password)
-        print(f"   Verification result: {password_valid}")
     except Exception as e:
-        print(f"❌ Error verifying password: {e}")
-        import traceback
-        traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Password verification error: {str(e)}"
+            detail="Password verification error"
         )
     
     if not password_valid:
@@ -210,41 +193,29 @@ async def login(credentials: UserLogin, db: Session = Depends(get_db)):
             username=user.username
         )
     except Exception as e:
-        print(f"❌ Error generating tokens: {e}")
-        import traceback
-        traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Token generation error: {str(e)}"
+            detail="Token generation error"
         )
 
     db.commit()
 
     # Return tokens with user data
-    try:
-        return AuthResponse(
-            access_token=access_token,
-            refresh_token=refresh_token,
-            token_type="bearer",
-            expires_in=24 * 3600,  # 24 hours in seconds
-            user=UserResponse(
-                id=user.id,
-                username=user.username,
-                email=user.email,
-                full_name=user.full_name,
-                role=user.role.value,
-                is_active=user.is_active,
-                created_at=user.created_at
-            )
+    return AuthResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer",
+        expires_in=24 * 3600,  # 24 hours in seconds
+        user=UserResponse(
+            id=user.id,
+            username=user.username,
+            email=user.email,
+            full_name=user.full_name,
+            role=user.role.value,
+            is_active=user.is_active,
+            created_at=user.created_at
         )
-    except Exception as e:
-        print(f"❌ Error creating response: {e}")
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Response serialization error: {str(e)}"
-        )
+    )
 
 
 @router.post("/refresh", response_model=TokenResponse)
@@ -397,43 +368,182 @@ async def logout(current_user: User = Depends(get_current_user)):
     }
 
 
+# ── Permission code map: (ModuleName, Permission) → list of frontend codes ──
+from app.core.permissions import ROLE_PERMISSIONS, ModuleName, Permission as Perm
+
+_MODULE_ACTION_CODES: dict[tuple, list[str]] = {
+    # Dashboard
+    (ModuleName.DASHBOARD, Perm.VIEW): ["dashboard.view_stats", "dashboard.view_kpi"],
+
+    # PPIC
+    (ModuleName.PPIC, Perm.VIEW): ["ppic.view_mo", "ppic.view_spk", "ppic.view_status"],
+    (ModuleName.PPIC, Perm.CREATE): ["ppic.create_mo", "ppic.request_material"],
+    (ModuleName.PPIC, Perm.UPDATE): ["ppic.update_mo"],
+    (ModuleName.PPIC, Perm.APPROVE): ["ppic.approve_mo"],
+
+    # Purchasing
+    (ModuleName.PURCHASING, Perm.VIEW): ["purchasing.view_po", "purchasing.view_requests"],
+    (ModuleName.PURCHASING, Perm.CREATE): ["purchasing.create_po", "purchasing.request_material"],
+    (ModuleName.PURCHASING, Perm.UPDATE): ["purchasing.update_po"],
+    (ModuleName.PURCHASING, Perm.APPROVE): ["purchasing.approve_po"],
+
+    # Warehouse
+    (ModuleName.WAREHOUSE, Perm.VIEW): ["warehouse.view_stock", "warehouse.view_receipts", "warehouse.view_issues"],
+    (ModuleName.WAREHOUSE, Perm.CREATE): ["warehouse.stock_in", "warehouse.stock_out"],
+    (ModuleName.WAREHOUSE, Perm.UPDATE): ["warehouse.update_stock"],
+    (ModuleName.WAREHOUSE, Perm.EXECUTE): ["warehouse.stock_in", "warehouse.stock_out", "warehouse.transfer"],
+    (ModuleName.WAREHOUSE, Perm.APPROVE): ["warehouse.approve_adjustment"],
+
+    # Cutting
+    (ModuleName.CUTTING, Perm.VIEW): ["cutting.view_status", "cutting.view_wo", "cutting.view_schedule"],
+    (ModuleName.CUTTING, Perm.CREATE): ["cutting.allocate_material"],
+    (ModuleName.CUTTING, Perm.EXECUTE): ["cutting.allocate_material", "cutting.complete_operation", "cutting.transfer_to_next"],
+    (ModuleName.CUTTING, Perm.APPROVE): ["cutting.approve_wo", "cutting.handle_shortage"],
+
+    # Embroidery
+    (ModuleName.EMBROIDERY, Perm.VIEW): ["embroidery.view_status", "embroidery.view_wo"],
+    (ModuleName.EMBROIDERY, Perm.CREATE): ["embroidery.allocate_material"],
+    (ModuleName.EMBROIDERY, Perm.EXECUTE): ["embroidery.complete_operation"],
+
+    # Sewing
+    (ModuleName.SEWING, Perm.VIEW): ["sewing.view_status", "sewing.view_wo"],
+    (ModuleName.SEWING, Perm.CREATE): ["sewing.create_transfer", "sewing.validate_input"],
+    (ModuleName.SEWING, Perm.EXECUTE): [
+        "sewing.accept_transfer", "sewing.process_stage",
+        "sewing.inline_qc", "sewing.create_transfer", "sewing.return_to_stage",
+    ],
+    (ModuleName.SEWING, Perm.UPDATE): ["sewing.return_to_stage"],
+
+    # Finishing
+    (ModuleName.FINISHING, Perm.VIEW): ["finishing.view_status", "finishing.view_wo"],
+    (ModuleName.FINISHING, Perm.EXECUTE): [
+        "finishing.accept_transfer", "finishing.line_clearance", "finishing.perform_stuffing",
+    ],
+
+    # Packing
+    (ModuleName.PACKING, Perm.VIEW): ["packing.view_status", "packing.view_wo"],
+    (ModuleName.PACKING, Perm.CREATE): ["packing.create_request"],
+    (ModuleName.PACKING, Perm.EXECUTE): [
+        "packing.sort_by_destination", "packing.pack_product",
+        "packing.label_carton", "packing.complete_operation",
+    ],
+
+    # Finish Goods
+    (ModuleName.FINISHGOODS, Perm.VIEW): ["finishgoods.view_stock", "finishgoods.view_shipments"],
+    (ModuleName.FINISHGOODS, Perm.CREATE): ["finishgoods.receive"],
+    (ModuleName.FINISHGOODS, Perm.EXECUTE): ["finishgoods.ship", "finishgoods.receive"],
+
+    # QC
+    (ModuleName.QC, Perm.VIEW): ["qc.view_reports", "qc.view_checkpoints"],
+    (ModuleName.QC, Perm.CREATE): ["qc.inspect", "qc.record_result"],
+    (ModuleName.QC, Perm.APPROVE): ["qc.approve_result", "qc.lab_test"],
+
+    # Kanban
+    (ModuleName.KANBAN, Perm.VIEW): ["kanban.view_requests"],
+    (ModuleName.KANBAN, Perm.CREATE): ["kanban.create_request"],
+    (ModuleName.KANBAN, Perm.APPROVE): ["kanban.approve_request", "kanban.fulfill_request"],
+
+    # Reports
+    (ModuleName.REPORTS, Perm.VIEW): [
+        "reports.view_production", "reports.view_inventory",
+        "reports.view_qc", "reports.view_financial",
+    ],
+    (ModuleName.REPORTS, Perm.CREATE): ["reports.export", "reports.generate"],
+
+    # Admin
+    (ModuleName.ADMIN, Perm.VIEW): ["admin.view_users", "admin.view_system_info"],
+    (ModuleName.ADMIN, Perm.CREATE): ["admin.create_user"],
+    (ModuleName.ADMIN, Perm.UPDATE): ["admin.manage_users", "admin.manage_permissions", "admin.manage_system"],
+    (ModuleName.ADMIN, Perm.DELETE): ["admin.delete_user"],
+
+    # Import/Export
+    (ModuleName.IMPORT_EXPORT, Perm.VIEW): ["import_export.view_history"],
+    (ModuleName.IMPORT_EXPORT, Perm.CREATE): ["import_export.import_data", "import_export.export_data"],
+
+    # Masterdata
+    (ModuleName.MASTERDATA, Perm.VIEW): ["masterdata.view_products", "masterdata.view_categories", "masterdata.view_suppliers"],
+    (ModuleName.MASTERDATA, Perm.CREATE): ["masterdata.create_product", "masterdata.create_category"],
+    (ModuleName.MASTERDATA, Perm.UPDATE): ["masterdata.update_product", "masterdata.update_category"],
+    (ModuleName.MASTERDATA, Perm.DELETE): ["masterdata.delete_product"],
+
+    # Audit
+    (ModuleName.AUDIT, Perm.VIEW): ["audit.view_logs", "audit.view_user_activity", "audit.view_security_logs"],
+    (ModuleName.AUDIT, Perm.CREATE): ["audit.export_logs"],
+
+    # Barcode
+    (ModuleName.BARCODE, Perm.VIEW): ["barcode.view"],
+    (ModuleName.BARCODE, Perm.EXECUTE): ["barcode.scan"],
+}
+
+_PRODUCTION_DEPT_MODULES = [
+    ModuleName.CUTTING, ModuleName.EMBROIDERY,
+    ModuleName.SEWING, ModuleName.FINISHING, ModuleName.PACKING,
+]
+
+_ALL_PERMISSION_CODES: list[str] = sorted({
+    code
+    for codes in _MODULE_ACTION_CODES.values()
+    for code in codes
+} | {"production.view_status", "production.view_wip", "production.schedule_production", "production.input_daily"})
+
+
+def _compute_permission_codes(user_role: "UserRoleModel") -> list[str]:
+    """Compute the complete list of frontend permission codes for a given role."""
+    from app.core.models.users import UserRole as _UR
+    # Bypass roles get all codes
+    if user_role in (_UR.SUPERADMIN, _UR.DEVELOPER, _UR.ADMIN, _UR.MANAGER):
+        return _ALL_PERMISSION_CODES
+
+    role_perms = ROLE_PERMISSIONS.get(user_role, {})
+    codes: set[str] = set()
+    has_dept_view = False
+    has_dept_input = False
+
+    for module, permitted in role_perms.items():
+        for perm in permitted:
+            codes.update(_MODULE_ACTION_CODES.get((module, perm), []))
+
+        if module in _PRODUCTION_DEPT_MODULES:
+            if Perm.VIEW in permitted:
+                has_dept_view = True
+            if Perm.CREATE in permitted or Perm.EXECUTE in permitted:
+                has_dept_input = True
+
+    if has_dept_view:
+        codes.update(["production.view_status", "production.view_wip", "production.schedule_production"])
+    if has_dept_input:
+        codes.add("production.input_daily")
+
+    return sorted(codes)
+
+
 @router.get("/permissions")
 async def get_user_permissions(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Get current user's permissions summary (PBAC - Permission-Based Access Control).
+    """Get current user's permissions summary (PBAC — Permission-Based Access Control).
 
     **Roles Required**: Any authenticated user
-
-    **Responses**:
-    - `200`: Returns user's module access and permissions
-    - `401`: Unauthorized
+    Returns a role-derived list of permission codes used by the frontend
+    for sidebar visibility and route guards.
 
     **Response Format**:
     ```json
     {
         "user_id": 1,
         "username": "john.doe",
-        "role": "Operator Cutting",
-        "department": "Cutting",
-        "modules": {
-            "dashboard": ["view"],
-            "cutting": ["view", "execute"]
-        }
+        "role": "PPIC Manager",
+        "is_active": true,
+        "permissions": ["dashboard.view_stats", "ppic.view_mo", ...]
     }
     ```
-
-    **Performance**:
-    - Redis cached (5-minute TTL)
-    - Cold cache: <10ms
-    - Hot cache: <1ms
     """
     return {
         "user_id": current_user.id,
         "username": current_user.username,
         "role": current_user.role.value,
         "is_active": current_user.is_active,
-        "permissions": ["view_dashboard", "view_reports"]
+        "permissions": _compute_permission_codes(current_user.role),
     }
 

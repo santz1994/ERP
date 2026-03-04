@@ -55,7 +55,7 @@ const menuItems: MenuItem[] = [
     submenu: [
       { icon: <Scissors />, label: 'Cutting', path: '/cutting', permissions: ['cutting.view_status'] },
       { icon: <Calendar />, label: 'Cutting Daily Input', path: '/production/input/cutting', permissions: ['production.input_daily'] },
-      { icon: <Palette />, label: 'Embroidery', path: '/embroidery', roles: [UserRole.ADMIN_EMBROIDERY, UserRole.SPV_CUTTING, UserRole.ADMIN] },
+      { icon: <Palette />, label: 'Embroidery', path: '/embroidery', roles: [UserRole.ADMIN_EMBROIDERY, UserRole.SPV_CUTTING, UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN, UserRole.ADMIN] },
       { icon: <Calendar />, label: 'Embroidery Daily Input', path: '/production/input/embroidery', permissions: ['production.input_daily'] },
       { icon: <Zap />, label: 'Sewing', path: '/sewing', permissions: ['sewing.view_status'] },
       { icon: <Calendar />, label: 'Sewing Daily Input', path: '/production/input/sewing', permissions: ['production.input_daily'] },
@@ -69,13 +69,20 @@ const menuItems: MenuItem[] = [
     icon: <Beaker />, 
     label: 'Quality Control', 
     path: '/quality', 
-    roles: [UserRole.QC_INSPECTOR, UserRole.ADMIN] 
+    roles: [
+      UserRole.QC_INSPECTOR, UserRole.QC_LAB,
+      UserRole.SPV_CUTTING, UserRole.SPV_SEWING, UserRole.SPV_FINISHING,
+      UserRole.ADMIN,
+    ] 
   },
   { 
     icon: <FileEdit />, 
     label: 'Rework Station', 
     path: '/rework-management',
-    roles: [UserRole.QC_INSPECTOR, UserRole.SPV_CUTTING, UserRole.SPV_SEWING, UserRole.SPV_FINISHING]
+    roles: [
+      UserRole.QC_INSPECTOR, UserRole.QC_LAB,
+      UserRole.SPV_CUTTING, UserRole.SPV_SEWING, UserRole.SPV_FINISHING,
+    ]
   },
 
   // --- SECTION: INVENTORY & LOGISTICS ---
@@ -84,34 +91,50 @@ const menuItems: MenuItem[] = [
     icon: <ShoppingCart />, 
     label: 'Purchasing', 
     path: '/purchasing', 
-    roles: [UserRole.PURCHASING, UserRole.ADMIN] 
-  },
+    roles: [
+      UserRole.PURCHASING, UserRole.PURCHASING_HEAD,
+      UserRole.MANAGER, UserRole.FINANCE_MANAGER, UserRole.ADMIN,
+    ] 
+  }, 
   { 
     icon: <Warehouse />, 
     label: 'Warehouse', 
     path: '/warehouse', 
-    roles: [UserRole.WAREHOUSE_ADMIN, UserRole.ADMIN] 
-  },
+    roles: [
+      UserRole.WAREHOUSE_ADMIN, UserRole.WAREHOUSE_OP,
+      UserRole.PPIC_MANAGER, UserRole.ADMIN,
+    ] 
+  }, 
   { 
     icon: <AlertCircle />, 
     label: 'Material Debt', 
     path: '/material-debt', 
-    roles: [UserRole.WAREHOUSE_ADMIN, UserRole.SPV_CUTTING, UserRole.SPV_SEWING, UserRole.SPV_FINISHING, UserRole.PPIC_MANAGER] 
+    roles: [
+      UserRole.WAREHOUSE_ADMIN, UserRole.SPV_CUTTING, UserRole.SPV_SEWING,
+      UserRole.SPV_FINISHING, UserRole.PPIC_MANAGER, UserRole.MANAGER,
+    ] 
   },
   { 
     icon: <TruckIcon />, 
     label: 'Finish Goods', 
     path: '/finishgoods', 
-    roles: [UserRole.WAREHOUSE_ADMIN, UserRole.ADMIN] 
+    roles: [
+      UserRole.WAREHOUSE_ADMIN, UserRole.WAREHOUSE_OP,
+      UserRole.PPIC_MANAGER, UserRole.SECURITY, UserRole.ADMIN,
+    ] 
   },
-
-  // --- SECTION: SYSTEM ---
   { 
     section: 'SYSTEM',
     icon: <FileText />, 
     label: 'Reports', 
     path: '/reports', 
-    roles: [UserRole.PPIC_MANAGER, UserRole.ADMIN] 
+    roles: [
+      UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN, UserRole.MANAGER,
+      UserRole.FINANCE_MANAGER, UserRole.PURCHASING_HEAD, UserRole.PURCHASING,
+      UserRole.WAREHOUSE_ADMIN, UserRole.QC_LAB,
+      UserRole.SPV_CUTTING, UserRole.SPV_SEWING, UserRole.SPV_FINISHING,
+      UserRole.ADMIN,
+    ] 
   },
   { 
     icon: <BarChart3 />, 
@@ -126,9 +149,10 @@ const menuItems: MenuItem[] = [
     submenu: [
       { icon: <Users />, label: 'User Management', path: '/admin/users', permissions: ['admin.manage_users'] },
       { icon: <Shield />, label: 'Permissions', path: '/admin/permissions', permissions: ['admin.view_system_info'] },
-      { icon: <Shield />, label: 'Audit Trail', path: '/admin/audit-trail', roles: [UserRole.DEVELOPER, UserRole.SUPERADMIN] },
+      { icon: <Shield />, label: 'Audit Trail', path: '/admin/audit-trail', roles: [UserRole.DEVELOPER, UserRole.SUPERADMIN, UserRole.MANAGER, UserRole.FINANCE_MANAGER] },
       { icon: <FileText />, label: 'Import/Export', path: '/admin/import-export', permissions: ['import_export.import_data'] },
       { icon: <Database />, label: 'Masterdata', path: '/admin/masterdata', permissions: ['admin.manage_users'] },
+      { icon: <Factory />, label: 'BOM Management', path: '/admin/bom-management', permissions: ['admin.manage_users'] },
       { icon: <Factory />, label: 'BOM Produksi', path: '/admin/bom-production', permissions: ['admin.manage_users'] },
       { icon: <ShoppingCart />, label: 'BOM Purchasing', path: '/admin/bom-purchase', permissions: ['admin.manage_users'] },
     ]
