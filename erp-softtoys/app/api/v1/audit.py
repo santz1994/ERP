@@ -334,13 +334,15 @@ def get_user_activity(
         UserActivityLog.timestamp >= cutoff_date
     ).order_by(desc(UserActivityLog.timestamp)).all()
 
-    # Join with User to get username
+    # Fetch user once — all activities belong to the same user_id
+    user = db.query(User).filter(User.id == user_id).first()
+    username = user.username if user else "Unknown"
+
     result = []
     for activity in activities:
-        user = db.query(User).filter(User.id == activity.user_id).first()
         result.append({
             **UserActivityResponse.from_orm(activity).dict(),
-            "username": user.username if user else "Unknown"
+            "username": username
         })
 
     return result

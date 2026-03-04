@@ -22,22 +22,24 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 interface KanbanCard {
   id: number;
   card_number: string;
-  department: string;
-  item_code: string;
-  qty_per_card: number;
+  requested_by_dept: string;
+  product_code: string;
+  product_name: string;
+  qty_requested: number;
+  qty_fulfilled: number;
   status: string;
-  priority: number;
-  created_at: string;
-  approved_at?: string;
-  shipped_at?: string;
-  received_at?: string;
+  priority: string;  // 'Low' | 'Normal' | 'High' | 'Urgent'
+  requested_at: string;
+  needed_by?: string | null;
+  approved_at?: string | null;
+  fulfilled_at?: string | null;
 }
 
 const statusColumns = [
-  { key: 'Requested', label: 'Requested', color: 'yellow', icon: Clock },
+  { key: 'Pending', label: 'Requested', color: 'yellow', icon: Clock },
   { key: 'Approved', label: 'Approved', color: 'blue', icon: CheckCircle },
-  { key: 'In Transit', label: 'In Transit', color: 'purple', icon: Truck },
-  { key: 'Received', label: 'Received', color: 'green', icon: CheckCircle },
+  { key: 'In Progress', label: 'In Transit', color: 'purple', icon: Truck },
+  { key: 'Completed', label: 'Received', color: 'green', icon: CheckCircle },
 ];
 
 export default function KanbanPage() {
@@ -107,20 +109,22 @@ export default function KanbanPage() {
     }
   });
 
+  const priorityOrder: Record<string, number> = { Urgent: 4, High: 3, Normal: 2, Low: 1 };
+
   const filterCards = (cards: KanbanCard[], status: string) => {
     if (!cards) return [];
     let filtered = cards.filter((card: KanbanCard) => card.status === status);
     if (selectedDept !== 'All') {
-      filtered = filtered.filter((card: KanbanCard) => card.department === selectedDept);
+      filtered = filtered.filter((card: KanbanCard) => card.requested_by_dept === selectedDept);
     }
-    return filtered.sort((a, b) => b.priority - a.priority);
+    return filtered.sort((a, b) => (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0));
   };
 
   const getRejectedCards = () => {
     if (!kanbanCards) return [];
-    let rejected = kanbanCards.filter((card: KanbanCard) => card.status === 'Rejected');
+    let rejected = kanbanCards.filter((card: KanbanCard) => card.status === 'Cancelled');
     if (selectedDept !== 'All') {
-      rejected = rejected.filter((card: KanbanCard) => card.department === selectedDept);
+      rejected = rejected.filter((card: KanbanCard) => card.requested_by_dept === selectedDept);
     }
     return rejected;
   };
@@ -217,29 +221,30 @@ export default function KanbanPage() {
                     <div 
                       key={card.id} 
                       className={`bg-white rounded-lg shadow p-4 hover:shadow-md transition ${
-                        card.priority === 1 ? 'border-2 border-red-500' : ''
+                        card.priority === 'Urgent' ? 'border-2 border-red-500' : card.priority === 'High' ? 'border-2 border-orange-400' : ''
                       }`}
                     >
                       {/* Card Header */}
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-mono text-gray-500">{card.card_number}</span>
-                        {card.priority === 1 && (
+                        {(card.priority === 'Urgent' || card.priority === 'High') && (
                           <AlertCircle className="w-4 h-4 text-red-600" />
                         )}
                       </div>
 
                       {/* Card Content */}
                       <div className="mb-3">
-                        <h4 className="font-semibold text-gray-900 mb-1">{card.item_code}</h4>
-                        <p className="text-sm text-gray-600">Qty: {card.qty_per_card} units</p>
-                        <p className="text-xs text-gray-500 mt-1">{card.department}</p>
+                        <h4 className="font-semibold text-gray-900 mb-1">{card.product_name}</h4>
+                        <p className="text-xs text-gray-500 font-mono">{card.product_code}</p>
+                        <p className="text-sm text-gray-600 mt-1">Qty: {card.qty_requested} units</p>
+                        <p className="text-xs text-gray-500 mt-1">{card.requested_by_dept}</p>
                       </div>
 
                       {/* Timeline */}
                       <div className="text-xs text-gray-500 space-y-1 mb-3">
                         <div className="flex items-center">
                           <Clock className="w-3 h-3 mr-1" />
-                          Created: {format(new Date(card.created_at), 'dd MMM HH:mm')}
+                          Created: {format(new Date(card.requested_at), 'dd MMM HH:mm')}
                         </div>
                         {card.approved_at && (
                           <div className="flex items-center text-blue-600">
@@ -247,23 +252,17 @@ export default function KanbanPage() {
                             Approved: {format(new Date(card.approved_at), 'dd MMM HH:mm')}
                           </div>
                         )}
-                        {card.shipped_at && (
-                          <div className="flex items-center text-purple-600">
-                            <Truck className="w-3 h-3 mr-1" />
-                            Shipped: {format(new Date(card.shipped_at), 'dd MMM HH:mm')}
-                          </div>
-                        )}
-                        {card.received_at && (
+                        {card.fulfilled_at && (
                           <div className="flex items-center text-green-600">
                             <CheckCircle className="w-3 h-3 mr-1" />
-                            Received: {format(new Date(card.received_at), 'dd MMM HH:mm')}
+                            Fulfilled: {format(new Date(card.fulfilled_at), 'dd MMM HH:mm')}
                           </div>
                         )}
                       </div>
 
                       {/* Actions */}
                       <div className="flex gap-2">
-                        {card.status === 'Requested' && (
+                        {card.status === 'Pending' && (
                           <>
                             <button
                               onClick={() => approveCard.mutate(card.id)}
@@ -296,7 +295,7 @@ export default function KanbanPage() {
                           </button>
                         )}
 
-                        {card.status === 'In Transit' && (
+                        {card.status === 'In Progress' && (
                           <button
                             onClick={() => receiveCard.mutate(card.id)}
                             disabled={receiveCard.isPending}
@@ -306,9 +305,9 @@ export default function KanbanPage() {
                           </button>
                         )}
 
-                        {card.status === 'Received' && (
+                        {card.status === 'Completed' && (
                           <div className="w-full text-center text-xs text-green-600 font-medium">
-                            Completed
+                            ✓ Completed
                           </div>
                         )}
                       </div>
@@ -341,11 +340,12 @@ export default function KanbanPage() {
                     <span className="text-xs font-mono text-gray-600">{card.card_number}</span>
                     <Ban className="w-4 h-4 text-red-600" />
                   </div>
-                  <h4 className="font-semibold text-gray-900 mb-1">{card.item_code}</h4>
-                  <p className="text-sm text-gray-600 mb-2">Qty: {card.qty_per_card} units</p>
-                  <p className="text-xs text-gray-500">{card.department}</p>
+                  <h4 className="font-semibold text-gray-900 mb-1">{card.product_name}</h4>
+                  <p className="text-xs text-gray-500 font-mono">{card.product_code}</p>
+                  <p className="text-sm text-gray-600 mb-2">Qty: {card.qty_requested} units</p>
+                  <p className="text-xs text-gray-500">{card.requested_by_dept}</p>
                   <div className="mt-3 text-xs text-red-700">
-                    Rejected: {format(new Date(card.created_at), 'dd MMM yyyy HH:mm')}
+                    Requested: {format(new Date(card.requested_at), 'dd MMM yyyy HH:mm')}
                   </div>
                 </div>
               ))}

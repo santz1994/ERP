@@ -25,6 +25,7 @@ import logging
 from app.core.database import get_db
 from app.core.dependencies import get_current_user
 from app.core.models import User, SPKModification, MaterialDebt, MaterialDebtSettlement, AuditLog, SPK
+from app.core.models.products import Product  # used as Material in MaterialDebt
 
 logger = logging.getLogger(__name__)
 
@@ -248,9 +249,14 @@ async def get_pending_approvals(
         ).count()
         
         approvals = []
+        # Batch-fetch SPKs and Users to avoid N+1
+        spk_ids = {mod.spk_id for mod in modifications}
+        user_ids = {mod.modified_by for mod in modifications}
+        spk_map = {s.id: s for s in db.query(SPK).filter(SPK.id.in_(spk_ids)).all()} if spk_ids else {}
+        user_map = {u.id: u for u in db.query(User).filter(User.id.in_(user_ids)).all()} if user_ids else {}
         for mod in modifications:
-            spk = db.query(SPK).filter(SPK.id == mod.spk_id).first()
-            requester = db.query(User).filter(User.id == mod.modified_by).first()
+            spk = spk_map.get(mod.spk_id)
+            requester = user_map.get(mod.modified_by)
             
             approvals.append({
                 "modification_id": f"MOD-{mod.id}",
@@ -564,9 +570,14 @@ async def get_pending_material_debts(
         ).count()
         
         debt_list = []
+        # Batch-fetch materials (Product) and Users to avoid N+1
+        mat_ids = {debt.material_id for debt in debts}
+        req_ids = {debt.requested_by for debt in debts}
+        mat_map = {p.id: p for p in db.query(Product).filter(Product.id.in_(mat_ids)).all()} if mat_ids else {}
+        req_map = {u.id: u for u in db.query(User).filter(User.id.in_(req_ids)).all()} if req_ids else {}
         for debt in debts:
-            material = db.query(Material).filter(Material.id == debt.material_id).first()
-            requester = db.query(User).filter(User.id == debt.requested_by).first()
+            material = mat_map.get(debt.material_id)
+            requester = req_map.get(debt.requested_by)
             
             debt_list.append({
                 "debt_id": f"DEBT-{debt.id}",

@@ -22,17 +22,30 @@ from sqlalchemy.orm import Session, joinedload
 from app.core.database import get_db
 from app.core.models.bom import BOMCategory, BOMDetail, BOMHeader, BOMType
 from app.core.models.products import Product
-from app.core.models.users import User
+from app.core.models.users import User, UserRole
 from app.api.v1.auth import get_current_user
 
 router = APIRouter(prefix="/bom-management", tags=["BOM Management"])
 
-ADMIN_ROLES = {"Developer", "Superadmin", "Admin"}
+# Roles allowed to CREATE / UPDATE / DELETE BOM data
+BOM_WRITE_ROLES = {
+    UserRole.DEVELOPER,
+    UserRole.SUPERADMIN,
+    UserRole.MANAGER,
+    UserRole.ADMIN,
+}
 
 
 def _require_admin(user: User):
-    if user.role.value not in ADMIN_ROLES:
-        raise HTTPException(403, "Only Admin / Superadmin / Developer can modify BOM data")
+    """Raise 403 if user does not have BOM write privileges."""
+    if user.role not in BOM_WRITE_ROLES:
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                f"Only Admin / Superadmin / Manager / Developer can modify BOM data. "
+                f"Your role: {user.role.value}"
+            ),
+        )
 
 
 # ══════════════════════════════════════════════════════════════════════════════

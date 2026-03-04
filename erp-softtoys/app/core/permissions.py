@@ -28,6 +28,7 @@ class ModuleName(str, Enum):
     ADMIN = "admin"
     IMPORT_EXPORT = "import_export"
     MASTERDATA = "masterdata"
+    BOM = "bom"  # Bill of Materials management
     AUDIT = "audit"
     BARCODE = "barcode"
 
@@ -64,6 +65,7 @@ ROLE_PERMISSIONS = {
         ModuleName.ADMIN: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.DELETE],
         ModuleName.IMPORT_EXPORT: [Permission.VIEW, Permission.CREATE, Permission.UPDATE],
         ModuleName.MASTERDATA: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.DELETE],
+        ModuleName.BOM: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.DELETE],
         ModuleName.AUDIT: [Permission.VIEW, Permission.CREATE],
         ModuleName.BARCODE: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
     },
@@ -86,6 +88,7 @@ ROLE_PERMISSIONS = {
         ModuleName.ADMIN: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.DELETE],
         ModuleName.IMPORT_EXPORT: [Permission.VIEW, Permission.CREATE, Permission.UPDATE],
         ModuleName.MASTERDATA: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.DELETE],
+        ModuleName.BOM: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.DELETE],
         ModuleName.AUDIT: [Permission.VIEW, Permission.CREATE],
         ModuleName.BARCODE: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
     },
@@ -108,6 +111,7 @@ ROLE_PERMISSIONS = {
         ModuleName.ADMIN: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.DELETE],
         ModuleName.IMPORT_EXPORT: [Permission.VIEW, Permission.CREATE, Permission.UPDATE],
         ModuleName.MASTERDATA: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.DELETE],
+        ModuleName.BOM: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.DELETE],
         ModuleName.AUDIT: [Permission.VIEW, Permission.CREATE],
         ModuleName.BARCODE: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
     },
@@ -130,6 +134,7 @@ ROLE_PERMISSIONS = {
         ModuleName.ADMIN: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.DELETE],
         ModuleName.IMPORT_EXPORT: [Permission.VIEW, Permission.CREATE, Permission.UPDATE],
         ModuleName.MASTERDATA: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.DELETE],
+        ModuleName.BOM: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.DELETE],
         ModuleName.AUDIT: [Permission.VIEW, Permission.CREATE],
         ModuleName.BARCODE: [Permission.VIEW, Permission.CREATE, Permission.UPDATE, Permission.EXECUTE],
     },
@@ -148,6 +153,7 @@ ROLE_PERMISSIONS = {
         ModuleName.QC: [Permission.VIEW],
         ModuleName.REPORTS: [Permission.VIEW, Permission.CREATE],
         ModuleName.MASTERDATA: [Permission.VIEW],
+        ModuleName.BOM: [Permission.VIEW],
         ModuleName.AUDIT: [Permission.VIEW],
         ModuleName.BARCODE: [Permission.VIEW],
     },
@@ -158,6 +164,7 @@ ROLE_PERMISSIONS = {
         ModuleName.WAREHOUSE: [Permission.VIEW],
         ModuleName.REPORTS: [Permission.VIEW, Permission.CREATE],
         ModuleName.MASTERDATA: [Permission.VIEW],
+        ModuleName.BOM: [Permission.VIEW],
     },
 
     UserRole.PURCHASING: {

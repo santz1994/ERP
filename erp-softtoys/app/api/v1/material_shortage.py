@@ -171,10 +171,16 @@ async def get_wo_material_allocations(
         )
     
     allocations = db.query(SPKMaterialAllocation).filter_by(wo_id=wo_id).all()
-    
+
+    # Batch-fetch materials to avoid N+1 query
+    mat_ids = {a.material_id for a in allocations}
+    material_map = {
+        p.id: p for p in db.query(Product).filter(Product.id.in_(mat_ids)).all()
+    } if mat_ids else {}
+
     response = []
     for alloc in allocations:
-        material = db.query(Product).filter_by(id=alloc.material_id).first()
+        material = material_map.get(alloc.material_id)
         
         response.append(MaterialAllocationResponse(
             id=alloc.id,

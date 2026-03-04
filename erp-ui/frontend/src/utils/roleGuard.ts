@@ -209,7 +209,7 @@ export const MODULE_ACCESS_MATRIX: Record<string, UserRole[]> = {
 /**
  * Check if user has access to a specific module
  * 
- * BYPASS: DEVELOPER, SUPERADMIN, and ADMIN roles have full access to all modules
+ * BYPASS: DEVELOPER, SUPERADMIN, MANAGER, and ADMIN roles have full access to all modules
  * 
  * @param userRole - The user's role
  * @param module - The module to check access for
@@ -219,8 +219,13 @@ export const hasModuleAccess = (
   userRole: UserRole,
   module: keyof typeof MODULE_ACCESS_MATRIX
 ): boolean => {
-  // BYPASS: Developer, Superadmin, and Admin have full module access
-  if (userRole === UserRole.DEVELOPER || userRole === UserRole.SUPERADMIN || userRole === UserRole.ADMIN) {
+  // BYPASS: Developer, Superadmin, Manager, and Admin have full module access
+  if (
+    userRole === UserRole.DEVELOPER ||
+    userRole === UserRole.SUPERADMIN ||
+    userRole === UserRole.MANAGER ||
+    userRole === UserRole.ADMIN
+  ) {
     return true
   }
   
@@ -382,8 +387,13 @@ export const hasPermission = (
   module: string,
   permission: PermissionLevel
 ): boolean => {
-  // High-privilege roles have all permissions
-  if (isHighPrivilegeRole(userRole)) {
+  // High-privilege roles (DEVELOPER, SUPERADMIN, MANAGER, ADMIN) have all permissions
+  if (
+    userRole === UserRole.DEVELOPER ||
+    userRole === UserRole.SUPERADMIN ||
+    userRole === UserRole.MANAGER ||
+    userRole === UserRole.ADMIN
+  ) {
     return true
   }
 

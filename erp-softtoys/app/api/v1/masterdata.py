@@ -14,7 +14,7 @@ Access:
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.core.database import get_db
 from app.core.models.products import Category, Partner, PartnerType, Product, ProductType, UOM
@@ -25,7 +25,7 @@ router = APIRouter(prefix="/masterdata", tags=["Masterdata"])
 
 # ── Role helpers ──────────────────────────────────────────────────────────────
 # Full write access (CREATE + UPDATE + DELETE): system admins
-ADMIN_ROLES = {"Developer", "Superadmin", "Admin"}
+ADMIN_ROLES = {"Developer", "Superadmin", "Admin", "Manager"}
 # Create + update (no delete): PPIC Manager & Warehouse Admin per ROLE_PERMISSIONS
 WRITE_ROLES = ADMIN_ROLES | {"PPIC Manager", "Warehouse Admin", "Purchasing Head"}
 
@@ -145,7 +145,13 @@ def list_products(
         q = q.filter(Product.category_id == category_id)
 
     total = q.count()
-    products = q.order_by(Product.code).offset((page - 1) * page_size).limit(page_size).all()
+    products = (
+        q.options(joinedload(Product.category))
+        .order_by(Product.code)
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
 
     return {
         "total": total,

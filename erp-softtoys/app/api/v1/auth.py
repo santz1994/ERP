@@ -466,6 +466,12 @@ _MODULE_ACTION_CODES: dict[tuple, list[str]] = {
     (ModuleName.MASTERDATA, Perm.UPDATE): ["masterdata.update_product", "masterdata.update_category"],
     (ModuleName.MASTERDATA, Perm.DELETE): ["masterdata.delete_product"],
 
+    # BOM Management
+    (ModuleName.BOM, Perm.VIEW): ["bom.view_headers", "bom.view_details", "admin.manage_users"],
+    (ModuleName.BOM, Perm.CREATE): ["bom.create_header", "bom.add_detail", "admin.manage_users"],
+    (ModuleName.BOM, Perm.UPDATE): ["bom.update_header", "bom.update_detail", "admin.manage_users"],
+    (ModuleName.BOM, Perm.DELETE): ["bom.delete_header", "bom.delete_detail", "admin.manage_users"],
+
     # Audit
     (ModuleName.AUDIT, Perm.VIEW): ["audit.view_logs", "audit.view_user_activity", "audit.view_security_logs"],
     (ModuleName.AUDIT, Perm.CREATE): ["audit.export_logs"],

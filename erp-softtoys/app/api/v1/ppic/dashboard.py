@@ -1273,11 +1273,29 @@ async def get_bom_explosion(
     bom_headers = db.query(BOMHeader).filter(BOMHeader.product_id == mo.product_id).all()
     qty_planned = float(mo.qty_planned) if mo.qty_planned else 0
 
+    # Batch-fetch all BOM details for all headers (avoid N+1)
+    header_ids = [h.id for h in bom_headers]
+    all_details = (
+        db.query(BOMDetail).filter(BOMDetail.bom_header_id.in_(header_ids)).all()
+        if header_ids else []
+    )
+
+    # Batch-fetch all component products (avoid N+1)
+    component_ids = {d.component_id for d in all_details}
+    component_map = {
+        p.id: p for p in db.query(Product).filter(Product.id.in_(component_ids)).all()
+    } if component_ids else {}
+
+    # Group details by header
+    from collections import defaultdict
+    details_by_header: dict = defaultdict(list)
+    for d in all_details:
+        details_by_header[d.bom_header_id].append(d)
+
     result = []
     for header in bom_headers:
-        details = db.query(BOMDetail).filter(BOMDetail.bom_header_id == header.id).all()
-        for detail in details:
-            comp = db.query(Product).filter(Product.id == detail.component_id).first()
+        for detail in details_by_header[header.id]:
+            comp = component_map.get(detail.component_id)
             qty_required = float(detail.qty_needed) * qty_planned if detail.qty_needed else 0
             result.append({
                 "level": 1,

@@ -1,26 +1,102 @@
 """
-BOM API Endpoints
-Feature #1: BOM Manufacturing Auto-Allocate
-Route: /api/v1/production/bom
+BOM Material Auto-Allocation API — INCOMPLETE / NOT REGISTERED
+===============================================================
+STATUS: This module is a WORK-IN-PROGRESS placeholder.
+        It is NOT registered in main.py and is NOT active.
 
-Endpoints:
-- POST /create-with-auto-allocation - Create SPK with automatic material allocation
-- GET /allocation-preview/{article_id} - Preview material allocation before SPK creation
+TODO:
+- Replace AsyncSession with sync SQLAlchemy Session (app uses sync ORM)
+- Implement BOMService in app/services/bom_service.py
+- Replace spk_id = 999 (placeholder) with real SPK creation logic
+- Register router in main.py with settings.API_PREFIX after completion
+
+Planned Endpoints:
+- POST /production/bom/create-with-auto-allocation
+- GET  /production/bom/allocation-preview
+- GET  /production/bom/spk/{spk_id}/allocations
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
-from decimal import Decimal
-from uuid import UUID
+from sqlalchemy.orm import Session
 
-from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.database import get_session
-from app.core.auth import get_current_user
-from app.services.bom_service import BOMService, BOMAllocationError
-from app.core.logger import logger
+from app.core.database import get_db
+from app.core.dependencies import get_current_user
+from app.core.models.users import User
 
-router = APIRouter(prefix="/api/v1/production/bom", tags=["BOM - Material Allocation"])
+router = APIRouter(prefix="/production/bom", tags=["BOM - Material Allocation (WIP)"])
+
+
+# ============================================================================
+# REQUEST/RESPONSE SCHEMAS
+# ============================================================================
+
+class MaterialAllocationItem(BaseModel):
+    material_id: int
+    material_name: str
+    qty_needed: float
+    qty_allocated: float
+    warehouse_location: str
+    status: str
+    spk_material_allocation_id: Optional[int] = None
+
+
+class DebtItem(BaseModel):
+    material_id: int
+    material_name: str
+    qty_shortage: float
+    material_debt_id: Optional[int] = None
+    debt_status: str
+
+
+class AllocationSummary(BaseModel):
+    total_materials: int
+    fully_allocated: int
+    partially_allocated: int
+    shortage_count: int
+
+
+class SPKCreateWithAllocationRequest(BaseModel):
+    mo_id: int = Field(..., description="Manufacturing Order ID")
+    article_id: int = Field(..., description="Article/Product ID")
+    quantity: int = Field(..., gt=0, description="Target quantity to produce")
+    target_date: Optional[str] = Field(None, description="Target completion date (YYYY-MM-DD)")
+    department: str = Field(..., description="Department (Cutting, Sewing, Finishing, Packing)")
+    allow_negative_inventory: bool = Field(False)
+    notes: Optional[str] = None
+
+
+# ============================================================================
+# PLACEHOLDER ENDPOINTS — NOT ACTIVE (not registered in main.py)
+# ============================================================================
+
+@router.post("/create-with-auto-allocation", include_in_schema=False)
+def create_spk_with_auto_allocation(
+    request: SPKCreateWithAllocationRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """PLACEHOLDER — BOM auto-allocation SPK creation. Not yet implemented."""
+    raise HTTPException(
+        status_code=501,
+        detail="BOM Auto-Allocation SPK creation is not yet implemented. Use /ppic/spk endpoint instead."
+    )
+
+
+@router.get("/allocation-preview", include_in_schema=False)
+def get_allocation_preview(
+    article_id: int = Query(...),
+    quantity: int = Query(..., gt=0),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """PLACEHOLDER — Material allocation preview. Not yet implemented."""
+    raise HTTPException(
+        status_code=501,
+        detail="BOM Allocation Preview is not yet implemented."
+    )
+
 
 # Initialize service
 bom_service = BOMService()

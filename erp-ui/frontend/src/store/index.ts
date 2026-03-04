@@ -315,4 +315,20 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 }))
 
+// ──────────────────────────────────────────────────────────────────────────────
+// Auto-load permissions on startup (page refresh) when user already logged in
+// This ensures non-admin roles regain their sidebar visibility after refresh.
+// ──────────────────────────────────────────────────────────────────────────────
+;(async () => {
+  const authState = useAuthStore.getState()
+  if (authState.user && authState.token) {
+    const permStore = usePermissionStore.getState()
+    // Only load if not already loaded in this session
+    if (!permStore.lastFetchedAt) {
+      console.log('[AuthStore] Restoring session — loading permissions for:', authState.user.username)
+      await permStore.loadPermissions()
+    }
+  }
+})()
+
 export { usePermissionStore } from './permissionStore'

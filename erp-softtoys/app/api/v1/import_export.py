@@ -456,9 +456,13 @@ def _export_bom_csv(bom_data, db: Session):
     # Header
     writer.writerow(['product_code', 'product_name', 'component_code', 'component_name', 'qty_needed', 'wastage_percent'])
 
+    # Batch-fetch all component products to avoid N+1
+    comp_ids = {bom_detail.component_id for _, bom_detail, _, _ in bom_data}
+    comp_map = {p.id: p for p in db.query(Product).filter(Product.id.in_(comp_ids)).all()} if comp_ids else {}
+
     # Data
     for bom_header, bom_detail, product, component_code in bom_data:
-        component = db.query(Product).filter(Product.id == bom_detail.component_id).first()
+        component = comp_map.get(bom_detail.component_id)
         writer.writerow([
             product.code,
             product.name,
@@ -486,9 +490,13 @@ def _export_bom_excel(bom_data, db: Session):
     headers = ['product_code', 'product_name', 'component_code', 'component_name', 'qty_needed', 'wastage_percent']
     sheet.append(headers)
 
+    # Batch-fetch all component products to avoid N+1
+    comp_ids = {bom_detail.component_id for _, bom_detail, _, _ in bom_data}
+    comp_map = {p.id: p for p in db.query(Product).filter(Product.id.in_(comp_ids)).all()} if comp_ids else {}
+
     # Data
     for bom_header, bom_detail, product, component_code in bom_data:
-        component = db.query(Product).filter(Product.id == bom_detail.component_id).first()
+        component = comp_map.get(bom_detail.component_id)
         sheet.append([
             product.code,
             product.name,

@@ -180,8 +180,9 @@ async def list_kanban_cards(
     """
     query = db.query(KanbanCard)
 
-    # Access control
-    if current_user.role.value not in ['Admin', 'Warehouse Admin', 'PPIC Manager']:
+    # Access control — high-privilege roles see all cards
+    _ALL_ACCESS = {'Admin', 'Warehouse Admin', 'PPIC Manager', 'Manager', 'Superadmin', 'Developer'}
+    if current_user.role.value not in _ALL_ACCESS:
         # Operators see only their department
         query = query.filter(KanbanCard.requested_by_dept == current_user.department)
     elif department:
@@ -195,9 +196,69 @@ async def list_kanban_cards(
 
     cards = query.order_by(KanbanCard.requested_at.desc()).limit(100).all()
 
+    # Pre-fetch all products in one query to avoid N+1
+    product_ids = {card.product_id for card in cards}
+    product_map = {
+        p.id: p for p in db.query(Product).filter(Product.id.in_(product_ids)).all()
+    }
+
     result = []
     for card in cards:
-        product = db.query(Product).filter(Product.id == card.product_id).first()
+        product = product_map.get(card.product_id)
+        if not product:
+            continue
+        result.append(KanbanCardResponse(
+            id=card.id,
+            card_number=card.card_number,
+            requested_by_dept=card.requested_by_dept,
+            requested_at=card.requested_at,
+            product_code=product.code,
+            product_name=product.name,
+            qty_requested=card.qty_requested,
+            qty_fulfilled=card.qty_fulfilled,
+            priority=card.priority,
+            status=card.status,
+            needed_by=card.needed_by,
+            approved_at=card.approved_at,
+            fulfilled_at=card.fulfilled_at
+        ))
+
+    return result
+
+
+@router.get("/cards/all", response_model=list[KanbanCardResponse])
+async def list_all_kanban_cards(
+    status: str | None = None,
+    department: str | None = None,
+    current_user: User = Depends(require_permission(ModuleName.KANBAN, Permission.VIEW)),
+    db: Session = Depends(get_db)
+):
+    """Return all kanban cards for dashboard/admin view (no department restriction for high-privilege roles)."""
+    _ALL_ACCESS = {'Admin', 'Warehouse Admin', 'PPIC Manager', 'Manager', 'Superadmin', 'Developer'}
+
+    query = db.query(KanbanCard)
+
+    if current_user.role.value not in _ALL_ACCESS:
+        query = query.filter(KanbanCard.requested_by_dept == current_user.department)
+
+    if department and department != "All":
+        query = query.filter(KanbanCard.requested_by_dept == department)
+
+    if status and status != "All":
+        query = query.filter(KanbanCard.status == status)
+
+    cards = query.order_by(KanbanCard.requested_at.desc()).all()
+
+    product_ids = {card.product_id for card in cards}
+    product_map = {
+        p.id: p for p in db.query(Product).filter(Product.id.in_(product_ids)).all()
+    } if product_ids else {}
+
+    result = []
+    for card in cards:
+        product = product_map.get(card.product_id)
+        if not product:
+            continue
         result.append(KanbanCardResponse(
             id=card.id,
             card_number=card.card_number,
@@ -229,7 +290,8 @@ async def approve_kanban_card(
     **Authorization**: Warehouse Admin, Supervisor, Admin
     """
     # Check role
-    if current_user.role.value not in ['Admin', 'Warehouse Admin', 'SPV Warehouse']:
+    _APPROVE_ROLES = {'Admin', 'Warehouse Admin', 'SPV Warehouse', 'Manager', 'Superadmin', 'Developer'}
+    if current_user.role.value not in _APPROVE_ROLES:
         raise HTTPException(
             status_code=403,
             detail="Only warehouse supervisors can approve kanban cards"
@@ -326,6 +388,102 @@ async def fulfill_kanban_card(
     return {"message": "Kanban card fulfilled", "card_number": kanban.card_number}
 
 
+# ========== PLURAL-PATH ACTION ENDPOINTS (used by KanbanPage.tsx) ==========
+
+class KanbanRejectRequest(BaseModel):
+    reason: str | None = None
+
+
+@router.post("/cards/{card_id}/approve")
+async def approve_kanban_card_v2(
+    card_id: int,
+    current_user: User = Depends(require_permission(ModuleName.KANBAN, Permission.APPROVE)),
+    db: Session = Depends(get_db)
+):
+    """Approve a kanban card (plural-path alias used by frontend)."""
+    _APPROVE_ROLES = {'Admin', 'Warehouse Admin', 'SPV Warehouse', 'Manager', 'Superadmin', 'Developer'}
+    if current_user.role.value not in _APPROVE_ROLES:
+        raise HTTPException(status_code=403, detail="Only warehouse supervisors can approve kanban cards")
+
+    kanban = BaseProductionService.get_kanban_card(db, card_id)
+    if kanban.status != KanbanStatus.PENDING:
+        raise HTTPException(status_code=400, detail=f"Cannot approve card in status: {kanban.status.value}")
+
+    kanban.status = KanbanStatus.APPROVED
+    kanban.approved_by_user_id = current_user.id
+    kanban.approved_at = datetime.now()
+    db.commit()
+
+    return {"message": "Kanban card approved", "card_number": kanban.card_number}
+
+
+@router.post("/cards/{card_id}/reject")
+async def reject_kanban_card(
+    card_id: int,
+    body: KanbanRejectRequest = KanbanRejectRequest(),
+    current_user: User = Depends(require_permission(ModuleName.KANBAN, Permission.APPROVE)),
+    db: Session = Depends(get_db)
+):
+    """Reject a kanban card — sets status to Cancelled."""
+    _APPROVE_ROLES = {'Admin', 'Warehouse Admin', 'SPV Warehouse', 'Manager', 'Superadmin', 'Developer'}
+    if current_user.role.value not in _APPROVE_ROLES:
+        raise HTTPException(status_code=403, detail="Only warehouse supervisors can reject kanban cards")
+
+    kanban = BaseProductionService.get_kanban_card(db, card_id)
+    if kanban.status not in [KanbanStatus.PENDING, KanbanStatus.APPROVED]:
+        raise HTTPException(status_code=400, detail=f"Cannot reject card in status: {kanban.status.value}")
+
+    kanban.status = KanbanStatus.CANCELLED
+    kanban.cancelled_by_user_id = current_user.id
+    kanban.cancelled_at = datetime.now()
+    kanban.cancellation_reason = body.reason
+    db.commit()
+
+    return {"message": "Kanban card rejected", "card_number": kanban.card_number}
+
+
+@router.post("/cards/{card_id}/ship")
+async def ship_kanban_card(
+    card_id: int,
+    current_user: User = Depends(require_permission(ModuleName.KANBAN, Permission.EXECUTE)),
+    db: Session = Depends(get_db)
+):
+    """Mark kanban card as shipped (In Progress = In Transit)."""
+    _SHIP_ROLES = {'Admin', 'Warehouse Admin', 'SPV Warehouse', 'Manager', 'Superadmin', 'Developer'}
+    if current_user.role.value not in _SHIP_ROLES and current_user.department != 'Warehouse':
+        raise HTTPException(status_code=403, detail="Only warehouse team can ship kanban cards")
+
+    kanban = BaseProductionService.get_kanban_card(db, card_id)
+    if kanban.status != KanbanStatus.APPROVED:
+        raise HTTPException(status_code=400, detail=f"Cannot ship card in status: {kanban.status.value}")
+
+    kanban.status = KanbanStatus.IN_PROGRESS
+    kanban.fulfilled_by_user_id = current_user.id
+    db.commit()
+
+    return {"message": "Kanban card shipped", "card_number": kanban.card_number}
+
+
+@router.post("/cards/{card_id}/receive")
+async def receive_kanban_card(
+    card_id: int,
+    current_user: User = Depends(require_permission(ModuleName.KANBAN, Permission.EXECUTE)),
+    db: Session = Depends(get_db)
+):
+    """Confirm receipt of kanban card (Completed = Received)."""
+    kanban = BaseProductionService.get_kanban_card(db, card_id)
+    if kanban.status != KanbanStatus.IN_PROGRESS:
+        raise HTTPException(status_code=400, detail=f"Cannot receive card in status: {kanban.status.value}")
+
+    kanban.status = KanbanStatus.COMPLETED
+    kanban.fulfilled_at = datetime.now()
+    kanban.qty_fulfilled = kanban.qty_requested
+    kanban.fulfilled_by_user_id = current_user.id
+    db.commit()
+
+    return {"message": "Kanban card received", "card_number": kanban.card_number}
+
+
 @router.get("/dashboard/{department}")
 async def kanban_dashboard(
     department: str,
@@ -337,7 +495,8 @@ async def kanban_dashboard(
     **Returns**: Count of cards by status for visual kanban board
     """
     # Access control
-    if current_user.department != department and current_user.role.value not in ['Admin', 'Warehouse Admin']:
+    _DASHBOARD_ALL = {'Admin', 'Warehouse Admin', 'Manager', 'Superadmin', 'Developer'}
+    if current_user.department != department and current_user.role.value not in _DASHBOARD_ALL:
         raise HTTPException(status_code=403, detail="Access denied to this department")
 
     # Count cards by status

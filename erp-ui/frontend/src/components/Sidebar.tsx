@@ -55,7 +55,7 @@ const menuItems: MenuItem[] = [
     submenu: [
       { icon: <Scissors />, label: 'Cutting', path: '/cutting', permissions: ['cutting.view_status'] },
       { icon: <Calendar />, label: 'Cutting Daily Input', path: '/production/input/cutting', permissions: ['production.input_daily'] },
-      { icon: <Palette />, label: 'Embroidery', path: '/embroidery', roles: [UserRole.ADMIN_EMBROIDERY, UserRole.SPV_CUTTING, UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN, UserRole.ADMIN] },
+      { icon: <Palette />, label: 'Embroidery', path: '/embroidery', roles: [UserRole.ADMIN_EMBROIDERY, UserRole.SPV_CUTTING, UserRole.SPV_SEWING, UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN, UserRole.ADMIN] },
       { icon: <Calendar />, label: 'Embroidery Daily Input', path: '/production/input/embroidery', permissions: ['production.input_daily'] },
       { icon: <Zap />, label: 'Sewing', path: '/sewing', permissions: ['sewing.view_status'] },
       { icon: <Calendar />, label: 'Sewing Daily Input', path: '/production/input/sewing', permissions: ['production.input_daily'] },
@@ -63,6 +63,9 @@ const menuItems: MenuItem[] = [
       { icon: <Calendar />, label: 'Finishing Daily Input', path: '/production/input/finishing', permissions: ['production.input_daily'] },
       { icon: <Package />, label: 'Packing', path: '/packing', permissions: ['packing.view_status'] },
       { icon: <Calendar />, label: 'Packing Daily Input', path: '/production/input/packing', permissions: ['production.input_daily'] },
+      { icon: <BarChart3 />, label: 'Daily Production', path: '/daily-production', permissions: ['production.input_daily'] },
+      { icon: <LayoutDashboard />, label: 'WIP Dashboard', path: '/production/wip', permissions: ['production.view_wip'] },
+      { icon: <Calendar />, label: 'Production Calendar', path: '/production/calendar', permissions: ['production.schedule_production'] },
     ]
   },
   { 
@@ -72,7 +75,7 @@ const menuItems: MenuItem[] = [
     roles: [
       UserRole.QC_INSPECTOR, UserRole.QC_LAB,
       UserRole.SPV_CUTTING, UserRole.SPV_SEWING, UserRole.SPV_FINISHING,
-      UserRole.ADMIN,
+      UserRole.PPIC_MANAGER, UserRole.ADMIN,
     ] 
   },
   { 
@@ -82,6 +85,7 @@ const menuItems: MenuItem[] = [
     roles: [
       UserRole.QC_INSPECTOR, UserRole.QC_LAB,
       UserRole.SPV_CUTTING, UserRole.SPV_SEWING, UserRole.SPV_FINISHING,
+      UserRole.PPIC_MANAGER, UserRole.ADMIN,
     ]
   },
 
@@ -102,7 +106,7 @@ const menuItems: MenuItem[] = [
     path: '/warehouse', 
     roles: [
       UserRole.WAREHOUSE_ADMIN, UserRole.WAREHOUSE_OP,
-      UserRole.PPIC_MANAGER, UserRole.ADMIN,
+      UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN, UserRole.ADMIN,
     ] 
   }, 
   { 
@@ -120,8 +124,17 @@ const menuItems: MenuItem[] = [
     path: '/finishgoods', 
     roles: [
       UserRole.WAREHOUSE_ADMIN, UserRole.WAREHOUSE_OP,
-      UserRole.PPIC_MANAGER, UserRole.SECURITY, UserRole.ADMIN,
+      UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN, UserRole.SECURITY, UserRole.ADMIN,
     ] 
+  },
+  {
+    icon: <Package />,
+    label: 'Kanban',
+    path: '/kanban',
+    roles: [
+      UserRole.WAREHOUSE_ADMIN, UserRole.WAREHOUSE_OP,
+      UserRole.ADMIN_PACKING, UserRole.PPIC_MANAGER, UserRole.ADMIN,
+    ]
   },
   { 
     section: 'SYSTEM',
@@ -140,7 +153,13 @@ const menuItems: MenuItem[] = [
     icon: <BarChart3 />, 
     label: 'Material Efficiency', 
     path: '/ppic/material-efficiency', 
-    roles: [UserRole.PPIC_MANAGER, UserRole.ADMIN] 
+    roles: [UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN, UserRole.ADMIN] 
+  },
+  {
+    icon: <ClipboardList />,
+    label: 'Material Allocation',
+    path: '/ppic/material-allocation',
+    roles: [UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN, UserRole.WAREHOUSE_ADMIN, UserRole.ADMIN]
   },
   { 
     icon: <Users />, 
@@ -155,6 +174,7 @@ const menuItems: MenuItem[] = [
       { icon: <Factory />, label: 'BOM Management', path: '/admin/bom-management', permissions: ['admin.manage_users'] },
       { icon: <Factory />, label: 'BOM Produksi', path: '/admin/bom-production', permissions: ['admin.manage_users'] },
       { icon: <ShoppingCart />, label: 'BOM Purchasing', path: '/admin/bom-purchase', permissions: ['admin.manage_users'] },
+      { icon: <Database />, label: 'Bulk Import', path: '/admin/bulk-import', permissions: ['admin.manage_users'] },
     ]
   },
   { 
@@ -174,11 +194,12 @@ export const Sidebar: React.FC = () => {
   const location = useLocation()
   const [openDropdowns, setOpenDropdowns] = useState<string[]>([])
 
-  // Helper: Check Access (Logic tetap sama, hanya disederhanakan)
+  // Helper: Check Access — RBAC bypass for top-level roles
   const hasAccess = (item: MenuItem | SubMenuItem): boolean => {
     if (!user) return false
     const role = user.role.toUpperCase()
-    if (['DEVELOPER', 'SUPERADMIN', 'ADMIN'].includes(role)) return true
+    // Full bypass: DEVELOPER, SUPERADMIN, MANAGER, ADMIN have access to everything
+    if (['DEVELOPER', 'SUPERADMIN', 'MANAGER', 'ADMIN'].includes(role)) return true
     if (!item.roles && !item.permissions) return true
     if (item.permissions?.some(p => hasPermission(p))) return true
     if (item.roles?.includes(user.role as UserRole)) return true

@@ -151,28 +151,39 @@ export const articleApi = {
 }
 
 export const bomApi = {
-  getBOMs: (params?: { article_code?: string; department?: string; bom_type?: string }) =>
-    apiClient.get('/bom', { params }),
+  // BOM Management CRUD — endpoints: /bom-management/headers
+  getBOMs: (params?: { search?: string; revision?: string; active_only?: boolean; bom_category?: string; page?: number; page_size?: number }) =>
+    apiClient.get('/bom-management/headers', { params }),
   
   getBOMById: (id: number) =>
-    apiClient.get(`/bom/${id}`),
+    apiClient.get(`/bom-management/headers/${id}`),
   
   createBOM: (data: BOMFormData) =>
-    apiClient.post('/bom', data),
+    apiClient.post('/bom-management/headers', data),
   
   updateBOM: (id: number, data: Partial<BOMFormData>) =>
-    apiClient.put(`/bom/${id}`, data),
+    apiClient.put(`/bom-management/headers/${id}`, data),
   
   deleteBOM: (id: number) =>
-    apiClient.delete(`/bom/${id}`),
+    apiClient.delete(`/bom-management/headers/${id}`),
   
-  // BOM Explosion for PO Auto mode
+  // BOM Detail lines
+  addBOMDetail: (headerId: number, data: { component_id: number; qty_needed: number; wastage_percent: number }) =>
+    apiClient.post(`/bom-management/headers/${headerId}/details`, data),
+  
+  updateBOMDetail: (detailId: number, data: { component_id?: number; qty_needed?: number; wastage_percent?: number }) =>
+    apiClient.put(`/bom-management/details/${detailId}`, data),
+  
+  deleteBOMDetail: (detailId: number) =>
+    apiClient.delete(`/bom-management/details/${detailId}`),
+  
+  // BOM Explosion for PPIC / PO Auto mode (from production work orders API)
   bomExplosion: (article_code: string, qty: number) =>
-    apiClient.post('/bom/explosion', { article_code, qty }),
+    apiClient.post('/ppic/spk/bom-explosion', { article_code, qty }),
   
   // BOM Cascade Validation
   validateBOMCascade: (article_code: string) =>
-    apiClient.get(`/bom/validate-cascade/${article_code}`),
+    apiClient.get(`/bom-management/validate-cascade/${article_code}`),
 }
 
 // ============================================================================

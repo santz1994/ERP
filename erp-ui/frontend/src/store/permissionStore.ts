@@ -70,9 +70,10 @@ export const usePermissionStore = create<PermissionState>((set, get) => ({
     try {
       set({ loading: true, error: null })
       
+      // apiClient.get() already unwraps response.data — use response directly
       const response = await apiClient.get('/auth/permissions')
-      const responseData = response.data || { permissions: [] }
-      const { permissions } = responseData
+      const responseData = response || { permissions: [] }
+      const permissions: string[] = responseData.permissions || []
       
       set({ 
         permissions, 
@@ -80,7 +81,7 @@ export const usePermissionStore = create<PermissionState>((set, get) => ({
         lastFetchedAt: new Date()
       })
       
-      console.log(`[PermissionStore] Loaded ${permissions.length} permissions`)
+      console.log(`[PermissionStore] Loaded ${permissions.length} permissions for role: ${responseData.role}`)
     } catch (error: any) {
       const errorMessage = error.response?.data?.detail || error.message || 'Failed to load permissions'
       
@@ -107,7 +108,7 @@ export const usePermissionStore = create<PermissionState>((set, get) => ({
     const userRole = getUserRole()
     if (userRole) {
       const roleUpper = userRole.toUpperCase()
-      if (roleUpper === 'DEVELOPER' || roleUpper === 'SUPERADMIN' || roleUpper === 'ADMIN') {
+      if (roleUpper === 'DEVELOPER' || roleUpper === 'SUPERADMIN' || roleUpper === 'MANAGER' || roleUpper === 'ADMIN') {
         return true // Full access bypass
       }
     }
@@ -132,7 +133,7 @@ export const usePermissionStore = create<PermissionState>((set, get) => ({
     const userRole = getUserRole()
     if (userRole) {
       const roleUpper = userRole.toUpperCase()
-      if (roleUpper === 'DEVELOPER' || roleUpper === 'SUPERADMIN' || roleUpper === 'ADMIN') {
+      if (roleUpper === 'DEVELOPER' || roleUpper === 'SUPERADMIN' || roleUpper === 'MANAGER' || roleUpper === 'ADMIN') {
         return true // Full access bypass
       }
     }
@@ -157,7 +158,7 @@ export const usePermissionStore = create<PermissionState>((set, get) => ({
     const userRole = getUserRole()
     if (userRole) {
       const roleUpper = userRole.toUpperCase()
-      if (roleUpper === 'DEVELOPER' || roleUpper === 'SUPERADMIN' || roleUpper === 'ADMIN') {
+      if (roleUpper === 'DEVELOPER' || roleUpper === 'SUPERADMIN' || roleUpper === 'MANAGER' || roleUpper === 'ADMIN') {
         return true // Full access bypass
       }
     }

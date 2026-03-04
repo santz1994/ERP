@@ -794,7 +794,7 @@ def cancel_purchase_order(
 from datetime import datetime as _dt
 from app.core.models.po_requests import PODeleteRequest, PORequestStatus as _ReqStatus
 
-ADMIN_ROLES = {"Developer", "Superadmin", "Admin"}
+ADMIN_ROLES = {"Developer", "Superadmin", "Admin", "Manager"}
 
 
 class _DeletePOBody(BaseModel):
