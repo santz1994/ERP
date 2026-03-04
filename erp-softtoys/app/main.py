@@ -278,8 +278,7 @@ app.include_router(
 # ✅ Material Allocation API (Week 3-4 Implementation)
 app.include_router(
     material_allocation.router,
-    # Note: material_allocation.router already has prefix="/api/v1/material-allocation"
-    # so we don't add settings.API_PREFIX here
+    prefix=settings.API_PREFIX
 )
 
 # Phase 3: Quality Control Module

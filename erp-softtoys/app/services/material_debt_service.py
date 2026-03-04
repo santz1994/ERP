@@ -356,13 +356,14 @@ class MaterialDebtService:
             List of outstanding debts with summary
         """
         try:
+            # DB stores plain strings: PENDING, APPROVED, REJECTED, SETTLED
             query = self.db.query(MaterialDebt).filter(
-                MaterialDebt.approval_status != MaterialDebtApprovalStatus.FULLY_RESOLVED.value
+                MaterialDebt.approval_status != "SETTLED"
             )
             
             if only_pending_approval:
                 query = query.filter(
-                    MaterialDebt.approval_status == MaterialDebtApprovalStatus.PENDING_APPROVAL.value
+                    MaterialDebt.approval_status == "PENDING"
                 )
             
             debts = query.all()

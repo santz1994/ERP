@@ -17,14 +17,15 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 from app.core.database import get_db
-from app.core.models.manufacturing import ManufacturingOrder, WorkOrder
+from app.core.models.manufacturing import ManufacturingOrder, WorkOrder, SPKMaterialAllocation
+from app.core.models.products import Product
 from app.services.material_allocation_service import (
     MaterialAllocationService,
     allocate_materials_for_mo
 )
 
 
-router = APIRouter(prefix="/api/v1/material-allocation", tags=["Material Allocation"])
+router = APIRouter(prefix="/ppic/material-allocation", tags=["Material Allocation"])
 
 
 # ============================================================================
@@ -45,7 +46,25 @@ class MaterialShortageAlertResponse(BaseModel):
     severity: str  # CRITICAL, HIGH, MEDIUM, LOW
     
     class Config:
-        from_attributes = True
+        orm_mode = True
+
+
+class MaterialAllocationListItem(BaseModel):
+    """Material allocation list item for frontend"""
+    id: int
+    wo_id: int
+    spk_number: str
+    material_id: int
+    material_code: str
+    material_name: str
+    department: str
+    qty_allocated: float
+    qty_consumed: float
+    status: str  # ALLOCATED, RELEASED, PARTIAL, INSUFFICIENT
+    uom: Optional[str] = None
+
+    class Config:
+        orm_mode = True
 
 
 class AllocateMaterialsRequest(BaseModel):
@@ -89,6 +108,65 @@ class CheckWOCanStartResponse(BaseModel):
 # ============================================================================
 # API Endpoints
 # ============================================================================
+
+@router.get("", response_model=List[MaterialAllocationListItem])
+def list_material_allocations(
+    db: Session = Depends(get_db),
+    status: Optional[str] = Query(None, description="Filter by status: ALLOCATED, RELEASED, PARTIAL, INSUFFICIENT"),
+    department: Optional[str] = Query(None, description="Filter by department")
+):
+    """List all material allocations with optional filters."""
+    query = (
+        db.query(SPKMaterialAllocation)
+        .join(WorkOrder, SPKMaterialAllocation.wo_id == WorkOrder.id)
+        .join(Product, SPKMaterialAllocation.material_id == Product.id)
+    )
+
+    if department:
+        query = query.filter(WorkOrder.department == department)
+
+    allocations = query.all()
+
+    result = []
+    for alloc in allocations:
+        wo = db.query(WorkOrder).get(alloc.wo_id)
+        product = db.query(Product).get(alloc.material_id)
+        if not wo or not product:
+            continue
+
+        # Derive status string
+        if alloc.is_consumed:
+            derived_status = "RELEASED"
+        elif alloc.is_reserved:
+            consumed_ratio = float(alloc.qty_consumed or 0) / float(alloc.qty_allocated or 1)
+            if consumed_ratio >= 0.95:
+                derived_status = "ALLOCATED"
+            elif consumed_ratio > 0:
+                derived_status = "PARTIAL"
+            else:
+                derived_status = "ALLOCATED"
+        else:
+            derived_status = "INSUFFICIENT"
+
+        if status and derived_status != status:
+            continue
+
+        result.append(MaterialAllocationListItem(
+            id=alloc.id,
+            wo_id=alloc.wo_id,
+            spk_number=wo.wo_number or f"WO-{wo.id}",
+            material_id=alloc.material_id,
+            material_code=product.code,
+            material_name=product.name,
+            department=wo.department.value if hasattr(wo.department, 'value') else str(wo.department),
+            qty_allocated=float(alloc.qty_allocated or 0),
+            qty_consumed=float(alloc.qty_consumed or 0),
+            status=derived_status,
+            uom=alloc.uom
+        ))
+
+    return result
+
 
 @router.post("/allocate", response_model=AllocateMaterialsResponse)
 def allocate_materials(
@@ -337,3 +415,94 @@ def check_all_wos_can_start(
         "blocked_wos": len([w for w in wo_statuses if not w["can_start"]]),
         "work_orders": wo_statuses
     }
+
+
+# ============================================================================
+# Reservation Endpoints (used by MaterialReservation widget)
+# ============================================================================
+
+@router.get("/reservations")
+def list_reservations(
+    wo_id: Optional[int] = Query(None, description="Filter by Work Order ID"),
+    material_id: Optional[int] = Query(None, description="Filter by Material (Product) ID"),
+    db: Session = Depends(get_db)
+):
+    """List material allocations / reservations, optionally filtered by WO or material."""
+    query = db.query(SPKMaterialAllocation)
+    if wo_id:
+        query = query.filter(SPKMaterialAllocation.wo_id == wo_id)
+    if material_id:
+        query = query.filter(SPKMaterialAllocation.material_id == material_id)
+
+    allocations = query.all()
+    result = []
+    for alloc in allocations:
+        wo = db.query(WorkOrder).get(alloc.wo_id)
+        product = db.query(Product).get(alloc.material_id)
+        if not wo or not product:
+            continue
+        state = "CONSUMED" if alloc.is_consumed else ("RESERVED" if alloc.is_reserved else "RELEASED")
+        result.append({
+            "id": alloc.id,
+            "wo_id": alloc.wo_id,
+            "wo_number": wo.wo_number or f"WO-{wo.id}",
+            "material_id": alloc.material_id,
+            "material_code": product.code,
+            "material_name": product.name,
+            "qty_allocated": float(alloc.qty_allocated or 0),
+            "qty_consumed": float(alloc.qty_consumed or 0),
+            "uom": alloc.uom,
+            "state": state,
+            "is_reserved": alloc.is_reserved,
+            "is_consumed": alloc.is_consumed,
+            "allocated_at": alloc.allocated_at.isoformat() if alloc.allocated_at else None,
+        })
+    return result
+
+
+@router.post("/reserve")
+def reserve_materials_for_wo(
+    request: dict,
+    db: Session = Depends(get_db)
+):
+    """Reserve (allocate) materials for a Work Order. Alias that auto-runs allocation."""
+    wo_id = request.get("wo_id")
+    if not wo_id:
+        raise HTTPException(status_code=422, detail="wo_id is required")
+
+    wo = db.query(WorkOrder).filter_by(id=wo_id).first()
+    if not wo:
+        raise HTTPException(status_code=404, detail=f"Work Order {wo_id} not found")
+
+    service = MaterialAllocationService(db)
+    try:
+        allocated_count = service.allocate_materials_for_wo(wo)
+        db.commit()
+        return {
+            "success": True,
+            "wo_id": wo_id,
+            "allocated_count": allocated_count,
+            "message": f"✅ Reserved {allocated_count} materials for WO-{wo_id}"
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/reservations/{reservation_id}/release")
+def release_reservation(
+    reservation_id: int,
+    db: Session = Depends(get_db)
+):
+    """Release a material reservation (mark is_reserved=False)."""
+    from datetime import datetime
+    alloc = db.query(SPKMaterialAllocation).filter_by(id=reservation_id).first()
+    if not alloc:
+        raise HTTPException(status_code=404, detail=f"Reservation {reservation_id} not found")
+    if alloc.is_consumed:
+        raise HTTPException(status_code=400, detail="Cannot release an already-consumed allocation")
+
+    alloc.is_reserved = False
+    alloc.qty_allocated = 0
+    db.commit()
+    return {"success": True, "reservation_id": reservation_id, "message": "Reservation released"}

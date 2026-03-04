@@ -18,7 +18,7 @@ interface Supplier {
 }
 
 const ADMIN_ROLES = ['Admin', 'Superadmin', 'Developer']
-const PRODUCT_TYPES = ['Raw Material', 'WIP', 'Finish Good', 'Label', 'Accessories', 'Service']
+const PRODUCT_TYPES = ['Raw Material', 'Bahan Penolong', 'WIP', 'Finish Good', 'Service']
 const UOM_OPTIONS = [
   'Pcs', 'Meter', 'Yard', 'Kg', 'Gram', 'Cm',
   'Roll', 'Box', 'Ctn', 'Set', 'Pack',
@@ -34,12 +34,11 @@ const useAdmin = () => {
 
 const TypeBadge: React.FC<{ type: string }> = ({ type }) => {
   const colours: Record<string, string> = {
-    'Raw Material': 'bg-blue-100 text-blue-800',
-    'WIP': 'bg-yellow-100 text-yellow-800',
-    'Finish Good': 'bg-green-100 text-green-800',
-    'Label': 'bg-purple-100 text-purple-800',
-    'Accessories': 'bg-orange-100 text-orange-800',
-    'Service': 'bg-gray-100 text-gray-700',
+    'Raw Material':   'bg-blue-100 text-blue-800',
+    'Bahan Penolong': 'bg-teal-100 text-teal-800',
+    'WIP':            'bg-yellow-100 text-yellow-800',
+    'Finish Good':    'bg-green-100 text-green-800',
+    'Service':        'bg-gray-100 text-gray-700',
   }
   return <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${colours[type] ?? 'bg-gray-100 text-gray-700'}`}>{type}</span>
 }

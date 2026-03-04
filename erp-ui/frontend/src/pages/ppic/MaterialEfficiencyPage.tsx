@@ -322,10 +322,10 @@ const MaterialEfficiencyPage: React.FC = () => {
           <p>• <strong>Actual Qty</strong>: Total StockMoves issued for that SPK (DONE only)</p>
           <p>• <strong>Efficiency %</strong>: Planned ÷ Actual × 100. Target: 95–105%</p>
           <p>• <strong>Variance</strong>: Actual − Planned. Positive = over-used material</p>
-          <p>• <Badge className="bg-green-600 text-white mr-1">Efficient</Badge>: 95–105% range</p>
-          <p>• <Badge className="bg-red-600 text-white mr-1">Over-used</Badge>: Actual &gt; Planned</p>
-          <p>• <Badge className="bg-blue-600 text-white mr-1">Under-used</Badge>: Actual much less than planned</p>
-          <p>• <Badge variant="outline" className="mr-1">No Data</Badge>: No StockMoves recorded yet</p>
+          <div>• <Badge className="bg-green-600 text-white mr-1">Efficient</Badge>: 95–105% range</div>
+          <div>• <Badge className="bg-red-600 text-white mr-1">Over-used</Badge>: Actual &gt; Planned</div>
+          <div>• <Badge className="bg-blue-600 text-white mr-1">Under-used</Badge>: Actual much less than planned</div>
+          <div>• <Badge variant="outline" className="mr-1">No Data</Badge>: No StockMoves recorded yet</div>
         </div>
       </Card>
     </div>

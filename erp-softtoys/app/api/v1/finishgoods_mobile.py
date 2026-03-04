@@ -353,23 +353,60 @@ def prepare_shipment(
         )
 
 
-@router.get("/inventory", response_model=List[dict])
+@router.get("/inventory", response_model=dict)
 def get_finishgood_inventory(
     product_code: Optional[str] = None,
+    low_stock_only: bool = False,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission(ModuleName.FINISHGOODS, Permission.VIEW))
 ):
     """Get FinishGood warehouse inventory.
     
-    Returns current stock levels for finished goods. Used by mobile app
-    to display available inventory after receipt.
+    Returns `{ inventory: [...] }` with current stock levels for finished goods.
     
     - **product_code**: Filter by specific product code (optional)
+    - **low_stock_only**: If true, only return products below min_stock
     """
     try:
         service = FinishgoodsService(db)
         inventory = service.get_finished_goods_inventory(product_code=product_code)
-        return inventory
+        if low_stock_only:
+            inventory = [i for i in inventory if i.get('low_stock', False)]
+        return {"inventory": inventory}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
+@router.get("/ready-for-shipment", response_model=dict)
+def get_ready_for_shipment(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission(ModuleName.FINISHGOODS, Permission.VIEW))
+):
+    """Get products ready for shipment (completed MOs with available stock)."""
+    try:
+        service = FinishgoodsService(db)
+        products = service.get_shipment_ready_products()
+        return {"products": products}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
+@router.get("/stock-aging", response_model=dict)
+def get_stock_aging(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission(ModuleName.FINISHGOODS, Permission.VIEW))
+):
+    """Get finished goods stock aging analysis."""
+    try:
+        service = FinishgoodsService(db)
+        items = service.get_stock_aging()
+        return {"items": items}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

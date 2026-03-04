@@ -69,13 +69,14 @@ const FinishgoodsPage: React.FC = () => {
   });
 
   // Fetch inventory
+  // NOTE: apiClient.get() already returns response.data, so we use the result directly.
   const { data: inventoryData, refetch: refetchInventory } = useQuery({
     queryKey: ['finishgoods-inventory', lowStockOnly],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (lowStockOnly) params.append('low_stock_only', 'true');
-      const response = await apiClient.get(`/finishgoods/inventory?${params}`);
-      return response.data;
+      const data = await apiClient.get(`/finishgoods/inventory?${params}`);
+      return data ?? { inventory: [] };
     },
     refetchInterval: 5000
   });
@@ -84,8 +85,8 @@ const FinishgoodsPage: React.FC = () => {
   const { data: readyData, refetch: refetchReady } = useQuery({
     queryKey: ['finishgoods-ready'],
     queryFn: async () => {
-      const response = await apiClient.get('/finishgoods/ready-for-shipment');
-      return response.data;
+      const data = await apiClient.get('/finishgoods/ready-for-shipment');
+      return data ?? { products: [] };
     },
     refetchInterval: 5000
   });
@@ -94,8 +95,8 @@ const FinishgoodsPage: React.FC = () => {
   const { data: agingData, refetch: refetchAging } = useQuery({
     queryKey: ['finishgoods-aging'],
     queryFn: async () => {
-      const response = await apiClient.get('/finishgoods/stock-aging');
-      return response.data;
+      const data = await apiClient.get('/finishgoods/stock-aging');
+      return data ?? { items: [] };
     },
     refetchInterval: 10000
   });
@@ -207,10 +208,10 @@ const FinishgoodsPage: React.FC = () => {
 
   const fetchBarcodeHistory = async () => {
     try {
-      const response = await apiClient.get('/barcode/history', {
+      const data = await apiClient.get('/barcode/history', {
         params: { location: 'finishgoods', limit: 10 }
       });
-      setBarcodeHistory(response.data.history || []);
+      setBarcodeHistory(data?.history || []);
     } catch (error) {
       console.error('Failed to fetch barcode history:', error);
     }

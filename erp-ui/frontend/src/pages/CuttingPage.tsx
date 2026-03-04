@@ -176,7 +176,7 @@ export default function CuttingPage() {
             title="Input Production"
             description="Record daily cutting production: input fabric yards, output pieces, material consumption tracking."
             icon={Edit3}
-            link="/production/cutting/input"
+            link="/production/input/cutting"
             color="blue"
             badge="Daily Entry"
           />

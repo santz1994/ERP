@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     DEBUG: bool = Field(default=True)
 
     # Database
-    DATABASE_URL: str = Field(default="postgresql://postgres:password@localhost:5432/erp_quty_karunia")
+    DATABASE_URL: str = Field(default="postgresql://postgres:password123@localhost:5432/erp_quty_karunia")
     DB_POOL_SIZE: int = Field(default=20)  # Increased from 5 for better concurrency
     DB_MAX_OVERFLOW: int = Field(default=40)  # Increased from 10
     DB_POOL_TIMEOUT: int = Field(default=30)  # Connection timeout in seconds

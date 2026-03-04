@@ -167,7 +167,7 @@ export default function PackingPage() {
             title="Input Production"
             description="Pack sets (Doll + Baju), scan barcodes, assign week/destination, generate FG labels."
             icon={Edit3}
-            link="/production/packing/input"
+            link="/production/input/packing"
             color="blue"
             badge="FG Generate"
           />

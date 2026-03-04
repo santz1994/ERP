@@ -1,23 +1,15 @@
-import os
-
-from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 from .config import settings
 
-load_dotenv()
-
-# Database configuration
-SQLALCHEMY_DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    settings.DATABASE_URL
-)
+# Database URL is loaded from .env by Pydantic BaseSettings in config.py
+# (env_file=".env" — no need for extra load_dotenv() here)
 
 # Pool configuration for connection management - Optimized for production
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
+    settings.DATABASE_URL,
     pool_pre_ping=True,  # Check connection before using
     pool_size=settings.DB_POOL_SIZE,  # Increased to 20 for concurrency
     max_overflow=settings.DB_MAX_OVERFLOW,  # Increased to 40

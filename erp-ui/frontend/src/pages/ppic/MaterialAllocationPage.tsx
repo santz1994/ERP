@@ -39,7 +39,7 @@ const MaterialAllocationPage: React.FC = () => {
       if (departmentFilter !== 'ALL') params.department = departmentFilter
       
       const response = await api.ppic.getMaterialAllocations(params)
-      return response.data as MaterialAllocation[]
+      return (Array.isArray(response) ? response : []) as MaterialAllocation[]
     }
   })
 

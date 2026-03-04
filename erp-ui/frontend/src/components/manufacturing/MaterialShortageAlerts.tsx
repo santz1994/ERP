@@ -48,8 +48,8 @@ export const MaterialShortageAlerts: React.FC<MaterialShortageAlertsProps> = ({
     queryKey: ['material-shortages'],
     queryFn: async () => {
       try {
-        const response = await apiClient.get('/material-allocation/shortages');
-        return (response.data  || []) as MaterialShortage[];
+        const data = await apiClient.get('/ppic/material-allocation/shortages');
+        return (Array.isArray(data) ? data : []) as MaterialShortage[];
       } catch (error) {
         console.error('[MaterialShortage] Error fetching shortages:', error);
         return []; // Return empty array on error

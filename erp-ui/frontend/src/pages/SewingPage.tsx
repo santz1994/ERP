@@ -171,7 +171,7 @@ export default function SewingPage() {
             title="Input Production"
             description="Record daily sewing output: Body stream, Baju stream. Inline QC with defect classification."
             icon={Edit3}
-            link="/production/sewing/input"
+            link="/production/input/sewing"
             color="orange"
             badge="2 Streams"
           />

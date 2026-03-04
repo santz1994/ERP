@@ -755,13 +755,13 @@ export const auditApi = {
     page?: number
     limit?: number
   }) =>
-    apiClient.get('/audit/trail', { params }),
+    apiClient.get('/audit/audit-trail', { params }),
   
   getLoginHistory: (user_id?: number) =>
-    apiClient.get('/audit/login-history', { params: { user_id } }),
+    apiClient.get('/audit/logs', { params: { user_id, action: 'LOGIN' } }),
   
   getDataChangeHistory: (table_name: string, record_id: number) =>
-    apiClient.get(`/audit/data-changes/${table_name}/${record_id}`),
+    apiClient.get(`/audit/entity/${table_name}/${record_id}`),
 }
 
 // ============================================================================

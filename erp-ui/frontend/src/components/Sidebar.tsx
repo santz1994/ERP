@@ -55,16 +55,10 @@ const menuItems: MenuItem[] = [
     permissions: ['production.view_status'],
     submenu: [
       { icon: <Scissors />, label: 'Cutting', path: '/cutting', permissions: ['cutting.view_status'] },
-      { icon: <Calendar />, label: 'Cutting Daily Input', path: '/production/input/cutting', permissions: ['production.input_daily'] },
       { icon: <Palette />, label: 'Embroidery', path: '/embroidery', roles: [UserRole.ADMIN_EMBROIDERY, UserRole.SPV_CUTTING, UserRole.SPV_SEWING, UserRole.PPIC_MANAGER, UserRole.PPIC_ADMIN, UserRole.ADMIN] },
-      { icon: <Calendar />, label: 'Embroidery Daily Input', path: '/production/input/embroidery', permissions: ['production.input_daily'] },
       { icon: <Zap />, label: 'Sewing', path: '/sewing', permissions: ['sewing.view_status'] },
-      { icon: <Calendar />, label: 'Sewing Daily Input', path: '/production/input/sewing', permissions: ['production.input_daily'] },
       { icon: <Sparkles />, label: 'Finishing', path: '/finishing', permissions: ['finishing.view_status'] },
-      { icon: <Calendar />, label: 'Finishing Daily Input', path: '/production/input/finishing', permissions: ['production.input_daily'] },
       { icon: <Package />, label: 'Packing', path: '/packing', permissions: ['packing.view_status'] },
-      { icon: <Calendar />, label: 'Packing Daily Input', path: '/production/input/packing', permissions: ['production.input_daily'] },
-      { icon: <BarChart3 />, label: 'Daily Production', path: '/daily-production', permissions: ['production.input_daily'] },
       { icon: <LayoutDashboard />, label: 'WIP Dashboard', path: '/production/wip', permissions: ['production.view_wip'] },
       { icon: <Calendar />, label: 'Production Calendar', path: '/production/calendar', permissions: ['production.schedule_production'] },
     ]

@@ -23,6 +23,7 @@ class ProductType(str, enum.Enum):
     """Product types as per Database Scheme."""
 
     RAW_MATERIAL = "Raw Material"
+    BAHAN_PENOLONG = "Bahan Penolong"   # Auxiliary / indirect material
     WIP = "WIP"
     FINISH_GOOD = "Finish Good"
     SERVICE = "Service"

@@ -42,7 +42,7 @@ class AuditLogResponse(BaseModel):
     request_path: str | None
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 class UserActivityResponse(BaseModel):
@@ -55,7 +55,7 @@ class UserActivityResponse(BaseModel):
     ip_address: str | None
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 class SecurityLogResponse(BaseModel):
@@ -69,7 +69,7 @@ class SecurityLogResponse(BaseModel):
     action_taken: str | None
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 class AuditSummaryResponse(BaseModel):

@@ -72,6 +72,7 @@ class ProductType(str, Enum):
     """Product type enum."""
 
     RAW_MATERIAL = "Raw Material"
+    BAHAN_PENOLONG = "Bahan Penolong"   # Auxiliary / indirect material
     WIP = "WIP"
     FINISH_GOOD = "Finish Good"
     SERVICE = "Service"

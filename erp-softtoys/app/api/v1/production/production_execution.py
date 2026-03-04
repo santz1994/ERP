@@ -9,12 +9,12 @@ Date: 3 Februari 2026
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy import and_
+from sqlalchemy import and_, func as sqlfunc
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, date
 
 from app.core.database import get_db
-from app.core.models.manufacturing import WorkOrder, ManufacturingOrder, WorkOrderStatus, Department
+from app.core.models.manufacturing import WorkOrder, ManufacturingOrder, WorkOrderStatus, Department, SPK
 from app.core.models.products import Product
 from app.core.models.warehouse import StockQuant, Location
 from app.services.bom_explosion_service import BOMExplosionService
@@ -416,6 +416,107 @@ async def transfer_wip(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error transferring WIP: {str(e)}"
         )
+
+
+@router.get("/wip")
+async def get_wip_dashboard(
+    articleCode: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Real-Time WIP Dashboard — buffer stock per department per article.
+    Returns list of WIPStock objects matching the frontend WIPStock interface.
+    """
+    DEPT_ICONS = {
+        'Cutting': '✂️',
+        'Embroidery': '🧵',
+        'Subcon': '🏭',
+        'Sewing': '🪡',
+        'Finishing': '✨',
+        'Packing': '📦',
+    }
+
+    query = (
+        db.query(SPK, ManufacturingOrder, Product)
+        .join(ManufacturingOrder, SPK.mo_id == ManufacturingOrder.id)
+        .join(Product, ManufacturingOrder.product_id == Product.id)
+        .filter(SPK.production_status.in_(['NOT_STARTED', 'IN_PROGRESS']))
+    )
+
+    if articleCode:
+        query = query.filter(Product.code == articleCode)
+
+    results = []
+    for spk, mo, product in query.all():
+        good_qty = int(spk.good_qty or 0)
+        target_qty = int(spk.target_qty or 1)
+        buffer_pct = good_qty / target_qty if target_qty > 0 else 0
+
+        if good_qty < 0:
+            wip_status = 'NEGATIVE'
+        elif buffer_pct == 0:
+            wip_status = 'CRITICAL'
+        elif buffer_pct < 0.3:
+            wip_status = 'CRITICAL'
+        elif buffer_pct < 0.7:
+            wip_status = 'LOW'
+        elif buffer_pct <= 1.0:
+            wip_status = 'SUFFICIENT'
+        else:
+            wip_status = 'ABUNDANT'
+
+        dept_val = spk.department.value if hasattr(spk.department, 'value') else str(spk.department)
+
+        results.append({
+            'department': dept_val,
+            'departmentLabel': dept_val,
+            'icon': DEPT_ICONS.get(dept_val, '🏭'),
+            'articleCode': product.code or '',
+            'articleName': product.name or '',
+            'spkNumber': f'SPK-{spk.id}',
+            'bufferStock': good_qty,
+            'targetQty': target_qty,
+            'cumulativeProduced': good_qty,
+            'cumulativeConsumed': 0,
+            'status': wip_status,
+        })
+
+    return results
+
+
+@router.get("/material-flow")
+async def get_material_flow(db: Session = Depends(get_db)):
+    """
+    Department-to-department material flow summary.
+    Returns list of DepartmentFlow objects: from/to/todayTransferred/pendingTransfer.
+    """
+    DEPT_ORDER = ['Cutting', 'Embroidery', 'Sewing', 'Finishing', 'Packing']
+
+    # Sum good_qty per department across all SPKs
+    rows = (
+        db.query(SPK.department, sqlfunc.coalesce(sqlfunc.sum(SPK.good_qty), 0).label('total'))
+        .group_by(SPK.department)
+        .all()
+    )
+    totals: dict = {}
+    for dept, total in rows:
+        dept_val = dept.value if hasattr(dept, 'value') else str(dept)
+        totals[dept_val] = float(total)
+
+    flows = []
+    for i in range(len(DEPT_ORDER) - 1):
+        from_dept = DEPT_ORDER[i]
+        to_dept = DEPT_ORDER[i + 1]
+        from_produced = totals.get(from_dept, 0)
+        to_produced = totals.get(to_dept, 0)
+        flows.append({
+            'from': from_dept,
+            'to': to_dept,
+            'todayTransferred': from_produced,
+            'pendingTransfer': max(0.0, from_produced - to_produced),
+        })
+
+    return flows
 
 
 @router.get("/work-order/{wo_id}/progress")

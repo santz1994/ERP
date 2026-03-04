@@ -61,7 +61,7 @@ export const MaterialReservation: React.FC<MaterialReservationProps> = ({
       const params = new URLSearchParams();
       if (selectedWO) params.append('wo_id', selectedWO.toString());
       if (materialId) params.append('material_id', materialId.toString());
-      const data = await apiClient.get(`/material-allocation/reservations?${params}`);
+      const data = await apiClient.get(`/ppic/material-allocation/reservations?${params}`);
       return (Array.isArray(data) ? data : []) as MaterialReservation[];
     },
     enabled: !!selectedWO || !!materialId
@@ -70,7 +70,7 @@ export const MaterialReservation: React.FC<MaterialReservationProps> = ({
   // Reserve Materials Mutation
   const reserveMutation = useMutation({
     mutationFn: async (data: { wo_id: number; auto_allocate?: boolean }) => {
-      return await apiClient.post('/material-allocation/reserve', data);
+      return await apiClient.post('/ppic/material-allocation/reserve', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['material-reservations'] });
@@ -85,7 +85,7 @@ export const MaterialReservation: React.FC<MaterialReservationProps> = ({
   // Release Reservation Mutation
   const releaseMutation = useMutation({
     mutationFn: async (reservationId: number) => {
-      return await apiClient.post(`/material-allocation/reservations/${reservationId}/release`);
+      return await apiClient.post(`/ppic/material-allocation/reservations/${reservationId}/release`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['material-reservations'] });

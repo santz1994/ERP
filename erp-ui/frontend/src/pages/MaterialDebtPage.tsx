@@ -65,12 +65,13 @@ const MaterialDebtPage: React.FC = () => {
           only_pending_approval: onlyPendingApproval
         }
       });
-      setDebts(response.data.debts || []);
+      // apiClient.get() already returns response.data directly
+      setDebts(response.debts || []);
       setStats({
-        total_outstanding: response.data.total_outstanding_value || 0,
-        total_qty: response.data.total_outstanding_qty || 0,
-        pending_approval: response.data.debts?.filter((d: any) => d.approval_status === 'PENDING_APPROVAL').length || 0,
-        approved: response.data.debts?.filter((d: any) => d.approval_status === 'APPROVED').length || 0
+        total_outstanding: response.total_outstanding_value || 0,
+        total_qty: response.total_outstanding_qty || 0,
+        pending_approval: response.debts?.filter((d: any) => d.approval_status === 'PENDING' || d.approval_status === 'PENDING_APPROVAL').length || 0,
+        approved: response.debts?.filter((d: any) => d.approval_status === 'APPROVED').length || 0
       });
     } catch (error) {
       console.error('Error fetching debts:', error);
@@ -85,8 +86,8 @@ const MaterialDebtPage: React.FC = () => {
 
   const fetchDebtDetail = async (debtId: number) => {
     try {
-      const response = await apiClient.get(`/warehouse/material-debt/${debtId}`);
-      setSelectedDebt(response.data);
+      const data = await apiClient.get(`/warehouse/material-debt/${debtId}`);
+      setSelectedDebt(data);
       setShowDetailModal(true);
     } catch (error) {
       console.error('Error fetching debt detail:', error);
@@ -95,11 +96,13 @@ const MaterialDebtPage: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'PENDING':           // DB value
       case 'PENDING_APPROVAL': return 'bg-yellow-100 text-yellow-800';
       case 'SPV_APPROVED': return 'bg-blue-100 text-blue-800';
       case 'MANAGER_APPROVED': return 'bg-blue-100 text-blue-800';
       case 'APPROVED': return 'bg-green-100 text-green-800';
       case 'REJECTED': return 'bg-red-100 text-red-800';
+      case 'SETTLED':           // DB value
       case 'FULLY_RESOLVED': return 'bg-green-100 text-green-800';
       case 'PARTIAL_RESOLVED': return 'bg-orange-100 text-orange-800';
       case 'EXCESS': return 'bg-purple-100 text-purple-800';
@@ -109,9 +112,11 @@ const MaterialDebtPage: React.FC = () => {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
+      case 'PENDING':           // DB value
       case 'PENDING_APPROVAL': return <Clock className="w-4 h-4" />;
       case 'APPROVED': return <CheckCircle className="w-4 h-4" />;
       case 'REJECTED': return <AlertCircle className="w-4 h-4" />;
+      case 'SETTLED':           // DB value
       case 'FULLY_RESOLVED': return <CheckCircle className="w-4 h-4" />;
       default: return <TrendingUp className="w-4 h-4" />;
     }

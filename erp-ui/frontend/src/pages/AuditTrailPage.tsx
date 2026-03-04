@@ -77,7 +77,7 @@ export default function AuditTrailPage() {
   const fetchSummary = async () => {
     try {
       const response = await api.get('/audit/summary');
-      setSummary(response.data);
+      setSummary(response);
     } catch (error) {
       console.error('Failed to fetch summary:', error);
     }

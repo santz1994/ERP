@@ -166,7 +166,7 @@ export default function FinishingPage() {
             title="Input Production"
             description="Stage 1 (Stuffing): Skin → Stuffed Body. Stage 2 (Closing): Hang tag → Finished Doll."
             icon={Edit3}
-            link="/production/finishing/input"
+            link="/production/input/finishing"
             color="purple"
             badge="2-Stage"
           />
